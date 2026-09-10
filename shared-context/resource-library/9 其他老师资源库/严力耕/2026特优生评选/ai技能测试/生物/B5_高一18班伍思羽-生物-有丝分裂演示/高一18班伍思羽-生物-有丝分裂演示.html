@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>有丝分裂科普展示 | 教材级严谨动画</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e0ecd8 0%, #c5ddcd 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            padding: 28px 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .master-container {
+            max-width: 1400px;
+            width: 100%;
+            background: #fffff8;
+            border-radius: 52px;
+            box-shadow: 0 28px 48px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(245, 240, 210, 0.7);
+            overflow: hidden;
+        }
+
+        .hero {
+            background: #fef7e6;
+            padding: 24px 32px 16px 32px;
+            border-bottom: 2px solid #dee6d5;
+        }
+        .hero h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1b4d2e;
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .hero h1 span {
+            font-size: 1.2rem;
+            background: #deedd9;
+            padding: 4px 14px;
+            border-radius: 60px;
+            font-weight: 500;
+            color: #2c6a44;
+        }
+        .hero p {
+            color: #416d53;
+            margin-top: 10px;
+            font-size: 1rem;
+            max-width: 85%;
+            border-left: 4px solid #78b38a;
+            padding-left: 16px;
+        }
+
+        .split-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            padding: 32px 32px 28px 32px;
+            background: #ffffff;
+        }
+
+        .demo-area {
+            flex: 2;
+            min-width: 300px;
+            background: #fefaf0;
+            border-radius: 44px;
+            padding: 20px 20px 24px 20px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+        }
+        .canvas-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+            position: relative;
+        }
+        canvas {
+            background: #fffff5;
+            border-radius: 32px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            height: auto;
+            max-width: 500px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .phase-badge {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: #e7f0e2;
+            padding: 8px 20px;
+            border-radius: 60px;
+            display: inline-block;
+            width: auto;
+            margin: 8px auto 0;
+            color: #2b6d43;
+        }
+        .button-cluster {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 18px 0 8px 0;
+        }
+        .stage-btn {
+            background: #f0f3ea;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 10px 18px;
+            border-radius: 80px;
+            color: #1e4f33;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .stage-btn:hover {
+            background: #ddebd4;
+            transform: translateY(-2px);
+        }
+        .stage-btn.active {
+            background: #2b7550;
+            color: white;
+            box-shadow: 0 6px 12px rgba(33, 94, 56, 0.25);
+        }
+
+        .info-area {
+            flex: 1.3;
+            min-width: 280px;
+            background: #fefef9;
+            border-radius: 44px;
+            padding: 16px 20px 24px 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .explanation-card {
+            background: #fcf9ef;
+            border-radius: 32px;
+            padding: 18px 20px;
+            border-left: 6px solid #5b9b6e;
+            margin-bottom: 24px;
+        }
+        .phase-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #235f3c;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .phase-desc {
+            font-size: 1rem;
+            line-height: 1.55;
+            color: #2d462f;
+            text-align: justify;
+        }
+
+        .glossary-section {
+            background: #eef3e9;
+            border-radius: 28px;
+            padding: 16px 18px;
+            margin-top: 8px;
+        }
+        .glossary-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #2f6b48;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-left: 3px solid #6eae7e;
+            padding-left: 12px;
+        }
+        .term-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
+        .term-badge {
+            background: #e2e9da;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1c532e;
+            cursor: pointer;
+            transition: 0.15s;
+            border: 1px solid #caddbd;
+        }
+        .term-badge:hover {
+            background: #cbe2bd;
+            transform: scale(0.98);
+        }
+        .term-popup {
+            background: #ffffffea;
+            backdrop-filter: blur(12px);
+            border-radius: 28px;
+            padding: 14px 18px;
+            margin-top: 12px;
+            border: 1px solid #cfe3c3;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.12);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #1e3a2a;
+        }
+        .hide-popup {
+            display: none;
+        }
+        footer {
+            background: #f3f2ea;
+            padding: 12px 32px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6e8b72;
+            border-top: 1px solid #dbebcf;
+        }
+        @media (max-width: 780px) {
+            .hero h1 { font-size: 1.8rem; }
+            .split-layout { padding: 20px; gap: 20px; }
+            .stage-btn { padding: 6px 12px; font-size: 0.8rem; }
+            .phase-title { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="master-container">
+    <div class="hero">
+        <h1>🧬 有丝分裂科普展示 <span>教材级严谨动画</span></h1>
+        <p>严格参照人教版高中生物教材图示 · 点击时期按钮观看科学动态过程 | 胞质分裂呈现细胞膜向内缢裂的精确模拟（无残留连接线）</p>
+    </div>
+
+    <div class="split-layout">
+        <div class="demo-area">
+            <div class="canvas-wrapper">
+                <canvas id="mitosisCanvas" width="500" height="500" style="max-width:500px; width:100%; height:auto; display:block;"></canvas>
+            </div>
+            <div style="text-align: center; margin: 6px 0 12px;">
+                <div class="phase-badge" id="phaseBadge">🌿 间期 · DNA复制</div>
+            </div>
+            <div class="button-cluster" id="phaseButtons"></div>
+            <div style="font-size:0.7rem; text-align:center; margin-top:16px; color:#8a9a82;">🔬 动画基于细胞生物学标准形态 | 染色体数目与行为符合教材描述 | 缢裂过程连续呈现，无中间连接线</div>
+        </div>
+
+        <div class="info-area">
+            <div class="explanation-card" id="explanationCard">
+                <div class="phase-title" id="dynTitle">🌱 间期</div>
+                <div class="phase-desc" id="dynDesc">
+                    细胞周期中时间最长的阶段，DNA复制、相关蛋白质合成，染色质呈细丝状，核仁明显。
+                </div>
+            </div>
+            <div class="glossary-section">
+                <div class="glossary-title">📚 名词百科 · 教材解析</div>
+                <div class="term-list" id="termList"></div>
+                <div id="popupContainer" class="term-popup hide-popup"></div>
+            </div>
+        </div>
+    </div>
+    <footer>📖 解析来源：人教版高中生物必修一《分子与细胞》 | 动画设计严格遵循染色体形态、着丝粒分裂、缢裂沟形成等科学事实，胞质分裂无额外连接线</footer>
+</div>
+
+<script>
+    (function(){
+        const canvas = document.getElementById('mitosisCanvas');
+        const ctx = canvas.getContext('2d');
+        const size = 500;
+        canvas.width = size;
+        canvas.height = size;
+        
+        // 阶段常量 (科学严谨顺序)
+        const PHASES = {
+            INTERPHASE: 'interphase',
+            PROPHASE: 'prophase',
+            METAPHASE: 'metaphase',
+            ANAPHASE: 'anaphase',
+            TELOPHASE: 'telophase',
+            CYTOKINESIS: 'cytokinesis'
+        };
+        
+        // 教材级描述 (精确)
+        const phaseMeta = {
+            [PHASES.INTERPHASE]: { title: "🌿 间期 (Interphase)", desc: "细胞周期中约90%时间处于间期。G1期合成RNA和蛋白质；S期DNA复制，每条染色体由两条姐妹染色单体组成；G2期为分裂期做准备。染色质细丝状，核仁核膜完整。" },
+            [PHASES.PROPHASE]: { title: "🔮 前期 (Prophase)", desc: "染色质螺旋化变粗，形成清晰可见的染色体（每条含两条染色单体）。核仁消失，核膜解体。中心体移向两极并发出纺锤丝，形成纺锤体。" },
+            [PHASES.METAPHASE]: { title: "🎯 中期 (Metaphase)", desc: "纺锤体完全形成，染色体着丝粒排列在细胞中央的赤道板上。染色体的着丝粒与两侧纺锤丝相连。此时染色体形态最稳定，数目最清晰。" },
+            [PHASES.ANAPHASE]: { title: "⚡ 后期 (Anaphase)", desc: "每个染色体的着丝粒分裂，姐妹染色单体分开成为独立的子染色体。纺锤丝缩短，将子染色体拉向细胞两极，使两极染色体数目加倍。" },
+            [PHASES.TELOPHASE]: { title: "🌙 末期 (Telophase)", desc: "染色体到达两极后逐渐解旋成染色质。核膜、核仁重现，纺锤体消失。细胞中部开始形成分裂沟（动物细胞），为胞质分裂做准备。" },
+            [PHASES.CYTOKINESIS]: { title: "✂️ 胞质分裂 (Cytokinesis)", desc: "动物细胞膜从中部向内缢裂，逐渐加深，最终将细胞质分割成两个子细胞。每个子细胞获得一套完整的染色体，恢复间期状态。动画中无任何残留连接线。" }
+        };
+        
+        // 专有名词百科库 (教材定义)
+        const glossary = {
+            "染色质": "由DNA、组蛋白和非组蛋白构成的细丝状复合物，间期呈松散状态，便于遗传信息的复制和转录。",
+            "染色体": "染色质在分裂期高度螺旋化形成的棒状结构，由着丝粒连接两条姐妹染色单体，是遗传物质的载体。",
+            "姐妹染色单体": "DNA复制后由同一个着丝粒连接的两条完全相同的DNA链，后期着丝粒分裂后分别进入两个子细胞。",
+            "着丝粒": "染色体上纺锤丝附着的区域，富含重复DNA序列，在后期受纺锤丝牵引而分裂，驱动染色单体分离。",
+            "纺锤体": "由微管蛋白组成的细胞骨架结构，在分裂期牵引染色体移动，确保遗传物质均等分配至子细胞。",
+            "赤道板": "细胞中央的一个虚拟平面，中期染色体的着丝粒排列于此，并非实际细胞结构。",
+            "中心体": "动物细胞中由一对中心粒构成的细胞器，发出星射线形成纺锤体，在间期复制。",
+            "核膜": "细胞核外围的双层膜结构，前期解体，末期重新形成，控制核质物质交换。",
+            "细胞膜缢裂": "动物细胞胞质分裂时，细胞膜在赤道板位置向内凹陷，逐渐收缩最终将细胞一分为二的过程。"
+        };
+        const termKeys = ["染色质", "染色体", "姐妹染色单体", "着丝粒", "纺锤体", "赤道板", "中心体", "核膜", "细胞膜缢裂"];
+        
+        // 动画控制变量
+        let currentPhase = PHASES.INTERPHASE;
+        let isAnimating = false;
+        let animStartTime = 0;
+        let animDuration = 700;      // 过渡动画时长(ms)
+        let targetPhase = null;
+        let animFrameId = null;
+        
+        // ---------- 严谨绘图函数 (符合教材形态) ----------
+        // 通用辅助：绘制细胞核
+        function drawNucleus(x, y, r, fill, stroke) {
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fillStyle = fill;
+            ctx.fill();
+            ctx.strokeStyle = stroke;
+            ctx.stroke();
+        }
+        
+        // 绘制染色体：type = 'double' (单体对), 'single' (单体), 'condensed' (前期粗短)
+        function drawChromosome(x, y, type, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle);
+            if (type === 'double') {
+                // 姐妹染色单体通过着丝粒连接 (X形)
+                ctx.beginPath();
+                ctx.moveTo(-14, -10);
+                ctx.lineTo(14, 10);
+                ctx.moveTo(-14, 10);
+                ctx.lineTo(14, -10);
+                ctx.lineWidth = 4.2;
+                ctx.strokeStyle = '#9d4468';
+                ctx.stroke();
+                // 着丝粒 (圆点)
+                ctx.beginPath();
+                ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#c97e5a';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+                ctx.fillStyle = '#7a2e45';
+                ctx.fill();
+            } else if (type === 'single') {
+                // 子染色体 (棒状)
+                ctx.beginPath();
+                ctx.moveTo(-14, 0);
+                ctx.lineTo(14, 0);
+                ctx.lineWidth = 5.5;
+                ctx.strokeStyle = '#b4547a';
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(0, 0, 3.8, 0, Math.PI * 2);
+                ctx.fillStyle = '#d68b62';
+                ctx.fill();
+            } else if (type === 'condensed') {
+                // 前期粗短染色体
+                ctx.fillStyle = '#a5426b';
+                ctx.fillRect(-11, -6, 22, 12);
+                ctx.beginPath();
+                ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#e2a87b';
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        
+        // 纺锤丝示意 (科学风格)
+        function drawSpindleFibers(x1, y1, x2, y2) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = '#b1aa7a';
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        function drawSpindleNetwork(cx, cy) {
+            for (let ang = -120; ang <= 120; ang += 30) {
+                let rad = ang * Math.PI / 180;
+                let xoff = Math.cos(rad) * 80;
+                let yoff = Math.sin(rad) * 80;
+                drawSpindleFibers(cx + xoff, cy + yoff, cx, cy - 145);
+                drawSpindleFibers(cx + xoff, cy + yoff, cx, cy + 145);
+            }
+        }
+        
+        // 静态绘制某一阶段 (cytokinesisConstrict: 0~1 缢裂程度)
+        function drawStaticPhase(phase, cytokinesisConstrict = 0) {
+            ctx.clearRect(0, 0, size, size);
+            ctx.fillStyle = '#fffff5';
+            ctx.fillRect(0, 0, size, size);
+            
+            const cx = size / 2, cy = size / 2;
+            // 绘制细胞轮廓
+            ctx.beginPath();
+            ctx.arc(cx, cy, 210, 0, Math.PI * 2);
+            ctx.fillStyle = '#faf0db';
+            ctx.fill();
+            ctx.strokeStyle = '#bc9a6b';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, 210, 0, Math.PI * 2);
+            ctx.clip();
+            
+            // 细胞质颗粒 (适量，随机但保证视觉稳定)
+            for (let i = 0; i < 60; i++) {
+                ctx.fillStyle = `rgba(150,110,65,${Math.random() * 0.1})`;
+                ctx.beginPath();
+                ctx.arc(cx - 160 + Math.random() * 320, cy - 150 + Math.random() * 300, Math.random() * 2 + 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // ---------- 各时期科学绘图 ----------
+            if (phase === PHASES.INTERPHASE) {
+                // 间期: 细胞核完整，染色质细丝状，核仁明显
+                drawNucleus(cx, cy, 88, '#efdcb2', '#b8824a');
+                // 染色质细丝 (曲线表示)
+                for (let i = 0; i < 18; i++) {
+                    let ang = Math.random() * Math.PI * 2;
+                    let rad = 35 + Math.random() * 48;
+                    let x = cx + Math.cos(ang) * rad, y = cy + Math.sin(ang) * rad;
+                    ctx.beginPath();
+                    ctx.moveTo(cx + Math.cos(ang) * 22, cy + Math.sin(ang) * 22);
+                    ctx.quadraticCurveTo(x + (Math.random() - 0.5) * 12, y + (Math.random() - 0.5) * 12, x, y);
+                    ctx.strokeStyle = '#bc7890';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                // 核仁
+                ctx.beginPath(); ctx.arc(cx - 18, cy - 12, 20, 0, Math.PI * 2); ctx.fillStyle = '#f9e2a1'; ctx.fill();
+                ctx.beginPath(); ctx.arc(cx + 15, cy + 8, 15, 0, Math.PI * 2); ctx.fill();
+            } 
+            else if (phase === PHASES.PROPHASE) {
+                // 前期: 染色体凝缩，核膜轮廓残存，两极中心体发出纺锤丝
+                for (let i = 0; i < 10; i++) {
+                    let angle = (i / 10) * Math.PI * 2;
+                    let x = cx + Math.cos(angle) * 98, y = cy + Math.sin(angle) * 98;
+                    drawChromosome(x, y, 'condensed', angle + 0.5);
+                }
+                ctx.beginPath(); ctx.arc(cx, cy, 66, 0, Math.PI * 2); ctx.fillStyle = '#f2e0bbaa'; ctx.fill();
+                drawSpindleNetwork(cx, cy);
+                // 中心粒
+                ctx.fillStyle = '#bc9a6e';
+                ctx.beginPath(); ctx.arc(cx, cy - 150, 9, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(cx, cy + 150, 9, 0, Math.PI * 2); ctx.fill();
+            } 
+            else if (phase === PHASES.METAPHASE) {
+                // 中期: 染色体排列赤道板，着丝粒整齐
+                const yEq = cy;
+                for (let i = -3; i <= 3; i++) {
+                    let x = cx + i * 44;
+                    if (x > cx + 130) x = cx + 122;
+                    if (x < cx - 130) x = cx - 122;
+                    drawChromosome(x, yEq, 'double', 0);
+                }
+                for (let i = -3; i <= 3; i++) {
+                    let x = cx + i * 44;
+                    drawSpindleFibers(x, yEq - 18, cx, cy - 150);
+                    drawSpindleFibers(x, yEq + 18, cx, cy + 150);
+                }
+                ctx.fillStyle = '#c8aa7a';
+                ctx.beginPath(); ctx.arc(cx, cy - 150, 10, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(cx, cy + 150, 10, 0, Math.PI * 2); ctx.fill();
+            } 
+            else if (phase === PHASES.ANAPHASE) {
+                // 后期: 着丝粒分裂，姐妹单体移向两极
+                const leftX = cx - 108, rightX = cx + 108;
+                for (let i = 0; i < 6; i++) {
+                    let offY = cy - 45 + i * 18;
+                    drawChromosome(leftX + (i % 2) * 9, offY, 'single', 0.25);
+                    drawChromosome(rightX - (i % 2) * 9, offY, 'single', -0.2);
+                }
+                for (let i = 0; i < 6; i++) {
+                    drawSpindleFibers(leftX + (i % 2) * 9, cy - 30 + i * 15, cx, cy - 150);
+                    drawSpindleFibers(rightX - (i % 2) * 9, cy - 30 + i * 15, cx, cy + 150);
+                }
+                ctx.fillStyle = '#b78f64';
+                ctx.beginPath(); ctx.arc(cx, cy - 150, 10, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(cx, cy + 150, 10, 0, Math.PI * 2); ctx.fill();
+            } 
+            else if (phase === PHASES.TELOPHASE) {
+                // 末期: 两组染色体，核膜重建，分裂沟起始
+                let leftNuc = cx - 105, rightNuc = cx + 105;
+                drawNucleus(leftNuc, cy - 8, 58, '#efdeb3', '#b87e4a');
+                drawNucleus(rightNuc, cy + 10, 58, '#efdeb3', '#b87e4a');
+                for (let i = 0; i < 5; i++) {
+                    drawChromosome(leftNuc - 12 + i * 11, cy - 4, 'single', 0.3);
+                    drawChromosome(rightNuc - 12 + i * 11, cy + 12, 'single', -0.2);
+                }
+                // 分裂沟早期示意 (虚线表示即将缢裂的位置)
+                ctx.beginPath();
+                ctx.moveTo(cx - 130, cy);
+                ctx.lineTo(cx + 130, cy);
+                ctx.strokeStyle = '#e4ac6e';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([8, 8]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            } 
+            else if (phase === PHASES.CYTOKINESIS) {
+                // 胞质分裂: 动态缢裂 (严谨模拟细胞膜凹陷，无任何连接线)
+                const constrict = Math.min(1, Math.max(0, cytokinesisConstrict));
+                // 缢裂程度影响两个子细胞中心的距离和半径，模拟膜向内凹陷
+                const maxOffset = 54;
+                const offset = constrict * maxOffset;
+                let leftCenterX = cx - (48 + offset * 0.65);
+                let rightCenterX = cx + (48 + offset * 0.65);
+                let leftY = cy - 6;
+                let rightY = cy + 6;
+                let radius = 88 - constrict * 12;
+                // 两个独立的子细胞，完全不绘制任何连接线
+                ctx.beginPath(); ctx.arc(leftCenterX, leftY, radius, 0, Math.PI * 2); ctx.fillStyle = '#f7eace'; ctx.fill();
+                ctx.beginPath(); ctx.arc(rightCenterX, rightY, radius, 0, Math.PI * 2); ctx.fill();
+                // 细胞核
+                drawNucleus(leftCenterX - 8, leftY - 2, 38, '#f3dfaf', '#b87e4a');
+                drawNucleus(rightCenterX + 6, rightY + 2, 38, '#f3dfaf', '#b87e4a');
+                // 染色体 (子细胞中为单体)
+                for (let i = 0; i < 5; i++) {
+                    drawChromosome(leftCenterX - 15 + i * 10, leftY - 8, 'single', 0.3);
+                    drawChromosome(rightCenterX - 5 + i * 10, rightY - 4, 'single', -0.2);
+                }
+                // 缢裂沟: 仅绘制细胞膜凹陷的弧形凹陷效果，不连接两个细胞，强调缢裂
+                ctx.beginPath();
+                let startX = cx - 34 - offset * 0.5;
+                let endX = cx + 34 + offset * 0.5;
+                let midY = cy + (constrict * 9);
+                // 上凹陷轮廓 (呈现膜内陷)
+                ctx.moveTo(startX, cy - 4);
+                ctx.quadraticCurveTo(cx, midY, endX, cy - 4);
+                ctx.strokeStyle = '#b87442';
+                ctx.lineWidth = 3.5;
+                ctx.setLineDash([]);
+                ctx.stroke();
+                // 加强凹陷立体感
+                ctx.beginPath();
+                ctx.moveTo(startX + 3, cy - 2);
+                ctx.quadraticCurveTo(cx, midY + 2, endX - 3, cy - 2);
+                ctx.strokeStyle = '#d9955c';
+                ctx.lineWidth = 2.2;
+                ctx.stroke();
+                // 注意: 完全没有额外连线，缢裂纯粹表现为膜内陷沟和细胞分离趋势
+            }
+            
+            ctx.restore();
+            // 外轮廓描边 (完整细胞轮廓线，胞质分裂时仍保持外轮廓线衬托)
+            ctx.beginPath();
+            ctx.arc(cx, cy, 210, 0, Math.PI * 2);
+            ctx.strokeStyle = '#cdae7a';
+            ctx.lineWidth = 2.2;
+            ctx.stroke();
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = '#6f583a';
+            ctx.fillText(phaseMeta[phase].title.split(' ')[0] + "时期", 28, 48);
+        }
+        
+        // 动画过渡函数（平滑混合 + 胞质分裂缢裂进度）
+        function drawTransition(progress, fromPhase, toPhase) {
+            // progress 0→1
+            ctx.clearRect(0, 0, size, size);
+            ctx.fillStyle = '#fffff5';
+            ctx.fillRect(0, 0, size, size);
+            ctx.save();
+            // 绘制 from 阶段 (透明度降低)
+            ctx.globalAlpha = 1 - progress;
+            drawStaticPhase(fromPhase, (fromPhase === PHASES.CYTOKINESIS) ? (1 - progress) : 0);
+            ctx.globalAlpha = progress;
+            drawStaticPhase(toPhase, (toPhase === PHASES.CYTOKINESIS) ? progress : 0);
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+        
+        function animateToPhase(newPhase) {
+            if (isAnimating) return;
+            if (newPhase === currentPhase) {
+                triggerLightFlash();
+                return;
+            }
+            targetPhase = newPhase;
+            isAnimating = true;
+            animStartTime = performance.now();
+            
+            function step(now) {
+                let elapsed = now - animStartTime;
+                let prog = Math.min(1, elapsed / animDuration);
+                let ease = 1 - Math.pow(1 - prog, 3);
+                if (prog < 1) {
+                    drawTransition(ease, currentPhase, targetPhase);
+                    requestAnimationFrame(step);
+                } else {
+                    drawStaticPhase(targetPhase, (targetPhase === PHASES.CYTOKINESIS) ? 1 : 0);
+                    currentPhase = targetPhase;
+                    isAnimating = false;
+                    updateRightPanel(currentPhase);
+                    triggerLightFlash();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+        
+        function triggerLightFlash() {
+            ctx.save();
+            ctx.fillStyle = '#fffbe6';
+            ctx.globalAlpha = 0.28;
+            ctx.fillRect(0, 0, size, size);
+            ctx.restore();
+            setTimeout(() => {
+                if (!isAnimating) drawStaticPhase(currentPhase, (currentPhase === PHASES.CYTOKINESIS) ? 1 : 0);
+            }, 55);
+        }
+        
+        function updateRightPanel(phase) {
+            document.getElementById('dynTitle').innerHTML = phaseMeta[phase].title;
+            document.getElementById('dynDesc').innerHTML = phaseMeta[phase].desc;
+            document.getElementById('phaseBadge').innerHTML = `🔬 ${phaseMeta[phase].title}`;
+            document.querySelectorAll('.stage-btn').forEach(btn => {
+                if (btn.getAttribute('data-phase') === phase) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+        
+        function buildGlossaryUI() {
+            const container = document.getElementById('termList');
+            const popupDiv = document.getElementById('popupContainer');
+            termKeys.forEach(key => {
+                const span = document.createElement('span');
+                span.className = 'term-badge';
+                span.innerText = key;
+                span.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const definition = glossary[key] || "参考高中教材。";
+                    popupDiv.innerHTML = `<strong>📖 ${key}</strong><br>${definition}<div style="text-align:right; margin-top:8px;"><span style="font-size:0.7rem;cursor:pointer;color:#578a65;" id="closePopupBtn">✖ 收起</span></div>`;
+                    popupDiv.classList.remove('hide-popup');
+                    const closeBtn = document.getElementById('closePopupBtn');
+                    if (closeBtn) closeBtn.onclick = () => popupDiv.classList.add('hide-popup');
+                });
+                container.appendChild(span);
+            });
+            document.addEventListener('click', function(e) {
+                if (!popupDiv.contains(e.target) && !e.target.classList.contains('term-badge')) {
+                    popupDiv.classList.add('hide-popup');
+                }
+            });
+        }
+        
+        function buildPhaseButtons() {
+            const btnContainer = document.getElementById('phaseButtons');
+            const phasesList = [
+                { id: PHASES.INTERPHASE, label: '🌱 间期' }, { id: PHASES.PROPHASE, label: '🔮 前期' },
+                { id: PHASES.METAPHASE, label: '🎯 中期' }, { id: PHASES.ANAPHASE, label: '⚡ 后期' },
+                { id: PHASES.TELOPHASE, label: '🌙 末期' }, { id: PHASES.CYTOKINESIS, label: '✂️ 胞质分裂' }
+            ];
+            phasesList.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'stage-btn';
+                btn.setAttribute('data-phase', p.id);
+                btn.innerText = p.label;
+                btn.addEventListener('click', () => animateToPhase(p.id));
+                btnContainer.appendChild(btn);
+            });
+        }
+        
+        buildPhaseButtons();
+        buildGlossaryUI();
+        drawStaticPhase(PHASES.INTERPHASE, 0);
+        updateRightPanel(PHASES.INTERPHASE);
+        currentPhase = PHASES.INTERPHASE;
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,514 @@
+---
+import { programmingTemplates } from '../data/programmingTemplates';
+---
+
+<section class="section-band bg-lab">
+  <div class="page-shell">
+    <div class="mb-8 max-w-3xl">
+      <p class="eyebrow">ONLINE PROGRAMMING</p>
+      <h1 class="mt-3 text-3xl font-black text-ink sm:text-4xl">在线编程</h1>
+      <p class="mt-4 leading-8 text-slate-700">
+        用 USB 连接 ESP32，选择与你的传感器对应的程序，检查引脚设置后上传。初次使用时，按模板说明勾选所需库文件。
+      </p>
+    </div>
+
+    <div class="tool-surface grid overflow-hidden lg:grid-cols-[360px_1fr]">
+      <aside class="border-b border-slate-200 bg-white p-6 lg:border-b-0 lg:border-r">
+        <label for="template-select" class="block text-sm font-bold text-ink">程序模板</label>
+        <select
+          id="template-select"
+          class="focus-ring mt-3 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-ink"
+        >
+          {programmingTemplates.map((template) => <option value={template.id}>{template.name}</option>)}
+        </select>
+
+        <div class="mt-5 rounded-md bg-yucai-50 p-4">
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <p id="template-source" class="text-xs font-black text-yucai-800"></p>
+            <p id="template-library-state" class="text-xs font-bold text-slate-500"></p>
+          </div>
+          <p id="template-summary" class="text-sm leading-7 text-slate-700"></p>
+          <p id="template-pins" class="mt-3 text-sm font-bold text-yucai-800"></p>
+        </div>
+
+        <div class="mt-5 border-t border-slate-200 pt-5">
+          <h2 class="text-sm font-black text-ink">程序设置</h2>
+          <div id="settings-panel" class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2"></div>
+        </div>
+
+        <div class="mt-5 border-t border-slate-200 pt-5">
+          <h2 class="text-sm font-black text-ink">库文件</h2>
+          <div class="mt-3 grid gap-3 text-sm text-slate-700">
+            <label class="flex items-start gap-3 rounded-md border border-slate-200 p-3">
+              <input id="library-phyphoxBLE" type="checkbox" class="mt-1 size-4 accent-yucai-700" />
+              <span>
+                <span class="block font-bold text-ink">phyphoxBLE</span>
+                <span class="block text-xs leading-5 text-slate-500">蓝牙数据上传库</span>
+              </span>
+            </label>
+            <label class="flex items-start gap-3 rounded-md border border-slate-200 p-3">
+              <input id="library-OLED" type="checkbox" class="mt-1 size-4 accent-yucai-700" />
+              <span>
+                <span class="block font-bold text-ink">OLED</span>
+                <span class="block text-xs leading-5 text-slate-500">屏幕显示与字体库</span>
+              </span>
+            </label>
+            <label class="flex items-start gap-3 rounded-md bg-slate-50 p-3">
+              <input id="incremental-upload" type="checkbox" checked class="mt-1 size-4 accent-yucai-700" />
+              <span>
+                <span class="block font-bold text-ink">只上传有变化的文件</span>
+                <span class="block text-xs leading-5 text-slate-500">再次上传时跳过未修改的文件，减少等待时间</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-6 grid gap-3">
+          <button id="serial-connect" class="focus-ring h-11 rounded-md bg-yucai-700 px-4 text-sm font-bold text-white transition hover:bg-yucai-800">
+            连接 ESP32
+          </button>
+          <button id="serial-write" class="focus-ring h-11 rounded-md bg-signal px-4 text-sm font-bold text-ink transition hover:bg-[#e49412]">
+            上传程序
+          </button>
+          <button id="serial-clear" class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+            清空输出
+          </button>
+          <button id="serial-toggle-output" class="focus-ring h-11 rounded-md border border-amber-300 bg-amber-50 px-4 text-sm font-bold text-ink transition hover:bg-amber-100">
+            暂停输出
+          </button>
+        </div>
+
+        <div class="mt-6 border-t border-slate-200 pt-5">
+          <p class="text-xs font-bold text-slate-500">连接状态</p>
+          <p id="serial-status" class="mt-2 text-sm font-bold text-yucai-800">未连接</p>
+        </div>
+      </aside>
+
+      <div class="grid min-h-[720px] bg-[#07111f] lg:grid-rows-[1fr_220px]">
+        <textarea
+          id="code-editor"
+          spellcheck="false"
+          class="min-h-[500px] w-full resize-none border-0 bg-[#07111f] p-5 font-mono text-sm leading-6 text-blue-50 outline-none"
+          aria-label="代码编辑区"
+        ></textarea>
+        <div id="serial-output-panel" class="border-t border-amber-200 bg-[#fff8e6] p-5">
+          <div class="mb-3 flex items-center justify-between gap-4">
+            <h2 class="text-sm font-bold text-ink">串口输出</h2>
+            <span id="serial-mode-badge" class="rounded-md bg-signal/25 px-2 py-1 text-xs font-bold text-ink">传感器程序</span>
+          </div>
+          <pre id="serial-log" class="h-36 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-slate-800">等待操作...</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script is:inline type="application/json" id="template-data" set:html={JSON.stringify(programmingTemplates)}></script>
+  <script>
+    import { Esp32Serial, pythonStringLiteral } from '../lib/esp32-serial';
+
+    type ProgrammingLibraryId = 'phyphoxBLE' | 'OLED';
+
+    type CodeSetting = {
+      id: string;
+      label: string;
+      helper: string;
+      control: 'text' | 'number';
+      defaultValue: string | number;
+      min?: number;
+      max?: number;
+      codeTarget: 'bleName' | 'pin';
+      variableName?: string;
+    };
+
+    type Template = {
+      id: string;
+      name: string;
+      summary: string;
+      pins: string;
+      source: 'demo' | 'real';
+      requiredLibraries: ProgrammingLibraryId[];
+      settings: CodeSetting[];
+      code: string;
+    };
+
+    type LibraryManifestFile = {
+      path: string;
+      url: string;
+      size: number;
+      sha256: string;
+    };
+
+    type LibraryManifest = {
+      version: number;
+      manifestPath: string;
+      libraries: Record<ProgrammingLibraryId, { name: ProgrammingLibraryId; files: LibraryManifestFile[] }>;
+    };
+
+    type DeviceManifest = {
+      version: number;
+      updatedAt?: string;
+      files: Record<string, { size: number; sha256: string }>;
+    };
+
+    const templateData = document.querySelector<HTMLScriptElement>('#template-data');
+    const templates = JSON.parse(templateData?.textContent ?? '[]') as Template[];
+    const select = document.querySelector<HTMLSelectElement>('#template-select');
+    const summary = document.querySelector<HTMLParagraphElement>('#template-summary');
+    const pins = document.querySelector<HTMLParagraphElement>('#template-pins');
+    const templateSource = document.querySelector<HTMLParagraphElement>('#template-source');
+    const templateLibraryState = document.querySelector<HTMLParagraphElement>('#template-library-state');
+    const settingsPanel = document.querySelector<HTMLDivElement>('#settings-panel');
+    const editor = document.querySelector<HTMLTextAreaElement>('#code-editor');
+    const status = document.querySelector<HTMLParagraphElement>('#serial-status');
+    const log = document.querySelector<HTMLPreElement>('#serial-log');
+    const connectButton = document.querySelector<HTMLButtonElement>('#serial-connect');
+    const writeButton = document.querySelector<HTMLButtonElement>('#serial-write');
+    const clearButton = document.querySelector<HTMLButtonElement>('#serial-clear');
+    const toggleOutputButton = document.querySelector<HTMLButtonElement>('#serial-toggle-output');
+    const serialModeBadge = document.querySelector<HTMLSpanElement>('#serial-mode-badge');
+    const incrementalUpload = document.querySelector<HTMLInputElement>('#incremental-upload');
+    const libraryCheckboxes: Record<ProgrammingLibraryId, HTMLInputElement | null> = {
+      phyphoxBLE: document.querySelector<HTMLInputElement>('#library-phyphoxBLE'),
+      OLED: document.querySelector<HTMLInputElement>('#library-OLED')
+    };
+
+    const encoder = new TextEncoder();
+    const maxLogLength = 60000;
+    const programmingTemplateStorageKey = 'yucai-programming-template-id';
+    let currentTemplate = templates[0];
+    let serialOutputPaused = false;
+
+    // 复用共享的 ESP32 串口 / MicroPython 烧录模块（与超声波网页实验室同一套实现）。
+    const esp = new Esp32Serial({ onText: (text) => appendSerialText(text) });
+
+    const appendLog = (line: string) => {
+      if (!log) return;
+      const time = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+      const previous = log.textContent === '等待操作...' ? '' : log.textContent ?? '';
+      log.textContent = `${previous}${previous ? '\n' : ''}[${time}] ${line}`;
+      if (log.textContent.length > maxLogLength) {
+        log.textContent = log.textContent.slice(-maxLogLength);
+      }
+      log.scrollTop = log.scrollHeight;
+    };
+
+    const appendSerialText = (text: string) => {
+      if (!log || !text) return;
+      const cleaned = text.replace(/\x04/g, '');
+      if (!cleaned.trim()) return;
+      if (isSerialOutputPaused()) return;
+      const previous = log.textContent === '等待操作...' ? '' : log.textContent ?? '';
+      log.textContent = `${previous}${cleaned}`;
+      if (log.textContent.length > maxLogLength) {
+        log.textContent = log.textContent.slice(-maxLogLength);
+      }
+      log.scrollTop = log.scrollHeight;
+    };
+
+    const setStatus = (text: string) => {
+      if (status) status.textContent = text;
+    };
+
+    const getTemplate = (id: string) => templates.find((item) => item.id === id) ?? templates[0];
+
+    const getStoredTemplateId = () => {
+      try {
+        const stored = window.localStorage.getItem(programmingTemplateStorageKey);
+        return stored && templates.some((template) => template.id === stored) ? stored : null;
+      } catch {
+        return null;
+      }
+    };
+
+    const persistSelectedTemplate = (id: string) => {
+      try {
+        window.localStorage.setItem(programmingTemplateStorageKey, id);
+      } catch {
+        // localStorage can be unavailable in private browsing or strict browser settings.
+      }
+    };
+
+    const isSerialOutputPaused = () => serialOutputPaused;
+
+    const setSerialOutputPaused = (paused: boolean) => {
+      serialOutputPaused = paused;
+      if (toggleOutputButton) toggleOutputButton.textContent = paused ? '恢复输出' : '暂停输出';
+      appendLog(paused ? '已暂停串口原始输出。' : '已恢复串口原始输出。');
+    };
+
+    const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const normalizePinValue = (value: string | number, setting: CodeSetting) => {
+      const parsed = Number.parseInt(String(value), 10);
+      const min = setting.min ?? 0;
+      const max = setting.max ?? 39;
+      if (!Number.isFinite(parsed)) return String(setting.defaultValue);
+      return String(Math.min(max, Math.max(min, parsed)));
+    };
+
+    const applySettingToCode = (code: string, setting: CodeSetting, rawValue: string | number) => {
+      if (setting.codeTarget === 'bleName') {
+        const value = pythonStringLiteral(String(rawValue).trim() || String(setting.defaultValue));
+        const pattern = /^(\s*blename\s*=\s*)["'][^"']*["']/m;
+        return pattern.test(code) ? code.replace(pattern, `$1${value}`) : `blename = ${value}\n${code}`;
+      }
+
+      if (setting.codeTarget === 'pin' && setting.variableName) {
+        const value = normalizePinValue(rawValue, setting);
+        const assignmentPattern = new RegExp(`(^\\s*${escapeRegExp(setting.variableName)}\\s*=\\s*)\\d+`, 'm');
+        if (assignmentPattern.test(code)) return code.replace(assignmentPattern, `$1${value}`);
+
+        const pattern = new RegExp(`(^\\s*${escapeRegExp(setting.variableName)}\\s*=\\s*Pin\\s*\\()\\s*\\d+`, 'm');
+        return pattern.test(code) ? code.replace(pattern, `$1${value}`) : code;
+      }
+
+      return code;
+    };
+
+    const refreshPinsLabel = () => {
+      if (!pins || !currentTemplate) return;
+      pins.textContent = currentTemplate.pins;
+      pins.hidden = !currentTemplate.pins.trim();
+    };
+
+    const buildCodeWithDefaultSettings = (template: Template) =>
+      template.settings.reduce(
+        (code, setting) => applySettingToCode(code, setting, setting.defaultValue),
+        template.code
+      );
+
+    const renderSettings = (template: Template) => {
+      if (!settingsPanel) return;
+      settingsPanel.textContent = '';
+
+      if (!template.settings.length) {
+        const empty = document.createElement('p');
+        empty.className = 'rounded-md bg-slate-50 p-3 text-sm leading-6 text-slate-500 sm:col-span-2';
+        empty.textContent = '这个模板暂时保留演示代码，没有额外设置。';
+        settingsPanel.append(empty);
+        return;
+      }
+
+      for (const setting of template.settings) {
+        const label = document.createElement('label');
+        label.className = setting.codeTarget === 'bleName' ? 'block sm:col-span-2' : 'block';
+        label.htmlFor = `setting-${setting.id}`;
+
+        const labelText = document.createElement('span');
+        labelText.className = 'block text-xs font-bold text-slate-500';
+        labelText.textContent = setting.label;
+
+        const input = document.createElement('input');
+        input.id = `setting-${setting.id}`;
+        input.type = setting.control;
+        input.value = String(setting.defaultValue);
+        input.className = 'focus-ring mt-1 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-ink';
+        if (setting.control === 'number') {
+          input.inputMode = 'numeric';
+          if (typeof setting.min === 'number') input.min = String(setting.min);
+          if (typeof setting.max === 'number') input.max = String(setting.max);
+        }
+
+        const helper = document.createElement('span');
+        helper.className = 'mt-1 block text-xs leading-5 text-slate-500';
+        helper.textContent = setting.helper;
+
+        input.addEventListener('input', () => {
+          if (editor) {
+            editor.value = applySettingToCode(editor.value, setting, input.value);
+          }
+          refreshPinsLabel();
+        });
+
+        label.append(labelText, input, helper);
+        settingsPanel.append(label);
+      }
+    };
+
+    const syncLibraryCheckboxes = (template: Template) => {
+      for (const library of Object.keys(libraryCheckboxes) as ProgrammingLibraryId[]) {
+        const checkbox = libraryCheckboxes[library];
+        if (!checkbox) continue;
+        checkbox.checked = false;
+      }
+      if (templateLibraryState) {
+        templateLibraryState.textContent = template.requiredLibraries.length
+          ? `可选 ${template.requiredLibraries.length} 组库，默认不上传`
+          : '无默认库';
+      }
+    };
+
+    const renderTemplate = (id: string) => {
+      currentTemplate = getTemplate(id);
+      if (!currentTemplate) return;
+      if (summary) summary.textContent = currentTemplate.summary.replace(/^真实 DIS /, '');
+      if (templateSource) templateSource.textContent = currentTemplate.source === 'real' ? '传感器程序' : '演示模板';
+      if (serialModeBadge) serialModeBadge.textContent = currentTemplate.source === 'real' ? '传感器程序' : '演示模板';
+      renderSettings(currentTemplate);
+      syncLibraryCheckboxes(currentTemplate);
+      if (editor) editor.value = buildCodeWithDefaultSettings(currentTemplate);
+      refreshPinsLabel();
+    };
+
+    const connectSerial = async () => {
+      if (esp.connected) return;
+      if (!Esp32Serial.isSupported()) {
+        setStatus('当前浏览器不支持 Web Serial');
+        appendLog('请使用电脑端 Chrome 或 Edge，并通过 localhost 或 HTTPS 打开页面。');
+        throw new Error('当前浏览器不支持 Web Serial');
+      }
+      await esp.connect(115200);
+      setStatus('已连接 ESP32 串口');
+      if (connectButton) connectButton.textContent = '已连接 ESP32';
+      appendLog('串口已打开，波特率 115200。');
+    };
+
+    const fetchLibraryManifest = async () => {
+      const response = await fetch('/esp32-libraries/manifest.json', { cache: 'no-store' });
+      if (!response.ok) throw new Error('无法读取库文件 manifest');
+      return (await response.json()) as LibraryManifest;
+    };
+
+    const emptyDeviceManifest = (): DeviceManifest => ({ version: 1, files: {} });
+
+    const readDeviceManifest = async (manifestPath: string): Promise<DeviceManifest> => {
+      const response = await esp.executeRawCode(
+        `try:
+    f = open(${pythonStringLiteral(manifestPath)}, 'r')
+    data = f.read()
+    f.close()
+except OSError:
+    data = '{}'
+print('YUCai_MANIFEST_BEGIN')
+print(data)
+print('YUCai_MANIFEST_END')
+`,
+        10000
+      );
+      const match = response.replace(/\x04/g, '').match(/YUCai_MANIFEST_BEGIN\s*([\s\S]*?)\s*YUCai_MANIFEST_END/);
+      if (!match) return emptyDeviceManifest();
+      try {
+        const parsed = JSON.parse(match[1]) as Partial<DeviceManifest>;
+        return {
+          version: 1,
+          files: parsed.files ?? {}
+        };
+      } catch {
+        return emptyDeviceManifest();
+      }
+    };
+
+    const writeDeviceManifest = async (manifestPath: string, deviceManifest: DeviceManifest) => {
+      const content = JSON.stringify(
+        {
+          version: 1,
+          updatedAt: new Date().toISOString(),
+          files: deviceManifest.files
+        },
+        null,
+        2
+      );
+      await esp.writeDeviceFile(manifestPath, encoder.encode(content));
+    };
+
+    const getSelectedLibraries = () =>
+      (Object.keys(libraryCheckboxes) as ProgrammingLibraryId[]).filter((library) => libraryCheckboxes[library]?.checked);
+
+    const uploadLibraryFiles = async (selectedLibraries: ProgrammingLibraryId[], incremental: boolean) => {
+      if (!selectedLibraries.length) {
+        appendLog('未选择库文件，只上传 main.py。');
+        return;
+      }
+
+      const manifest = await fetchLibraryManifest();
+      const deviceManifest = incremental ? await readDeviceManifest(manifest.manifestPath) : emptyDeviceManifest();
+      let uploaded = 0;
+      let skipped = 0;
+
+      for (const library of selectedLibraries) {
+        const libraryFiles = manifest.libraries[library]?.files ?? [];
+        appendLog(`开始检查 ${library}，共 ${libraryFiles.length} 个文件。`);
+        for (const file of libraryFiles) {
+          const existing = deviceManifest.files[file.path];
+          if (incremental && existing?.sha256 === file.sha256 && existing.size === file.size) {
+            skipped += 1;
+            appendLog(`跳过未变化文件：${file.path}`);
+            continue;
+          }
+
+          const response = await fetch(file.url, { cache: 'no-store' });
+          if (!response.ok) throw new Error(`无法读取库文件：${file.path}`);
+          await esp.writeDeviceFile(file.path, new Uint8Array(await response.arrayBuffer()));
+          deviceManifest.files[file.path] = { size: file.size, sha256: file.sha256 };
+          uploaded += 1;
+          appendLog(`已上传库文件：${file.path}`);
+        }
+      }
+
+      await writeDeviceManifest(manifest.manifestPath, deviceManifest);
+      appendLog(`库文件处理完成：上传 ${uploaded} 个，跳过 ${skipped} 个。`);
+    };
+
+    const uploadMainPy = async () => {
+      const code = editor?.value ?? '';
+      if (!code.trim()) throw new Error('main.py 内容为空');
+      await esp.writeDeviceFile('main.py', encoder.encode(code.replace(/\r\n/g, '\n')));
+      appendLog(`main.py 上传完成，共 ${code.split('\n').length} 行。`);
+    };
+
+    const resetDeviceAfterUpload = async () => {
+      await esp.softReset();
+      appendLog('已发送重启命令，ESP32 将运行新的 main.py。');
+    };
+
+    select?.addEventListener('change', () => {
+      persistSelectedTemplate(select.value);
+      setStatus('正在切换模板并刷新页面，释放串口连接');
+      window.location.reload();
+    });
+
+    connectButton?.addEventListener('click', async () => {
+      try {
+        await connectSerial();
+      } catch (error) {
+        setStatus('连接失败');
+        appendLog(error instanceof Error ? error.message : String(error));
+      }
+    });
+
+    writeButton?.addEventListener('click', async () => {
+      if (!writeButton) return;
+      writeButton.disabled = true;
+      writeButton.textContent = '上传中...';
+
+      try {
+        await connectSerial();
+        await esp.enterRawRepl();
+        appendLog('已进入 MicroPython raw REPL。');
+        await uploadLibraryFiles(getSelectedLibraries(), Boolean(incrementalUpload?.checked));
+        await uploadMainPy();
+        await resetDeviceAfterUpload();
+        setStatus('上传完成，等待 ESP32 重启');
+      } catch (error) {
+        setStatus('上传失败');
+        appendLog(error instanceof Error ? error.message : String(error));
+      } finally {
+        writeButton.disabled = false;
+        writeButton.textContent = '上传程序';
+      }
+    });
+
+    clearButton?.addEventListener('click', () => {
+      if (log) log.textContent = '等待操作...';
+      esp.resetBuffer();
+    });
+
+    toggleOutputButton?.addEventListener('click', () => {
+      setSerialOutputPaused(!isSerialOutputPaused());
+    });
+
+    const initialTemplateId = getStoredTemplateId() ?? templates[0]?.id ?? '';
+    if (select && initialTemplateId) select.value = initialTemplateId;
+    renderTemplate(select?.value ?? initialTemplateId);
+  </script>
+</section>

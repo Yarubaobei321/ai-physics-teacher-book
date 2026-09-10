@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中化学：有机物球棍模型与反应机理演示</title>
+    <style>
+        * {
+            user-select: none; /* 避免拖动干扰，但不影响文字选择 */
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        /* UI 面板样式 - 全部可折叠 (除右上大标题区域外) */
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 12px 20px;
+            color: white;
+            pointer-events: auto;
+            z-index: 10;
+            border-left: 5px solid #4caf50;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 14px;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .info-panel h1 {
+            margin: 0 0 5px;
+            font-size: 1.2rem;
+        }
+        .info-panel p {
+            margin: 0;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        .info-detail {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .info-panel.collapsed .info-detail {
+            max-height: 0 !important;
+            padding: 0;
+            margin: 0;
+            opacity: 0;
+        }
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 15px 25px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            z-index: 20;
+            pointer-events: auto;
+            font-size: 16px;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+        button {
+            background: #2c3e66;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 1rem;
+        }
+        button:hover {
+            background: #1e2a4a;
+            transform: scale(1.02);
+        }
+        button.active {
+            background: #e67e22;
+            box-shadow: 0 0 12px #e67e22;
+        }
+        /* 反应面板可折叠 */
+        .react-panel {
+            position: absolute;
+            bottom: 100px;
+            right: 30px;
+            width: 360px;
+            background: rgba(20, 20, 30, 0.94);
+            backdrop-filter: blur(14px);
+            border-radius: 24px;
+            padding: 20px;
+            color: #f0f0f0;
+            pointer-events: auto;
+            border: 1px solid #ffaa44;
+            z-index: 15;
+            font-size: 14px;
+            transition: 0.2s;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+            font-family: monospace;
+        }
+        .react-panel.collapsible {
+            cursor: pointer;
+        }
+        .react-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .react-panel.collapsed .react-content {
+            max-height: 0 !important;
+            padding: 0;
+            margin: 0;
+        }
+        .react-panel h3 {
+            margin: 0 0 12px;
+            font-size: 1.3rem;
+            border-left: 4px solid #ffaa44;
+            padding-left: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .eq {
+            background: #00000066;
+            padding: 10px;
+            border-radius: 12px;
+            font-family: 'Courier New', monospace;
+            margin: 12px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .bond-detail {
+            font-size: 12px;
+            margin-top: 8px;
+            border-top: 1px solid #777;
+            padding-top: 8px;
+            color: #ffd966;
+        }
+        .structure {
+            background: #2a2a2a;
+            padding: 8px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            margin: 10px 0;
+            font-size: 13px;
+        }
+        .close-react {
+            float: right;
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0;
+        }
+        /* 表格区域 - 缩小1/2倍 (原宽度480px => 240px, 字体等比例缩小) */
+        .table-container {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            width: 260px;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 12px;
+            color: white;
+            pointer-events: auto;
+            font-size: 10px;
+            max-height: 48%;
+            overflow-y: auto;
+            border: 1px solid #4caf50;
+            z-index: 12;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            transition: all 0.2s;
+        }
+        .table-container table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        .table-container th, .table-container td {
+            border: 1px solid #aaa;
+            padding: 5px 4px;
+            text-align: left;
+        }
+        .table-container th {
+            background: #2c3e66;
+            font-size: 10px;
+        }
+        .table-container td {
+            font-size: 8.5px;
+        }
+        .table-header-click {
+            cursor: pointer;
+            background-color: #3a5a7a;
+            transition: 0.1s;
+        }
+        .table-header-click:hover {
+            background-color: #e67e22;
+        }
+        .toggle-table {
+            position: absolute;
+            top: 20px;
+            right: 310px;
+            background: #4caf50;
+            padding: 4px 10px;
+            font-size: 10px;
+            z-index: 20;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .fold-icon {
+            margin-left: 8px;
+            font-size: 12px;
+        }
+        @media (max-width: 800px) {
+            .react-panel { width: 280px; right: 15px; bottom: 90px; }
+            .table-container { width: 220px; right: 15px; }
+            .toggle-table { right: 250px; font-size: 8px; }
+            .controls button { padding: 6px 12px; font-size: 0.7rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel collapsible" id="infoPanel">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>🧪 有机化学 · 球棍模型库</h1>
+            <span class="fold-icon">▼</span>
+        </div>
+        <div class="info-detail">
+            <p>✨ 操作指南：<br>🔹 点击下方分子按钮切换3D球棍模型。<br>🔹 点击各个灰色面板标题可折叠/展开内容，节省屏幕空间。</p>
+        </div>
+    </div>
+    <div class="controls" id="controls-bar"></div>
+    
+    <!-- 动态反应信息面板 可折叠 -->
+    <div class="react-panel collapsible" id="reactPanel">
+        <h3 id="reactionTitle">🔬 典型反应实验 <span class="fold-icon">▲</span></h3>
+        <div class="react-content" id="reactContentWrapper">
+            <div id="reactionContent">点击分子按钮，显示对应的典型反应以及旧键断裂/新键形成</div>
+        </div>
+    </div>
+
+    <!-- 对比表格 - 缩小1/2并且合并重复内容 -->
+    <button id="toggleTable" class="toggle-table">📋 显示/隐藏表</button>
+    <div id="tablePanel" class="table-container" style="display: block;">
+        <h4 style="margin:0 0 6px; font-size:12px; text-align:center;">📊 有机反应对比</h4>
+        <table id="reactionTable">
+            <thead>
+                <tr><th id="reactTypeHeader" class="table-header-click">🔽 反应类型</th><th>反应条件</th><th>反应物特点</th><th>生成物特点</th></tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- 动态填充，合并相同特点 -->
+            </tbody>
+        </table>
+        <div style="font-size:7px; margin-top:6px;">※ 反应物特点:断裂原有活性键；生成物特点:形成新官能团</div>
+    </div>
+
+    <!-- 引入Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- 初始化场景 ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050b1a);
+        scene.fog = new THREE.FogExp2(0x050b1a, 0.008);
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(4, 3, 6);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+        
+        const controlsOrbit = new OrbitControls(camera, renderer.domElement);
+        controlsOrbit.enableDamping = true;
+        controlsOrbit.dampingFactor = 0.05;
+        controlsOrbit.autoRotate = false;
+        controlsOrbit.enableZoom = true;
+        controlsOrbit.target.set(0, 0.5, 0);
+        
+        // 灯光
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(2, 5, 3);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+        const fillLight = new THREE.PointLight(0x4466cc, 0.3);
+        fillLight.position.set(-1, 2, 2);
+        scene.add(fillLight);
+        const backLight = new THREE.PointLight(0xffaa66, 0.2);
+        backLight.position.set(0, 1, -3);
+        scene.add(backLight);
+        
+        const gridHelper = new THREE.GridHelper(12, 20, 0x88aaff, 0x335588);
+        gridHelper.position.y = -1.2;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.25;
+        scene.add(gridHelper);
+        
+        // 原子颜色映射: 相同原子用同一颜色
+        const colorMap = {
+            'C': 0x708090,   // 灰钢色
+            'H': 0xd0d0e0,   // 浅灰
+            'O': 0xcc5533,   // 橙红色
+            'Br': 0xb87333,   // 棕铜色 (暂未用)
+        };
+        
+        // 活跃化学键标记为红色 (比如 双键中π键或特定反应活跃键，这里规则: 对于C=C双键之间的键用红色高亮，或者特定断裂位置)
+        // 为了展示效果，我们在生成时检测: 如果两个碳原子之间距离接近双键特征且额外标记，但我们手动定义活跃键索引更稳妥。
+        // 在分子数据中增加 activeBonds 数组来标记需要红色的化学键 (特别活跃的键: 如双键、易断裂的C-H等)
+        // 为了使教学醒目，我们将每个分子中参与典型反应的核心键标记为红色 (例如: 甲烷的任意C-H键、乙烯的C=C、乙醇的C-O、乙酸的C-OH等)
+        
+        // 工具函数：构建球棍模型 group (支持活跃键红色)
+        function buildMolecule(atoms, bonds, activeBonds = []) {
+            const group = new THREE.Group();
+            atoms.forEach(atom => {
+                const geometry = new THREE.SphereGeometry(atom.r, 32, 32);
+                const material = new THREE.MeshStandardMaterial({ color: atom.color, roughness: 0.3, metalness: 0.1 });
+                const sphere = new THREE.Mesh(geometry, material);
+                sphere.position.set(atom.x, atom.y, atom.z);
+                group.add(sphere);
+            });
+            bonds.forEach((bond, idx) => {
+                const p1 = atoms[bond.i];
+                const p2 = atoms[bond.j];
+                const start = new THREE.Vector3(p1.x, p1.y, p1.z);
+                const end = new THREE.Vector3(p2.x, p2.y, p2.z);
+                const direction = new THREE.Vector3().subVectors(end, start);
+                const length = direction.length();
+                const isActive = activeBonds.includes(idx);
+                const cylinderMat = new THREE.MeshStandardMaterial({ color: isActive ? 0xff3333 : 0xc0c0c0, roughness: 0.3, emissive: isActive ? 0x441111 : 0x000000 });
+                const cylinderGeo = new THREE.CylinderGeometry(0.07, 0.07, length, 8);
+                const cylinder = new THREE.Mesh(cylinderGeo, cylinderMat);
+                cylinder.position.copy(start.clone().add(end).multiplyScalar(0.5));
+                cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), direction.clone().normalize());
+                group.add(cylinder);
+            });
+            return group;
+        }
+        
+        // 分子数据库 (包含活跃键索引)
+        const moleculesDB = [
+            { name: "甲烷 CH₄", type: "烷烃", importance: 1,
+              atoms: [{e:"C",x:0,y:0,z:0,r:0.32,color:colorMap['C']},{e:"H",x:0.65,y:0.65,z:0.65,r:0.22,color:colorMap['H']},
+                      {e:"H",x:-0.65,y:-0.65,z:0.65,r:0.22,color:colorMap['H']},{e:"H",x:-0.65,y:0.65,z:-0.65,r:0.22,color:colorMap['H']},
+                      {e:"H",x:0.65,y:-0.65,z:-0.65,r:0.22,color:colorMap['H']}],
+              bonds:[{i:0,j:1},{i:0,j:2},{i:0,j:3},{i:0,j:4}],
+              activeBonds: [0,1,2,3], // 所有C-H键为活跃 (取代反应断裂)
+              reaction: { type:"取代反应", cond:"光照/卤素", desc:"甲烷与氯气光照下发生取代，C-H键断裂，C-Cl新键形成", eq:"CH₄ + Cl₂ → CH₃Cl + HCl", oldBond:"C-H σ键断裂", newBond:"C-Cl σ键形成", structure:"CH₃Cl (氯甲烷)" } },
+            { name: "乙烷 C₂H₆", type: "烷烃", importance: 2,
+              atoms:[{e:"C",x:-0.6,y:0,z:0,r:0.32,color:colorMap['C']},{e:"C",x:0.6,y:0,z:0,r:0.32,color:colorMap['C']},
+                     {e:"H",x:-1.2,y:0.6,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:-1.2,y:-0.6,z:-0.4,r:0.22,color:colorMap['H']},{e:"H",x:-1.2,y:-0.2,z:0.8,r:0.22,color:colorMap['H']},
+                     {e:"H",x:1.2,y:0.6,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:1.2,y:-0.6,z:-0.4,r:0.22,color:colorMap['H']},{e:"H",x:1.2,y:-0.2,z:0.8,r:0.22,color:colorMap['H']}],
+              bonds:[{i:0,j:1},{i:0,j:2},{i:0,j:3},{i:0,j:4},{i:1,j:5},{i:1,j:6},{i:1,j:7}],
+              activeBonds: [0], // C-C键断裂 (裂解)
+              reaction: { type:"裂解反应", cond:"高温", desc:"乙烷裂解生成乙烯和氢气", eq:"C₂H₆ → C₂H₄ + H₂", oldBond:"C-C σ键断裂", newBond:"形成C=C π键", structure:"C₂H₄" } },
+            { name: "丙烷 C₃H₈", type: "烷烃", importance: 3,
+              atoms:[{e:"C",x:-1.0,y:0,z:0,r:0.32,color:colorMap['C']},{e:"C",x:0,y:0,z:0,r:0.32,color:colorMap['C']},{e:"C",x:1.0,y:0,z:0,r:0.32,color:colorMap['C']},
+                     {e:"H",x:-1.6,y:0.6,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:-1.6,y:-0.6,z:-0.4,r:0.22,color:colorMap['H']},{e:"H",x:-1.6,y:0.2,z:-0.7,r:0.22,color:colorMap['H']},
+                     {e:"H",x:0,y:0.6,z:0.8,r:0.22,color:colorMap['H']},{e:"H",x:0,y:-0.7,z:-0.5,r:0.22,color:colorMap['H']},{e:"H",x:1.6,y:0.6,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:1.6,y:-0.6,z:-0.4,r:0.22,color:colorMap['H']},{e:"H",x:1.6,y:0.2,z:-0.7,r:0.22,color:colorMap['H']}],
+              bonds:[{i:0,j:1},{i:1,j:2},{i:0,j:3},{i:0,j:4},{i:0,j:5},{i:1,j:6},{i:1,j:7},{i:2,j:8},{i:2,j:9},{i:2,j:10}],
+              activeBonds: [2,3,4], // 伯碳C-H键活跃
+              reaction: { type:"卤代反应", cond:"光照", desc:"丙烷氯代", eq:"C₃H₈ + Cl₂ → C₃H₇Cl + HCl", oldBond:"C-H σ键断裂", newBond:"C-Cl σ键形成", structure:"氯丙烷" } },
+            { name: "乙烯 C₂H₄", type:"烯烃", importance:1,
+              atoms:[{e:"C",x:-0.5,y:0,z:0,r:0.32,color:colorMap['C']},{e:"C",x:0.5,y:0,z:0,r:0.32,color:colorMap['C']},
+                     {e:"H",x:-1.1,y:0.5,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:-1.1,y:-0.5,z:-0.4,r:0.22,color:colorMap['H']},{e:"H",x:1.1,y:0.5,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:1.1,y:-0.5,z:-0.4,r:0.22,color:colorMap['H']}],
+              bonds:[{i:0,j:1},{i:0,j:2},{i:0,j:3},{i:1,j:4},{i:1,j:5}],
+              activeBonds: [0], // 双键 (π键) 活跃
+              reaction: { type:"加成反应", cond:"常温/溴水", desc:"乙烯与溴加成", eq:"C₂H₄ + Br₂ → CH₂BrCH₂Br", oldBond:"C=C π键断裂", newBond:"C-Br σ键形成", structure:"1,2-二溴乙烷" } },
+            { name: "乙醇 C₂H₅OH", type:"醇", importance:1,
+              atoms:[{e:"C",x:-0.7,y:0,z:0,r:0.32,color:colorMap['C']},{e:"C",x:0.3,y:0,z:0,r:0.32,color:colorMap['C']},{e:"O",x:1.1,y:0.4,z:0.3,r:0.32,color:colorMap['O']},
+                     {e:"H",x:-1.2,y:0.6,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:-1.2,y:-0.5,z:-0.5,r:0.22,color:colorMap['H']},{e:"H",x:-1.2,y:-0.2,z:0.7,r:0.22,color:colorMap['H']},
+                     {e:"H",x:0.4,y:-0.7,z:-0.4,r:0.22,color:colorMap['H']},{e:"H",x:0.4,y:0.6,z:-0.4,r:0.22,color:colorMap['H']},{e:"H",x:1.5,y:0.9,z:0.2,r:0.18,color:colorMap['H']}],
+              bonds:[{i:0,j:1},{i:1,j:2},{i:0,j:3},{i:0,j:4},{i:0,j:5},{i:1,j:6},{i:1,j:7},{i:2,j:8}],
+              activeBonds: [1,6], // C-O键和β-C-H键 (消去反应)
+              reaction: { type:"消去反应", cond:"浓硫酸 170℃", desc:"乙醇脱水生成乙烯", eq:"C₂H₅OH → CH₂=CH₂ + H₂O", oldBond:"C-O及β-C-H断裂", newBond:"C=C π键形成", structure:"乙烯" } },
+            { name: "乙酸 CH₃COOH", type:"羧酸", importance:1,
+              atoms:[{e:"C",x:-0.5,y:0,z:0.2,r:0.32,color:colorMap['C']},{e:"C",x:0.6,y:0,z:-0.2,r:0.32,color:colorMap['C']},
+                     {e:"O",x:1.2,y:-0.5,z:-0.1,r:0.3,color:colorMap['O']},{e:"O",x:0.7,y:0.8,z:-0.5,r:0.3,color:colorMap['O']},
+                     {e:"H",x:-1.0,y:0.6,z:0.5,r:0.22,color:colorMap['H']},{e:"H",x:-1.0,y:-0.5,z:-0.2,r:0.22,color:colorMap['H']},{e:"H",x:-1.0,y:-0.2,z:0.9,r:0.22,color:colorMap['H']},{e:"H",x:0.3,y:1.1,z:-0.8,r:0.18,color:colorMap['H']}],
+              bonds:[{i:0,j:1},{i:1,j:2},{i:1,j:3},{i:0,j:4},{i:0,j:5},{i:0,j:6},{i:3,j:7}],
+              activeBonds: [2,7], // 羧基C-OH键 (易断裂) 以及醇OH键在酯化中
+              reaction: { type:"酯化反应", cond:"浓硫酸加热", desc:"乙酸与乙醇酯化", eq:"CH₃COOH + C₂H₅OH ⇌ CH₃COOC₂H₅ + H₂O", oldBond:"羧基C-OH断裂，醇O-H断裂", newBond:"酯基C-O形成", structure:"乙酸乙酯" } },
+            { name: "苯 C₆H₆", type:"芳香烃", importance:1,
+              atoms:[{e:"C",x:0,y:0.8,z:0,r:0.32,color:colorMap['C']},{e:"C",x:0.7,y:0.4,z:0,r:0.32,color:colorMap['C']},{e:"C",x:0.7,y:-0.4,z:0,r:0.32,color:colorMap['C']},
+                     {e:"C",x:0,y:-0.8,z:0,r:0.32,color:colorMap['C']},{e:"C",x:-0.7,y:-0.4,z:0,r:0.32,color:colorMap['C']},{e:"C",x:-0.7,y:0.4,z:0,r:0.32,color:colorMap['C']},
+                     {e:"H",x:0,y:1.4,z:0.2,r:0.2,color:colorMap['H']},{e:"H",x:1.2,y:0.7,z:0.2,r:0.2,color:colorMap['H']},{e:"H",x:1.2,y:-0.7,z:0.2,r:0.2,color:colorMap['H']},{e:"H",x:0,y:-1.4,z:0.2,r:0.2,color:colorMap['H']},
+                     {e:"H",x:-1.2,y:-0.7,z:0.2,r:0.2,color:colorMap['H']},{e:"H",x:-1.2,y:0.7,z:0.2,r:0.2,color:colorMap['H']}],
+              bonds:[{i:0,j:1},{i:1,j:2},{i:2,j:3},{i:3,j:4},{i:4,j:5},{i:5,j:0},{i:0,j:6},{i:1,j:7},{i:2,j:8},{i:3,j:9},{i:4,j:10},{i:5,j:11}],
+              activeBonds: [6,7,8,9,10,11], // 芳环C-H键活跃，可被取代
+              reaction: { type:"硝化反应", cond:"浓H₂SO₄/浓HNO₃", desc:"苯硝化生成硝基苯", eq:"C₆H₆ + HNO₃ → C₆H₅NO₂ + H₂O", oldBond:"芳环C-H断裂", newBond:"C-N键形成", structure:"硝基苯" } }
+        ];
+        // 增加甲醛
+        moleculesDB.push({ name: "甲醛 HCHO", type:"醛", importance:2,
+            atoms:[{e:"C",x:0,y:0,z:0,r:0.32,color:colorMap['C']},{e:"O",x:0.9,y:0,z:0,r:0.3,color:colorMap['O']},{e:"H",x:-0.6,y:0.5,z:0.4,r:0.22,color:colorMap['H']},{e:"H",x:-0.6,y:-0.5,z:-0.4,r:0.22,color:colorMap['H']}],
+            bonds:[{i:0,j:1},{i:0,j:2},{i:0,j:3}],
+            activeBonds: [1,2], // 醛基C-H键活跃 (氧化)
+            reaction: { type:"银镜反应", cond:"银氨溶液/水浴", desc:"甲醛被氧化", eq:"HCHO + 2[Ag(NH₃)₂]OH → HCOONH₄ + 2Ag↓ + 3NH₃ + H₂O", oldBond:"C-H断裂", newBond:"O-H及银析出", structure:"甲酸铵" } });
+        
+        let currentGroup = null;
+        let currentMoleculeData = null;
+        
+        function loadMolecule(index) {
+            if(currentGroup) scene.remove(currentGroup);
+            const data = moleculesDB[index];
+            currentMoleculeData = data;
+            if(data.atoms && data.bonds) {
+                const active = data.activeBonds || [];
+                const group = buildMolecule(data.atoms, data.bonds, active);
+                group.position.y = 0.2;
+                scene.add(group);
+                currentGroup = group;
+            } else {
+                const geom = new THREE.SphereGeometry(0.6);
+                const mat = new THREE.MeshStandardMaterial({ color: 0x88aaff });
+                const mesh = new THREE.Mesh(geom, mat);
+                scene.add(mesh);
+                currentGroup = mesh;
+            }
+            // 更新右边反应详情
+            const react = data.reaction;
+            if(react) {
+                document.getElementById("reactionTitle").innerHTML = `🧪 ${data.name} · ${react.type} <span class="fold-icon">▲</span>`;
+                document.getElementById("reactionContent").innerHTML = `
+                    <div class="eq"><strong>📌 反应描述:</strong> ${react.desc}</div>
+                    <div class="eq">📖 方程式: ${react.eq}</div>
+                    <div class="bond-detail">✂️ 旧键断裂: ${react.oldBond}</div>
+                    <div class="bond-detail">🔗 新键形成: ${react.newBond}</div>
+                    <div class="structure">⚛️ 结构简式: ${react.structure}</div>
+                `;
+            }
+        }
+        
+        // 生成按钮列表
+        const btnContainer = document.getElementById("controls-bar");
+        moleculesDB.forEach((mol, idx) => {
+            const btn = document.createElement("button");
+            btn.textContent = `${mol.name}`;
+            btn.onclick = () => {
+                loadMolecule(idx);
+                document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            };
+            btnContainer.appendChild(btn);
+        });
+        
+        // --- 构建表格，合并相同特点 (反应物特点统一为"断裂原有活性键"，生成物特点统一为"形成新官能团") ---
+        const reactionMap = new Map();
+        moleculesDB.forEach(m => {
+            if(m.reaction) {
+                const key = m.reaction.type;
+                if(!reactionMap.has(key)) {
+                    reactionMap.set(key, { cond: m.reaction.cond });
+                }
+            }
+        });
+        const tbody = document.getElementById("tableBody");
+        let tableHtml = "";
+        for(let [type, info] of reactionMap.entries()) {
+            tableHtml += `<tr><td>${type}</td><td>${info.cond || "特定条件"}</td><td>断裂原有活性键</td><td>形成新官能团</td></tr>`;
+        }
+        tbody.innerHTML = tableHtml;
+        
+        // 折叠面板逻辑
+        const infoPanelDiv = document.getElementById("infoPanel");
+        infoPanelDiv.addEventListener("click", (e) => {
+            if(e.target.closest('.fold-icon') || e.currentTarget === infoPanelDiv) {
+                infoPanelDiv.classList.toggle("collapsed");
+                const icon = infoPanelDiv.querySelector('.fold-icon');
+                icon.textContent = infoPanelDiv.classList.contains("collapsed") ? "▶" : "▼";
+            }
+        });
+        const reactPanelDiv = document.getElementById("reactPanel");
+        reactPanelDiv.querySelector("h3").addEventListener("click", () => {
+            reactPanelDiv.classList.toggle("collapsed");
+            const icon = reactPanelDiv.querySelector("h3 .fold-icon");
+            icon.textContent = reactPanelDiv.classList.contains("collapsed") ? "▶" : "▲";
+        });
+        document.getElementById("toggleTable").addEventListener("click", () => {
+            const panel = document.getElementById("tablePanel");
+            panel.style.display = panel.style.display === "none" ? "block" : "none";
+        });
+        
+        // 初始化
+        loadMolecule(0);
+        document.querySelectorAll('.controls button')[0].classList.add('active');
+        
+        // 星空背景
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 1000;
+        const starPos = [];
+        for(let i=0;i<starCount;i++) { starPos.push((Math.random()-0.5)*200, (Math.random()-0.5)*120, (Math.random()-0.5)*80-40); }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
+        const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, transparent: true, opacity: 0.5 }));
+        scene.add(stars);
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            controlsOrbit.update();
+            stars.rotation.y += 0.0005;
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        animate();
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

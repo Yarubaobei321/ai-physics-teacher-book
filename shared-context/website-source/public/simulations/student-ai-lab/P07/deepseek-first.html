@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0">
+  <title>能量守恒定律 · 动能与势能 | 物理互动演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #1a1e2b 0%, #2a3140 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 750px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 3rem;
+      padding: 25px 30px 30px;
+      box-shadow: 0 30px 55px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      transition: all 0.2s ease;
+    }
+
+    h1 {
+      text-align: center;
+      font-weight: 500;
+      font-size: 2.3rem;
+      letter-spacing: 2px;
+      color: #f0e6d2;
+      margin-bottom: 8px;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    h1 span {
+      background: rgba(255,215,0,0.2);
+      padding: 0 12px;
+      border-radius: 40px;
+      font-size: 1.8rem;
+      color: #ffd966;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #b9c6d4;
+      margin-bottom: 20px;
+      font-style: italic;
+      font-weight: 300;
+      font-size: 1rem;
+      border-bottom: 1px dashed rgba(255,255,255,0.2);
+      padding-bottom: 12px;
+    }
+
+    .canvas-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: rgba(10, 15, 22, 0.7);
+      border-radius: 28px;
+      padding: 15px 10px;
+      margin-bottom: 20px;
+      box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 12px 20px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 320px;
+      border-radius: 18px;
+      background: radial-gradient(circle at 20% 20%, #3a4555, #1b212c);
+      touch-action: none;  /* 改善移动端拖拽体验 */
+    }
+
+    .energy-panel {
+      background: rgba(20, 25, 35, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 25px;
+      padding: 20px 22px;
+      margin: 18px 0 16px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-around;
+      gap: 15px;
+    }
+
+    .energy-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 70px;
+    }
+
+    .energy-label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #adb9cc;
+      font-weight: 400;
+    }
+
+    .energy-value {
+      font-size: 2.1rem;
+      font-weight: 600;
+      color: #f5e7d3;
+      line-height: 1.2;
+      text-shadow: 0 0 12px rgba(255,200,100,0.5);
+    }
+
+    .unit {
+      font-size: 0.9rem;
+      color: #8f9eb5;
+      margin-left: 2px;
+    }
+
+    .total-energy {
+      background: rgba(255, 215, 0, 0.12);
+      border-radius: 40px;
+      padding: 10px 22px;
+      border: 1px solid rgba(255, 215, 0, 0.45);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .total-label {
+      color: #ffd966;
+      font-weight: 500;
+      letter-spacing: 1px;
+    }
+
+    .total-number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #ffd966;
+      text-shadow: 0 0 15px #ffb347;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin: 10px 0 5px;
+    }
+
+    .btn {
+      background: rgba(220, 225, 235, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      color: #e6eefc;
+      padding: 10px 24px;
+      border-radius: 3rem;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.6px;
+      background: rgba(45, 55, 72, 0.6);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.3);
+    }
+
+    .btn:hover {
+      background: rgba(80, 100, 130, 0.5);
+      border-color: rgba(255, 215, 0, 0.6);
+      color: #ffe5a3;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+    }
+
+    .slider-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0,0,0,0.3);
+      padding: 5px 18px;
+      border-radius: 30px;
+    }
+
+    .slider-container label {
+      color: #cfdbe9;
+      font-size: 0.9rem;
+      font-weight: 400;
+    }
+
+    input[type="range"] {
+      width: 100px;
+      cursor: pointer;
+      background: rgba(255,255,255,0.2);
+      height: 5px;
+      border-radius: 5px;
+      accent-color: #f0b34b;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: #bcc8dd;
+    }
+
+    .legend span::before {
+      content: "●";
+      margin-right: 6px;
+      font-size: 1.2rem;
+      vertical-align: middle;
+    }
+
+    .legend .kinetic::before { content: "●"; color: #ff7b9c; }
+    .legend .potential::before { content: "●"; color: #5bc0be; }
+    .legend .total-dot::before { content: "●"; color: #ffd966; }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 18px 15px;
+      }
+      .energy-value {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    ⚡能量守恒
+    <span>E = K + U</span>
+  </h1>
+  <div class="subtitle">重力势能 ⇄ 动能 · 总机械能不变</div>
+
+  <!-- 画布：展示摆锤/滑块运动 -->
+  <div class="canvas-wrapper">
+    <canvas id="energyCanvas" width="600" height="260" aria-label="能量守恒演示动画，小球沿弧线运动，显示动能与势能转化"></canvas>
+  </div>
+
+  <!-- 实时能量数值面板 -->
+  <div class="energy-panel">
+    <div class="energy-item">
+      <span class="energy-label">🔵 动能 K</span>
+      <span class="energy-value" id="kineticDisplay">0.00 <span class="unit">J</span></span>
+    </div>
+    <div class="energy-item">
+      <span class="energy-label">🟠 重力势能 U</span>
+      <span class="energy-value" id="potentialDisplay">0.00 <span class="unit">J</span></span>
+    </div>
+    <div class="total-energy">
+      <span class="total-label">✨ 总机械能</span>
+      <span class="total-number" id="totalDisplay">0.00 <span class="unit" style="font-size:0.9rem;">J</span></span>
+    </div>
+  </div>
+
+  <!-- 控制区域 -->
+  <div class="controls">
+    <button class="btn" id="playPauseBtn">
+      <span>▶</span> 播放/暂停
+    </button>
+    <button class="btn" id="resetBtn">
+      <span>↺</span> 重置位置
+    </button>
+    <div class="slider-container">
+      <label>📐 初始高度</label>
+      <input type="range" id="heightSlider" min="0.15" max="0.95" step="0.01" value="0.85">
+      <span id="heightPercent" style="color:#f0b34b; min-width:45px;">85%</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="kinetic">动能 (红色)</span>
+    <span class="potential">势能 (青色)</span>
+    <span class="total-dot">总能量 (金色)</span>
+  </div>
+  <div style="text-align: center; margin-top: 10px; font-size:0.75rem; color:#6b7b91;">
+    💡 拖动滑块调整起始高度 · 点击画布也可拖拽小球
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- 物理参数 -----
+    const canvas = document.getElementById('energyCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 显示元素
+    const kineticDisplay = document.getElementById('kineticDisplay');
+    const potentialDisplay = document.getElementById('potentialDisplay');
+    const totalDisplay = document.getElementById('totalDisplay');
+    const heightSlider = document.getElementById('heightSlider');
+    const heightPercent = document.getElementById('heightPercent');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // 固定参数 (模拟单位质量 m = 1.0 kg, 重力加速度 g = 9.8 m/s²)
+    const mass = 1.0;            // kg
+    const g = 9.8;              // m/s²
+
+    // 几何定义：以画布为基准，悬挂点位于顶部中间偏上。
+    // 使用极坐标/圆弧运动：小球沿圆弧运动，圆心在 (pivotX, pivotY)，半径 R。
+    const pivotX = canvas.width / 2;
+    const pivotY = 60;          // 悬挂点Y坐标 (靠近顶部)
+    const radius = 150;         // 摆长 (像素)
+
+    // 角度范围：从左侧水平到右侧水平？ 为了美观限制角度 -75° 到 75° (相对于垂直向下)
+    const minAngle = -75 * Math.PI / 180;   // 左极端
+    const maxAngle = 75 * Math.PI / 180;    // 右极端
+
+    // 当前角度 (弧度)，0 表示垂直向下 (最低点)。
+    let currentAngle = 0.7;     // 初始约40度 (对应较高势能)
+
+    // 角速度 (弧度/秒)  模拟运动速度
+    let angularVelocity = 0.0;
+
+    // 动画控制
+    let animationId = null;
+    let isAnimating = true;     // 默认自动运动
+
+    // 拖拽状态
+    let isDragging = false;
+
+    // ----- 工具函数：角度转坐标 -----
+    function getBallPosition(angle) {
+      // 角度从垂直向下算起：x = pivotX + R * sin(angle), y = pivotY + R * cos(angle)
+      const x = pivotX + radius * Math.sin(angle);
+      const y = pivotY + radius * Math.cos(angle);
+      return { x, y };
+    }
+
+    // 计算当前高度 (相对于最低点)。最低点对应 angle = 0，高度 = 0。
+    // 高度 = R * (1 - cos(angle))   (因为垂直向下时cos0=1，高度差为R*(1-cosθ))
+    function getHeightFromAngle(angle) {
+      return radius * (1 - Math.cos(angle));
+    }
+
+    // 根据高度计算重力势能 U = m * g * h (h单位为米，需要将像素转换为米)
+    // 设定比例尺：1米 = 80像素 (可调整，使得数值合理)
+    const pixelsPerMeter = 80;
+
+    function computeEnergies(angle) {
+      const hPixels = getHeightFromAngle(angle);
+      const hMeters = hPixels / pixelsPerMeter;
+      const potential = mass * g * hMeters;   // 势能
+
+      // 总机械能 E_total 由初始条件决定：在释放点(最高点)动能=0，总能量=势能最大值。
+      // 我们根据滑块设定的“初始角度”计算总能量。但为了动态变化，实时总能量 = 当前势能 + 动能。
+      // 动能通过角速度计算：线速度 v = radius * |angularVelocity| / pixelsPerMeter (转换为米/秒)
+      // 注意：角速度单位弧度/秒，线速度 = R(像素)*ω / pixelsPerMeter 得到米/秒。
+      const speedMetersPerSecond = (radius * Math.abs(angularVelocity)) / pixelsPerMeter;
+      const kinetic = 0.5 * mass * speedMetersPerSecond * speedMetersPerSecond;
+
+      return {
+        potential,
+        kinetic,
+        total: potential + kinetic
+      };
+    }
+
+    // 根据当前状态更新UI数值
+    function updateEnergyDisplay() {
+      const energies = computeEnergies(currentAngle);
+      kineticDisplay.innerHTML = `${energies.kinetic.toFixed(2)} <span class="unit">J</span>`;
+      potentialDisplay.innerHTML = `${energies.potential.toFixed(2)} <span class="unit">J</span>`;
+      totalDisplay.innerHTML = `${energies.total.toFixed(2)} <span class="unit">J</span>`;
+    }
+
+    // 同步滑块显示与角度 (基于当前角度反推高度百分比)
+    function updateSliderFromAngle() {
+      const hPixels = getHeightFromAngle(currentAngle);
+      // 最大可能高度对应最大角度 maxAngle (或minAngle绝对值) 时的 hMax
+      const hMax = getHeightFromAngle(maxAngle);  // 对称，取正角度最大高度
+      let percent = hPixels / hMax;
+      // 限制范围
+      percent = Math.min(Math.max(percent, 0.0), 1.0);
+      heightSlider.value = percent;
+      heightPercent.textContent = Math.round(percent * 100) + '%';
+    }
+
+    // 根据滑块百分比设置角度 (0~1 对应 0高度~最大高度)
+    function setAngleFromSlider(percent) {
+      const hMax = getHeightFromAngle(maxAngle);
+      const targetHPixels = percent * hMax;
+      // 反推角度：h = R*(1-cosθ) => cosθ = 1 - h/R
+      let cosTheta = 1 - (targetHPixels / radius);
+      // 限制cosTheta在[-1,1]之间
+      cosTheta = Math.min(1, Math.max(-1, cosTheta));
+      let newAngle = Math.acos(cosTheta); // 返回0到PI之间，但我们希望正角度方向
+      // 根据之前角度符号保持方向？为了简单，我们保持角度为正（右侧）或者允许符号。滑块只控制高度大小，不改变方向。
+      // 我们约定滑块设定高度，角度取正值（右侧）。如果用户想左侧，可通过拖拽。
+      // 但为了连续性，保留当前角度的符号（除非角度接近0）
+      if (Math.abs(currentAngle) < 0.01) {
+        // 接近零，设为正
+        newAngle = newAngle;
+      } else {
+        // 保留符号
+        newAngle = Math.sign(currentAngle) * newAngle;
+      }
+      // 边界检查
+      if (newAngle > maxAngle) newAngle = maxAngle;
+      if (newAngle < minAngle) newAngle = minAngle;
+      currentAngle = newAngle;
+      // 设置角度后，将角速度归零（避免突然跳跃能量不守恒感，但重置运动状态）
+      angularVelocity = 0.0;
+      updateEnergyDisplay();
+      updateSliderFromAngle();
+    }
+
+    // 滑块事件
+    heightSlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      heightPercent.textContent = Math.round(val * 100) + '%';
+      // 拖动滑块时暂停动画以便精确调整，并设置角度
+      if (isAnimating) {
+        // 可选择自动暂停，提升体验
+        stopAnimation();
+        isAnimating = false;
+        playPauseBtn.innerHTML = '<span>▶</span> 播放';
+      }
+      setAngleFromSlider(val);
+      drawCanvas();
+    });
+
+    // ----- 物理更新 (基于时间步长) -----
+    let lastTimestamp = 0;
+    function physicsUpdate(deltaTimeSec) {
+      // 限制最大delta避免跳跃
+      const dt = Math.min(deltaTimeSec, 0.05);
+
+      // 计算当前角度对应的加速度：重力产生的切向加速度
+      // 对于单摆：角加速度 α = - (g / L) * sin(θ) ，但注意单位！
+      // 这里L是摆长(米) = radius / pixelsPerMeter
+      const L = radius / pixelsPerMeter;  // 米
+      const angularAccel = -(g / L) * Math.sin(currentAngle);
+
+      // 半隐式欧拉积分
+      angularVelocity += angularAccel * dt;
+      currentAngle += angularVelocity * dt;
+
+      // 边界限制 (防止角度超出范围，同时模拟碰撞能量损失轻微)
+      if (currentAngle > maxAngle) {
+        currentAngle = maxAngle;
+        angularVelocity = -angularVelocity * 0.5; // 反弹能量损失
+      } else if (currentAngle < minAngle) {
+        currentAngle = minAngle;
+        angularVelocity = -angularVelocity * 0.5;
+      }
+
+      // 微小阻尼，防止数值不稳定（非常小，几乎不影响能量守恒视觉效果）
+      angularVelocity *= 0.9995;
+    }
+
+    // ----- 动画循环 -----
+    function animationFrame(ts) {
+      if (!isAnimating) {
+        lastTimestamp = 0;
+        animationId = null;
+        return;
+      }
+
+      if (lastTimestamp === 0) {
+        lastTimestamp = ts;
+        animationId = requestAnimationFrame(animationFrame);
+        drawCanvas();
+        return;
+      }
+
+      const deltaMs = ts - lastTimestamp;
+      const deltaSec = deltaMs / 1000;
+      if (deltaSec > 0.001) {
+        physicsUpdate(deltaSec);
+      }
+
+      updateEnergyDisplay();
+      updateSliderFromAngle();
+      drawCanvas();
+
+      lastTimestamp = ts;
+      animationId = requestAnimationFrame(animationFrame);
+    }
+
+    function startAnimation() {
+      if (isAnimating) return;
+      isAnimating = true;
+      lastTimestamp = 0;
+      if (animationId) cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(animationFrame);
+    }
+
+    function stopAnimation() {
+      isAnimating = false;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+      }
+      lastTimestamp = 0;
+    }
+
+    // 播放/暂停按钮
+    playPauseBtn.addEventListener('click', () => {
+      if (isAnimating) {
+        stopAnimation();
+        playPauseBtn.innerHTML = '<span>▶</span> 播放';
+      } else {
+        startAnimation();
+        playPauseBtn.innerHTML = '<span>⏸️</span> 暂停';
+      }
+      drawCanvas();
+    });
+
+    // 重置按钮：回到滑块设定的高度，角速度归零
+    resetBtn.addEventListener('click', () => {
+      const percent = parseFloat(heightSlider.value);
+      setAngleFromSlider(percent);
+      angularVelocity = 0.0;
+      updateEnergyDisplay();
+      updateSliderFromAngle();
+      drawCanvas();
+      // 如果当前是暂停状态，保持暂停；否则动画继续。
+      if (!isAnimating) {
+        // 什么都不做，画面已更新
+      }
+    });
+
+    // ----- 绘制画布 (美观的视觉元素) -----
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 绘制半透明网格/背景装饰
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.lineWidth = 0.8;
+      for (let i = 0; i < canvas.width; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let j = 0; j < canvas.height; j += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, j);
+        ctx.lineTo(canvas.width, j);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 绘制悬挂点
+      ctx.beginPath();
+      ctx.arc(pivotX, pivotY, 7, 0, 2 * Math.PI);
+      ctx.fillStyle = '#e0e7f0';
+      ctx.shadowColor = 'rgba(255,255,200,0.7)';
+      ctx.shadowBlur = 10;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 绘制摆线 (从悬挂点到小球)
+      const ballPos = getBallPosition(currentAngle);
+      ctx.beginPath();
+      ctx.moveTo(pivotX, pivotY);
+      ctx.lineTo(ballPos.x, ballPos.y);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // 绘制最低点参考线 (虚线)
+      const lowestY = pivotY + radius;
+      ctx.beginPath();
+      ctx.moveTo(pivotX - 45, lowestY);
+      ctx.lineTo(pivotX + 45, lowestY);
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([6, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]); // 重置
+
+      // 绘制高度指示条 (动态高度)
+      const currentHeightPixels = getHeightFromAngle(currentAngle);
+      const ballY = ballPos.y;
+      ctx.beginPath();
+      ctx.moveTo(pivotX + 55, lowestY);
+      ctx.lineTo(pivotX + 55, ballY);
+      ctx.strokeStyle = '#5bc0be';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([4, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#5bc0be';
+      ctx.font = '11px "Segoe UI"';
+      ctx.fillText('h', pivotX + 60, (lowestY + ballY) / 2 + 4);
+
+      // 绘制小球 (带光泽)
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 12;
+      const gradient = ctx.createRadialGradient(ballPos.x-6, ballPos.y-6, 3, ballPos.x, ballPos.y, 18);
+      gradient.addColorStop(0, '#ffb347');
+      gradient.addColorStop(0.7, '#d1472c');
+      ctx.beginPath();
+      ctx.arc(ballPos.x, ballPos.y, 16, 0, 2 * Math.PI);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#fff6e5';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 显示当前角度/高度文字
+      ctx.font = 'bold 13px "Segoe UI", "Roboto"';
+      ctx.fillStyle = '#f7eac8';
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 4;
+      const angleDeg = (currentAngle * 180 / Math.PI).toFixed(1);
+      ctx.fillText(`${angleDeg}°`, ballPos.x + 20, ballPos.y - 12);
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+
+      // 绘制能量条示意（小球附近简单表示）
+      const energies = computeEnergies(currentAngle);
+      const maxEnergyEstimate = mass * g * (getHeightFromAngle(maxAngle)/pixelsPerMeter);
+      const kineticPercent = Math.min(1, energies.kinetic / maxEnergyEstimate);
+      const potentialPercent = Math.min(1, energies.potential / maxEnergyEstimate);
+      
+      // 在右下角绘制小条
+      const barX = canvas.width - 100;
+      const barY = 190;
+      ctx.fillStyle = '#2d3748';
+      ctx.fillRect(barX, barY, 70, 14);
+      ctx.fillStyle = '#ff7b9c';
+      ctx.fillRect(barX, barY, 70 * kineticPercent, 6);
+      ctx.fillStyle = '#5bc0be';
+      ctx.fillRect(barX, barY+8, 70 * potentialPercent, 6);
+      ctx.fillStyle = '#ddd';
+      ctx.font = '9px "Segoe UI"';
+      ctx.fillText('K', barX-16, barY+7);
+      ctx.fillText('U', barX-16, barY+16);
+    }
+
+    // ----- 鼠标/触摸交互：拖拽小球改变角度 -----
+    function handleDragStart(e) {
+      e.preventDefault();
+      const pos = getCanvasCoords(e);
+      if (!pos) return;
+      const ballPos = getBallPosition(currentAngle);
+      const dist = Math.hypot(pos.x - ballPos.x, pos.y - ballPos.y);
+      if (dist < 30) {  // 点击小球附近
+        isDragging = true;
+        // 拖动时暂停动画更易控制
+        if (isAnimating) {
+          stopAnimation();
+          isAnimating = false;
+          playPauseBtn.innerHTML = '<span>▶</span> 播放';
+        }
+        canvas.style.cursor = 'grabbing';
+      }
+    }
+
+    function handleDragMove(e) {
+      if (!isDragging) return;
+      e.preventDefault();
+      const pos = getCanvasCoords(e);
+      if (!pos) return;
+      // 计算从悬挂点到鼠标点的角度
+      const dx = pos.x - pivotX;
+      const dy = pos.y - pivotY;
+      let angle = Math.atan2(dx, dy); // atan2(x,y) 因为角度从垂直向下算起
+      // 限制角度范围
+      angle = Math.min(maxAngle, Math.max(minAngle, angle));
+      currentAngle = angle;
+      angularVelocity = 0.0;
+      updateEnergyDisplay();
+      updateSliderFromAngle();
+      drawCanvas();
+    }
+
+    function handleDragEnd(e) {
+      if (isDragging) {
+        isDragging = false;
+        canvas.style.cursor = 'default';
+        // 不自动恢复动画，保持暂停状态方便观察
+      }
+    }
+
+    function getCanvasCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;   // canvas 实际像素比例
+      const scaleY = canvas.height / rect.height;
+
+      let clientX, clientY;
+
+      if (e.touches) {
+        // 触摸事件
+        if (e.touches.length === 0) return null;
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+      }
+
+      // 相对于canvas物理像素坐标
+      const canvasX = (clientX - rect.left) * scaleX;
+      const canvasY = (clientY - rect.top) * scaleY;
+      return { x: canvasX, y: canvasY };
+    }
+
+    // 绑定事件
+    canvas.addEventListener('mousedown', handleDragStart);
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) handleDragMove(e);
+    });
+    window.addEventListener('mouseup', handleDragEnd);
+
+    // 触摸事件
+    canvas.addEventListener('touchstart', handleDragStart, { passive: false });
+    canvas.addEventListener('touchmove', handleDragMove, { passive: false });
+    canvas.addEventListener('touchend', handleDragEnd);
+    canvas.addEventListener('touchcancel', handleDragEnd);
+
+    // 避免鼠标离开canvas时还拖拽
+    window.addEventListener('mouseleave', () => {
+      if (isDragging) {
+        isDragging = false;
+        canvas.style.cursor = 'default';
+      }
+    });
+
+    // 初始化设置
+    function initialize() {
+      // 根据滑块设定初始角度
+      const initPercent = parseFloat(heightSlider.value);
+      setAngleFromSlider(initPercent);
+      angularVelocity = 0.0;
+      updateEnergyDisplay();
+      drawCanvas();
+      // 默认开始动画
+      if (!isAnimating) {
+        startAnimation();
+        playPauseBtn.innerHTML = '<span>⏸️</span> 暂停';
+      } else {
+        startAnimation();
+      }
+    }
+
+    initialize();
+
+    // 窗口失去焦点时不做特殊处理，保持运行。
+    // 清理动画(非必须，但良好实践)
+    window.addEventListener('beforeunload', () => {
+      stopAnimation();
+    });
+
+  })();
+</script>
+</body>
+</html>

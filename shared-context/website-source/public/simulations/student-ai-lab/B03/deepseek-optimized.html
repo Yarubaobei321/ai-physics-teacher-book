@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>孟德尔自由组合定律 · 交互模拟</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #0e1420; color: #dbe7f5; overflow: hidden;
+  }
+  header {
+    height: 52px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 18px; background: linear-gradient(90deg,#102a24,#1b2f22);
+    border-bottom: 2px solid #2f5d3a;
+  }
+  header h1 { font-size: 1.2rem; color: #ffd54f; }
+  #f1Status { font-size: 0.9rem; color: #9fe8b5; }
+  #f1Status b { color: #ffd54f; }
+  main {
+    height: calc(100vh - 52px); display: flex; flex-direction: column; padding: 10px 12px 8px;
+  }
+  .grid { flex: 1 1 0; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 10px; min-height: 0; }
+  .card {
+    background: #121c2e; border: 1px solid #23344e; border-radius: 10px; padding: 10px 12px;
+    display: flex; flex-direction: column; min-height: 0; overflow-y: auto;
+  }
+  .card h2 { font-size: 0.92rem; color: #ffd54f; margin-bottom: 6px; flex: none; }
+  .card h2 .tag { font-size: 0.75rem; color: #8fa6c4; font-weight: 400; margin-left: 6px; }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; flex: none; }
+  button {
+    font-size: 0.82rem; padding: 6px 10px; border-radius: 7px; cursor: pointer;
+    border: 1px solid #3a5b86; background: #1c2f4d; color: #e6f0fb; font-weight: 600;
+  }
+  button:hover { background: #274465; }
+  button:active { transform: translateY(1px); }
+  button.primary { background: #14532d; border-color: #2e9e5b; }
+  button.danger { background: #571a1a; border-color: #c64a4a; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 4px 0; flex-wrap: wrap; }
+  .lbl { font-size: 0.8rem; color: #9db8d8; flex: none; }
+  .geno-chip {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 700;
+    padding: 4px 10px; border-radius: 16px; border: 1px solid transparent;
+  }
+  .geno-chip button { font-size: 0.85rem; font-weight: 700; padding: 4px 8px; }
+  .g-Y { background: #e6c838; color: #3a3200; }
+  .g-G { background: #4a9e4a; color: #eaffea; }
+  .gamete-chip {
+    font-size: 0.85rem; font-weight: 700; padding: 4px 10px; border-radius: 14px;
+    background: #1d3a5f; border: 1px solid #35608f; color: #8fd0ff; cursor: pointer;
+  }
+  .gamete-chip:hover { background: #274d7a; }
+  .zygote { font-size: 0.95rem; font-weight: 700; padding: 6px 12px; border-radius: 8px; background: #1b2740; border: 1px solid #3a5b86; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 4px; }
+  th, td { border: 1px solid #2a3f63; padding: 3px 6px; text-align: center; }
+  th { background: #16233f; color: #8fd0ff; }
+  td.gt { text-align: left; font-size: 0.76rem; }
+  .badge-p { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.74rem; font-weight: 700; background: #1b4d8f; color: #cfe4ff; }
+  .badge-r { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 0.74rem; font-weight: 700; background: #8f2d1b; color: #ffd9cf; }
+  .strip {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 8px; margin: 6px 0;
+    border-radius: 8px; background: #16233f; border: 1px solid #2a3f63; font-size: 0.8rem;
+  }
+  .strip .st-title { font-weight: 700; color: #ffd54f; margin-right: 4px; }
+  #log {
+    height: 110px; margin-top: 8px; background: #0c1424; border: 1px solid #23344e; border-radius: 8px;
+    padding: 6px 10px; overflow-y: auto; font-size: 0.78rem; color: #a9c2e0; flex: none;
+  }
+  #log .t { color: #5c7d9e; margin-right: 6px; }
+  #log .re { color: #ff8a80; }
+  #log .pe { color: #7fe0a8; }
+  .history { font-size: 0.78rem; color: #9db8d8; line-height: 1.6; max-height: 74px; overflow-y: auto; }
+  .note { font-size: 0.74rem; color: #7fa3c9; margin-top: 4px; line-height: 1.5; }
+  .pheno-cell { display: inline-flex; align-items: center; gap: 4px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .dot.y { background: #f4d03f; } .dot.g { background: #6ab04c; }
+  .dot.wr { background: repeating-linear-gradient(45deg,#f4d03f 0 3px,#a08010 3px 6px); border-radius: 50%; }
+  .dot.gw { background: repeating-linear-gradient(45deg,#6ab04c 0 3px,#3c6b2a 3px 6px); border-radius: 50%; }
+  .footnote { font-size: 0.76rem; color: #ffb74d; margin-top: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🫛 孟德尔自由组合定律 · 交互模拟</h1>
+  <span id="f1Status">F1：<b>—</b> ｜ F1 配子种类数：<b>—</b></span>
+</header>
+<main>
+  <div class="grid">
+    <!-- 模块一：亲本与 F1 -->
+    <section class="card" aria-label="模块一 亲本与F1">
+      <h2>模块一 · 亲本 P 与 F1 的产生 <span class="tag">随机组合双亲 → 抽选配子 → 受精</span></h2>
+      <div class="row">
+        <span class="lbl">母本 P₁：</span>
+        <span class="geno-chip g-Y" id="p1Chip">—</span>
+        <button id="randomMom" aria-label="随机母本">🎲 随机母本</button>
+      </div>
+      <div class="row">
+        <span class="lbl">父本 P₂：</span>
+        <span class="geno-chip g-G" id="p2Chip">—</span>
+        <button id="randomDad" aria-label="随机父本">🎲 随机父本</button>
+      </div>
+      <div class="btnrow">
+        <button id="randomPair" class="primary" aria-label="随机组合双亲">随机组合双亲</button>
+        <button id="resetClassic" aria-label="重置为经典亲本">重置经典 (YYRR×yyrr)</button>
+      </div>
+      <div class="row">
+        <button id="drawFemale" aria-label="雌配子">♀ 雌配子</button>
+        <button id="drawMale" aria-label="雄配子">♂ 雄配子</button>
+        <button id="fertilize" class="primary" aria-label="随机结合">⚡ 随机结合</button>
+        <button id="resetGamete" aria-label="重置配子">↺ 重置配子</button>
+      </div>
+      <div class="row">
+        <span class="lbl">雌配子：</span><span id="fGamete">—</span>
+        <span class="lbl">雄配子：</span><span id="mGamete">—</span>
+      </div>
+      <div class="row">
+        <span class="lbl">合子（F1）：</span><span class="zygote" id="zygoteBox">—</span>
+      </div>
+      <p class="note" id="gameteNote">配子种类数 = 2ⁿ（n 为杂合基因对数）。例：YYRR→1 种，YyRr→4 种。</p>
+    </section>
+
+    <!-- 模块二：F2 理论比例 -->
+    <section class="card" aria-label="模块二 F2理论比例">
+      <h2>模块二 · F2 理论比例（F1 自交） <span class="tag" id="f2F1label">—</span></h2>
+      <div class="strip" id="recStrip">
+        <span class="st-title">重组/亲本型判定（相对当前亲本 P₁×P₂，动态）：</span>
+        <span class="badge-p">亲本型：<span id="parentalList">—</span></span>
+        <span class="badge-r">重组型：<span id="recomList">—</span></span>
+      </div>
+      <div class="row"><span class="lbl">F1 配子种类数：</span><b id="f2GameteCount">—</b><span class="lbl" id="f2GameteList">—</span></div>
+      <table id="f2Table">
+        <thead><tr><th>表现型</th><th>计数</th><th>占比</th><th>基因型</th><th>标签</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="footnote" id="recFootnote">重组型说明：与当前两个亲本表现型不同者为重组型（动态判定，非固定黄皱/绿圆）。</p>
+    </section>
+
+    <!-- 模块三：测交 -->
+    <section class="card" aria-label="模块三 测交">
+      <h2>模块三 · 测交（F1 × 隐性纯合 yyrr） <span class="tag">理论 1:1:1:1</span></h2>
+      <div class="btnrow">
+        <button id="doTestcross" class="primary" aria-label="执行测交">🧪 执行测交</button>
+        <button id="run100" aria-label="快速执行约100次测交">⚡ 连测约 100 次</button>
+        <button id="resetTestcross" class="danger" aria-label="重置测交">↺ 重置测交</button>
+      </div>
+      <div class="row"><span class="lbl">测交后代统计（共 <b id="tcTotal">0</b> 次）：</span></div>
+      <table id="tcTable">
+        <thead><tr><th>表现型</th><th>计数</th><th>百分比</th><th>理论</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="note">单次 F1 随机产生一个配子 × 亲本 yyrr（只产生 yr）受精。大量重复后各表现型应各约占 25%。</p>
+    </section>
+
+    <!-- 模块四：配子随机结合 -->
+    <section class="card" aria-label="模块四 配子随机结合">
+      <h2>模块四 · 配子随机结合（F1×F1 多次随机）</h2>
+      <div class="row">
+        <span class="lbl">F1 可能的配子（点击可指定）：</span>
+        <span id="f1GametePool"></span>
+      </div>
+      <div class="btnrow">
+        <button id="m4Combine" class="primary" aria-label="随机抽选配子结合">⚡ 随机抽配子并结合</button>
+        <button id="m4Reset" aria-label="重置配子记录">↺ 重置</button>
+      </div>
+      <div class="row"><span class="lbl">本次合子：</span><span class="zygote" id="m4Zygote">—</span></div>
+      <div class="history" id="m4History">（点击按钮后显示最近合子记录）</div>
+    </section>
+  </div>
+  <div id="log" role="log" aria-label="事件日志"></div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var GENOTYPES = ['YYRR', 'YYRr', 'YYrr', 'YyRR', 'YyRr', 'Yyrr', 'yyRR', 'yyRr', 'yyrr'];
+  var PHENOS = ['黄圆', '黄皱', '绿圆', '绿皱'];
+
+  // ---------- 遗传学核心 ----------
+  function norm(g) {
+    var ys = [g[0], g[1]].sort(function (a, b) { return a === 'Y' ? -1 : 1; }).join('');
+    var rs = [g[2], g[3]].sort(function (a, b) { return a === 'R' ? -1 : 1; }).join('');
+    return ys + rs;
+  }
+  function pheno(g) {
+    g = norm(g);
+    return (g[0] === 'Y' ? '黄' : '绿') + (g[2] === 'R' ? '圆' : '皱');
+  }
+  function gametes(g) {
+    g = norm(g);
+    var y = g[0] === g[1] ? [g[0]] : [g[0], g[1]];
+    var r = g[2] === g[3] ? [g[2]] : [g[2], g[3]];
+    var out = [];
+    for (var i = 0; i < y.length; i++)
+      for (var j = 0; j < r.length; j++) out.push(y[i] + r[j]);
+    return out;
+  }
+  function gameteCount(g) { return gametes(g).length; }
+  function randomGamete(g) {
+    var gs = gametes(g);
+    return gs[Math.floor(Math.random() * gs.length)];
+  }
+  function zygote(a, b) { return norm(a[0] + b[0] + a[1] + b[1]); }
+  function crossDist(ga, gb) {
+    var dist = {};
+    var gaS = gametes(ga), gbS = gametes(gb);
+    for (var i = 0; i < gaS.length; i++)
+      for (var j = 0; j < gbS.length; j++) {
+        var z = zygote(gaS[i], gbS[j]);
+        var p = pheno(z);
+        if (!dist[p]) dist[p] = { count: 0, gens: [] };
+        dist[p].count++;
+        if (dist[p].gens.indexOf(z) < 0) dist[p].gens.push(z);
+      }
+    return dist;
+  }
+
+  // ---------- 状态 ----------
+  var P1 = 'YyRr', P2 = 'yyRR';      // 初始亲本（后由 reset 设置）
+  var F1 = null;
+  var fGamete = null, mGamete = null; // 模块一雌/雄配子
+  var tc = { '黄圆': 0, '黄皱': 0, '绿圆': 0, '绿皱': 0 }; // 测交统计
+  var m4Pool = null, m4HistoryArr = [];
+
+  function log(msg, cls) {
+    var el = document.getElementById('log');
+    var d = document.createElement('div');
+    var t = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    var span = document.createElement('span');
+    span.className = 't'; span.textContent = '[' + t + '] ';
+    d.appendChild(span);
+    var c = document.createElement('span');
+    c.className = cls || '';
+    c.innerHTML = msg;
+    d.appendChild(c);
+    el.appendChild(d);
+    while (el.children.length > 60) el.removeChild(el.firstChild);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ---------- 亲本状态更新 ----------
+  function chip(geno) {
+    var p = pheno(geno);
+    var isYellow = p[0] === '黄';
+    return '<span class="geno-chip ' + (isYellow ? 'g-Y' : 'g-G') + '">' +
+      (isYellow ? '🟡' : '🟢') + ' ' + geno + '（' + p + '）</span>';
+  }
+  function updateParents(resetTC) {
+    document.getElementById('p1Chip').innerHTML = chip(P1);
+    document.getElementById('p2Chip').innerHTML = chip(P2);
+    // F1 重新生成：随机受精
+    F1 = zygote(randomGamete(P1), randomGamete(P2));
+    document.getElementById('zygoteBox').textContent = F1 + '（' + pheno(F1) + '）';
+    document.getElementById('f1Status').innerHTML =
+      'F1：<b>' + F1 + '（' + pheno(F1) + '）</b> ｜ F1 配子种类数：<b>' + gameteCount(F1) + '</b>';
+    // 母本/父本各自的配子种类
+    var note = '配子种类数：P₁(' + P1 + ')→' + gameteCount(P1) + ' 种（' + gametes(P1).join('、') + '）；P₂(' + P2 + ')→' + gameteCount(P2) + ' 种（' + gametes(P2).join('、') + '）';
+    document.getElementById('gameteNote').textContent = note;
+    if (resetTC) { tc = { '黄圆': 0, '黄皱': 0, '绿圆': 0, '绿皱': 0 }; }
+    fGamete = mGamete = null;
+    document.getElementById('fGamete').innerHTML = '—';
+    document.getElementById('mGamete').innerHTML = '—';
+    updateF2();
+    updateTC();
+    updateM4();
+    log('亲本更新为 <b>' + P1 + '×' + P2 + '</b>，F1 = <b>' + F1 + '（' + pheno(F1) + '）</b>' + (resetTC ? '；测交记录已自动重置' : ''), 'pe');
+  }
+
+  // ---------- 模块二：F2 理论比例 ----------
+  function parentPhenoSet() {
+    var s = {};
+    s[pheno(P1)] = 1; s[pheno(P2)] = 1;
+    return Object.keys(s);
+  }
+  function isRecom(p) { return parentPhenoSet().indexOf(p) < 0; }
+
+  function updateF2() {
+    document.getElementById('f2F1label').textContent = '（当前 F1 = ' + F1 + ' × ' + F1 + '）';
+    document.getElementById('f2GameteCount').textContent = gameteCount(F1);
+    document.getElementById('f2GameteList').textContent = '：' + gametes(F1).join('、');
+    // 重组/亲本型动态判定条
+    var ps = parentPhenoSet();
+    var recs = PHENOS.filter(function (p) { return isRecom(p); });
+    document.getElementById('parentalList').textContent = ps.join('、');
+    document.getElementById('recomList').textContent = recs.length ? recs.join('、') : '（无）';
+    // 动态脚注
+    document.getElementById('recFootnote').textContent =
+      '重组型说明（动态）：相对当前亲本 ' + P1 + '(' + pheno(P1) + ') × ' + P2 + '(' + pheno(P2) + ')，与亲本表现型不同者（' +
+      (recs.length ? recs.join('、') : '无') + '）为重组型；亲本型为 ' + ps.join('、') + '。' +
+      '示例：亲本 YYrr×yyRR 时重组型=黄圆/绿皱；经典 YYRR×yyrr 时重组型=黄皱/绿圆。';
+    // F2 表
+    var dist = crossDist(F1, F1);
+    var total = 0;
+    for (var k in dist) total += dist[k].count;
+    var tbody = document.querySelector('#f2Table tbody');
+    var html = '';
+    PHENOS.forEach(function (p) {
+      var d = dist[p];
+      if (!d) return;
+      var pct = (d.count / total * 100).toFixed(2) + '%';
+      var cls = isRecom(p) ? 'badge-r' : 'badge-p';
+      var lbl = isRecom(p) ? '重组型' : '亲本型';
+      var gens = GENOTYPES.filter(function (g) { return pheno(g) === p; }).join('、');
+      html += '<tr><td><span class="pheno-cell"><span class="dot ' + pcl(p) + '"></span>' + p + '</span></td><td>' +
+        d.count + '</td><td>' + pct + '</td><td class="gt">' + d.gens.join('、') + '</td><td><span class="' + cls + '">' + lbl + '</span></td></tr>';
+    });
+    tbody.innerHTML = html;
+  }
+  function pcl(p) {
+    if (p === '黄圆') return 'y';
+    if (p === '黄皱') return 'wr';
+    if (p === '绿圆') return 'g';
+    return 'gw';
+  }
+
+  // ---------- 模块三：测交 ----------
+  function updateTC() {
+    document.getElementById('tcTotal').textContent = tc['黄圆'] + tc['黄皱'] + tc['绿圆'] + tc['绿皱'];
+    var tbody = document.querySelector('#tcTable tbody');
+    var total = tc['黄圆'] + tc['黄皱'] + tc['绿圆'] + tc['绿皱'];
+    var html = '';
+    PHENOS.forEach(function (p) {
+      var c = tc[p];
+      var pct = total ? (c / total * 100).toFixed(1) + '%' : '—';
+      html += '<tr><td><span class="pheno-cell"><span class="dot ' + pcl(p) + '"></span>' + p + '</span></td><td>' + c +
+        '</td><td>' + pct + '</td><td>25%</td></tr>';
+    });
+    tbody.innerHTML = html;
+  }
+  function doOneTestcross(silent) {
+    // F1 × yyrr（yyrr 只产生 yr）
+    var g1 = randomGamete(F1);
+    var z = zygote(g1, 'yr');
+    var p = pheno(z);
+    tc[p]++;
+    updateTC();
+    if (!silent) log('测交：F1 配子 <b>' + g1 + '</b> × yr → 子代 <b>' + z + '（' + p + '）</b>', '');
+  }
+
+  // ---------- 模块四：配子随机结合 ----------
+  function updateM4() {
+    m4Pool = gametes(F1);
+    var el = document.getElementById('f1GametePool');
+    el.innerHTML = m4Pool.map(function (g, i) {
+      return '<button class="gamete-chip" data-i="' + i + '" aria-label="指定配子' + g + '">' + g + '</button>';
+    }).join('');
+  }
+  document.getElementById('f1GametePool').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button[data-i]');
+    if (!btn) return;
+    var g = m4Pool[parseInt(btn.getAttribute('data-i'), 10)];
+    var z = zygote(g, randomGamete(F1));
+    var p = pheno(z);
+    m4HistoryArr.unshift('指定 ' + g + ' × 随机 ' + ' → ' + z + '(' + p + ')');
+    document.getElementById('m4Zygote').textContent = z + '（' + p + '）';
+    renderM4History();
+    log('配子结合：<b>' + g + '</b> × 随机配子 → <b>' + z + '（' + p + '）</b>', '');
+  });
+
+  function renderM4History() {
+    var el = document.getElementById('m4History');
+    el.innerHTML = m4HistoryArr.length ? m4HistoryArr.slice(0, 12).map(function (h) { return '▸ ' + h + '<br>'; }).join('') : '（点击按钮后显示最近合子记录）';
+  }
+
+  // ---------- 按钮绑定 ----------
+  document.getElementById('randomPair').addEventListener('click', function () {
+    P1 = GENOTYPES[Math.floor(Math.random() * 9)];
+    P2 = GENOTYPES[Math.floor(Math.random() * 9)];
+    updateParents(true);
+  });
+  document.getElementById('resetClassic').addEventListener('click', function () {
+    P1 = 'YYRR'; P2 = 'yyrr';
+    updateParents(true);
+    log('重置为经典亲本 YYRR×yyrr → F1=<b>YyRr（黄圆）</b>', 'pe');
+  });
+  document.getElementById('randomMom').addEventListener('click', function () {
+    P1 = GENOTYPES[Math.floor(Math.random() * 9)];
+    updateParents(true);
+  });
+  document.getElementById('randomDad').addEventListener('click', function () {
+    P2 = GENOTYPES[Math.floor(Math.random() * 9)];
+    updateParents(true);
+  });
+  document.getElementById('drawFemale').addEventListener('click', function () {
+    fGamete = randomGamete(P1);
+    document.getElementById('fGamete').innerHTML = '<button class="gamete-chip" id="fgChip" aria-label="雌配子' + fGamete + '">' + fGamete + '</button>';
+    log('抽选母本 P₁(' + P1 + ') 配子：<b>' + fGamete + '</b>', '');
+  });
+  document.getElementById('drawMale').addEventListener('click', function () {
+    mGamete = randomGamete(P2);
+    document.getElementById('mGamete').innerHTML = '<button class="gamete-chip" id="mgChip" aria-label="雄配子' + mGamete + '">' + mGamete + '</button>';
+    log('抽选父本 P₂(' + P2 + ') 配子：<b>' + mGamete + '</b>', '');
+  });
+  // 配子 chip 可点击重抽
+  document.getElementById('fGamete').addEventListener('click', function () {
+    document.getElementById('drawFemale').click();
+  });
+  document.getElementById('mGamete').addEventListener('click', function () {
+    document.getElementById('drawMale').click();
+  });
+  document.getElementById('fertilize').addEventListener('click', function () {
+    var ga = fGamete || randomGamete(P1);
+    var gb = mGamete || randomGamete(P2);
+    var z = zygote(ga, gb);
+    var p = pheno(z);
+    document.getElementById('zygoteBox').textContent = z + '（' + p + '）';
+    F1 = z;
+    document.getElementById('f1Status').innerHTML =
+      'F1：<b>' + F1 + '（' + pheno(F1) + '）</b> ｜ F1 配子种类数：<b>' + gameteCount(F1) + '</b>';
+    updateF2(); updateTC(); updateM4();
+    log('受精：雌配子 <b>' + ga + '</b> × 雄配子 <b>' + gb + '</b> → F1 = <b>' + z + '（' + p + '）</b>', 'pe');
+  });
+  document.getElementById('resetGamete').addEventListener('click', function () {
+    fGamete = mGamete = null;
+    document.getElementById('fGamete').innerHTML = '—';
+    document.getElementById('mGamete').innerHTML = '—';
+    log('已重置配子显示。', '');
+  });
+  document.getElementById('doTestcross').addEventListener('click', function () {
+    doOneTestcross(false);
+  });
+  document.getElementById('run100').addEventListener('click', function () {
+    for (var i = 0; i < 100; i++) doOneTestcross(true);
+    var total = tc['黄圆'] + tc['黄皱'] + tc['绿圆'] + tc['绿皱'];
+    log('已连测 100 次，累计 <b>' + total + '</b> 次：黄圆 ' + tc['黄圆'] + '、黄皱 ' + tc['黄皱'] + '、绿圆 ' + tc['绿圆'] + '、绿皱 ' + tc['绿皱'] + '（理论各 25%）', 'pe');
+  });
+  document.getElementById('resetTestcross').addEventListener('click', function () {
+    tc = { '黄圆': 0, '黄皱': 0, '绿圆': 0, '绿皱': 0 };
+    updateTC();
+    log('测交记录已重置。', '');
+  });
+  document.getElementById('m4Combine').addEventListener('click', function () {
+    var ga = randomGamete(F1), gb = randomGamete(F1);
+    var z = zygote(ga, gb);
+    var p = pheno(z);
+    document.getElementById('m4Zygote').textContent = z + '（' + p + '）';
+    m4HistoryArr.unshift('随机 ' + ga + ' × ' + gb + ' → ' + z + '(' + p + ')');
+    renderM4History();
+    log('配子随机结合：<b>' + ga + '</b> × <b>' + gb + '</b> → <b>' + z + '（' + p + '）</b>', '');
+  });
+  document.getElementById('m4Reset').addEventListener('click', function () {
+    m4HistoryArr = [];
+    document.getElementById('m4Zygote').textContent = '—';
+    renderM4History();
+    log('模块四记录已重置。', '');
+  });
+
+  // ---------- 初始化 ----------
+  P1 = 'YYRR'; P2 = 'yyrr';
+  updateParents(true);
+  log('初始化：经典亲本 YYRR×yyrr，F1=<b>YyRr（黄圆）</b>；F2 理论 9:3:3:1，测交理论 1:1:1:1。', 'pe');
+
+  // ---------- 自检（Node 已核对） ----------
+  console.log('[B03 自检] YYRR 配子数=', gameteCount('YYRR'), '(期望1)  YyRr 配子数=', gameteCount('YyRr'), '(期望4)');
+  var d = crossDist('YyRr', 'YyRr');
+  console.log('[B03 自检] F2 分布=', JSON.stringify(d), '(期望 9:3:3:1)');
+  var d2 = crossDist('YyRr', 'yyrr');
+  console.log('[B03 自检] 测交=', JSON.stringify(d2), '(期望各1)');
+})();
+</script>
+</body>
+</html>

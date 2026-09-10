@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>数学探索：正弦型函数五点作图法交互演示 | 高中数学生动课堂</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动造成干扰，但不影响文本复制 */
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #f1f5f9 0%, #e6edf4 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .demo-container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(0px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25), 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        /* 头部 */
+        .header {
+            background: #0f172a;
+            color: white;
+            padding: 1.2rem 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 0.5rem 0 0;
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+
+        /* 主要内容区: 左图右控制 */
+        .main-dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 1.5rem 1.8rem 1.8rem 1.8rem;
+            gap: 2rem;
+        }
+
+        /* 画布区域 */
+        .canvas-area {
+            flex: 2;
+            min-width: 280px;
+            background: #ffffff;
+            border-radius: 1.8rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            background: #fefefe;
+            border-radius: 1.2rem;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            cursor: crosshair;
+        }
+
+        /* 函数表达式卡片 */
+        .formula-card {
+            background: #f8fafc;
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 1.2rem;
+            text-align: center;
+            font-size: 1.2rem;
+            font-family: 'Courier New', '等线', monospace;
+            font-weight: 500;
+            color: #0c4a6e;
+            border-left: 6px solid #3b82f6;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .formula-card span {
+            background: #eef2ff;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            font-size: 1.3rem;
+        }
+
+        /* 右侧控制面板 */
+        .controls-panel {
+            flex: 1;
+            min-width: 260px;
+            background: #ffffffdd;
+            backdrop-filter: blur(2px);
+            background: #ffffff;
+            border-radius: 1.8rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            padding: 1.3rem 1.5rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.8rem;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        .control-group label span:first-child {
+            letter-spacing: 0.5px;
+        }
+        .param-value {
+            background: #e2e8f0;
+            padding: 0.2rem 0.7rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #cbd5e1;
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            border: none;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #2563eb;
+            transform: scale(1.2);
+        }
+
+        .reset-btn {
+            background: #0f172a;
+            border: none;
+            color: white;
+            width: 100%;
+            padding: 10px 0;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .reset-btn:hover {
+            background: #1e293b;
+            transform: translateY(-2px);
+        }
+
+        /* 五点信息表格 */
+        .points-table {
+            margin-top: 1.8rem;
+            background: #f1f5f9;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+        }
+        .points-table h4 {
+            margin: 0 0 8px 0;
+            font-size: 0.9rem;
+            color: #334155;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            font-size: 0.7rem;
+            text-align: center;
+        }
+        .point-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 6px 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            transition: 0.1s;
+            border-top: 3px solid #3b82f6;
+        }
+        .point-card strong {
+            display: block;
+            font-size: 0.75rem;
+            color: #075985;
+        }
+        .point-coord {
+            font-family: monospace;
+            font-size: 0.65rem;
+            color: #2c3e66;
+            word-break: break-word;
+        }
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 12px;
+            justify-content: center;
+            font-size: 0.7rem;
+        }
+        .legend-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 20px;
+            margin-right: 4px;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+            color: #475569;
+            background: #f9fbfd;
+        }
+        @media (max-width: 760px) {
+            .points-grid { gap: 3px; }
+            .point-card { padding: 3px 1px; }
+            .point-coord { font-size: 0.55rem; }
+            .formula-card span { font-size: 1rem; }
+            .main-dashboard { padding: 1rem; gap: 1rem; }
+        }
+        button {
+            background: none;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+<div class="demo-container">
+    <div class="header">
+        <h1>📐 正弦型函数 · 五点作图法</h1>
+        <p>y = A·sin(ωx + φ) + b  |  动态交互，精准定位五点关键点</p>
+    </div>
+    <div class="main-dashboard">
+        <!-- 左侧画布区 -->
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="sineCanvas" width="800" height="450" style="width:100%; height:auto; max-width:800px; aspect-ratio:800/450"></canvas>
+            </div>
+            <div class="formula-card">
+                📌 当前函数： <span id="functionDisplay">y = sin(x)</span>
+            </div>
+            <div class="legend">
+                <span><span class="legend-dot" style="background:#3b82f6;"></span> 正弦曲线</span>
+                <span><span class="legend-dot" style="background:#ef4444; border-radius: 50%;"></span> ✦ 五点(关键点)</span>
+                <span><span class="legend-dot" style="background:#f97316;"></span> 辅助网格/轴线</span>
+            </div>
+        </div>
+
+        <!-- 右侧交互区 -->
+        <div class="controls-panel">
+            <div class="control-group">
+                <label><span>振幅 <em>A</em></span><span id="A_val" class="param-value">1.00</span></label>
+                <input type="range" id="A_slider" min="0.2" max="2.5" step="0.01" value="1">
+            </div>
+            <div class="control-group">
+                <label><span>角频率 <em>ω</em> (影响周期)</span><span id="ω_val" class="param-value">1.00</span></label>
+                <input type="range" id="ω_slider" min="0.5" max="3" step="0.02" value="1">
+            </div>
+            <div class="control-group">
+                <label><span>初相 <em>φ</em> (弧度)</span><span id="φ_val" class="param-value">0.00</span></label>
+                <input type="range" id="φ_slider" min="-3.1416" max="3.1416" step="0.05" value="0">
+            </div>
+            <div class="control-group">
+                <label><span>纵向平移 <em>b</em></span><span id="b_val" class="param-value">0.00</span></label>
+                <input type="range" id="b_slider" min="-1.5" max="1.5" step="0.05" value="0">
+            </div>
+            <button class="reset-btn" id="resetBtn">⟳ 重置默认 (A=1, ω=1, φ=0, b=0)</button>
+            
+            <!-- 五点动态表格 -->
+            <div class="points-table">
+                <h4>📌 一个周期内「五点」坐标 (起始点/峰/交点/谷/终点)</h4>
+                <div class="points-grid" id="fivePointsGrid">
+                    <!-- 动态js填充 -->
+                    <div>点1</div><div>点2</div><div>点3</div><div>点4</div><div>点5</div>
+                </div>
+                <div style="font-size:0.7rem; margin-top:8px; text-align:center; color:#475569;">
+                    ※ 作图顺序：起点 → 最高点 → 零点 → 最低点 → 终点 (一个完整周期)
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        💡 五点法原理：基于正弦函数在一个周期内五个特征点 (0, π/2, π, 3π/2, 2π) 经平移伸缩变换得到关键点，描绘函数图像轮廓。
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // DOM 元素
+        const canvas = document.getElementById('sineCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 滑块
+        const A_slider = document.getElementById('A_slider');
+        const ω_slider = document.getElementById('ω_slider');
+        const φ_slider = document.getElementById('φ_slider');
+        const b_slider = document.getElementById('b_slider');
+        
+        // 显示数值
+        const A_val = document.getElementById('A_val');
+        const ω_val = document.getElementById('ω_val');
+        const φ_val = document.getElementById('φ_val');
+        const b_val = document.getElementById('b_val');
+        const functionDisplay = document.getElementById('functionDisplay');
+        
+        // 重置按钮
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // 参数
+        let A = 1.0;
+        let omega = 1.0;
+        let phi = 0.0;
+        let b = 0.0;
+        
+        // 画布尺寸控制 (物理像素)
+        let canvasWidth = 800;
+        let canvasHeight = 450;
+        
+        // 坐标变换参数: 定义域 x ∈ [ -0.5*周期偏移? 为了美观展示一个完整周期+两侧少许, 但我们要展示至少一个完整周期，最好显示两个周期? 常规五点法在一个周期上, 我们展示 [x_min, x_max] 包含一个完整区间，基于omega计算周期
+        // 为了使五点清晰，展示区间为: [起始相位偏移对应的 x_start , x_start + T] 其中T=2π/ω，但为了通用观感，我们固定x范围从 -0.5 到 2π+0.5 根据ω动态不合适？最好根据ω动态调整显示范围使得一个标准周期完整占据画布大部分。
+        // 更优雅: 动态根据周期T = 2π/ω，显示区间为 [ -0.3*T, T+0.3*T ]? 为了让五点位于中央，根据当前ω计算显示从 x0 到 x0+T，其中x0使得第一个关键点在画布左边距合理。但为稳定体验, 我们做自适应: 依据周期T设置显示范围: startX = -T/6 到 endX = T + T/6，确保一个周期完整显示，并且五点清晰。
+        // 对于作图法需要计算五点横坐标 (基于标准正弦五点相位: 0, π/2, π, 3π/2, 2π) 映射到 x = (相位 - φ) / ω 。
+        let displayStartX = 0, displayEndX = 0;
+        let T = 2 * Math.PI; // 初始默认
+        
+        function updateParameters() {
+            A = parseFloat(A_slider.value);
+            omega = parseFloat(ω_slider.value);
+            phi = parseFloat(φ_slider.value);
+            b = parseFloat(b_slider.value);
+            
+            A_val.innerText = A.toFixed(2);
+            ω_val.innerText = omega.toFixed(2);
+            φ_val.innerText = phi.toFixed(2);
+            b_val.innerText = b.toFixed(2);
+            
+            // 更新函数表达式
+            let aStr = A === 1 ? '' : (A === -1 ? '-' : A.toFixed(2));
+            let omegaStr = omega === 1 ? '' : (omega.toFixed(2));
+            let phiAbs = Math.abs(phi).toFixed(2);
+            let phiSign = phi >= 0 ? '+' : '-';
+            let phiShow = (phi === 0) ? '' : (phiSign + ' ' + Math.abs(phi).toFixed(2));
+            let bStr = (b === 0) ? '' : (b > 0 ? ` + ${b.toFixed(2)}` : ` - ${Math.abs(b).toFixed(2)}`);
+            
+            let mid = `sin(${omegaStr !== '' ? omegaStr : ''}x ${phiShow !== '' ? phiShow : ''})`;
+            if (omegaStr === '' && phi === 0) mid = 'sin(x)';
+            else if (omegaStr !== '' && phi === 0) mid = `sin(${omegaStr}x)`;
+            else if (omegaStr === '' && phi !== 0) mid = `sin(x ${phiShow} ${Math.abs(phi).toFixed(2)})`;
+            else mid = `sin(${omegaStr}x ${phiShow} ${Math.abs(phi).toFixed(2)})`;
+            
+            let expr = `y = ${aStr !== '' ? aStr : '1'}·${mid}${bStr}`;
+            functionDisplay.innerText = expr;
+            
+            // 计算周期 T = 2π/|ω| , omega>0
+            T = (2 * Math.PI) / omega;
+            // 为了让画面美观，显示范围基于周期T，保证一个完整周期居中显示，两侧留白20%左右
+            let padding = T * 0.25;
+            displayStartX = -padding;
+            displayEndX = T + padding;
+            // 但避免五点过于偏移，第一个关键点横坐标 x0 = (0 - phi)/omega ; 最后一个关键点 x_last = (2π - phi)/omega
+            // 我们需要确保这五个点都在显示区间内（显然如果padding合理就在）
+            drawCanvas();
+            updateFivePointsGrid();
+        }
+        
+        // 根据参数计算五点横纵坐标 (五点相位点: phaseList = [0, π/2, π, 3π/2, 2π])
+        function computeFivePoints() {
+            const phases = [0, Math.PI/2, Math.PI, 3*Math.PI/2, 2*Math.PI];
+            const points = [];
+            for (let i = 0; i < phases.length; i++) {
+                let phase = phases[i];
+                // 标准正弦五点横坐标 x = (phase - φ) / ω
+                let x = (phase - phi) / omega;
+                let y = A * Math.sin(phase) + b;   // 因为 sin(phase) 即标准位置
+                points.push({ x, y, phaseName: getPhaseName(i) });
+            }
+            return points;
+        }
+        
+        function getPhaseName(idx) {
+            const names = ["起点 (0)", "峰值点 (π/2)", "零点 (π)", "谷值点 (3π/2)", "终点 (2π)"];
+            return names[idx];
+        }
+        
+        // 更新右侧五点表格
+        function updateFivePointsGrid() {
+            const points = computeFivePoints();
+            const gridContainer = document.getElementById('fivePointsGrid');
+            if (!gridContainer) return;
+            gridContainer.innerHTML = '';
+            points.forEach((pt, idx) => {
+                const card = document.createElement('div');
+                card.className = 'point-card';
+                const xFixed = pt.x.toFixed(3);
+                const yFixed = pt.y.toFixed(3);
+                card.innerHTML = `<strong>${pt.phaseName}</strong><div class="point-coord">(${xFixed}, ${yFixed})</div>`;
+                gridContainer.appendChild(card);
+            });
+        }
+        
+        // 绘制坐标系与曲线及五点标记
+        function drawCanvas() {
+            if (!ctx) return;
+            // 设置实际canvas分辨率
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // 定义绘图区域边距
+            const margin = { left: 55, right: 30, top: 30, bottom: 45 };
+            const drawWidth = canvasWidth - margin.left - margin.right;
+            const drawHeight = canvasHeight - margin.top - margin.bottom;
+            
+            // 映射函数: x世界坐标 -> canvasX, y世界坐标-> canvasY
+            function worldToCanvas(xWorld, yWorld) {
+                const t = (xWorld - displayStartX) / (displayEndX - displayStartX);
+                const canvasX = margin.left + t * drawWidth;
+                // y范围: 根据振幅+b决定范围，动态以保证曲线全部可见，设置y范围 [ -|A|*1.2 - |b| -0.3 , |A|*1.2 + |b| +0.3 ]
+                const maxAmp = Math.max(1.2, Math.abs(A) * 1.2 + Math.abs(b) + 0.5);
+                const yMinWorld = -maxAmp;
+                const yMaxWorld = maxAmp;
+                const ty = (yWorld - yMinWorld) / (yMaxWorld - yMinWorld);
+                const canvasY = canvasHeight - margin.bottom - ty * drawHeight;
+                return { x: canvasX, y: canvasY };
+            }
+            
+            // 绘制网格和轴线
+            ctx.save();
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 0.6;
+            ctx.font = "12px 'Segoe UI'";
+            ctx.fillStyle = "#334155";
+            
+            // 辅助网格线 (纵向)
+            const xStepRaw = (displayEndX - displayStartX) / 10;
+            for (let x = displayStartX; x <= displayEndX + 0.001; x += xStepRaw) {
+                const { x: cx } = worldToCanvas(x, 0);
+                if (cx >= margin.left && cx <= canvasWidth - margin.right) {
+                    ctx.beginPath();
+                    ctx.moveTo(cx, margin.top);
+                    ctx.lineTo(cx, canvasHeight - margin.bottom);
+                    ctx.strokeStyle = "#e2e8f0";
+                    ctx.stroke();
+                }
+            }
+            // 横向网格
+            const ySteps = 8;
+            const maxAmp = Math.max(1.2, Math.abs(A) * 1.2 + Math.abs(b) + 0.5);
+            for (let i = -Math.floor(maxAmp); i <= Math.floor(maxAmp); i++) {
+                let yVal = i;
+                if (Math.abs(yVal) <= maxAmp + 0.1) {
+                    const { y: cy } = worldToCanvas(0, yVal);
+                    if (cy >= margin.top && cy <= canvasHeight - margin.bottom) {
+                        ctx.beginPath();
+                        ctx.moveTo(margin.left, cy);
+                        ctx.lineTo(canvasWidth - margin.right, cy);
+                        ctx.strokeStyle = "#e2e8f0";
+                        ctx.stroke();
+                        ctx.fillStyle = "#64748b";
+                        ctx.fillText(yVal.toFixed(1), margin.left - 20, cy - 3);
+                    }
+                }
+            }
+            
+            // 绘制坐标轴 (X轴 Y轴)
+            ctx.beginPath();
+            const { x: axisX0, y: axisY0 } = worldToCanvas(0, 0);
+            // X轴
+            ctx.moveTo(margin.left, axisY0);
+            ctx.lineTo(canvasWidth - margin.right, axisY0);
+            // Y轴
+            ctx.moveTo(axisX0, margin.top);
+            ctx.lineTo(axisX0, canvasHeight - margin.bottom);
+            ctx.strokeStyle = "#334155";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            
+            // 绘制X轴刻度标签
+            ctx.fillStyle = "#1e293b";
+            const xTickCount = 8;
+            for (let i = 0; i <= xTickCount; i++) {
+                const xWorld = displayStartX + (i / xTickCount) * (displayEndX - displayStartX);
+                const { x: cx } = worldToCanvas(xWorld, 0);
+                if (cx >= margin.left && cx <= canvasWidth - margin.right) {
+                    ctx.fillText(xWorld.toFixed(2), cx - 12, axisY0 + (axisY0 > canvasHeight/2 ? -10 : 18));
+                }
+            }
+            
+            // 绘制函数曲线
+            ctx.beginPath();
+            let first = true;
+            const steps = 400;
+            for (let i = 0; i <= steps; i++) {
+                let t = i / steps;
+                let xWorld = displayStartX + t * (displayEndX - displayStartX);
+                let yWorld = A * Math.sin(omega * xWorld + phi) + b;
+                const { x: cx, y: cy } = worldToCanvas(xWorld, yWorld);
+                if (cx < margin.left || cx > canvasWidth - margin.right || cy < margin.top || cy > canvasHeight - margin.bottom) {
+                    first = true;
+                    continue;
+                }
+                if (first) {
+                    ctx.moveTo(cx, cy);
+                    first = false;
+                } else {
+                    ctx.lineTo(cx, cy);
+                }
+            }
+            ctx.strokeStyle = "#3b82f6";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            
+            // 绘制五点 (大红圆点)
+            const fivePoints = computeFivePoints();
+            for (let pt of fivePoints) {
+                const { x: wx, y: wy } = pt;
+                const { x: cx, y: cy } = worldToCanvas(wx, wy);
+                // 确保点在画面内才绘制
+                if (cx >= margin.left-5 && cx <= canvasWidth-margin.right+5 && cy >= margin.top-5 && cy <= canvasHeight-margin.bottom+5) {
+                    ctx.beginPath();
+                    ctx.fillStyle = "#ef4444";
+                    ctx.shadowBlur = 0;
+                    ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 2.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = "#b91c1c";
+                    ctx.font = "bold 11px 'Segoe UI'";
+                    ctx.shadowBlur = 0;
+                    ctx.fillText(`●`, cx-2, cy-4);
+                }
+            }
+            
+            // 额外标记文字坐标可选项，更直观: 在点附近标注坐标（可选避免拥挤，仅显示部分）
+            ctx.font = "10px monospace";
+            ctx.fillStyle = "#c2410c";
+            for (let pt of fivePoints) {
+                const { x: wx, y: wy } = pt;
+                const { x: cx, y: cy } = worldToCanvas(wx, wy);
+                if (cx >= margin.left && cx <= canvasWidth-margin.right && cy >= margin.top && cy <= canvasHeight-margin.bottom) {
+                    ctx.fillStyle = "#9a3412";
+                    ctx.shadowBlur = 0;
+                    ctx.fillText(`(${wx.toFixed(2)}, ${wy.toFixed(2)})`, cx+5, cy-4);
+                }
+            }
+            ctx.restore();
+            
+            // 补标画布标题
+            ctx.font = "500 12px 'Segoe UI'";
+            ctx.fillStyle = "#1e293b";
+            ctx.fillText("五点作图示意 (红点)", canvasWidth-140, margin.top-5);
+        }
+        
+        // 监听resize保持比例 (canvas宽高固定800*450 css自适应，无需动态resize)
+        function handleResize() {
+            // 如果希望响应式，不用更改实际分辨率，只需重绘
+            drawCanvas();
+        }
+        
+        // 事件绑定
+        function bindEvents() {
+            A_slider.addEventListener('input', () => { updateParameters(); });
+            ω_slider.addEventListener('input', () => { updateParameters(); });
+            φ_slider.addEventListener('input', () => { updateParameters(); });
+            b_slider.addEventListener('input', () => { updateParameters(); });
+            resetBtn.addEventListener('click', () => {
+                A_slider.value = '1';
+                ω_slider.value = '1';
+                φ_slider.value = '0';
+                b_slider.value = '0';
+                updateParameters();
+            });
+            window.addEventListener('resize', () => { setTimeout(() => { drawCanvas(); }, 50); });
+        }
+        
+        // 初始化设置画板真实宽高及渲染
+        function init() {
+            canvasWidth = 800;
+            canvasHeight = 450;
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            updateParameters();
+            bindEvents();
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

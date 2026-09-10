@@ -1,0 +1,137 @@
+---
+import type { ExperimentReviewData } from '../data/lab-reviews/types';
+
+interface Props {
+  data: ExperimentReviewData;
+  slug?: string;
+}
+
+const { data, slug } = Astro.props;
+
+const eyebrow = data.eyebrow ?? 'LAB REVIEW · 实验回顾';
+const title = data.title ?? '实验回顾';
+
+const hasApparatus = Array.isArray(data.apparatus) && data.apparatus.length > 0;
+const hasProcedure = Array.isArray(data.procedure) && data.procedure.length > 0;
+const hasFormulas = Array.isArray(data.formulas) && data.formulas.length > 0;
+const hasParameters =
+  Array.isArray(data.parameters) && data.parameters.length > 0;
+const hasNotes = Array.isArray(data.notes) && data.notes.length > 0;
+---
+
+<section class="bg-white" id={slug ? `lab-review-${slug}` : undefined} data-lab-review={slug}>
+  <div class="page-shell py-12 sm:py-16">
+    <header class="mb-10">
+      <p class="eyebrow">{eyebrow}</p>
+      <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">{title}</h2>
+      <p class="mt-4 max-w-3xl leading-8 text-slate-700" set:html={data.purpose} />
+    </header>
+
+    <div class="grid gap-6 lg:grid-cols-12">
+      {hasApparatus && (
+        <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft lg:col-span-5">
+          <p class="text-[11px] font-black uppercase tracking-[0.18em] text-yucai-700">APPARATUS</p>
+          <h3 class="mt-2 text-lg font-black text-ink">实验装置</h3>
+          <ul class="mt-4 flex flex-wrap gap-2">
+            {data.apparatus!.map((item) => (
+              <li class="rounded-md bg-yucai-50 px-3 py-2 text-sm font-bold text-yucai-800">{item}</li>
+            ))}
+          </ul>
+        </article>
+      )}
+
+      {hasParameters && (
+        <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft lg:col-span-7">
+          <p class="text-[11px] font-black uppercase tracking-[0.18em] text-yucai-700">KEY PARAMETERS</p>
+          <h3 class="mt-2 text-lg font-black text-ink">关键参数 / 量程</h3>
+          <dl class="lab-review-params mt-4 divide-y divide-slate-100">
+            {data.parameters!.map((p) => (
+              <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 py-2.5">
+                <dt class="font-mono text-sm font-bold text-yucai-800" set:html={p.symbol} />
+                <dd class="font-mono text-sm font-bold text-ink" set:html={p.value} />
+                {p.description && (
+                  <span class="text-xs leading-6 text-slate-500">{p.description}</span>
+                )}
+              </div>
+            ))}
+          </dl>
+        </article>
+      )}
+
+      {hasFormulas && (
+        <article class="rounded-md border border-slate-200 bg-white p-6 shadow-soft lg:col-span-12">
+          <p class="text-[11px] font-black uppercase tracking-[0.18em] text-yucai-700">CORE RELATIONS</p>
+          <h3 class="mt-2 text-lg font-black text-ink">关键关系 / 核心公式</h3>
+          <ul class="mt-4 space-y-4">
+            {data.formulas!.map((f) => (
+              <li class="rounded-md border border-slate-100 bg-yucai-50/60 p-4">
+                {f.label && (
+                  <p class="text-xs font-black uppercase tracking-[0.14em] text-yucai-700">{f.label}</p>
+                )}
+                <p class="lab-review-formula mt-2 font-mono text-base font-bold text-ink sm:text-lg" set:html={f.expression} />
+                {f.note && (
+                  <p class="mt-2 text-sm leading-6 text-slate-600" set:html={f.note} />
+                )}
+              </li>
+            ))}
+          </ul>
+        </article>
+      )}
+
+      {hasProcedure && (
+        <article class={`rounded-md border border-slate-200 bg-white p-6 shadow-soft ${hasNotes ? 'lg:col-span-7' : 'lg:col-span-12'}`}>
+          <p class="text-[11px] font-black uppercase tracking-[0.18em] text-yucai-700">PROCEDURE</p>
+          <h3 class="mt-2 text-lg font-black text-ink">装置 / 测量步骤</h3>
+          <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm leading-7 text-slate-700">
+            {data.procedure!.map((step) => (
+              <li class="pl-1 marker:font-black marker:text-yucai-700">
+                <span set:html={step.text} />
+                {step.note && (
+                  <p class="mt-1 text-xs leading-6 text-slate-500" set:html={step.note} />
+                )}
+              </li>
+            ))}
+          </ol>
+        </article>
+      )}
+
+      {hasNotes && (
+        <article class={`rounded-md border border-yucai-100 bg-yucai-50/60 p-6 ${hasProcedure ? 'lg:col-span-5' : 'lg:col-span-12'}`}>
+          <p class="text-[11px] font-black uppercase tracking-[0.18em] text-yucai-700">NOTES & CAVEATS</p>
+          <h3 class="mt-2 text-lg font-black text-ink">主要误差来源 / 注意事项</h3>
+          <ul class="mt-4 list-disc space-y-2 pl-5 text-sm leading-7 text-slate-700">
+            {data.notes!.map((note) => (
+              <li class="pl-1 marker:text-yucai-700" set:html={note} />
+            ))}
+          </ul>
+        </article>
+      )}
+    </div>
+  </div>
+</section>
+
+<style>
+  .lab-review-params :global(sub),
+  .lab-review-params :global(sup) {
+    font-size: 0.75em;
+  }
+
+  :global(.formula-frac) {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 0.12em;
+    vertical-align: middle;
+    line-height: 1;
+  }
+
+  :global(.formula-frac > span:first-child) {
+    border-bottom: 1px solid currentColor;
+    padding: 0 0.18em 0.08em;
+  }
+
+  :global(.formula-frac > span:last-child) {
+    padding-top: 0.08em;
+    font-size: 0.86em;
+  }
+</style>

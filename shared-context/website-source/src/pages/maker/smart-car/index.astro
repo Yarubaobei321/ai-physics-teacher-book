@@ -1,0 +1,411 @@
+---
+import BaseLayout from '../../../components/BaseLayout.astro';
+import '../../../styles/project-doc.css';
+
+const quick = [
+  { k: '主控', v: 'ESP32 DevKit' },
+  { k: '驱动', v: 'DRV8833' },
+  { k: '传感器', v: '3 避障 + 3 循迹' },
+  { k: '交互', v: '3 按键 + 1 LED' }
+];
+
+const parts = [
+  { title: '大脑：ESP32', desc: '读取 6 路传感器和 3 个按键，运行状态机，再给 DRV8833 输出 PWM。', cls: 'pd-card--accent' },
+  { title: '眼睛：避障与循迹', desc: '三路红外避障看前方有没有障碍，三路 TCRT5000 看地面有没有黑线。', cls: 'pd-card--green' },
+  { title: '腿：DRV8833 + TT 电机', desc: 'ESP32 不直接带动电机，而是输出 PWM 给驱动板；左右轮速度差让小车转向。', cls: 'pd-card--signal' },
+  { title: '提示：按键 + LED', desc: '三个按键切换模式，LED 用每周期的闪烁次数表示当前在哪个模式。', cls: 'pd-card--accent' }
+];
+
+const states = [
+  { name: '停车 / 待机', small: 'LED 不闪，所有电机停止', cls: 'is-stop' },
+  { name: '避障模式', small: '按 GPIO21，LED 每周期闪 1 下', cls: 'is-obstacle' },
+  { name: '循迹模式', small: '按 GPIO22，LED 每周期闪 2 下', cls: 'is-line' },
+  { name: '手动模式', small: '按 GPIO23，LED 每周期闪 3 下', cls: 'is-manual' }
+];
+
+const debounce = [
+  { b: '读取电平', s: '松开=高，按下=低' },
+  { b: '软件消抖', s: '稳定约 40ms 才承认' },
+  { b: '生成事件', s: '只在按下瞬间触发一次' },
+  { b: '切换模式', s: '先停车，再进入新状态' }
+];
+
+const obstacleRows = [
+  ['左', '中', '右', '小车动作', '怎么理解'],
+  ['无', '无', '无', '低速前进', '前方安全，继续走'],
+  ['有', '无', '无', '向右偏', '左边挡住，就往右绕'],
+  ['无', '无', '有', '向左偏', '右边挡住，就往左绕'],
+  ['无', '有', '无', '原地转向找路', '正前方挡住，左右试探'],
+  ['有', '有', '无', '右转', '左和中挡住，右边能走'],
+  ['无', '有', '有', '左转', '中和右挡住，左边能走'],
+  ['有', '有', '有', '后退再转向', '三边都挡住，先退出危险区']
+];
+
+const lineRows = [
+  ['左', '中', '右', '小车动作', '怎么理解'],
+  ['白', '黑', '白', '沿线直行', '小车正对着黑线'],
+  ['黑', '黑', '白', '小幅左转', '黑线偏左一点，轻轻修正'],
+  ['黑', '白', '白', '大幅左转', '黑线明显在左边，赶紧找回'],
+  ['白', '黑', '黑', '小幅右转', '黑线偏右一点，轻轻修正'],
+  ['白', '白', '黑', '大幅右转', '黑线明显在右边，赶紧找回'],
+  ['黑', '黑', '黑', '慢速直行', '可能是宽线或交叉口'],
+  ['白', '白', '白', '按最近方向搜索', '黑线丢了，先按上次方向找']
+];
+
+const smoothSteps = [
+  { b: '传感器读数', s: '把电平翻译成中文状态：有障碍、黑线、白底。' },
+  { b: '状态机判断', s: '当前是避障、循迹、手动还是停车。' },
+  { b: '计算目标速度', s: '例如左轮 110、右轮 180。' },
+  { b: '平滑输出 PWM', s: '当前速度每次只变 8，减少猛冲和抖动。' }
+];
+
+const testSteps = [
+  { b: '架空车轮', s: '第一次测试垫高小车，不要直接放地上跑。' },
+  { b: '测试避障', s: '按 GPIO21，依次用手挡左、中、右红外。' },
+  { b: '测试循迹', s: '按 GPIO22，把黑线放到左、中、右循迹模块下。' },
+  { b: '低速落地', s: '确认方向正确后，再放到地面调高度和阈值。' }
+];
+
+const faqRows = [
+  ['电机完全不转', 'VM 是否有电、GND 是否共地、STBY/SLEEP/EN 是否接高电平'],
+  ['低速只响不转', 'TT 电机启动扭矩不足，保留起步冲量，必要时略提高低速参数'],
+  ['串口状态和实际相反', '检查 OBSTACLE_ACTIVE_LOW（避障）或 LINE_ACTIVE_LOW（循迹）'],
+  ['循迹左右反了', '检查左右传感器是否插反，或左右电机输出是否接反'],
+  ['小车一动就重启', '电源电流不足或电机噪声过大，供电要稳且必须共地']
+];
+
+const questions = [
+  {
+    q: '为什么按键按下时 ESP32 读到的是低电平？',
+    a: '按键一端接 GPIO，另一端接 GND，程序又开启了上拉输入。松开时 GPIO 被上拉到高电平，按下时被直接拉到 GND，所以读到 LOW。'
+  },
+  {
+    q: '为什么红外避障是“低电平触发”，循迹模块却是“高电平触发”？',
+    a: '不同模块内部比较器和输出电路设计不同，输出逻辑不一定一样。关键不是死记“红外一定高或低”，而是用串口先确认每个模块在当前接法下的有效电平，再让程序常量和真实电平一致。'
+  },
+  {
+    q: '为什么切换模式前要先停车？',
+    a: '上一个模式可能还保留着左右轮 PWM。如果不先清零，新模式开始的瞬间会继承旧速度，车会突然冲一下，也会让调试者误判为新模式算法错误。'
+  },
+  {
+    q: '为什么左循迹看到黑线时，小车要向左转？',
+    a: '左侧传感器看到黑线，说明车身相对轨迹偏到右边，黑线在车的左侧。让左轮慢一点、右轮快一点，小车就会向左修正，重新把中间传感器压回黑线。'
+  },
+  {
+    q: '为什么电机完全不转时，不能只怀疑程序？',
+    a: '电机需要独立电源、驱动板使能和公共地。程序输出 PWM 只是控制信号，如果 VM 没电、GND 没共地、STBY/SLEEP/EN 没拉高，或者电机线接错，串口正常也不会转。'
+  },
+  {
+    q: '为什么调车时要先架空车轮？',
+    a: '第一次上电时方向、速度和传感器逻辑都可能反。架空车轮可以先观察左右轮是否按预期转动，避免小车突然冲出去、撞到人或损坏线路。'
+  }
+];
+---
+
+<BaseLayout
+  title="三红外三循迹智能小车 · 作品介绍 | 科创天地"
+  description="ESP32 + DRV8833 三红外三循迹智能小车作品介绍：从四大部分、信号流与供电、接线表、模式状态机、避障与循迹决策，到调试顺序和常见问题排查，让学生一页看懂整车工作原理。"
+  ogImage="/maker/smart-hardware/images/smart-car-build-02.webp"
+>
+  <article class="pd-doc">
+    <header class="pd-hero">
+      <div class="page-shell pd-hero-inner">
+        <a class="pd-back" href="/maker/#works">← 返回科创天地</a>
+        <p class="pd-hero-eyebrow">创新实验作品 · SMART CAR · ESP32 · DRV8833</p>
+        <h1>三红外三循迹智能小车</h1>
+        <p class="pd-hero-lead">
+          这台小车不是“电机自己会跑”，而是 ESP32 一直在重复做四件事：读取传感器和按键 → 判断当前模式 → 算出左右轮速度 → 输出 PWM 控制电机。看懂这条链路，就看懂了整台车。
+        </p>
+        <div class="pd-tags">
+          <span class="pd-tag">源码 v3.2</span>
+          <span class="pd-tag">环境 esp32dev</span>
+          <span class="pd-tag">串口 9600</span>
+          <span class="pd-tag">低速平滑控制</span>
+        </div>
+        <div class="pd-hero-actions">
+          <a class="pd-btn pd-btn--primary" href="/projects/smart-car/">打开教学控制台 →</a>
+          <a class="pd-btn pd-btn--ghost" href="#wiring">先看接线与原理</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-shell">
+      <div class="pd-quick">
+        {quick.map((item) => (
+          <div class="pd-quick-item">
+            <div class="k">{item.k}</div>
+            <div class="v">{item.v}</div>
+          </div>
+        ))}
+      </div>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">01 · 整体认识</p>
+        <h2>小车由四个部分组成</h2>
+        <p class="pd-lead-block">把小车想成一个小型机器人：ESP32 是大脑，传感器是眼睛，DRV8833 和电机是腿，按键和 LED 是它和人交流的方式。</p>
+        <div class="pd-grid4">
+          {parts.map((item) => (
+            <div class:list={['pd-card', item.cls]}>
+              <h3>{item.title}</h3>
+              <p>{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section class="pd-section" id="wiring">
+        <p class="pd-section-eyebrow">02 · 信号流与供电</p>
+        <h2>一张图看懂小车怎么连</h2>
+        <p class="pd-lead-block">左边的传感器和按键把“看到的世界”送进 ESP32；ESP32 判断后把 PWM 送给 DRV8833，再由驱动板带动左右电机。红线是电机供电，灰线是公共地。</p>
+        <div class="pd-diagram" aria-label="智能小车信号流和供电示意图">
+          <svg viewBox="0 0 1080 520" xmlns="http://www.w3.org/2000/svg" role="img">
+            <defs>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#0b63c7" />
+              </marker>
+              <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#0d9488" />
+              </marker>
+            </defs>
+            <rect x="410" y="170" width="260" height="180" rx="14" fill="#102033" stroke="#0b63c7" stroke-width="3" />
+            <text x="540" y="206" text-anchor="middle" font-size="22" font-weight="900" fill="#fff">ESP32 大脑</text>
+            <text x="540" y="232" text-anchor="middle" font-size="13" font-weight="700" fill="#b7dcff">读取输入 · 判断状态 · 输出 PWM</text>
+            <text x="430" y="282" font-size="13" font-weight="900" fill="#93c5fd" font-family="monospace">GPIO21/22/23 按键</text>
+            <text x="430" y="306" font-size="13" font-weight="900" fill="#93c5fd" font-family="monospace">GPIO36/39/34 避障</text>
+            <text x="430" y="330" font-size="13" font-weight="900" fill="#93c5fd" font-family="monospace">GPIO35/32/33 循迹</text>
+
+            <rect x="52" y="70" width="240" height="118" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="172" y="104" text-anchor="middle" font-size="18" font-weight="900" fill="#102033">三路红外避障</text>
+            <text x="172" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">左 36 · 中 39 · 右 34</text>
+            <text x="172" y="154" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">有障碍 = 低电平</text>
+            <path d="M292 130 C350 130 350 244 410 244" stroke="#0b63c7" stroke-width="3" fill="none" marker-end="url(#arrow)" />
+
+            <rect x="52" y="234" width="240" height="118" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="172" y="268" text-anchor="middle" font-size="18" font-weight="900" fill="#102033">三路 TCRT5000 循迹</text>
+            <text x="172" y="294" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">左 35 · 中 32 · 右 33</text>
+            <text x="172" y="318" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">黑线 = 高电平</text>
+            <path d="M292 294 C350 294 350 292 410 292" stroke="#0b63c7" stroke-width="3" fill="none" marker-end="url(#arrow)" />
+
+            <rect x="52" y="386" width="240" height="82" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="172" y="420" text-anchor="middle" font-size="18" font-weight="900" fill="#102033">三个模式按键</text>
+            <text x="172" y="446" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">21 避障 · 22 循迹 · 23 手动</text>
+            <path d="M292 426 C360 426 352 328 410 328" stroke="#0b63c7" stroke-width="3" fill="none" marker-end="url(#arrow)" />
+
+            <rect x="786" y="108" width="230" height="116" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="901" y="142" text-anchor="middle" font-size="18" font-weight="900" fill="#102033">DRV8833 电机驱动</text>
+            <text x="901" y="168" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">GPIO25/26 控左轮</text>
+            <text x="901" y="192" text-anchor="middle" font-size="13" font-weight="700" fill="#475569">GPIO27/14 控右轮</text>
+            <path d="M670 248 C730 248 720 166 786 166" stroke="#0d9488" stroke-width="3" fill="none" marker-end="url(#arrowGreen)" />
+
+            <rect x="808" y="286" width="92" height="66" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="854" y="324" text-anchor="middle" font-size="18" font-weight="900" fill="#102033">左电机</text>
+            <rect x="922" y="286" width="92" height="66" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="968" y="324" text-anchor="middle" font-size="18" font-weight="900" fill="#102033">右电机</text>
+            <path d="M872 224 L854 286" stroke="#0d9488" stroke-width="3" fill="none" marker-end="url(#arrowGreen)" />
+            <path d="M930 224 L968 286" stroke="#0d9488" stroke-width="3" fill="none" marker-end="url(#arrowGreen)" />
+
+            <rect x="768" y="410" width="118" height="58" rx="10" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="827" y="436" text-anchor="middle" font-size="16" font-weight="900" fill="#102033">电机电源</text>
+            <text x="827" y="456" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">5V~6V → VM</text>
+            <path d="M827 410 C827 330 808 270 824 224" stroke="#e11d48" stroke-width="4" fill="none" />
+
+            <rect x="910" y="410" width="118" height="58" rx="10" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="969" y="436" text-anchor="middle" font-size="16" font-weight="900" fill="#102033">公共地</text>
+            <text x="969" y="456" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">ESP32 / DRV / 传感器</text>
+            <path d="M910 440 C760 440 730 344 670 326" stroke="#475569" stroke-width="3" fill="none" />
+          </svg>
+        </div>
+        <div class="pd-callout pd-callout--danger">
+          <strong>供电三条铁律：</strong>① DRV8833 的 <span class="pd-pin">VM</span> 是电机电源，建议 5V~6V，不要把没稳压的高电压接到 ESP32；② ESP32 GND、DRV8833 GND、电机电源负极、所有传感器 GND <strong>必须共地</strong>；③ <span class="pd-pin">STBY/SLEEP/EN</span> 必须接高电平，否则程序再对电机也不转。
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">03 · 接线总表</p>
+        <h2>每个引脚接到哪里</h2>
+        <div class="pd-grid2">
+          <div>
+            <h3>DRV8833 与电机</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr><th>ESP32 / 模块</th><th>连接</th><th>说明</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="pd-pin">GPIO25</span></td><td>AIN1</td><td>左轮 PWM 1</td></tr>
+                  <tr><td><span class="pd-pin">GPIO26</span></td><td>AIN2</td><td>左轮 PWM 2</td></tr>
+                  <tr><td><span class="pd-pin">GPIO27</span></td><td>BIN1</td><td>右轮 PWM 1</td></tr>
+                  <tr><td><span class="pd-pin">GPIO14</span></td><td>BIN2</td><td>右轮 PWM 2</td></tr>
+                  <tr><td>AO1 / AO2</td><td>左侧 TT 电机</td><td>方向反了就交换两线</td></tr>
+                  <tr><td>BO1 / BO2</td><td>右侧 TT 电机</td><td>方向反了就交换两线</td></tr>
+                  <tr><td><span class="pd-pin">VM</span></td><td>电机电源正极</td><td>建议 5V~6V</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3>传感器、按键与 LED</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr><th>元件</th><th>GPIO</th><th>逻辑</th></tr></thead>
+                <tbody>
+                  <tr><td>左/中/右 红外避障</td><td><span class="pd-pin">36 / 39 / 34</span></td><td>有障碍 = 低</td></tr>
+                  <tr><td>左/中/右 循迹</td><td><span class="pd-pin">35 / 32 / 33</span></td><td>黑线 = 高</td></tr>
+                  <tr><td>避障/循迹/手动 按键</td><td><span class="pd-pin">21 / 22 / 23</span></td><td>按下接 GND</td></tr>
+                  <tr><td>状态 LED</td><td><span class="pd-pin">2</span></td><td>闪烁次数表示模式</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pd-callout pd-callout--safe">
+              <strong>电源分两套：</strong>控制电路（ESP32、传感器、使能脚）用 3.3V/稳定 5V，电机电路用 5V~6V。两套电的<strong>正极可以分开，但 GND 必须连在一起</strong>——否则 DRV8833 不知道控制信号的 0V 参考点在哪里。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">04 · 状态机</p>
+        <h2>三个按键切换三个“大脑模式”</h2>
+        <p class="pd-lead-block">状态机就是：小车当前处于一个状态，收到一个事件（按键）后切换到另一个状态。按某个模式键就切到对应模式，已经在这个模式时再按一次就停车。</p>
+        <div class="pd-states">
+          {states.map((item) => (
+            <div class:list={['pd-state-card', item.cls]}>
+              <div class="name">{item.name}</div>
+              <div class="small">{item.small}</div>
+            </div>
+          ))}
+        </div>
+        <div class="pd-callout pd-callout--warn">
+          每次切换模式时，程序<strong>先停车再进入新模式</strong>。因为上一个模式可能还给电机留着速度，若直接切换，车轮会短时间继承旧速度，容易让人误以为新模式的算法错了。
+        </div>
+        <div class="pd-grid2" style="margin-top:16px">
+          <div class="pd-card">
+            <h3>一次按键如何触发切换</h3>
+            <p>三个模式键都用 <span class="pd-pin">INPUT_PULLUP</span>：平时是高电平，按下被接到 GND 变成低电平。程序每轮都读按键，但不会一看到变化就切换，而是先消抖约 40ms 确认是真实按下，再决定切到新模式还是切回停车。</p>
+          </div>
+          <div class="pd-grid4" style="margin-top:0">
+            {debounce.map((item, i) => (
+              <div class="pd-step" data-n={i + 1} style="grid-column:auto">
+                <b>{item.b}</b><span>{item.s}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">05 · 决策逻辑</p>
+        <h2>避障和循迹各自怎么做决定</h2>
+        <div class="pd-grid2">
+          <div>
+            <h3>避障：看左中右，决定怎么绕</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr>{obstacleRows[0].map((h) => <th>{h}</th>)}</tr></thead>
+                <tbody>
+                  {obstacleRows.slice(1).map((row) => (
+                    <tr>{row.map((cell, i) => <td>{i === 3 ? <strong>{cell}</strong> : cell}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:12px">一句话记忆：<strong>前面没挡就走，左挡往右，右挡往左，三边都挡先后退。</strong></p>
+          </div>
+          <div>
+            <h3>循迹：黑线在哪边，就往哪边修正</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr>{lineRows[0].map((h) => <th>{h}</th>)}</tr></thead>
+                <tbody>
+                  {lineRows.slice(1).map((row) => (
+                    <tr>{row.map((cell, i) => <td>{i === 3 ? <strong>{cell}</strong> : cell}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p style="margin-top:12px">传感器装在车头下方，正常是中间压线。左传感器看到黑线，说明线跑到了车的左边，要向左修正才能让中间重新回到线上——<strong>看到线在哪，就往哪修正</strong>。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">06 · 平滑控制</p>
+        <h2>为什么新版控制更顺、不猛冲</h2>
+        <p class="pd-lead-block">程序分成“决策层”和“电机层”。决策层只说目标速度是多少；电机层每隔 30ms 把当前速度向目标速度靠近一点点，而不是一步跳到位。</p>
+        <div class="pd-steps">
+          {smoothSteps.map((item, i) => (
+            <div class="pd-step" data-n={i + 1}><b>{item.b}</b><span>{item.s}</span></div>
+          ))}
+        </div>
+        <div class="pd-code">
+          <pre>const unsigned long MOTOR_RAMP_INTERVAL_MS = 30;
+const int MOTOR_RAMP_STEP = 8;
+
+<span class="c">// 传感器看到世界 → 状态机判断模式 → 算法给目标速度 → 平滑 PWM 控制电机</span>
+目标速度：160
+当前速度：0 → 8 → 16 → 24 → … → 160</pre>
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">07 · 调试</p>
+        <h2>串口监视器怎么看 · 课堂测试顺序</h2>
+        <p class="pd-lead-block">串口波特率设为 9600，程序每秒输出一行中文状态。按“模式对不对 → 传感器对不对 → 动作对不对 → 速度对不对”的顺序排查最快。</p>
+        <div class="pd-code">
+          <pre>[状态] 模式=循迹模式 LED=2闪
+| 避障 左=无障碍(高) 中=无障碍(高) 右=无障碍(高)
+| 循迹 左=白底(低) 中=黑线(高) 右=白底(低)
+| 动作=循迹/沿线直行
+| 当前速度 L=145 R=145 | 目标速度 L=145 R=145</pre>
+        </div>
+        <div class="pd-steps">
+          {testSteps.map((item, i) => (
+            <div class="pd-step" data-n={i + 1}><b>{item.b}</b><span>{item.s}</span></div>
+          ))}
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">08 · 排查</p>
+        <h2>常见问题速查</h2>
+        <div class="pd-table-wrap">
+          <table class="pd-table">
+            <thead><tr><th>现象</th><th>优先检查</th></tr></thead>
+            <tbody>
+              {faqRows.map((row) => (
+                <tr><td><strong>{row[0]}</strong></td><td>{row[1]}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">09 · 自检</p>
+        <h2>学完后你应该能回答</h2>
+        <div class="pd-qa-list">
+          {questions.map((item, index) => (
+            <details class="pd-qa">
+              <summary>
+                <span class="pd-qa-index">{index + 1}</span>
+                <span>{item.q}</span>
+              </summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+        <div class="pd-callout pd-callout--safe" style="margin-top:18px">
+          <strong>一句话总结：</strong>这台车的核心不是某一行代码，而是一条完整的控制链——<strong>传感器电平 → 程序判断状态 → 状态机选择动作 → 左右轮 PWM → 小车运动</strong>。先把每个传感器电平读对，再把状态机理解清楚，最后再调速度。
+        </div>
+      </section>
+
+      <section class="pd-cta">
+        <h2>想亲手试试？打开教学控制台</h2>
+        <p>教学控制台是网页演示版，可以在浏览器里模拟传感器电平、观察状态机如何切换、看左右轮 PWM 如何变化，把这页讲的原理一步步“跑”出来。</p>
+        <div class="pd-hero-actions">
+          <a class="pd-btn pd-btn--primary" href="/projects/smart-car/">打开智能小车教学控制台 →</a>
+          <a class="pd-btn pd-btn--ghost" href="/maker/#maker-projects">看看其他科创作品</a>
+        </div>
+        <p class="pd-foot-note">育才物理创新实验室 · 智能小车 car01 v3.2 · 本页面向物理实验与学生作品展示，落地上车前仍需完成供电、共地、使能与串口日志检查。</p>
+      </section>
+    </div>
+  </article>
+</BaseLayout>

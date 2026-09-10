@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中数学立体几何 - 交互式3D演示</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel-bg: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent2: #f59e0b;
+            --accent3: #ef4444;
+            --accent4: #10b981;
+            --border: #334155;
+            --radius: 10px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --transition: 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 顶部栏 */
+        .topbar {
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+            flex-shrink: 0;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .topbar .title {
+            font-size: 1.3em;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .topbar .subtitle {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--panel-bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all var(--transition);
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .btn:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent);
+            color: #fff;
+        }
+        .btn.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 0 16px rgba(59, 130, 246, 0.4);
+        }
+        .btn-icon {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1em;
+            min-width: 34px;
+        }
+
+        /* 主体 */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 3D视图 */
+        .viewer {
+            flex: 1;
+            position: relative;
+            cursor: grab;
+            min-width: 0;
+            background: radial-gradient(ellipse at center, #1a2740 0%, #0a0f1a 100%);
+        }
+        .viewer:active {
+            cursor: grabbing;
+        }
+        .viewer canvas {
+            display: block;
+        }
+        .hint-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.78em;
+            color: #64748b;
+            pointer-events: none;
+            text-align: center;
+            letter-spacing: 0.03em;
+            transition: opacity 1s;
+        }
+
+        /* 截面滑块 */
+        .section-slider-container {
+            position: absolute;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--panel-bg);
+            border-radius: 24px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            z-index: 5;
+            transition: all var(--transition);
+        }
+        .section-slider-container.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateX(-50%) translateY(20px);
+        }
+        .section-slider-container label {
+            font-size: 0.8em;
+            white-space: nowrap;
+            font-weight: 500;
+            color: var(--accent2);
+        }
+        .section-slider-container input[type=range] {
+            width: 140px;
+            accent-color: var(--accent2);
+            cursor: pointer;
+        }
+        .section-slider-container .val {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            min-width: 36px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* 知识点面板 */
+        .panel {
+            width: 380px;
+            background: var(--panel-bg);
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
+            padding: 16px 18px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            z-index: 5;
+            transition: all var(--transition);
+        }
+        .panel .section-title {
+            font-size: 1.05em;
+            font-weight: 700;
+            color: #f1f5f9;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 6px;
+            letter-spacing: 0.03em;
+        }
+        .panel .info-card {
+            background: #1a2540;
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+        }
+        .panel .info-card h4 {
+            font-size: 0.9em;
+            color: var(--accent2);
+            margin-bottom: 6px;
+            letter-spacing: 0.02em;
+        }
+        .panel .info-card p,
+        .panel .info-card li {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .panel .info-card ul {
+            list-style: disc;
+            padding-left: 18px;
+        }
+        .panel .info-card .formula {
+            display: inline-block;
+            background: #0f172a;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', 'SF Mono', monospace;
+            color: #fbbf24;
+            font-size: 0.85em;
+            margin: 2px 0;
+            letter-spacing: 0.04em;
+        }
+        .panel .highlight-box {
+            background: #1a2035;
+            border-left: 3px solid var(--accent4);
+            border-radius: 0 8px 8px 0;
+            padding: 10px 14px;
+            font-size: 0.8em;
+            color: #a7f3d0;
+            line-height: 1.5;
+        }
+        .panel .highlight-box strong {
+            color: #34d399;
+        }
+
+        /* 图例 */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.75em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* 响应式 */
+        @media (max-width: 820px) {
+            .main-container {
+                flex-direction: column;
+            }
+            .panel {
+                width: 100%;
+                max-height: 42vh;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                flex-shrink: 1;
+                padding: 10px 14px;
+                gap: 8px;
+                font-size: 0.9em;
+            }
+            .panel .info-card {
+                padding: 8px 10px;
+            }
+            .panel .info-card p,
+            .panel .info-card li {
+                font-size: 0.73em;
+            }
+            .topbar {
+                padding: 8px 10px;
+                gap: 6px;
+            }
+            .topbar .title {
+                font-size: 1.05em;
+            }
+            .btn {
+                padding: 6px 10px;
+                font-size: 0.72em;
+                border-radius: 16px;
+            }
+            .section-slider-container {
+                bottom: 44px;
+                padding: 8px 14px;
+                gap: 6px;
+            }
+            .section-slider-container input[type=range] {
+                width: 90px;
+            }
+            .hint-overlay {
+                bottom: 8px;
+                font-size: 0.68em;
+            }
+            .viewer {
+                min-height: 300px;
+                flex: 1 1 auto;
+            }
+        }
+        @media (max-width: 480px) {
+            .topbar .subtitle {
+                display: none;
+            }
+            .panel {
+                max-height: 38vh;
+                padding: 8px 10px;
+                gap: 5px;
+            }
+            .btn {
+                padding: 5px 8px;
+                font-size: 0.68em;
+                border-radius: 14px;
+            }
+            .section-slider-container input[type=range] {
+                width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部导航 -->
+    <div class="topbar">
+        <span class="title">📐 立体几何 · 3D交互演示</span>
+        <span class="subtitle">旋转/缩放/探索</span>
+        <button class="btn btn-icon" id="btnReset" title="重置视角">🔄</button>
+        <button class="btn" id="btnWireframe" title="切换线框模式">🔍 线框</button>
+        <button class="btn" id="btnAutoRotate" title="自动旋转">🎠 自动旋转</button>
+    </div>
+
+    <!-- 主体 -->
+    <div class="main-container">
+        <!-- 3D视图 -->
+        <div class="viewer" id="viewer">
+            <div class="section-slider-container hidden" id="sectionSliderContainer">
+                <label>🔪 截面位置</label>
+                <input type="range" id="sectionSlider" min="-2.8" max="2.8" step="0.02" value="0">
+                <span class="val" id="sectionVal">d=0.00</span>
+            </div>
+            <div class="hint-overlay" id="hintOverlay">🖱 拖拽旋转 &nbsp;|&nbsp; 滚轮缩放 &nbsp;|&nbsp; 右键平移</div>
+        </div>
+
+        <!-- 知识面板 -->
+        <div class="panel" id="panel">
+            <div class="section-title" id="panelTitle">📦 正方体</div>
+            <div id="panelContent"></div>
+            <div class="legend" id="legend"></div>
+        </div>
+    </div>
+
+    <!-- 底部图形选择 -->
+    <div class="topbar" style="border-top:1px solid var(--border);border-bottom:none;justify-content:center;gap:8px;flex-wrap:wrap;padding:8px 12px;" id="shapeBar">
+        <button class="btn active" data-shape="cube">正方体</button>
+        <button class="btn" data-shape="cuboid">长方体</button>
+        <button class="btn" data-shape="tetrahedron">正四面体</button>
+        <button class="btn" data-shape="corner">墙角三棱锥</button>
+        <button class="btn" data-shape="triPrism">正三棱柱</button>
+        <button class="btn" data-shape="cylinder">圆柱</button>
+        <button class="btn" data-shape="cone">圆锥</button>
+        <button class="btn" data-shape="sphere">球体</button>
+        <button class="btn" data-shape="pyramid">正四棱锥</button>
+    </div>
+
+    <!-- Three.js Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // ============ DOM元素 ============
+        const viewerEl = document.getElementById('viewer');
+        const panelTitle = document.getElementById('panelTitle');
+        const panelContent = document.getElementById('panelContent');
+        const legendEl = document.getElementById('legend');
+        const sectionSliderContainer = document.getElementById('sectionSliderContainer');
+        const sectionSlider = document.getElementById('sectionSlider');
+        const sectionVal = document.getElementById('sectionVal');
+        const hintOverlay = document.getElementById('hintOverlay');
+        const btnReset = document.getElementById('btnReset');
+        const btnWireframe = document.getElementById('btnWireframe');
+        const btnAutoRotate = document.getElementById('btnAutoRotate');
+        const shapeButtons = document.querySelectorAll('#shapeBar .btn');
+
+        let currentShape = 'cube';
+        let isWireframe = false;
+        let isAutoRotate = false;
+
+        // ============ Three.js初始化 ============
+        const scene = new THREE.Scene();
+
+        // 渲染器
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        viewerEl.appendChild(renderer.domElement);
+
+        // 相机
+        const camera = new THREE.PerspectiveCamera(48, 2, 0.5, 50);
+        camera.position.set(5.5, 3.8, 7.5);
+        camera.lookAt(0, 0, 0);
+
+        // OrbitControls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.08;
+        controls.minDistance = 2.5;
+        controls.maxDistance = 18;
+        controls.maxPolarAngle = Math.PI * 0.85;
+        controls.target.set(0, 0, 0);
+        controls.autoRotate = false;
+        controls.autoRotateSpeed = 1.5;
+        controls.update();
+
+        // 光照
+        const ambientLight = new THREE.AmbientLight('#bcd4f5', 2.5);
+        scene.add(ambientLight);
+        const keyLight = new THREE.DirectionalLight('#ffffff', 6);
+        keyLight.position.set(8, 14, 10);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        keyLight.shadow.camera.near = 0.5;
+        keyLight.shadow.camera.far = 50;
+        keyLight.shadow.camera.left = -12;
+        keyLight.shadow.camera.right = 12;
+        keyLight.shadow.camera.top = 12;
+        keyLight.shadow.camera.bottom = -12;
+        keyLight.shadow.bias = -0.0003;
+        keyLight.shadow.normalBias = 0.02;
+        scene.add(keyLight);
+        const fillLight = new THREE.DirectionalLight('#8ec5fc', 2.5);
+        fillLight.position.set(-3, 2, -3);
+        scene.add(fillLight);
+        const rimLight = new THREE.DirectionalLight('#ffffff', 1.8);
+        rimLight.position.set(0, -1, 4);
+        scene.add(rimLight);
+
+        // 地面网格
+        const gridHelper = new THREE.PolarGridHelper(8, 40, 28, 128, '#2a3a55', '#1e2d44');
+        scene.add(gridHelper);
+        const floorGeo = new THREE.PlaneGeometry(20, 20);
+        const floorMat = new THREE.MeshStandardMaterial({ color: '#141e2e', roughness: 0.9, metalness: 0.05 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -5;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // ============ 场景对象组 ============
+        const mainGroup = new THREE.Group();
+        const wireGroup = new THREE.Group();
+        const auxGroup = new THREE.Group();
+        const sectionGroup = new THREE.Group();
+        scene.add(mainGroup);
+        scene.add(wireGroup);
+        scene.add(auxGroup);
+        scene.add(sectionGroup);
+
+        // 存储当前图形的引用
+        let currentMeshes = { solids: [], wires: [], aux: [], sectionParts: [] };
+
+        function clearGroup(group) {
+            while (group.children.length > 0) {
+                const child = group.children[0];
+                disposeRecursive(child);
+                group.remove(child);
+            }
+        }
+        function disposeRecursive(obj) {
+            if (obj.geometry) obj.geometry.dispose();
+            if (obj.material) {
+                if (Array.isArray(obj.material)) {
+                    obj.material.forEach(m => m.dispose());
+                } else {
+                    obj.material.dispose();
+                }
+            }
+            if (obj.children) {
+                for (let i = obj.children.length - 1; i >= 0; i--) {
+                    disposeRecursive(obj.children[i]);
+                }
+            }
+        }
+        function clearAll() {
+            clearGroup(mainGroup);
+            clearGroup(wireGroup);
+            clearGroup(auxGroup);
+            clearGroup(sectionGroup);
+            currentMeshes = { solids: [], wires: [], aux: [], sectionParts: [] };
+        }
+
+        // ============ 辅助函数 ============
+        function createGlowMaterial(color, opacity = 0.55, emissiveIntensity = 0.35) {
+            return new THREE.MeshPhysicalMaterial({
+                color: color,
+                metalness: 0.05,
+                roughness: 0.35,
+                opacity: opacity,
+                transparent: true,
+                depthWrite: true,
+                emissive: color,
+                emissiveIntensity: emissiveIntensity,
+                clearcoat: 0.1,
+                clearcoatRoughness: 0.4,
+            });
+        }
+        function createWireMaterial(color = '#ffffff', opacity = 0.55) {
+            return new THREE.MeshBasicMaterial({
+                color: color,
+                wireframe: true,
+                transparent: true,
+                opacity: opacity,
+                depthTest: true,
+            });
+        }
+        function createLineMaterial(color = '#ffffff', linewidth = 1) {
+            return new THREE.LineBasicMaterial({ color: color, linewidth: linewidth, transparent: true, opacity: 0.9,
+                depthTest: true });
+        }
+        function createSphereDot(pos, color = '#ff4444', radius = 0.08) {
+            const geo = new THREE.SphereGeometry(radius, 16, 16);
+            const mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.7,
+                roughness: 0.3 });
+            const dot = new THREE.Mesh(geo, mat);
+            dot.position.copy(pos);
+            dot.castShadow = true;
+            return dot;
+        }
+        function createThickLine(points, color = '#ff3333', radius = 0.04) {
+            const curve = new THREE.CatmullRomCurve3(points, false);
+            const geo = new THREE.TubeGeometry(curve, 64, radius, 8, false);
+            const mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.5,
+                roughness: 0.3, metalness: 0.1 });
+            const tube = new THREE.Mesh(geo, mat);
+            tube.castShadow = true;
+            return tube;
+        }
+        function createDashedLine(p1, p2, color = '#ffffff', dashSize = 0.15, gapSize = 0.1) {
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length();
+            dir.normalize();
+            const points = [];
+            let pos = 0;
+            let isDash = true;
+            while (pos < len) {
+                if (isDash) {
+                    const end = Math.min(pos + dashSize, len);
+                    points.push(new THREE.Vector3().copy(p1).addScaledVector(dir, pos));
+                    points.push(new THREE.Vector3().copy(p1).addScaledVector(dir, end));
+                    pos = end;
+                } else {
+                    pos += gapSize;
+                }
+                isDash = !isDash;
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const mat = new THREE.LineDashedMaterial({ color: color, dashSize: dashSize, gapSize: gapSize, transparent: true,
+                opacity: 0.7 });
+            const line = new THREE.LineSegments(geo, mat);
+            line.computeLineDistances();
+            return line;
+        }
+
+        // ============ 图形构建函数 ============
+        function buildCube() {
+            clearAll();
+            const size = 2;
+            const geo = new THREE.BoxGeometry(size, size, size);
+            const solidMat = createGlowMaterial('#4da6ff', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            solid.name = 'cube-solid';
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo);
+            const wireMat = new THREE.LineBasicMaterial({ color: '#b0d4ff', transparent: true, opacity: 0.7,
+            depthTest: true });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            wire.name = 'cube-wire';
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 8个顶点标记
+            const corners = [
+                [-1, -1, -1],
+                [1, -1, -1],
+                [-1, 1, -1],
+                [1, 1, -1],
+                [-1, -1, 1],
+                [1, -1, 1],
+                [-1, 1, 1],
+                [1, 1, 1]
+            ];
+            corners.forEach(c => {
+                const dot = createSphereDot(new THREE.Vector3(...c), '#ffcc66', 0.07);
+                auxGroup.add(dot);
+                currentMeshes.aux.push(dot);
+            });
+
+            // 体对角线
+            const diagPoints = [new THREE.Vector3(-1, -1, -1), new THREE.Vector3(1, 1, 1)];
+            const diag = createThickLine(diagPoints, '#ff5555', 0.05);
+            auxGroup.add(diag);
+            currentMeshes.aux.push(diag);
+            const d1 = createSphereDot(new THREE.Vector3(-1, -1, -1), '#ff5555', 0.1);
+            const d2 = createSphereDot(new THREE.Vector3(1, 1, 1), '#ff5555', 0.1);
+            auxGroup.add(d1);
+            auxGroup.add(d2);
+            currentMeshes.aux.push(d1, d2);
+
+            // 存储正方体引用用于截面计算
+            currentMeshes._cubeData = { size, corners };
+            buildCubeSection(0);
+        }
+
+        function buildCubeSection(d) {
+            // 清除旧截面
+            clearGroup(sectionGroup);
+            currentMeshes.sectionParts = [];
+            if (!currentMeshes._cubeData) return;
+            const { size, corners } = currentMeshes._cubeData;
+            const hs = size / 2; // =1
+
+            // 12条棱
+            const edges = [];
+            const v = corners.map(c => new THREE.Vector3(...c));
+            for (let i = 0; i < 8; i++) {
+                for (let j = i + 1; j < 8; j++) {
+                    const diff = Math.abs(v[i].x - v[j].x) + Math.abs(v[i].y - v[j].y) + Math.abs(v[i].z - v[j].z);
+                    if (Math.abs(diff - 2) < 0.01) {
+                        edges.push([v[i].clone(), v[j].clone()]);
+                    }
+                }
+            }
+
+            // 平面 x+y+z = d 与各棱的交点
+            const intersections = [];
+            for (const [a, b] of edges) {
+                const sa = a.x + a.y + a.z - d;
+                const sb = b.x + b.y + b.z - d;
+                if (Math.abs(sa - sb) < 0.0001) continue;
+                if (sa * sb <= 0) {
+                    const t = Math.abs(sa) / (Math.abs(sa) + Math.abs(sb));
+                    const pt = new THREE.Vector3().lerpVectors(a, b, t);
+                    // 去重
+                    let dup = false;
+                    for (const ex of intersections) {
+                        if (ex.distanceToSquared(pt) < 0.0001) { dup = true; break; }
+                    }
+                    if (!dup) intersections.push(pt);
+                }
+            }
+
+            if (intersections.length < 3) return;
+
+            // 投影到截面平面，按角度排序
+            const n = new THREE.Vector3(1, 1, 1).normalize();
+            const u = new THREE.Vector3(1, -1, 0).normalize();
+            const v2 = new THREE.Vector3().crossVectors(n, u).normalize();
+            const center = new THREE.Vector3();
+            intersections.forEach(p => center.add(p));
+            center.divideScalar(intersections.length);
+
+            const projected = intersections.map(p => {
+                const rel = new THREE.Vector3().subVectors(p, center);
+                const px = rel.dot(u);
+                const py = rel.dot(v2);
+                return { pt: p, angle: Math.atan2(py, px), px, py };
+            });
+            projected.sort((a, b) => a.angle - b.angle);
+
+            const sortedPts = projected.map(p => p.pt);
+            if (sortedPts.length < 3) return;
+
+            // 创建截面形状（在局部坐标中）
+            const shape = new THREE.Shape();
+            const localPts = projected.map(p => new THREE.Vector2(p.px, p.py));
+            shape.moveTo(localPts[0].x, localPts[0].y);
+            for (let i = 1; i < localPts.length; i++) {
+                shape.lineTo(localPts[i].x, localPts[i].y);
+            }
+            shape.closePath();
+            const shapeGeo = new THREE.ShapeGeometry(shape);
+            const shapeMat = new THREE.MeshBasicMaterial({ color: '#ffbb33', side: THREE.DoubleSide, transparent: true,
+                opacity: 0.65, depthTest: true, depthWrite: false });
+            const shapeMesh = new THREE.Mesh(shapeGeo, shapeMat);
+            shapeMesh.position.copy(center);
+            const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
+            shapeMesh.setRotationFromQuaternion(quat);
+            sectionGroup.add(shapeMesh);
+            currentMeshes.sectionParts.push(shapeMesh);
+
+            // 截面边框
+            const borderPts3D = [...sortedPts, sortedPts[0]];
+            const borderGeo = new THREE.BufferGeometry().setFromPoints(borderPts3D);
+            const borderMat = new THREE.LineBasicMaterial({ color: '#ff8800', linewidth: 1, transparent: true, opacity: 0.9,
+                depthTest: true });
+            const borderLine = new THREE.Line(borderGeo, borderMat);
+            sectionGroup.add(borderLine);
+            currentMeshes.sectionParts.push(borderLine);
+
+            // 截面类型标签
+            const nPts = sortedPts.length;
+            let sectionType = '';
+            if (nPts === 3) sectionType = '三角形截面';
+            else if (nPts === 4) sectionType = '四边形截面';
+            else if (nPts === 5) sectionType = '五边形截面';
+            else if (nPts === 6) sectionType = '六边形截面 (正六边形!)';
+            else sectionType = `${nPts}边形截面`;
+            sectionVal.textContent = `d=${d.toFixed(2)} [${sectionType}]`;
+        }
+
+        function buildCuboid() {
+            clearAll();
+            const geo = new THREE.BoxGeometry(2.4, 1.6, 3.0);
+            const solidMat = createGlowMaterial('#5cb8ff', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo);
+            const wireMat = new THREE.LineBasicMaterial({ color: '#b0d4ff', transparent: true, opacity: 0.7,
+            depthTest: true });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 体对角线
+            const hw = 1.2,
+                hh = 0.8,
+                hd = 1.5;
+            const diag = createThickLine([new THREE.Vector3(-hw, -hh, -hd), new THREE.Vector3(hw, hh, hd)], '#ff6666',
+            0.05);
+            auxGroup.add(diag);
+            currentMeshes.aux.push(diag);
+            const d1 = createSphereDot(new THREE.Vector3(-hw, -hh, -hd), '#ff6666', 0.1);
+            const d2 = createSphereDot(new THREE.Vector3(hw, hh, hd), '#ff6666', 0.1);
+            auxGroup.add(d1, d2);
+            currentMeshes.aux.push(d1, d2);
+
+            // 顶点
+            [
+                [-hw, -hh, -hd],
+                [hw, -hh, -hd],
+                [-hw, hh, -hd],
+                [hw, hh, -hd],
+                [-hw, -hh, hd],
+                [hw, -hh, hd],
+                [-hw, hh, hd],
+                [hw, hh, hd]
+            ].forEach(c => {
+                const dot = createSphereDot(new THREE.Vector3(...c), '#ffcc66', 0.06);
+                auxGroup.add(dot);
+                currentMeshes.aux.push(dot);
+            });
+            currentMeshes._cubeData = null;
+        }
+
+        function buildTetrahedron() {
+            clearAll();
+            const R = 1.5; // 外接球半径
+            const rawVerts = [
+                new THREE.Vector3(1, 1, 1),
+                new THREE.Vector3(1, -1, -1),
+                new THREE.Vector3(-1, 1, -1),
+                new THREE.Vector3(-1, -1, 1)
+            ].map(v => v.normalize().multiplyScalar(R));
+            const indices = [0, 1, 2, 0, 2, 3, 0, 3, 1, 1, 3, 2];
+            const geo = new THREE.PolyhedronGeometry(rawVerts.map(v => v.toArray()).flat(), indices, R, 0);
+            const solidMat = createGlowMaterial('#4de8a0', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo);
+            const wireMat = new THREE.LineBasicMaterial({ color: '#a0f0c8', transparent: true, opacity: 0.7,
+            depthTest: true });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 顶点
+            rawVerts.forEach(v => {
+                const dot = createSphereDot(v, '#ffcc66', 0.07);
+                auxGroup.add(dot);
+                currentMeshes.aux.push(dot);
+            });
+
+            // 外接球（线框）
+            const outerSphereGeo = new THREE.SphereGeometry(R, 48, 36);
+            const outerSphereWire = new THREE.LineBasicMaterial({ color: '#ff6666', transparent: true, opacity: 0.45,
+                depthTest: true });
+            const outerSphere = new THREE.LineSegments(new THREE.EdgesGeometry(outerSphereGeo), outerSphereWire);
+            auxGroup.add(outerSphere);
+            currentMeshes.aux.push(outerSphere);
+
+            // 内切球（半透明）
+            const r = R / 3;
+            const innerSphereGeo = new THREE.SphereGeometry(r, 40, 30);
+            const innerSphereMat = new THREE.MeshPhysicalMaterial({ color: '#ffd700', metalness: 0.1, roughness: 0.25,
+                opacity: 0.5, transparent: true, depthWrite: true, emissive: '#ffd700', emissiveIntensity: 0.4,
+                clearcoat: 0.3 });
+            const innerSphere = new THREE.Mesh(innerSphereGeo, innerSphereMat);
+            auxGroup.add(innerSphere);
+            currentMeshes.aux.push(innerSphere);
+
+            // 高线（从顶点到对面重心）
+            const centroid012 = new THREE.Vector3().addVectors(rawVerts[0], rawVerts[1]).add(rawVerts[2]).divideScalar(
+            3);
+            const heightLine = createDashedLine(rawVerts[3], centroid012, '#ffdd57', 0.2, 0.12);
+            auxGroup.add(heightLine);
+            currentMeshes.aux.push(heightLine);
+            currentMeshes._cubeData = null;
+        }
+
+        function buildCornerTriPyramid() {
+            clearAll();
+            const a = 2.2,
+                b = 2.2,
+                c = 2.2;
+            const O = new THREE.Vector3(0, 0, 0);
+            const A = new THREE.Vector3(a, 0, 0);
+            const B = new THREE.Vector3(0, b, 0);
+            const C = new THREE.Vector3(0, 0, c);
+
+            const verts = new Float32Array([
+                O.x, O.y, O.z, A.x, A.y, A.z, B.x, B.y, B.z,
+                O.x, O.y, O.z, B.x, B.y, B.z, C.x, C.y, C.z,
+                O.x, O.y, O.z, C.x, C.y, C.z, A.x, A.y, A.z,
+                A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z,
+            ]);
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+            geo.computeVertexNormals();
+            const solidMat = createGlowMaterial('#c084fc', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            // 线框
+            const wireVerts = [O, A, O, B, O, C, A, B, B, C, C, A];
+            const wireGeo = new THREE.BufferGeometry().setFromPoints(wireVerts);
+            const wireLine = new THREE.LineSegments(wireGeo, new THREE.LineBasicMaterial({ color: '#d8b4fe',
+                transparent: true, opacity: 0.7, depthTest: true }));
+            wireGroup.add(wireLine);
+            currentMeshes.wires.push(wireLine);
+
+            // 直角棱彩色标记
+            const colors = ['#ff5555', '#55ff55', '#5555ff'];
+            const axes = [A, B, C];
+            axes.forEach((pt, i) => {
+                const tube = createThickLine([O, pt], colors[i], 0.06);
+                auxGroup.add(tube);
+                currentMeshes.aux.push(tube);
+                const dot = createSphereDot(pt, colors[i], 0.1);
+                auxGroup.add(dot);
+                currentMeshes.aux.push(dot);
+            });
+            const dotO = createSphereDot(O, '#ffffff', 0.1);
+            auxGroup.add(dotO);
+            currentMeshes.aux.push(dotO);
+
+            // 直角标记小弧线
+            const arcRadius = 0.3;
+            const arcPts = [];
+            const nSeg = 20;
+            for (let i = 0; i <= nSeg; i++) {
+                const t = i / nSeg;
+                const angle = t * Math.PI / 2;
+                const pt = new THREE.Vector3(arcRadius * Math.cos(angle), arcRadius * Math.sin(angle), 0);
+                arcPts.push(pt);
+            }
+            const arcGeo = new THREE.BufferGeometry().setFromPoints(arcPts);
+            const arcLine = new THREE.Line(arcGeo, new THREE.LineBasicMaterial({ color: '#ffffff', transparent: true,
+                opacity: 0.6, depthTest: true }));
+            auxGroup.add(arcLine);
+            currentMeshes.aux.push(arcLine);
+            currentMeshes._cubeData = null;
+        }
+
+        function buildTriPrism() {
+            clearAll();
+            const r = 1.3;
+            const h = 3.5;
+            const sides = 3;
+            const geo = new THREE.CylinderGeometry(r, r, h, sides);
+            const solidMat = createGlowMaterial('#f472b6', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo);
+            const wireMat = new THREE.LineBasicMaterial({ color: '#f9a8d4', transparent: true, opacity: 0.7,
+            depthTest: true });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 顶点
+            const hh = h / 2;
+            for (let i = 0; i < 3; i++) {
+                const angle = (i / 3) * Math.PI * 2 + Math.PI / 6;
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                [hh, -hh].forEach(y => {
+                    const dot = createSphereDot(new THREE.Vector3(x, y, z), '#ffcc66', 0.06);
+                    auxGroup.add(dot);
+                    currentMeshes.aux.push(dot);
+                });
+            }
+            currentMeshes._cubeData = null;
+        }
+
+        function buildCylinder() {
+            clearAll();
+            const r = 1.5;
+            const h = 3.5;
+            const geo = new THREE.CylinderGeometry(r, r, h, 64);
+            const solidMat = createGlowMaterial('#60a5fa', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo, 15);
+            const wireMat = new THREE.LineBasicMaterial({ color: '#93c5fd', transparent: true, opacity: 0.5,
+            depthTest: true });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 轴截面示意线
+            const hh = h / 2;
+            const axisRect = [
+                new THREE.Vector3(-r, hh, 0),
+                new THREE.Vector3(r, hh, 0),
+                new THREE.Vector3(r, -hh, 0),
+                new THREE.Vector3(-r, -hh, 0),
+                new THREE.Vector3(-r, hh, 0),
+            ];
+            const axisGeo = new THREE.BufferGeometry().setFromPoints(axisRect);
+            const axisLine = new THREE.Line(axisGeo, new THREE.LineDashedMaterial({ color: '#ffdd57', dashSize: 0.3,
+                gapSize: 0.2, transparent: true, opacity: 0.7, depthTest: true }));
+            axisLine.computeLineDistances();
+            auxGroup.add(axisLine);
+            currentMeshes.aux.push(axisLine);
+            currentMeshes._cubeData = null;
+        }
+
+        function buildCone() {
+            clearAll();
+            const r = 1.6;
+            const h = 3.8;
+            const geo = new THREE.ConeGeometry(r, h, 64, 1);
+            const solidMat = createGlowMaterial('#fb923c', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo, 20);
+            const wireMat = new THREE.LineBasicMaterial({ color: '#fdba74', transparent: true, opacity: 0.55,
+            depthTest: true });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 轴截面三角形
+            const hh = h / 2;
+            const apex = new THREE.Vector3(0, hh, 0);
+            const baseL = new THREE.Vector3(-r, -hh, 0);
+            const baseR = new THREE.Vector3(r, -hh, 0);
+            const triPts = [apex, baseL, baseR, apex];
+            const triGeo = new THREE.BufferGeometry().setFromPoints(triPts);
+            const triLine = new THREE.Line(triGeo, new THREE.LineDashedMaterial({ color: '#ffdd57', dashSize: 0.3,
+                gapSize: 0.2, transparent: true, opacity: 0.7, depthTest: true }));
+            triLine.computeLineDistances();
+            auxGroup.add(triLine);
+            currentMeshes.aux.push(triLine);
+            currentMeshes._cubeData = null;
+        }
+
+        function buildSphere() {
+            clearAll();
+            const R = 1.8;
+            const geo = new THREE.SphereGeometry(R, 64, 48);
+            const solidMat = createGlowMaterial('#38bdf8', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo, 20);
+            const wireMat = new THREE.LineBasicMaterial({ color: '#7dd3fc', transparent: true, opacity: 0.4,
+            depthTest: true });
+            const wire = new THREE.LineSegments(wireGeo, wireMat);
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 大圆（三个坐标平面上的）
+            const circleGeo = new THREE.TorusGeometry(R, 0.025, 16, 128);
+            const circleMat = new THREE.MeshStandardMaterial({ color: '#ffdd57', emissive: '#ffdd57', emissiveIntensity: 0.6,
+                roughness: 0.3 });
+            [
+                [0, 0, 0],
+                [Math.PI / 2, 0, 0],
+                [0, 0, Math.PI / 2]
+            ].forEach(rot => {
+                const circle = new THREE.Mesh(circleGeo, circleMat);
+                circle.rotation.set(...rot);
+                auxGroup.add(circle);
+                currentMeshes.aux.push(circle);
+            });
+            currentMeshes._cubeData = null;
+        }
+
+        function buildPyramid() {
+            clearAll();
+            const r = 1.5;
+            const h = 3.5;
+            const sides = 4;
+            const geo = new THREE.ConeGeometry(r, h, sides, 1);
+            const solidMat = createGlowMaterial('#a78bfa', 0.5, 0.3);
+            const solid = new THREE.Mesh(geo, solidMat);
+            solid.castShadow = true;
+            solid.receiveShadow = true;
+            solid.rotation.y = Math.PI / 4;
+            mainGroup.add(solid);
+            currentMeshes.solids.push(solid);
+
+            const wireGeo = new THREE.EdgesGeometry(geo);
+            const wire = new THREE.LineSegments(wireGeo, new THREE.LineBasicMaterial({ color: '#c4b5fd', transparent: true,
+                opacity: 0.7, depthTest: true }));
+            wire.rotation.y = Math.PI / 4;
+            wireGroup.add(wire);
+            currentMeshes.wires.push(wire);
+
+            // 顶点
+            const hh = h / 2;
+            const apex = new THREE.Vector3(0, hh, 0);
+            const dotApex = createSphereDot(apex, '#ffcc66', 0.09);
+            auxGroup.add(dotApex);
+            currentMeshes.aux.push(dotApex);
+            for (let i = 0; i < 4; i++) {
+                const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+                const x = r * Math.cos(angle);
+                const z = r * Math.sin(angle);
+                const dot = createSphereDot(new THREE.Vector3(x, -hh, z), '#ffcc66', 0.06);
+                auxGroup.add(dot);
+                currentMeshes.aux.push(dot);
+            }
+            // 高线
+            const baseCenter = new THREE.Vector3(0, -hh, 0);
+            const hLine = createDashedLine(apex, baseCenter, '#ffdd57', 0.2, 0.12);
+            auxGroup.add(hLine);
+            currentMeshes.aux.push(hLine);
+            currentMeshes._cubeData = null;
+        }
+
+        // ============ 图形切换 ============
+        const shapeBuilders = {
+            cube: buildCube,
+            cuboid: buildCuboid,
+            tetrahedron: buildTetrahedron,
+            corner: buildCornerTriPyramid,
+            triPrism: buildTriPrism,
+            cylinder: buildCylinder,
+            cone: buildCone,
+            sphere: buildSphere,
+            pyramid: buildPyramid,
+        };
+
+        const shapeNames = {
+            cube: '正方体',
+            cuboid: '长方体',
+            tetrahedron: '正四面体',
+            corner: '墙角三棱锥',
+            triPrism: '正三棱柱',
+            cylinder: '圆柱',
+            cone: '圆锥',
+            sphere: '球体',
+            pyramid: '正四棱锥',
+        };
+
+        const shapeIcons = {
+            cube: '📦',
+            cuboid: '📋',
+            tetrahedron: '🔺',
+            corner: '📐',
+            triPrism: '🔷',
+            cylinder: '🥫',
+            cone: '🔻',
+            sphere: '⚽',
+            pyramid: '🔶',
+        };
+
+        function switchShape(shape) {
+            currentShape = shape;
+            shapeButtons.forEach(b => b.classList.remove('active'));
+            const targetBtn = document.querySelector(`[data-shape="${shape}"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+
+            if (shapeBuilders[shape]) {
+                shapeBuilders[shape]();
+            }
+            updatePanel(shape);
+            applyWireframeMode();
+
+            // 截面滑块仅正方体显示
+            if (shape === 'cube') {
+                sectionSliderContainer.classList.remove('hidden');
+                sectionSlider.value = 0;
+                sectionVal.textContent = 'd=0.00';
+                buildCubeSection(0);
+            } else {
+                sectionSliderContainer.classList.add('hidden');
+            }
+
+            // 重置视角
+            controls.target.set(0, 0, 0);
+            camera.position.set(5.5, 3.8, 7.5);
+            camera.lookAt(0, 0, 0);
+            controls.update();
+        }
+
+        function applyWireframeMode() {
+            mainGroup.children.forEach(child => {
+                if (child.material && child.material.isMeshPhysicalMaterial) {
+                    child.material.wireframe = isWireframe;
+                    child.material.opacity = isWireframe ? 0.9 : 0.5;
+                    child.material.transparent = true;
+                }
+            });
+        }
+
+        // ============ 知识点面板 ============
+        const panelData = {
+            cube: {
+                title: '📦 正方体（立方体）',
+                cards: [
+                    { title: '📏 基本性质', content: '6个全等的正方形面，12条等长的棱，8个顶点。<br>棱长记为 <span class="formula">a</span>。' },
+                    { title: '📐 体对角线', content: '体对角线长度：<span class="formula">d = a√3</span><br>体对角线与各面夹角相等。<br>体对角线垂直于对面三角形的截面（过体对角线中点的正六边形截面）。' },
+                    { title: '🔪 截面（重点！）', content: '平面截正方体可得：三角形、四边形、五边形、<strong>六边形</strong>。<br>过各棱中点的截面是<strong>正六边形</strong>（面积最大截面之一）。<br>拖动下方滑块观察截面变化！' },
+                    { title: '📊 公式', content: '表面积：<span class="formula">S = 6a²</span><br>体积：<span class="formula">V = a³</span><br>外接球半径：<span class="formula">R = a√3/2</span><br>内切球半径：<span class="formula">r = a/2</span>' },
+                ],
+                legend: [
+                    { color: '#4da6ff', label: '正方体面' }, { color: '#ff5555', label: '体对角线' }, { color: '#ffbb33',
+                    label: '截面' }, { color: '#ffcc66', label: '顶点' }
+                ],
+                highlight: '💡 <strong>课后拓展：</strong>正方体的体对角线恰好穿过其内切球的球心，且体对角线的中点是正方体的对称中心。截面垂直于体对角线时，在中心位置得到正六边形。',
+            },
+            cuboid: {
+                title: '📋 长方体',
+                cards: [
+                    { title: '📏 基本性质', content: '6个矩形面（对面全等），12条棱（分3组，每组4条等长）。<br>三组棱长记为 <span class="formula">a, b, c</span>。' },
+                    { title: '📐 体对角线', content: '体对角线长度：<span class="formula">d = √(a²+b²+c²)</span><br>（勾股定理在三维的推广）' },
+                    { title: '📊 公式', content: '表面积：<span class="formula">S = 2(ab+bc+ca)</span><br>体积：<span class="formula">V = abc</span><br>外接球直径 = 体对角线长。' },
+                ],
+                legend: [{ color: '#5cb8ff', label: '长方体面' }, { color: '#ff6666', label: '体对角线' }, { color: '#ffcc66',
+                    label: '顶点' }],
+                highlight: '💡 <strong>注意：</strong>长方体体对角线长度公式是空间两点距离公式的直接应用。外接球球心在体对角线中点。',
+            },
+            tetrahedron: {
+                title: '🔺 正四面体',
+                cards: [
+                    { title: '📏 基本性质', content: '4个全等的等边三角形面，6条等长的棱，4个顶点。<br>棱长记为 <span class="formula">a</span>。是最简单的柏拉图立体。' },
+                    { title: '📐 高与重心', content: '高：<span class="formula">h = a√6/3</span><br>重心（也是内切球和外接球的球心）将高分为3:1（从顶点到底面）。' },
+                    { title: '⚽ 内切球与外接球', content: '外接球半径：<span class="formula">R = a√6/4</span><br>内切球半径：<span class="formula">r = a√6/12</span><br>关系：<span class="formula">R = 3r</span>，<span class="formula">h = 4r</span>' },
+                    { title: '📊 公式', content: '表面积：<span class="formula">S = √3·a²</span><br>体积：<span class="formula">V = a³√2/12</span>' },
+                ],
+                legend: [{ color: '#4de8a0', label: '正四面体面' }, { color: '#ff6666', label: '外接球（线框）' }, { color: '#ffd700',
+                    label: '内切球（金色）' }, { color: '#ffdd57', label: '高线（虚线）' }],
+                highlight: '💡 <strong>拓展：</strong>正四面体的内切球球心与外接球球心重合（均在重心），这是正四面体高度对称性的体现。R=3r 是一个优美的关系。',
+            },
+            corner: {
+                title: '📐 墙角三棱锥（直角三棱锥）',
+                cards: [
+                    { title: '📏 基本性质', content: '三条棱 <strong>两两垂直</strong>，交于一点O。<br>设OA=<span class="formula">a</span>, OB=<span class="formula">b</span>, OC=<span class="formula">c</span>。<br>底面△ABC是斜面（一般不是直角三角形）。' },
+                    { title: '📊 体积公式', content: '体积：<span class="formula">V = abc/6</span><br>（三条互相垂直的棱长乘积的1/6）<br>这是三棱锥体积公式的特例。' },
+                    { title: '🔍 高考常考', content: '底面ABC的面积可用海伦公式计算。<br>O到平面ABC的距离（高）：<span class="formula">h = abc/√(a²b²+b²c²+c²a²)</span>' },
+                ],
+                legend: [{ color: '#ff5555', label: '棱OA' }, { color: '#55ff55', label: '棱OB' }, { color: '#5555ff',
+                    label: '棱OC' }, { color: '#c084fc', label: '三棱锥面' }],
+                highlight: '💡 <strong>课本习题拓展：</strong>墙角模型是"补形法"的典型应用——可将此三棱锥补成一个长方体，O为长方体的一个顶点，A、B、C分别在三条棱上。',
+            },
+            triPrism: {
+                title: '🔷 正三棱柱',
+                cards: [
+                    { title: '📏 基本性质', content: '两个底面是全等的等边三角形，3个侧面是全等的矩形。<br>底面边长 <span class="formula">a</span>，高 <span class="formula">h</span>。' },
+                    { title: '📊 公式', content: '底面积：<span class="formula">S底 = a²√3/4</span><br>侧面积：<span class="formula">S侧 = 3ah</span><br>体积：<span class="formula">V = S底·h</span>' },
+                    { title: '📐 外接球', content: '外接球半径：<span class="formula">R = √(a²/3 + h²/4)</span><br>球心在上底面和下底面中心连线的中点。' },
+                ],
+                legend: [{ color: '#f472b6', label: '正三棱柱面' }, { color: '#ffcc66', label: '顶点' }],
+                highlight: '💡 <strong>祖暅原理应用：</strong>等底面积等高的柱体体积相等。正三棱柱与同底等高的圆柱体积之比取决于底面积之比。',
+            },
+            cylinder: {
+                title: '🥫 圆柱',
+                cards: [
+                    { title: '📏 基本性质', content: '两个底面是全等的圆，侧面展开是矩形。<br>底面半径 <span class="formula">r</span>，高 <span class="formula">h</span>。' },
+                    { title: '📊 公式', content: '侧面积：<span class="formula">S侧 = 2πrh</span><br>表面积：<span class="formula">S = 2πr(r+h)</span><br>体积：<span class="formula">V = πr²h</span>' },
+                    { title: '📐 轴截面', content: '轴截面是矩形（宽=2r，高=h）。<br>图中黄色虚线框为轴截面示意。' },
+                ],
+                legend: [{ color: '#60a5fa', label: '圆柱面' }, { color: '#ffdd57', label: '轴截面示意' }],
+                highlight: '💡 <strong>旋转体：</strong>圆柱可看作矩形绕其一边旋转一周而成。祖暅原理：等底面积等高的柱体体积相等。',
+            },
+            cone: {
+                title: '🔻 圆锥',
+                cards: [
+                    { title: '📏 基本性质', content: '底面是圆，侧面展开是扇形。<br>底面半径 <span class="formula">r</span>，高 <span class="formula">h</span>，母线 <span class="formula">l = √(r²+h²)</span>。' },
+                    { title: '📊 公式', content: '侧面积：<span class="formula">S侧 = πrl</span><br>表面积：<span class="formula">S = πr(r+l)</span><br>体积：<span class="formula">V = πr²h/3</span>' },
+                    { title: '📐 轴截面', content: '轴截面是等腰三角形（底=2r，高=h，腰=l）。<br>图中黄色虚线为轴截面示意。' },
+                ],
+                legend: [{ color: '#fb923c', label: '圆锥面' }, { color: '#ffdd57', label: '轴截面示意' }],
+                highlight: '💡 <strong>关键关系：</strong>圆锥体积是同底等高圆柱体积的1/3。这一关系可通过祖暅原理或积分证明。',
+            },
+            sphere: {
+                title: '⚽ 球体',
+                cards: [
+                    { title: '📏 基本性质', content: '空间中到定点（球心）距离等于定长（半径R）的所有点的集合。<br>球是旋转体（半圆绕直径旋转）。' },
+                    { title: '📊 公式', content: '表面积：<span class="formula">S = 4πR²</span><br>体积：<span class="formula">V = 4πR³/3</span><br>（这两个公式需要牢记！）' },
+                    { title: '📐 大圆与小圆', content: '过球心的平面截球得<strong>大圆</strong>（半径=R）。<br>不过球心的平面截球得小圆。<br>图中三个金色大圆分别位于三个坐标平面。' },
+                ],
+                legend: [{ color: '#38bdf8', label: '球面' }, { color: '#ffdd57', label: '大圆（三个）' }],
+                highlight: '💡 <strong>拓展：</strong>球的表面积公式 S=4πR² 恰好是其外切圆柱侧面积（也是4πR²），这一巧合在数学史上被称为"阿基米德的发现"。',
+            },
+            pyramid: {
+                title: '🔶 正四棱锥',
+                cards: [
+                    { title: '📏 基本性质', content: '底面是正方形，4个侧面是全等的等腰三角形。<br>底面边长 <span class="formula">a</span>，高 <span class="formula">h</span>，斜高 <span class="formula">s = √(h²+a²/4)</span>。' },
+                    { title: '📊 公式', content: '底面积：<span class="formula">S底 = a²</span><br>侧面积：<span class="formula">S侧 = 2a·s</span><br>体积：<span class="formula">V = a²h/3</span>' },
+                    { title: '📐 外接球', content: '外接球半径：<span class="formula">R = (a²/2 + h²)/(2h)</span><br>（当且仅当底面中心到各顶点等距时存在外接球）' },
+                ],
+                legend: [{ color: '#a78bfa', label: '正四棱锥面' }, { color: '#ffdd57', label: '高线（虚线）' }, { color: '#ffcc66',
+                    label: '顶点' }],
+                highlight: '💡 <strong>拓展：</strong>正四棱锥的侧面与底面所成二面角相等，这是"正棱锥"定义的重要推论。',
+            },
+        };
+
+        function updatePanel(shape) {
+            const data = panelData[shape];
+            if (!data) return;
+            panelTitle.textContent = data.title;
+            let html = '';
+            data.cards.forEach(card => {
+                html +=
+                    `<div class="info-card"><h4>${card.title}</h4><p>${card.content}</p></div>`;
+            });
+            if (data.highlight) {
+                html += `<div class="highlight-box">${data.highlight}</div>`;
+            }
+            panelContent.innerHTML = html;
+
+            let legendHtml = '';
+            if (data.legend) {
+                data.legend.forEach(item => {
+                    legendHtml +=
+                        `<span class="legend-item"><span class="legend-dot" style="background:${item.color};"></span>${item.label}</span>`;
+                });
+            }
+            legendEl.innerHTML = legendHtml;
+        }
+
+        // ============ 事件处理 ============
+        shapeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const shape = btn.dataset.shape;
+                if (shape && shape !== currentShape) {
+                    switchShape(shape);
+                }
+            });
+        });
+
+        btnReset.addEventListener('click', () => {
+            controls.target.set(0, 0, 0);
+            camera.position.set(5.5, 3.8, 7.5);
+            camera.lookAt(0, 0, 0);
+            controls.update();
+            // 闪烁提示
+            hintOverlay.style.opacity = '1';
+            setTimeout(() => { hintOverlay.style.opacity = '0.6'; }, 1500);
+        });
+
+        btnWireframe.addEventListener('click', () => {
+            isWireframe = !isWireframe;
+            btnWireframe.classList.toggle('active', isWireframe);
+            applyWireframeMode();
+        });
+
+        btnAutoRotate.addEventListener('click', () => {
+            isAutoRotate = !isAutoRotate;
+            btnAutoRotate.classList.toggle('active', isAutoRotate);
+            controls.autoRotate = isAutoRotate;
+        });
+
+        sectionSlider.addEventListener('input', () => {
+            const d = parseFloat(sectionSlider.value);
+            if (currentShape === 'cube') {
+                buildCubeSection(d);
+            }
+        });
+
+        // 键盘快捷键
+        window.addEventListener('keydown', (e) => {
+            const shapeKeys = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+            const shapes = Object.keys(shapeBuilders);
+            const idx = shapeKeys.indexOf(e.key);
+            if (idx >= 0 && idx < shapes.length && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                const target = document.activeElement;
+                if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+                switchShape(shapes[idx]);
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    btnReset.click();
+                }
+            }
+            if (e.key === 'w' || e.key === 'W') {
+                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    btnWireframe.click();
+                }
+            }
+            if (e.key === 'a' || e.key === 'A') {
+                if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+                    btnAutoRotate.click();
+                }
+            }
+        });
+
+        // 响应式调整
+        function resize() {
+            const rect = viewerEl.getBoundingClientRect();
+            renderer.setSize(rect.width, rect.height);
+            camera.aspect = rect.width / Math.max(rect.height, 1);
+            camera.updateProjectionMatrix();
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 触摸提示自动隐藏
+        setTimeout(() => {
+            hintOverlay.style.opacity = '0.5';
+        }, 6000);
+        viewerEl.addEventListener('pointerdown', () => {
+            hintOverlay.style.opacity = '0.3';
+        });
+
+        // ============ 渲染循环 ============
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // 更新截面（正方体时实时更新）
+            // （仅在拖动滑块时更新，由input事件处理）
+
+            renderer.render(scene, camera);
+        }
+
+        // ============ 启动 ============
+        switchShape('cube');
+        updatePanel('cube');
+        resize();
+        animate();
+
+        console.log('✅ 立体几何3D交互演示已就绪');
+        console.log('   🖱 鼠标拖拽旋转 | 滚轮缩放 | 右键平移');
+        console.log('   ⌨ 快捷键: 1-9切换图形 | R重置视角 | W线框模式 | A自动旋转');
+        console.log('   📦 当前图形：正方体（含截面演示，拖动底部滑块查看）');
+    </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/answer-association-template.schema.json",
+  "title": "步步高题目—答案块人工复核候选模板",
+  "description": "此模板只登记待人工核对的候选位置，不能直接把候选答案写入题目记录。",
+  "type": "object",
+  "required": ["schema_version", "templates"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "templates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/template"}
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "sourceId": {"type": "string", "pattern": "^src\\.bbg\\.[0-9a-f]{64}$"},
+    "questionId": {"type": "string", "pattern": "^q\\.src\\.bbg\\.[0-9a-f]{64}\\.[0-9]{3}$"},
+    "answerBlockId": {"type": "string", "pattern": "^ab\\.src\\.bbg\\.[0-9a-f]{64}\\.[0-9]{3}$"},
+    "candidate": {
+      "type": "object",
+      "required": ["answer_block_id", "label", "locator", "candidate_basis"],
+      "properties": {
+        "answer_block_id": {"$ref": "#/$defs/answerBlockId"},
+        "label": {"type": "string", "minLength": 1},
+        "locator": {"type": "string", "pattern": "^Markdown 第 [1-9][0-9]*(?:-[1-9][0-9]*)? 行；.+$"},
+        "candidate_basis": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": ["same_variant_group", "same_chapter", "same_label", "manual_source_audit"]
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "target": {
+      "type": "object",
+      "required": ["target_question_id", "answer_candidates"],
+      "properties": {
+        "target_question_id": {"$ref": "#/$defs/questionId"},
+        "answer_candidates": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/candidate"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "sourcePair": {
+      "type": "object",
+      "required": ["target_role", "target_source_id", "answer_source_id", "targets"],
+      "properties": {
+        "target_role": {"enum": ["learning_note", "practice"]},
+        "target_source_id": {"$ref": "#/$defs/sourceId"},
+        "answer_source_id": {"$ref": "#/$defs/sourceId"},
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/target"}
+        },
+        "unmatched_answer_blocks": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/candidate"}
+        }
+      },
+      "additionalProperties": false
+    },
+    "template": {
+      "type": "object",
+      "required": ["id", "relative_output_path", "status", "variant_group", "scope", "source_pairs"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^assocq-template\\.bbg\\.[a-z0-9][a-z0-9._-]*$"},
+        "relative_output_path": {
+          "allOf": [
+            {"$ref": "#/$defs/relativePath"},
+            {"pattern": "^reports/associations/"}
+          ]
+        },
+        "status": {"const": "pending_manual_review"},
+        "variant_group": {"type": "string", "minLength": 1},
+        "scope": {
+          "type": "object",
+          "required": ["course", "chapter", "topic"],
+          "properties": {
+            "course": {"type": "string", "minLength": 1},
+            "chapter": {"type": "string", "minLength": 1},
+            "topic": {"type": "string", "minLength": 1}
+          },
+          "additionalProperties": false
+        },
+        "source_pairs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/sourcePair"}
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

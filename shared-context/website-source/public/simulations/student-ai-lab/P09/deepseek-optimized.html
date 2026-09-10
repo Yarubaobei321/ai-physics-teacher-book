@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>力学核心模型 — 高中物理导航学习页</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;
+  background:#f0f4f8;
+  color:#1a202c;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+.header{
+  background:linear-gradient(135deg,#1e3a5f 0%,#2d6a9f 50%,#4a90d9 100%);
+  color:#fff;
+  padding:16px 32px;
+  text-align:center;
+  box-shadow:0 2px 12px rgba(0,0,0,0.15);
+  position:relative;
+  z-index:10;
+}
+.header h1{font-size:24px;font-weight:700;letter-spacing:2px}
+.header p{font-size:13px;opacity:0.85;margin-top:4px}
+.back-btn{
+  position:absolute;left:20px;top:50%;transform:translateY(-50%);
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);
+  color:#fff;padding:7px 16px;border-radius:8px;cursor:pointer;
+  font-size:13px;transition:background 0.2s;display:none;
+}
+.back-btn:hover{background:rgba(255,255,255,0.3)}
+
+/* ===== HOME VIEW ===== */
+#home-view{
+  max-width:1000px;margin:36px auto;padding:0 20px;
+}
+.home-intro{text-align:center;margin-bottom:32px}
+.home-intro h2{font-size:22px;color:#2d3748;margin-bottom:8px}
+.home-intro p{font-size:14px;color:#718096;line-height:1.6}
+.cards-container{
+  display:flex;gap:28px;justify-content:center;flex-wrap:wrap;
+}
+.card{
+  flex:1;min-width:300px;max-width:440px;
+  background:#fff;border-radius:16px;
+  box-shadow:0 4px 20px rgba(0,0,0,0.07);
+  padding:28px 24px;cursor:pointer;
+  transition:transform 0.3s,box-shadow 0.3s;
+  border-top:4px solid;
+  position:relative;overflow:hidden;
+}
+.card:hover{
+  transform:translateY(-6px);
+  box-shadow:0 12px 36px rgba(0,0,0,0.12);
+}
+.card.card-blue{border-color:#4a90d9}
+.card.card-teal{border-color:#38b2ac}
+.card-icon{
+  width:56px;height:56px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;margin-bottom:16px;
+}
+.card-blue .card-icon{background:#ebf4ff;color:#3182ce}
+.card-teal .card-icon{background:#e6fffa;color:#2c7a7b}
+.card h3{font-size:18px;margin-bottom:8px;font-weight:700}
+.card p{font-size:13px;color:#718096;line-height:1.7;margin-bottom:14px}
+.card .tag{
+  display:inline-block;font-size:11px;padding:3px 10px;
+  border-radius:20px;font-weight:600;letter-spacing:0.5px;
+}
+.card-blue .tag{background:#ebf4ff;color:#3182ce}
+.card-teal .tag{background:#e6fffa;color:#2c7a7b}
+.card .enter-hint{
+  display:block;margin-top:12px;font-size:12px;color:#a0aec0;
+  text-align:right;font-weight:500;
+}
+
+/* ===== MODEL VIEW ===== */
+.model-view{
+  max-width:1160px;margin:0 auto;padding:20px 24px 40px;
+  display:none;
+}
+.model-view.active{display:block}
+.model-title{
+  font-size:20px;font-weight:700;margin-bottom:4px;
+}
+.model-subtitle{
+  font-size:13px;color:#718096;margin-bottom:16px;line-height:1.5;
+}
+.assumptions{
+  background:#fffbeb;border:1px solid #f6e05e;
+  border-radius:8px;padding:10px 14px;
+  font-size:12px;color:#975a16;margin-bottom:16px;
+  line-height:1.6;
+}
+.assumptions strong{color:#744210}
+
+/* Canvas */
+.canvas-wrapper{
+  background:#fff;border-radius:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  padding:16px;margin-bottom:14px;
+  text-align:center;
+}
+.canvas-wrapper canvas{
+  display:block;margin:0 auto;
+  max-width:100%;
+}
+
+/* Controls */
+.controls-bar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+  background:#fff;border-radius:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  padding:14px 18px;margin-bottom:14px;
+}
+.controls-bar .ctrl-group{display:flex;align-items:center;gap:8px}
+.controls-bar label{font-size:13px;font-weight:600;color:#4a5568}
+.btn{
+  padding:8px 18px;border:none;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:background 0.2s,transform 0.1s;
+  display:inline-flex;align-items:center;gap:5px;
+}
+.btn:active{transform:scale(0.96)}
+.btn-play{background:#38a169;color:#fff}
+.btn-play:hover{background:#2f855a}
+.btn-pause{background:#dd6b20;color:#fff}
+.btn-pause:hover{background:#c05621}
+.btn-reset{background:#e2e8f0;color:#4a5568}
+.btn-reset:hover{background:#cbd5e0}
+.btn-thrust{background:#4a90d9;color:#fff;min-width:120px}
+.btn-thrust:hover{background:#3182ce}
+.btn-thrust.off{background:#a0aec0}
+.btn-thrust.off:hover{background:#718096}
+
+/* Slider */
+.slider-group{display:flex;align-items:center;gap:10px;flex:1;min-width:260px}
+.slider-group label{font-size:13px;font-weight:600;color:#4a5568;white-space:nowrap}
+.slider-group input[type=range]{
+  flex:1;-webkit-appearance:none;appearance:none;
+  height:6px;border-radius:3px;background:#e2e8f0;outline:none;
+}
+.slider-group input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:18px;height:18px;border-radius:50%;
+  background:#4a90d9;cursor:pointer;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.slider-group input[type=range]::-moz-range-thumb{
+  width:18px;height:18px;border-radius:50%;border:none;
+  background:#4a90d9;cursor:pointer;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+.slider-group .val{
+  font-size:14px;font-weight:700;color:#2d3748;
+  min-width:56px;text-align:right;font-variant-numeric:tabular-nums;
+}
+
+/* Readings */
+.readings-row{
+  display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;
+}
+.reading-card{
+  flex:1;min-width:120px;
+  background:#fff;border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  padding:12px 16px;text-align:center;
+  border-left:4px solid #4a90d9;
+}
+.reading-card .r-label{font-size:11px;color:#a0aec0;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.reading-card .r-value{
+  font-size:26px;font-weight:800;color:#2d3748;
+  font-variant-numeric:tabular-nums;margin-top:2px;
+}
+.reading-card .r-unit{font-size:12px;color:#718096;font-weight:500}
+
+/* Graph area (model 2) */
+.graph-section{
+  display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap;
+}
+.graph-section .canvas-wrapper{flex:2;min-width:400px;margin-bottom:0}
+
+/* Observation */
+.observation-box{
+  background:#fff;border-radius:12px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);
+  padding:16px 20px;
+}
+.observation-box h4{font-size:14px;font-weight:700;color:#2d3748;margin-bottom:8px}
+.observation-box p{font-size:13px;color:#4a5568;line-height:1.7;margin-bottom:8px}
+.observation-box textarea{
+  width:100%;min-height:48px;border:1px solid #e2e8f0;
+  border-radius:8px;padding:10px 12px;font-size:13px;
+  font-family:inherit;resize:vertical;
+  transition:border-color 0.2s;
+}
+.observation-box textarea:focus{
+  outline:none;border-color:#4a90d9;
+  box-shadow:0 0 0 3px rgba(74,144,217,0.15);
+}
+
+/* Graph side panel for model 2 readings */
+.side-readings{
+  flex:1;min-width:200px;
+  display:flex;flex-direction:column;gap:10px;
+}
+
+/* Pause overlay indicator */
+.pause-badge{
+  display:none;
+  position:absolute;top:8px;right:12px;
+  background:rgba(221,107,32,0.9);color:#fff;
+  font-size:11px;font-weight:700;padding:3px 10px;
+  border-radius:12px;letter-spacing:0.5px;
+}
+.canvas-wrapper{position:relative}
+.canvas-wrapper.paused .pause-badge{display:block}
+
+@media(max-width:800px){
+  .graph-section{flex-direction:column}
+  .controls-bar{flex-direction:column;align-items:stretch}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== HEADER ==================== -->
+<div class="header" id="page-header">
+  <button class="back-btn" id="back-btn" onclick="showHome()">← 返回首页</button>
+  <h1 id="header-title">力学核心模型</h1>
+  <p id="header-sub">高中物理 · 交互式学习导航</p>
+</div>
+
+<!-- ==================== HOME VIEW ==================== -->
+<div id="home-view">
+  <div class="home-intro">
+    <h2>选择你要探索的物理模型</h2>
+    <p>通过交互式模拟，直观理解牛顿运动定律的核心思想。<br>操作模型、观察数据、总结规律。</p>
+  </div>
+  <div class="cards-container">
+    <!-- Card 1 -->
+    <div class="card card-blue" onclick="showModel(1)">
+      <div class="card-icon">🧊</div>
+      <h3>牛顿第一定律</h3>
+      <p>探究"不受力（合力为零）"时物体的运动规律。在光滑水平面上推动物块，观察撤去推力后速度如何变化。</p>
+      <span class="tag">惯性 · 匀速直线运动</span>
+      <span class="enter-hint">点击进入 →</span>
+    </div>
+    <!-- Card 2 -->
+    <div class="card card-teal" onclick="showModel(2)">
+      <div class="card-icon">🚀</div>
+      <h3>牛顿第二定律</h3>
+      <p>探究"受恒力"时物体的运动规律。调节力与质量，观察加速度的变化，并通过 v-t 图验证匀加速运动。</p>
+      <span class="tag">F = ma · 匀加速运动</span>
+      <span class="enter-hint">点击进入 →</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODEL 1 VIEW ==================== -->
+<div id="model1-view" class="model-view">
+  <div class="model-title">牛顿第一定律 — 光滑水平面上的物块</div>
+  <div class="model-subtitle">
+    核心问题：当物体不受外力（或合力为零）时，它将如何运动？<br>
+    操作：施加推力让物块加速，然后撤去推力，观察速度变化。
+  </div>
+  <div class="assumptions">
+    <strong>理想条件声明：</strong>忽略一切摩擦力（光滑水平面）；向右为正方向；所有物理量使用 SI 国际单位。推力恒定为 F = 2 N，物块质量 m = 1 kg（推力开启时 a = 2 m/s²）。
+  </div>
+
+  <!-- Animation Canvas -->
+  <div class="canvas-wrapper" id="m1-canvas-wrap">
+    <div class="pause-badge">⏸ 已暂停</div>
+    <canvas id="canvas1" width="1060" height="210"
+      aria-label="牛顿第一定律动画：物块在光滑水平面上运动，可施加或撤去水平推力"
+      role="img">
+      此区域为动画演示：一个物块在光滑水平面上运动。施加推力时物块加速，撤去推力后物块以恒定速度匀速运动。
+    </canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <button class="btn btn-play" id="m1-play" onclick="m1Play()">▶ 播放</button>
+      <button class="btn btn-pause" id="m1-pause" onclick="m1Pause()">⏸ 暂停</button>
+      <button class="btn btn-reset" onclick="m1Reset()">↺ 重置</button>
+    </div>
+    <div class="ctrl-group">
+      <button class="btn btn-thrust" id="m1-thrust" onclick="m1ToggleThrust()">推力：开启</button>
+    </div>
+  </div>
+
+  <!-- Readings -->
+  <div class="readings-row">
+    <div class="reading-card">
+      <div class="r-label">速度 v</div>
+      <div class="r-value" id="m1-v">0.00</div>
+      <div class="r-unit">m/s</div>
+    </div>
+    <div class="reading-card">
+      <div class="r-label">加速度 a</div>
+      <div class="r-value" id="m1-a">0.00</div>
+      <div class="r-unit">m/s²</div>
+    </div>
+    <div class="reading-card">
+      <div class="r-label">推力状态</div>
+      <div class="r-value" id="m1-f-status" style="font-size:18px;color:#38a169">已撤去</div>
+      <div class="r-unit">F = 2 N / 0 N</div>
+    </div>
+  </div>
+
+  <!-- Observation -->
+  <div class="observation-box">
+    <h4>📝 观察与结论</h4>
+    <p>撤去推力后，物块的速度________（增大 / 减小 / 保持不变），这说明________。</p>
+    <textarea placeholder="写下你的观察和结论……"></textarea>
+  </div>
+</div>
+
+<!-- ==================== MODEL 2 VIEW ==================== -->
+<div id="model2-view" class="model-view">
+  <div class="model-title">牛顿第二定律 — 恒力作用下的匀加速运动</div>
+  <div class="model-subtitle">
+    核心问题：力、质量和加速度之间存在怎样的定量关系？<br>
+    操作：调节力 F 和质量 m，观察加速度 a 以及 v-t 图的变化。
+  </div>
+  <div class="assumptions">
+    <strong>理想条件声明：</strong>忽略一切摩擦力（光滑水平面）；向右为正方向；初速度 v₀ = 0；所有物理量使用 SI 国际单位。公式：a = F / m，v = a · t。
+  </div>
+
+  <!-- Animation Canvas -->
+  <div class="canvas-wrapper" id="m2-canvas-wrap">
+    <div class="pause-badge">⏸ 已暂停</div>
+    <canvas id="canvas2" width="1060" height="200"
+      aria-label="牛顿第二定律动画：物块在恒力作用下从静止开始匀加速运动"
+      role="img">
+      此区域为动画演示：一个物块在恒定水平力作用下从静止开始做匀加速直线运动。
+    </canvas>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-bar">
+    <div class="ctrl-group">
+      <button class="btn btn-play" id="m2-play" onclick="m2Play()">▶ 播放</button>
+      <button class="btn btn-pause" id="m2-pause" onclick="m2Pause()">⏸ 暂停</button>
+      <button class="btn btn-reset" onclick="m2Reset()">↺ 重置</button>
+    </div>
+    <div class="slider-group">
+      <label>力 F：</label>
+      <input type="range" id="m2-F-slider" min="1" max="20" step="1" value="10"
+        oninput="m2UpdateF(this.value)">
+      <span class="val" id="m2-F-val">10 N</span>
+    </div>
+    <div class="slider-group">
+      <label>质量 m：</label>
+      <input type="range" id="m2-m-slider" min="0.5" max="5" step="0.5" value="2"
+        oninput="m2UpdateM(this.value)">
+      <span class="val" id="m2-m-val">2.0 kg</span>
+    </div>
+  </div>
+
+  <!-- Readings + Graph side by side -->
+  <div class="graph-section">
+    <div class="canvas-wrapper">
+      <canvas id="canvas2-graph" width="620" height="340"
+        aria-label="v-t 图：速度随时间线性增长的直线，过原点"
+        role="img">
+        此区域为 v-t 图（速度-时间图），横轴为时间 t（秒），纵轴为速度 v（m/s）。匀加速运动时图像为过原点的直线。
+      </canvas>
+    </div>
+    <div class="side-readings">
+      <div class="reading-card" style="border-left-color:#38b2ac">
+        <div class="r-label">加速度 a</div>
+        <div class="r-value" id="m2-a">5.00</div>
+        <div class="r-unit">m/s²</div>
+      </div>
+      <div class="reading-card" style="border-left-color:#38b2ac">
+        <div class="r-label">速度 v</div>
+        <div class="r-value" id="m2-v">0.00</div>
+        <div class="r-unit">m/s</div>
+      </div>
+      <div class="reading-card" style="border-left-color:#38b2ac">
+        <div class="r-label">时间 t</div>
+        <div class="r-value" id="m2-t">0.00</div>
+        <div class="r-unit">s</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Observation -->
+  <div class="observation-box">
+    <h4>📝 观察与结论</h4>
+    <p>当力 F 增大时，加速度 a________（增大 / 减小）；当质量 m 增大时，加速度 a________（增大 / 减小）。v-t 图的斜率等于________。</p>
+    <textarea placeholder="写下你的观察和结论……"></textarea>
+  </div>
+</div>
+
+<!-- ==================== JAVASCRIPT ==================== -->
+<script>
+(function(){
+'use strict';
+
+/* ===== VIEW MANAGEMENT ===== */
+var currentView = 'home';
+
+function showHome(){
+  document.getElementById('home-view').style.display = '';
+  document.getElementById('model1-view').style.display = 'none';
+  document.getElementById('model1-view').classList.remove('active');
+  document.getElementById('model2-view').style.display = 'none';
+  document.getElementById('model2-view').classList.remove('active');
+  document.getElementById('back-btn').style.display = 'none';
+  document.getElementById('header-title').textContent = '力学核心模型';
+  document.getElementById('header-sub').textContent = '高中物理 · 交互式学习导航';
+  currentView = 'home';
+  cancelAnimationFrame(animFrameId);
+  animRunning = false;
+}
+
+function showModel(n){
+  document.getElementById('home-view').style.display = 'none';
+  document.getElementById('model1-view').style.display = 'none';
+  document.getElementById('model1-view').classList.remove('active');
+  document.getElementById('model2-view').style.display = 'none';
+  document.getElementById('model2-view').classList.remove('active');
+  document.getElementById('back-btn').style.display = '';
+
+  if(n === 1){
+    document.getElementById('model1-view').style.display = 'block';
+    document.getElementById('model1-view').classList.add('active');
+    document.getElementById('header-title').textContent = '牛顿第一定律';
+    document.getElementById('header-sub').textContent = '不受力时的运动 · 惯性定律';
+  } else {
+    document.getElementById('model2-view').style.display = 'block';
+    document.getElementById('model2-view').classList.add('active');
+    document.getElementById('header-title').textContent = '牛顿第二定律';
+    document.getElementById('header-sub').textContent = 'F = ma · 匀加速运动';
+  }
+  currentView = 'model' + n;
+  ensureAnimLoop();
+}
+
+/* ===== ANIMATION FRAME LOOP ===== */
+var animFrameId = null;
+var animRunning = false;
+var lastFrameTime = 0;
+
+function ensureAnimLoop(){
+  if(!animRunning){
+    animRunning = true;
+    lastFrameTime = performance.now();
+    animFrameId = requestAnimationFrame(animLoop);
+  }
+}
+
+function animLoop(timestamp){
+  var dt = Math.min((timestamp - lastFrameTime) / 1000, 0.05);
+  lastFrameTime = timestamp;
+
+  if(currentView === 'model1'){
+    m1Step(dt);
+    m1Render();
+  } else if(currentView === 'model2'){
+    m2Step(dt);
+    m2Render();
+  }
+
+  animFrameId = requestAnimationFrame(animLoop);
+}
+
+/* ===== MODEL 1: NEWTON'S FIRST LAW ===== */
+var m1 = {
+  running: false,
+  paused: false,
+  thrustOn: true,
+  v: 0,
+  a: 0,
+  x: 0,
+  THRUST_A: 2,
+  TRACK_LENGTH: 50,
+  pausedV: 0,
+  pausedA: 0
+};
+
+function m1Step(dt){
+  if(!m1.running || m1.paused) return;
+  if(m1.thrustOn){
+    m1.a = m1.THRUST_A;
+  } else {
+    m1.a = 0;
+  }
+  m1.v = m1.v + m1.a * dt;
+  m1.x = m1.x + m1.v * dt;
+  if(m1.x > m1.TRACK_LENGTH + 3){
+    m1.x = -3;
+  }
+}
+
+function m1Play(){
+  if(m1.paused){
+    m1.paused = false;
+    document.getElementById('m1-canvas-wrap').classList.remove('paused');
+    return;
+  }
+  m1.running = true;
+  m1.paused = false;
+  document.getElementById('m1-canvas-wrap').classList.remove('paused');
+  ensureAnimLoop();
+}
+
+function m1Pause(){
+  if(m1.running && !m1.paused){
+    m1.paused = true;
+    m1.pausedV = m1.v;
+    m1.pausedA = m1.a;
+    document.getElementById('m1-canvas-wrap').classList.add('paused');
+  }
+}
+
+function m1Reset(){
+  m1.running = false;
+  m1.paused = false;
+  m1.v = 0;
+  m1.a = 0;
+  m1.x = 0;
+  m1.thrustOn = true;
+  document.getElementById('m1-canvas-wrap').classList.remove('paused');
+  updateM1ThrustBtn();
+  m1Render();
+}
+
+function m1ToggleThrust(){
+  m1.thrustOn = !m1.thrustOn;
+  updateM1ThrustBtn();
+}
+
+function updateM1ThrustBtn(){
+  var btn = document.getElementById('m1-thrust');
+  if(m1.thrustOn){
+    btn.textContent = '推力：开启';
+    btn.classList.remove('off');
+  } else {
+    btn.textContent = '推力：撤去';
+    btn.classList.add('off');
+  }
+}
+
+function m1Render(){
+  var canvas = document.getElementById('canvas1');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = '#fafcff';
+  ctx.fillRect(0, 0, W, H);
+
+  var groundY = H - 42;
+
+  ctx.save();
+  ctx.strokeStyle = '#cbd5e0';
+  ctx.lineWidth = 1;
+  for(var i = -20; i < W + 20; i += 14){
+    ctx.beginPath();
+    ctx.moveTo(i, groundY);
+    ctx.lineTo(i - 10, groundY + 14);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = '#a0aec0';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  ctx.lineTo(W, groundY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#a0aec0';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('光滑水平面（无摩擦）', 10, groundY + 28);
+
+  ctx.fillStyle = '#718096';
+  ctx.font = '10px monospace';
+  ctx.strokeStyle = '#a0aec0';
+  ctx.lineWidth = 1;
+  for(var m = 0; m <= m1.TRACK_LENGTH; m += 10){
+    var sx = (m / m1.TRACK_LENGTH) * (W - 60) + 30;
+    ctx.beginPath();
+    ctx.moveTo(sx, groundY);
+    ctx.lineTo(sx, groundY + 5);
+    ctx.stroke();
+    ctx.fillText(m + 'm', sx - 8, groundY + 16);
+  }
+
+  var blockW = 56, blockH = 40;
+  var blockScreenX = 30 + (m1.x / m1.TRACK_LENGTH) * (W - 60);
+  var blockY = groundY - blockH;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  ctx.fillRect(blockScreenX - blockW/2 + 3, blockY + 3, blockW, blockH);
+
+  var grad = ctx.createLinearGradient(blockScreenX - blockW/2, blockY, blockScreenX - blockW/2, groundY);
+  grad.addColorStop(0, '#63b3ed');
+  grad.addColorStop(1, '#3182ce');
+  ctx.fillStyle = grad;
+  roundRect(ctx, blockScreenX - blockW/2, blockY, blockW, blockH, 4);
+  ctx.fill();
+
+  ctx.strokeStyle = '#2b6cb0';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, blockScreenX - blockW/2, blockY, blockW, blockH, 4);
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('1 kg', blockScreenX, blockY + blockH/2 + 5);
+
+  if(m1.thrustOn){
+    drawArrow(ctx, blockScreenX - blockW/2 - 55, blockY + blockH/2, blockScreenX - blockW/2 - 5, blockY + blockH/2, '#e53e3e', 3);
+    ctx.fillStyle = '#e53e3e';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('F = 2 N', blockScreenX - blockW/2 - 30, blockY - 6);
+  }
+
+  if(m1.v > 0.05){
+    var vArrowLen = Math.min(m1.v * 12, 150);
+    drawArrow(ctx, blockScreenX, blockY - 18, blockScreenX + vArrowLen, blockY - 18, '#2d9cdb', 2.5);
+    ctx.fillStyle = '#2d9cdb';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('v = ' + m1.v.toFixed(2) + ' m/s', blockScreenX + vArrowLen + 6, blockY - 14);
+  } else if(m1.running){
+    ctx.fillStyle = '#a0aec0';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('v ≈ 0', blockScreenX, blockY - 14);
+  }
+
+  ctx.textAlign = 'start';
+
+  if(m1.paused){
+    document.getElementById('m1-v').textContent = m1.pausedV.toFixed(2);
+    document.getElementById('m1-a').textContent = m1.pausedA.toFixed(2);
+  } else {
+    document.getElementById('m1-v').textContent = m1.v.toFixed(2);
+    document.getElementById('m1-a').textContent = m1.a.toFixed(2);
+  }
+
+  var statusEl = document.getElementById('m1-f-status');
+  if(m1.thrustOn){
+    statusEl.textContent = '施加中';
+    statusEl.style.color = '#e53e3e';
+  } else {
+    statusEl.textContent = '已撤去';
+    statusEl.style.color = '#38a169';
+  }
+}
+
+/* ===== MODEL 2: NEWTON'S SECOND LAW ===== */
+var m2 = {
+  running: false,
+  paused: false,
+  F: 10,
+  mass: 2,
+  t: 0,
+  TRACK_LENGTH: 50,
+  MAX_TIME: 10,
+  pausedT: 0,
+  pausedV: 0,
+  pausedA: 0,
+  vHistory: []
+};
+
+function m2GetA(){ return m2.F / m2.mass; }
+function m2GetV(){ return m2GetA() * m2.t; }
+function m2GetX(){ return 0.5 * m2GetA() * m2.t * m2.t; }
+
+function m2Step(dt){
+  if(!m2.running || m2.paused) return;
+  m2.t += dt;
+
+  var x = m2GetX();
+  if(x >= m2.TRACK_LENGTH){
+    m2.t = Math.sqrt(2 * m2.TRACK_LENGTH / m2GetA());
+    m2.running = false;
+    m2.paused = false;
+  }
+  if(m2.t >= m2.MAX_TIME){
+    m2.t = m2.MAX_TIME;
+    m2.running = false;
+    m2.paused = false;
+  }
+
+  m2.vHistory.push({t: m2.t, v: m2GetV()});
+  if(m2.vHistory.length > 2000) m2.vHistory = m2.vHistory.slice(-1000);
+}
+
+function m2Play(){
+  if(m2.paused){
+    m2.paused = false;
+    document.getElementById('m2-canvas-wrap').classList.remove('paused');
+    return;
+  }
+  var x = m2GetX();
+  if(x >= m2.TRACK_LENGTH || m2.t >= m2.MAX_TIME){
+    m2ResetState();
+  }
+  m2.running = true;
+  m2.paused = false;
+  document.getElementById('m2-canvas-wrap').classList.remove('paused');
+  ensureAnimLoop();
+}
+
+function m2Pause(){
+  if(m2.running && !m2.paused){
+    m2.paused = true;
+    m2.pausedT = m2.t;
+    m2.pausedV = m2GetV();
+    m2.pausedA = m2GetA();
+    document.getElementById('m2-canvas-wrap').classList.add('paused');
+  }
+}
+
+function m2Reset(){
+  m2ResetState();
+  document.getElementById('m2-canvas-wrap').classList.remove('paused');
+  m2Render();
+}
+
+function m2ResetState(){
+  m2.running = false;
+  m2.paused = false;
+  m2.t = 0;
+  m2.vHistory = [];
+}
+
+function m2UpdateF(val){
+  m2.F = parseFloat(val);
+  document.getElementById('m2-F-val').textContent = m2.F + ' N';
+  m2ResetState();
+  m2Render();
+}
+
+function m2UpdateM(val){
+  m2.mass = parseFloat(val);
+  document.getElementById('m2-m-val').textContent = m2.mass.toFixed(1) + ' kg';
+  m2ResetState();
+  m2Render();
+}
+
+function m2Render(){
+  m2RenderAnimation();
+  m2RenderGraph();
+  m2UpdateReadings();
+}
+
+function m2RenderAnimation(){
+  var canvas = document.getElementById('canvas2');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.fillStyle = '#f7fafa';
+  ctx.fillRect(0, 0, W, H);
+
+  var groundY = H - 38;
+
+  ctx.strokeStyle = '#b2dfdb';
+  ctx.lineWidth = 1;
+  for(var i = -20; i < W + 20; i += 14){
+    ctx.beginPath();
+    ctx.moveTo(i, groundY);
+    ctx.lineTo(i - 10, groundY + 14);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#80cbc4';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  ctx.lineTo(W, groundY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#80cbc4';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('光滑水平面（无摩擦）', 10, groundY + 26);
+
+  ctx.fillStyle = '#718096';
+  ctx.font = '10px monospace';
+  for(var mk = 0; mk <= m2.TRACK_LENGTH; mk += 10){
+    var sx = (mk / m2.TRACK_LENGTH) * (W - 60) + 30;
+    ctx.strokeStyle = '#a0aec0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx, groundY);
+    ctx.lineTo(sx, groundY + 5);
+    ctx.stroke();
+    ctx.fillText(mk + 'm', sx - 8, groundY + 15);
+  }
+
+  var x = m2GetX();
+  var blockW = 52, blockH = 38;
+  var blockScreenX = 30 + (Math.min(x, m2.TRACK_LENGTH) / m2.TRACK_LENGTH) * (W - 60);
+  var blockY = groundY - blockH;
+
+  ctx.fillStyle = 'rgba(0,0,0,0.07)';
+  ctx.fillRect(blockScreenX - blockW/2 + 3, blockY + 3, blockW, blockH);
+
+  var grad = ctx.createLinearGradient(blockScreenX - blockW/2, blockY, blockScreenX - blockW/2, groundY);
+  grad.addColorStop(0, '#81e6d9');
+  grad.addColorStop(1, '#319795');
+  ctx.fillStyle = grad;
+  roundRect(ctx, blockScreenX - blockW/2, blockY, blockW, blockH, 4);
+  ctx.fill();
+
+  ctx.strokeStyle = '#285e61';
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, blockScreenX - blockW/2, blockY, blockW, blockH, 4);
+  ctx.stroke();
+
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(m2.mass.toFixed(1) + ' kg', blockScreenX, blockY + blockH/2 + 5);
+
+  var fArrowLen = 20 + m2.F * 2;
+  drawArrow(ctx, blockScreenX - blockW/2 - fArrowLen - 5, blockY + blockH/2,
+            blockScreenX - blockW/2 - 5, blockY + blockH/2, '#e53e3e', 3);
+  ctx.fillStyle = '#e53e3e';
+  ctx.font = 'bold 12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('F = ' + m2.F + ' N', blockScreenX - blockW/2 - fArrowLen/2 - 5, blockY - 6);
+
+  var v = m2GetV();
+  if(v > 0.1){
+    var vArrowLen = Math.min(v * 4, 160);
+    drawArrow(ctx, blockScreenX + blockW/2 + 5, blockY + blockH/2,
+              blockScreenX + blockW/2 + 5 + vArrowLen, blockY + blockH/2, '#2d9cdb', 2.5);
+    ctx.fillStyle = '#2d9cdb';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('v = ' + v.toFixed(1) + ' m/s', blockScreenX + blockW/2 + vArrowLen + 10, blockY + blockH/2 + 4);
+  }
+
+  ctx.textAlign = 'start';
+}
+
+function m2RenderGraph(){
+  var canvas = document.getElementById('canvas2-graph');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, W, H);
+
+  var a = m2GetA();
+  var margin = {top: 30, right: 30, bottom: 48, left: 60};
+  var plotW = W - margin.left - margin.right;
+  var plotH = H - margin.top - margin.bottom;
+
+  var tMax = Math.max(m2.t * 1.2, 4);
+  var vMax = Math.max(a * tMax * 1.15, 5);
+
+  function tx(t){ return margin.left + (t / tMax) * plotW; }
+  function ty(v){ return margin.top + plotH - (v / vMax) * plotH; }
+
+  ctx.strokeStyle = '#edf2f7';
+  ctx.lineWidth = 1;
+  var tGridStep = niceStep(tMax, 5);
+  var vGridStep = niceStep(vMax, 5);
+
+  for(var tg = 0; tg <= tMax; tg += tGridStep){
+    var gx = tx(tg);
+    ctx.beginPath(); ctx.moveTo(gx, margin.top); ctx.lineTo(gx, margin.top + plotH); ctx.stroke();
+  }
+  for(var vg = 0; vg <= vMax; vg += vGridStep){
+    var gy = ty(vg);
+    ctx.beginPath(); ctx.moveTo(margin.left, gy); ctx.lineTo(margin.left + plotW, gy); ctx.stroke();
+  }
+
+  ctx.strokeStyle = '#4a5568';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(margin.left, margin.top);
+  ctx.lineTo(margin.left, margin.top + plotH);
+  ctx.lineTo(margin.left + plotW, margin.top + plotH);
+  ctx.stroke();
+
+  ctx.fillStyle = '#4a5568';
+  ctx.font = '11px monospace';
+  ctx.textAlign = 'center';
+  for(var tt = 0; tt <= tMax; tt += tGridStep){
+    ctx.fillText(tt.toFixed(1), tx(tt), margin.top + plotH + 16);
+  }
+  ctx.textAlign = 'right';
+  for(var vv = 0; vv <= vMax; vv += vGridStep){
+    ctx.fillText(vv.toFixed(1), margin.left - 8, ty(vv) + 4);
+  }
+
+  ctx.fillStyle = '#2d3748';
+  ctx.font = '13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('t / s', margin.left + plotW / 2, H - 6);
+  ctx.save();
+  ctx.translate(14, margin.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('v / (m·s⁻¹)', 0, 0);
+  ctx.restore();
+
+  ctx.fillStyle = '#2d3748';
+  ctx.font = 'bold 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('v — t 图', W / 2, 18);
+
+  ctx.strokeStyle = 'rgba(56, 161, 105, 0.3)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6, 4]);
+  ctx.beginPath();
+  ctx.moveTo(tx(0), ty(0));
+  ctx.lineTo(tx(tMax), ty(a * tMax));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  var curT = m2.t;
+  var curV = a * curT;
+  if(curT > 0.01){
+    ctx.strokeStyle = '#38a169';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(tx(0), ty(0));
+    if(m2.vHistory.length > 1){
+      for(var hi = 0; hi < m2.vHistory.length; hi++){
+        ctx.lineTo(tx(m2.vHistory[hi].t), ty(m2.vHistory[hi].v));
+      }
+    }
+    ctx.lineTo(tx(curT), ty(curV));
+    ctx.stroke();
+  }
+
+  if(curT > 0){
+    ctx.fillStyle = '#e53e3e';
+    ctx.beginPath();
+    ctx.arc(tx(curT), ty(curV), 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#2d3748';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('(' + curT.toFixed(2) + ', ' + curV.toFixed(2) + ')', tx(curT) + 10, ty(curV) - 8);
+  }
+
+  ctx.fillStyle = '#718096';
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('斜率 = a = ' + a.toFixed(2) + ' m/s²', W - margin.right, margin.top + 16);
+
+  ctx.textAlign = 'start';
+}
+
+function m2UpdateReadings(){
+  var dispV, dispA, dispT;
+  if(m2.paused){
+    dispV = m2.pausedV;
+    dispA = m2.pausedA;
+    dispT = m2.pausedT;
+  } else {
+    dispV = m2GetV();
+    dispA = m2GetA();
+    dispT = m2.t;
+  }
+  document.getElementById('m2-a').textContent = dispA.toFixed(2);
+  document.getElementById('m2-v').textContent = dispV.toFixed(2);
+  document.getElementById('m2-t').textContent = dispT.toFixed(2);
+}
+
+/* ===== UTILITY FUNCTIONS ===== */
+
+function drawArrow(ctx, x1, y1, x2, y2, color, lineWidth){
+  var headLen = 10;
+  var angle = Math.atan2(y2 - y1, x2 - x1);
+
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = lineWidth;
+
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - headLen * Math.cos(angle - Math.PI/6), y2 - headLen * Math.sin(angle - Math.PI/6));
+  ctx.lineTo(x2 - headLen * Math.cos(angle + Math.PI/6), y2 - headLen * Math.sin(angle + Math.PI/6));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function roundRect(ctx, x, y, w, h, r){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function niceStep(range, targetTicks){
+  var rough = range / targetTicks;
+  var mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  var residual = rough / mag;
+  if(residual <= 1.5) return mag;
+  if(residual <= 3) return 2 * mag;
+  if(residual <= 7) return 5 * mag;
+  return 10 * mag;
+}
+
+/* ===== EXPOSE TO GLOBAL FOR ONCLICK HANDLERS ===== */
+window.showHome = showHome;
+window.showModel = showModel;
+window.m1Play = m1Play;
+window.m1Pause = m1Pause;
+window.m1Reset = m1Reset;
+window.m1ToggleThrust = m1ToggleThrust;
+window.m2Play = m2Play;
+window.m2Pause = m2Pause;
+window.m2Reset = m2Reset;
+window.m2UpdateF = m2UpdateF;
+window.m2UpdateM = m2UpdateM;
+
+/* ===== INITIAL RENDER ===== */
+m1Render();
+m2Render();
+
+})();
+</script>
+
+<!--
+============================================================
+SELF-CHECK REPORT (验收清单自检)
+============================================================
+
+1. 子模型二验证：F=10 N, m=2 kg
+   - 手算 a = F/m = 10/2 = 5.00 m/s²
+     代码: m2GetA() = m2.F / m2.mass = 10 / 2 = 5.00  → 一致 ✓
+   - 手算 2s 末 v = at = 5×2 = 10.00 m/s
+     代码: m2GetV() = a * t = 5 * 2 = 10.00  → 一致 ✓
+   - v-t 图：代码绘制从 (0,0) 出发的直线，斜率 = a = 5
+     虚线为理论全范围，实线为已运行轨迹，均为过原点直线 ✓
+   - 结论：通过 ✓
+
+2. 子模型一验证：运动中撤去推力
+   - 推力开启时 m1.a = m1.THRUST_A = 2 m/s²，m1.v 持续增加
+   - 撤去推力后 m1.a = 0，m1Step 中 v += 0*dt → v 不变
+   - 连续观察 3s：Δv = a×Δt = 0×3 = 0，读数完全冻结 ✓
+   - 结论：通过 ✓
+
+3. 暂停功能验证：
+   - m1Pause() 设置 m1.paused=true；m1Step 中 if(m1.paused) return 跳过物理更新 ✓
+   - m2Pause() 同理，m2Step 跳过 ✓
+   - 读数：暂停时显示 pausedV/pausedA/pausedT 冻结值 ✓
+   - 画布：暂停时 render 仍调用但物理未变，显示冻结帧 ✓
+   - 恢复：m1Play() 检测 m1.paused 后设 false，动画继续 ✓
+   - 视觉指示：暂停时 canvas-wrapper 添加 "已暂停" 徽章 ✓
+   - 结论：通过 ✓
+
+4. 子模型切换状态隔离验证：
+   - m1 和 m2 为独立对象，属性完全不交叉 ✓
+   - showModel(n) 仅切换 CSS display，不修改另一模型的任何状态 ✓
+   - 动画循环根据 currentView 字符串决定更新哪个模型 ✓
+   - canvas 元素独立（canvas1、canvas2、canvas2-graph），clearRect 各自画布 ✓
+   - 来回切换：各模型的 v、a、t、推力状态、滑块值、观察文本均独立保持 ✓
+   - 无残影：每次 render 均先 clearRect(0,0,W,H) 清空全画布 ✓
+   - 结论：通过 ✓
+
+5. 所有控件操作验证：
+   - 播放按钮：m1Play / m2Play → 启动/恢复动画 ✓
+   - 暂停按钮：m1Pause / m2Pause → 冻结状态与读数 ✓
+   - 重置按钮：m1Reset / m2Reset → 归零所有状态并重绘 ✓
+   - 推力开关：m1ToggleThrust → 切换 m1.thrustOn，按钮文字/颜色更新 ✓
+   - F 滑块 (1-20 N, step=1)：m2UpdateF → 更新 F，重置模拟 ✓
+   - m 滑块 (0.5-5 kg, step=0.5)：m2UpdateM → 更新 m，重置模拟 ✓
+   - 返回首页按钮：showHome → 停止动画循环，显示卡片 ✓
+   - 卡片点击：showModel(1) / showModel(2) → 正确切换视图 ✓
+   - textarea 输入：正常接受用户文本 ✓
+   - 无 console 报错，无未定义变量引用 ✓
+   - 结论：通过 ✓
+
+额外工程检查：
+   - HTML lang="zh-CN" ✓
+   - 零外链、零外部依赖（无 CDN、无外部 CSS/JS/字体/图片）✓
+   - 单文件内视图切换（showModel/showHome），无外部页面跳转 ✓
+   - 1440×900 布局：max-width 1160px 居中，各区块垂直排列无溢出 ✓
+   - canvas 提供 aria-label + role="img" + 替代文本内容 ✓
+   - 所有控件有可见文字标签 ✓
+   - 页面声明"忽略一切摩擦力（光滑水平面）；向右为正方向；SI 单位" ✓
+   - 每个子模型底部设"观察与结论"填空区 ✓
+
+============================================================
+-->
+</body>
+</html>

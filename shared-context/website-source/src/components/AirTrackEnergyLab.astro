@@ -1,0 +1,1552 @@
+---
+import ExperimentReview from './ExperimentReview.astro';
+import LabDraftNotice from './LabDraftNotice.astro';
+import LabSectionNav from './LabSectionNav.astro';
+import { airTrackReview } from '../data/lab-reviews/air-track';
+
+const trialIndexes = [1, 2, 3, 4, 5, 6];
+const defaultCartMassG = 160;
+const defaultHangerMassesG = [20, 50, 70, 100, 120, 150];
+const apparatus = ['气垫导轨', '两双头光电门', '带有遮光条的滑块', '重锤'];
+const steps = ['将气垫导轨调节水平', '连接遮光条和重锤，释放重锤', '读取数据并代入表达式验证'];
+---
+
+<section class="bg-lab">
+  <div class="page-shell py-12 sm:py-16">
+    <div class="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+      <div>
+        <a href="/online-lab/" class="focus-ring inline-flex rounded-md text-sm font-bold text-yucai-700 hover:text-yucai-900">
+          返回在线实验室
+        </a>
+        <p class="eyebrow mt-8">MECHANICAL ENERGY</p>
+        <h1 class="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">气垫导轨验证系统机械能守恒定律</h1>
+        <LabSectionNav slug="air-track" />
+        <p class="mt-5 leading-8 text-slate-700">
+          用气垫导轨减小摩擦影响，重锤下降带动滑块运动。比较重锤重力势能减少量
+          <span class="font-mono font-bold text-yucai-800">mgh</span>
+          与滑块和重锤组成系统的动能增加量
+          <span class="font-mono font-bold text-yucai-800">1/2(M+m)(v<sub>2</sub>²-v<sub>1</sub>²)</span>
+          是否接近。
+        </p>
+
+        <div class="mt-8 grid gap-5 sm:grid-cols-2">
+          <div class="rounded-md border border-slate-200 bg-white p-5">
+            <h2 class="text-base font-black text-ink">实验器材</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+              {apparatus.map((item) => <span class="rounded-md bg-yucai-50 px-3 py-2 text-sm font-bold text-yucai-800">{item}</span>)}
+            </div>
+          </div>
+
+          <div class="rounded-md border border-slate-200 bg-white p-5">
+            <h2 class="text-base font-black text-ink">实验步骤</h2>
+            <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-700">
+              {steps.map((step) => <li class="pl-1 marker:font-black marker:text-yucai-700">{step}</li>)}
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <figure class="mx-auto w-full max-w-[620px] overflow-hidden rounded-md border border-slate-200 bg-white shadow-soft lg:translate-y-8 lg:justify-self-end">
+        <img
+          src="/images/mechanical-energy-air-track.png"
+          alt="气垫导轨验证系统机械能守恒的光电门、滑块、遮光条和重锤装置图"
+          class="max-h-[430px] w-full object-contain"
+        />
+      </figure>
+    </div>
+
+    <div id="lab-workbench" class="tool-surface mt-10 overflow-hidden scroll-mt-24">
+      <LabDraftNotice />
+      <div class="border-b border-slate-200 bg-white px-5 py-5 sm:px-6">
+        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,auto)] xl:items-end">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-yucai-700">DATA WORKBENCH</p>
+            <h2 class="mt-2 text-2xl font-black text-ink">气垫导轨数据表格与能量图像</h2>
+            <p class="mt-3 leading-7 text-slate-700">
+              两只双头光电门分别给出速度。把同一次实验的两条速度记录填入表格，页面会按填入顺序保留 v<sub>1</sub>、v<sub>2</sub>，不自动排序。
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-xs font-bold text-slate-600">实验小组名称</span>
+              <input
+                id="group-name"
+                class="focus-ring mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-ink"
+                type="text"
+                value="第 1 小组"
+                autocomplete="off"
+              />
+            </label>
+
+            <div class="flex flex-wrap gap-3">
+              <button
+                id="manual-mode"
+                class="focus-ring h-11 rounded-md border border-yucai-600 px-4 text-sm font-bold text-yucai-700 transition hover:bg-yucai-50"
+                type="button"
+              >
+                手动录入
+              </button>
+              <button
+                id="serial-mode"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                串口输入
+              </button>
+              <button
+                id="ble-mode"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                蓝牙输入
+              </button>
+              <button
+                id="ai-simulate"
+                class="focus-ring hidden h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                AI模拟
+              </button>
+              <button
+                id="clear-data"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                一键数据清除
+              </button>
+              <button
+                id="export-csv"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                导出CSV
+              </button>
+              <button
+                id="export-screenshot"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                导出截图
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="lab-report-panel" class="bg-white">
+        <div class="p-5 sm:p-6">
+          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <div>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <label class="block rounded-md bg-yucai-50 p-4">
+                  <span class="text-xs font-bold text-slate-600">重力加速度 g / (m/s²)</span>
+                  <input
+                    id="gravity-input"
+                    class="focus-ring mt-2 h-10 w-full rounded-md border border-yucai-200 bg-white px-3 font-mono text-sm"
+                    type="number"
+                    value="9.7880"
+                    step="0.0001"
+                    min="0.0001"
+                    inputmode="decimal"
+                  />
+                </label>
+
+                <label class="block rounded-md bg-yucai-50 p-4">
+                  <span class="text-xs font-bold text-slate-600">滑块质量 M / g（可先统一填写，也可在表格中逐行调整）</span>
+                  <input
+                    id="cart-mass-global"
+                    class="focus-ring mt-2 h-10 w-full rounded-md border border-yucai-200 bg-white px-3 font-mono text-sm"
+                    type="number"
+                    value={defaultCartMassG}
+                    step="1"
+                    min="1"
+                    inputmode="numeric"
+                    aria-label="滑块质量，将同步到表格中各次实验的滑块质量"
+                  />
+                </label>
+
+                <div class="rounded-md bg-slate-100 px-4 py-3 text-sm leading-7 text-slate-700 sm:col-span-2">
+                  <p>
+                    重锤与滑块质量列单位为 g，重锤下降高度单位为 cm。页面计算时会自动把质量换算为 kg、把高度换算为 m。各次「重锤质量」可依次填 20、50、70、100、120、150
+                    g 做对比；滑块质量可以先在上方统一填写，也可以在表格中按每次实测值单独调整。
+                  </p>
+                </div>
+              </div>
+
+              <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                <div class="rounded-md bg-white px-4 py-3 ring-1 ring-slate-200">
+                  <p class="text-xs font-bold text-slate-500">重力势能减少量</p>
+                  <p class="mt-2 text-lg font-black text-ink" data-latex="Delta E_p = mgh">ΔE<sub>p</sub> = mgh</p>
+                </div>
+                <div class="rounded-md bg-white px-4 py-3 ring-1 ring-slate-200">
+                  <p class="text-xs font-bold text-slate-500">系统动能增加量</p>
+                  <p class="mt-2 text-lg font-black text-ink" data-latex="Delta E_k = 1/2(M+m)(v_2^2-v_1^2)">
+                    ΔE<sub>k</sub> =
+                    <span class="inline-flex flex-col align-middle text-center leading-tight">
+                      <span class="border-b border-ink px-2">1</span>
+                      <span>2</span>
+                    </span>
+                    (M+m)(v<sub>2</sub>²-v<sub>1</sub>²)
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-md border border-slate-200 bg-white p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-black uppercase tracking-[0.16em] text-yucai-700">LIVE INPUT</p>
+                  <p id="input-status" class="mt-2 text-sm font-bold leading-6 text-ink">当前为手动录入</p>
+                </div>
+                <p id="mode-label" class="shrink-0 rounded-md bg-yucai-50 px-2 py-1 text-xs font-bold text-yucai-800">手动录入</p>
+              </div>
+
+              <div id="serial-panel" class="mt-4 hidden">
+                <div class="grid grid-cols-2 gap-3">
+                  <button id="serial-connect" class="focus-ring h-10 rounded-md bg-yucai-700 px-3 text-sm font-bold text-white transition hover:bg-yucai-800" type="button">
+                    连接串口
+                  </button>
+                  <button id="serial-clear-log" class="focus-ring h-10 rounded-md border border-slate-300 px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100" type="button">
+                    清空日志
+                  </button>
+                </div>
+                <pre id="serial-log" class="mt-3 h-32 overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-3 text-xs leading-5 text-blue-50">等待串口数据...</pre>
+              </div>
+
+              <div id="ble-panel" class="mt-4 hidden">
+                <label class="block">
+                  <span class="text-xs font-bold text-slate-600">蓝牙名称前缀</span>
+                  <input
+                    id="ble-name-prefix"
+                    class="focus-ring mt-2 h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+                    value="ESP32-2gate"
+                    autocomplete="off"
+                  />
+                </label>
+                <div class="mt-3 grid grid-cols-2 gap-3">
+                  <button id="ble-connect-prefix" class="focus-ring h-10 rounded-md bg-yucai-700 px-3 text-sm font-bold text-white transition hover:bg-yucai-800" type="button">
+                    按名称连接
+                  </button>
+                  <button id="ble-connect-all" class="focus-ring h-10 rounded-md border border-yucai-600 px-3 text-sm font-bold text-yucai-700 transition hover:bg-yucai-50" type="button">
+                    搜索所有蓝牙
+                  </button>
+                </div>
+                <p id="ble-status" class="mt-3 text-sm font-bold leading-6 text-yucai-800">等待连接 ESP32-2gate 两双头光电门</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="velocity-record-panel" class="mt-5 hidden">
+            <div class="rounded-md bg-slate-950 p-4">
+              <canvas id="velocity-chart" class="h-[360px] w-full" aria-label="两双头光电门速度测量图像"></canvas>
+            </div>
+
+            <div class="mt-4 overflow-hidden rounded-md border border-slate-200 bg-white">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                <h3 class="text-base font-black text-ink">两双头光电门速度记录</h3>
+                <button
+                  id="clear-velocity-records"
+                  class="focus-ring h-9 rounded-md border border-slate-300 px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                  type="button"
+                >
+                  清空记录
+                </button>
+              </div>
+              <div class="max-h-72 overflow-auto">
+                <table class="w-full min-w-[1080px] text-left text-sm">
+                  <thead class="sticky top-0 bg-slate-100 text-xs font-black text-slate-600">
+                    <tr>
+                      <th class="px-4 py-3">序号</th>
+                      <th class="px-4 py-3">来源</th>
+                      <th class="px-4 py-3">光电门</th>
+                      <th class="px-4 py-3">在线时间</th>
+                      <th class="px-4 py-3">设备时间 / s</th>
+                      <th class="px-4 py-3">时间差 / s</th>
+                      <th class="px-4 py-3">速度 / m/s</th>
+                      <th class="px-4 py-3">填入表格</th>
+                    </tr>
+                  </thead>
+                  <tbody id="velocity-record-table-body" class="divide-y divide-slate-100 text-slate-700">
+                    <tr>
+                      <td class="px-4 py-4 text-slate-500" colspan="8">等待两双头光电门触发</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-5 overflow-x-auto rounded-md border border-slate-200">
+            <table class="min-w-[1060px] w-full table-fixed text-left text-base">
+              <thead class="bg-slate-100 text-sm font-black text-slate-600">
+                <tr>
+                  <th class="w-24 px-4 py-4">实验次数</th>
+                  <th class="w-28 px-4 py-4">重锤质量 m / g</th>
+                  <th class="w-28 px-4 py-4">滑块质量 M / g</th>
+                  <th class="w-28 px-4 py-4">重锤下落高度 h / cm</th>
+                  <th class="w-32 px-4 py-4">初速度 v<sub>1</sub> / (m/s)</th>
+                  <th class="w-32 px-4 py-4">末速度 v<sub>2</sub> / (m/s)</th>
+                  <th class="w-36 bg-amber-50 px-4 py-4 text-amber-800">ΔE<sub>p</sub> / J</th>
+                  <th class="w-36 bg-sky-50 px-4 py-4 text-sky-800">ΔE<sub>k</sub> / J</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                {
+                  trialIndexes.map((trial, idx) => (
+                    <tr>
+                      <td class="px-4 py-4 font-mono font-bold text-ink">第 {trial} 次</td>
+                      <td class="px-4 py-4">
+                        <input
+                          class="focus-ring h-12 w-24 rounded-md border border-slate-300 bg-white px-3 font-mono text-base"
+                          data-hanger-mass-input
+                          data-trial={trial}
+                          type="number"
+                          value={defaultHangerMassesG[idx] ?? 20}
+                          step="1"
+                          min="0"
+                          inputmode="numeric"
+                          aria-label={`第 ${trial} 次实验的重锤质量`}
+                        />
+                      </td>
+                      <td class="px-4 py-4">
+                        <input
+                          class="focus-ring h-12 w-24 rounded-md border border-slate-300 bg-white px-3 font-mono text-base"
+                          data-cart-mass-input
+                          data-trial={trial}
+                          type="number"
+                          value={defaultCartMassG}
+                          step="1"
+                          min="0"
+                          inputmode="numeric"
+                          aria-label={`第 ${trial} 次实验的滑块质量`}
+                        />
+                      </td>
+                      <td class="px-4 py-4">
+                        <input
+                          class="focus-ring h-12 w-24 rounded-md border border-slate-300 bg-white px-3 font-mono text-base"
+                          data-height-input
+                          data-trial={trial}
+                          type="number"
+                          step="1"
+                          min="0"
+                          inputmode="numeric"
+                          aria-label={`第 ${trial} 次实验的重锤下落高度，单位厘米`}
+                        />
+                      </td>
+                      <td class="px-4 py-4">
+                        <input
+                          class="focus-ring h-12 w-28 rounded-md border border-slate-300 bg-white px-3 font-mono text-base"
+                          data-initial-speed-input
+                          data-trial={trial}
+                          type="number"
+                          step="0.0001"
+                          min="0"
+                          inputmode="decimal"
+                          aria-label={`第 ${trial} 次实验的初速度 v₁`}
+                        />
+                      </td>
+                      <td class="px-4 py-4">
+                        <input
+                          class="focus-ring h-12 w-28 rounded-md border border-slate-300 bg-white px-3 font-mono text-base"
+                          data-final-speed-input
+                          data-trial={trial}
+                          type="number"
+                          step="0.0001"
+                          min="0"
+                          inputmode="decimal"
+                          aria-label={`第 ${trial} 次实验的末速度 v₂`}
+                        />
+                      </td>
+                      <td class="bg-amber-50/70 px-4 py-4 font-mono tabular-nums font-bold text-amber-900" data-field="potential" data-trial={trial}></td>
+                      <td class="bg-sky-50/70 px-4 py-4 font-mono tabular-nums font-bold text-sky-900" data-field="kinetic" data-trial={trial}></td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="border-t border-slate-200 bg-white p-5 sm:p-6">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-md bg-yucai-50 p-4">
+              <p class="text-xs font-bold text-slate-500">可绘图实验次数</p>
+              <p id="chart-point-count" class="mt-1 font-mono text-2xl font-black text-yucai-800">0</p>
+            </div>
+            <div class="rounded-md bg-slate-100 p-4">
+              <p class="text-xs font-bold text-slate-500">最近速度</p>
+              <p id="latest-velocity" class="mt-1 font-mono text-2xl font-black text-ink">--</p>
+            </div>
+          </div>
+
+          <div id="lab-analysis" class="relative mt-5 scroll-mt-24 rounded-md bg-slate-950 p-4">
+            <canvas id="energy-bar-chart" class="h-[420px] w-full" aria-label="各实验次数势能减小和系统动能增加柱状图"></canvas>
+            <div
+              id="energy-tooltip"
+              class="pointer-events-none absolute hidden w-60 rounded-md border border-blue-100/30 bg-slate-900/95 px-3 py-2 text-xs leading-5 text-blue-50 shadow-xl"
+              aria-live="polite"
+            >
+            </div>
+            <p id="bar-chart-empty" class="pointer-events-none absolute inset-x-6 top-1/2 -translate-y-1/2 text-center text-sm font-bold text-blue-100">
+              请至少填写一组完整实验数据
+            </p>
+          </div>
+
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { bindLabDraft } from '../lib/lab-draft';
+    type InputMode = 'manual' | 'serial' | 'ble';
+    type ChartBarKind = 'potential' | 'kinetic';
+
+    type AirTrackRow = {
+      trial: number;
+      hangerMassG: number | null;
+      cartMassG: number | null;
+      dropHeightCm: number | null;
+      initialSpeed: number | null;
+      finalSpeed: number | null;
+      potentialDecrease: number | null;
+      kineticIncrease: number | null;
+      relativeError: number | null;
+      chartReady: boolean;
+    };
+
+    type ChartPoint = {
+      trial: number;
+      potentialDecrease: number;
+      kineticIncrease: number;
+      relativeError: number | null;
+    };
+
+    type ChartHitArea = {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      kind: ChartBarKind;
+      point: ChartPoint;
+      label: string;
+      value: number;
+    };
+
+    type CapturedVelocityMeta = {
+      source: '串口' | '蓝牙';
+      gateNumber?: number;
+      deviceTime?: number;
+      gateDeltaS?: number;
+      raw?: string;
+    };
+
+    type VelocityRecord = CapturedVelocityMeta & {
+      id: number;
+      velocity: number;
+      onlineTimeMs: number;
+    };
+
+    type SerialPortLike = {
+      open: (options: { baudRate: number }) => Promise<void>;
+      close: () => Promise<void>;
+      readable: ReadableStream<Uint8Array> | null;
+      writable: WritableStream<Uint8Array> | null;
+    };
+
+    type SerialNavigator = Navigator & {
+      serial?: {
+        requestPort: () => Promise<SerialPortLike>;
+      };
+    };
+
+    type BluetoothRequestFilter = {
+      name?: string;
+      namePrefix?: string;
+      services?: string[];
+    };
+
+    type BluetoothRequestOptions = {
+      filters?: BluetoothRequestFilter[];
+      acceptAllDevices?: boolean;
+      optionalServices?: string[];
+    };
+
+    type BluetoothRemoteGATTCharacteristicLike = EventTarget & {
+      startNotifications: () => Promise<BluetoothRemoteGATTCharacteristicLike>;
+      value?: DataView;
+    };
+
+    type BluetoothRemoteGATTServiceLike = {
+      getCharacteristic: (characteristicUuid: string) => Promise<BluetoothRemoteGATTCharacteristicLike>;
+    };
+
+    type BluetoothRemoteGATTServerLike = {
+      connected?: boolean;
+      disconnect: () => void;
+      getPrimaryService: (serviceUuid: string) => Promise<BluetoothRemoteGATTServiceLike>;
+    };
+
+    type BluetoothDeviceLike = {
+      name?: string;
+      gatt?: BluetoothRemoteGATTServerLike & { connect: () => Promise<BluetoothRemoteGATTServerLike> };
+    };
+
+    type BluetoothLike = {
+      requestDevice: (options: BluetoothRequestOptions) => Promise<BluetoothDeviceLike>;
+    };
+
+    const trialNumbers = [1, 2, 3, 4, 5, 6];
+    const DEFAULT_HANGER_MASSES_G = [20, 50, 70, 100, 120, 150];
+    const DEFAULT_CART_MASS_G = 160;
+    const simulatedData: Record<number, { hangerMassG: number; cartMassG: number; dropHeightCm: number; initialSpeed: number; finalSpeed: number }> = {
+      1: { hangerMassG: 20, cartMassG: 160, dropHeightCm: 30, initialSpeed: 0.2, finalSpeed: 0.996 },
+      2: { hangerMassG: 50, cartMassG: 160, dropHeightCm: 30, initialSpeed: 0.18, finalSpeed: 1.292 },
+      3: { hangerMassG: 70, cartMassG: 160, dropHeightCm: 30, initialSpeed: 0.16, finalSpeed: 1.475 },
+      4: { hangerMassG: 100, cartMassG: 160, dropHeightCm: 30, initialSpeed: 0.17, finalSpeed: 1.392 },
+      5: { hangerMassG: 120, cartMassG: 160, dropHeightCm: 30, initialSpeed: 0.15, finalSpeed: 1.18 },
+      6: { hangerMassG: 150, cartMassG: 160, dropHeightCm: 35, initialSpeed: 0.16, finalSpeed: 1.26 }
+    };
+
+    const hangerMassInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-hanger-mass-input]'));
+    const cartMassInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-cart-mass-input]'));
+
+    const applyCartMassFromGlobal = () => {
+      const raw = cartMassGlobalInput?.value.trim() ?? '';
+      const v = raw === '' ? String(DEFAULT_CART_MASS_G) : raw;
+      for (const el of cartMassInputs) el.value = v;
+    };
+    const heightInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-height-input]'));
+    const initialSpeedInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-initial-speed-input]'));
+    const finalSpeedInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-final-speed-input]'));
+    const groupNameInput = document.querySelector<HTMLInputElement>('#group-name');
+    const gravityInput = document.querySelector<HTMLInputElement>('#gravity-input');
+    const cartMassGlobalInput = document.querySelector<HTMLInputElement>('#cart-mass-global');
+    const manualButton = document.querySelector<HTMLButtonElement>('#manual-mode');
+    const serialModeButton = document.querySelector<HTMLButtonElement>('#serial-mode');
+    const bleModeButton = document.querySelector<HTMLButtonElement>('#ble-mode');
+    const simulateButton = document.querySelector<HTMLButtonElement>('#ai-simulate');
+    const clearButton = document.querySelector<HTMLButtonElement>('#clear-data');
+    const exportCsvButton = document.querySelector<HTMLButtonElement>('#export-csv');
+    const exportScreenshotButton = document.querySelector<HTMLButtonElement>('#export-screenshot');
+    const serialPanel = document.querySelector<HTMLDivElement>('#serial-panel');
+    const blePanel = document.querySelector<HTMLDivElement>('#ble-panel');
+    const velocityRecordPanel = document.querySelector<HTMLDivElement>('#velocity-record-panel');
+    const velocityChart = document.querySelector<HTMLCanvasElement>('#velocity-chart');
+    const velocityRecordTableBody = document.querySelector<HTMLTableSectionElement>('#velocity-record-table-body');
+    const clearVelocityRecordsButton = document.querySelector<HTMLButtonElement>('#clear-velocity-records');
+    const serialConnectButton = document.querySelector<HTMLButtonElement>('#serial-connect');
+    const serialClearLogButton = document.querySelector<HTMLButtonElement>('#serial-clear-log');
+    const serialLog = document.querySelector<HTMLPreElement>('#serial-log');
+    const bleNamePrefixInput = document.querySelector<HTMLInputElement>('#ble-name-prefix');
+    const bleConnectPrefixButton = document.querySelector<HTMLButtonElement>('#ble-connect-prefix');
+    const bleConnectAllButton = document.querySelector<HTMLButtonElement>('#ble-connect-all');
+    const bleStatus = document.querySelector<HTMLParagraphElement>('#ble-status');
+    const inputStatus = document.querySelector<HTMLParagraphElement>('#input-status');
+    const modeLabel = document.querySelector<HTMLParagraphElement>('#mode-label');
+    const barChart = document.querySelector<HTMLCanvasElement>('#energy-bar-chart');
+    const energyTooltip = document.querySelector<HTMLDivElement>('#energy-tooltip');
+    const barChartEmpty = document.querySelector<HTMLParagraphElement>('#bar-chart-empty');
+    const pointCountLabel = document.querySelector<HTMLParagraphElement>('#chart-point-count');
+    const latestVelocityLabel = document.querySelector<HTMLParagraphElement>('#latest-velocity');
+    const decoder = new TextDecoder();
+    const maxLogLength = 30000;
+    const phyphoxExperimentServiceUuid = 'cddf0001-30f7-4671-8b43-5e40ba53514a';
+    const phyphoxDataServiceUuid = 'cddf1001-30f7-4671-8b43-5e40ba53514a';
+    const phyphoxDataCharacteristicUuid = 'cddf1002-30f7-4671-8b43-5e40ba53514a';
+    const phyphoxServiceUuids = [phyphoxExperimentServiceUuid, phyphoxDataServiceUuid];
+
+    let currentMode: InputMode = 'manual';
+    let latestVelocity: number | null = null;
+    let latestGateNumber: number | undefined;
+    const velocityRecords: VelocityRecord[] = [];
+    let velocityRecordSequence = 0;
+    let chartHitAreas: ChartHitArea[] = [];
+    let activeChartSelection: { trial: number; kind: ChartBarKind } | null = null;
+    let serialPort: SerialPortLike | null = null;
+    let serialReader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+    let serialLineBuffer = '';
+    let serialReadLoopStarted = false;
+    let selectedBleDevice: BluetoothDeviceLike | null = null;
+    let bleDataCharacteristic: BluetoothRemoteGATTCharacteristicLike | null = null;
+    let bleDeviceName = '';
+
+    const getPositiveNumericValue = (input: HTMLInputElement | null, fallback: number) => {
+      const value = Number(input?.value);
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    };
+
+    const parseInputNumber = (input: HTMLInputElement | null) => {
+      const raw = input?.value.trim() ?? '';
+      if (raw === '') return null;
+      const value = Number(raw);
+      return Number.isFinite(value) ? value : null;
+    };
+
+    const formatNumber = (value: number | null, digits = 4) => {
+      if (value === null || !Number.isFinite(value)) return '';
+      return value.toFixed(digits);
+    };
+
+    const formatEnergyValue = (value: number) => `${value.toFixed(4)} J`;
+
+    const readGroupName = () => {
+      const value = groupNameInput?.value.trim();
+      return value || '未命名小组';
+    };
+
+    const getInputByTrial = (inputs: HTMLInputElement[], trial: number) =>
+      inputs.find((input) => Number(input.dataset.trial) === trial) ?? null;
+
+    const setCell = (trial: number, field: string, value: string) => {
+      const cell = document.querySelector<HTMLElement>(`[data-field="${field}"][data-trial="${trial}"]`);
+      if (cell) cell.textContent = value;
+    };
+
+    const readRows = () => {
+      const gravity = getPositiveNumericValue(gravityInput, 9.788);
+
+      const rows: AirTrackRow[] = trialNumbers.map((trial) => {
+        const hangerMassG = parseInputNumber(getInputByTrial(hangerMassInputs, trial));
+        const cartMassG = parseInputNumber(getInputByTrial(cartMassInputs, trial));
+        const dropHeightCm = parseInputNumber(getInputByTrial(heightInputs, trial));
+        const initialSpeed = parseInputNumber(getInputByTrial(initialSpeedInputs, trial));
+        const finalSpeed = parseInputNumber(getInputByTrial(finalSpeedInputs, trial));
+
+        const potentialDecrease =
+          hangerMassG !== null && hangerMassG > 0 && dropHeightCm !== null && dropHeightCm >= 0
+            ? (hangerMassG / 1000) * gravity * (dropHeightCm / 100)
+            : null;
+        const kineticIncrease =
+          hangerMassG !== null &&
+          hangerMassG > 0 &&
+          cartMassG !== null &&
+          cartMassG > 0 &&
+          initialSpeed !== null &&
+          finalSpeed !== null
+            ? 0.5 * ((hangerMassG + cartMassG) / 1000) * (finalSpeed ** 2 - initialSpeed ** 2)
+            : null;
+        const relativeError =
+          potentialDecrease !== null && kineticIncrease !== null && kineticIncrease !== 0
+            ? Math.abs(1 - potentialDecrease / kineticIncrease)
+            : null;
+
+        return {
+          trial,
+          hangerMassG,
+          cartMassG,
+          dropHeightCm,
+          initialSpeed,
+          finalSpeed,
+          potentialDecrease,
+          kineticIncrease,
+          relativeError,
+          chartReady: potentialDecrease !== null && kineticIncrease !== null
+        };
+      });
+
+      return rows;
+    };
+
+    const getChartPoints = (rows: AirTrackRow[]) =>
+      rows
+        .filter((row): row is AirTrackRow & { potentialDecrease: number; kineticIncrease: number } => row.chartReady)
+        .map((row) => ({
+          trial: row.trial,
+          potentialDecrease: row.potentialDecrease,
+          kineticIncrease: row.kineticIncrease,
+          relativeError: row.relativeError
+        }));
+
+    const drawEnergyBarChart = (points: ChartPoint[]) => {
+      if (!barChart) return;
+      chartHitAreas = [];
+      const ratio = window.devicePixelRatio || 1;
+      const rect = barChart.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width * ratio));
+      const height = Math.max(1, Math.floor(rect.height * ratio));
+      barChart.width = width;
+      barChart.height = height;
+
+      const ctx = barChart.getContext('2d');
+      if (!ctx) return;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+
+      const marginLeft = 72 * ratio;
+      const marginRight = 34 * ratio;
+      const marginTop = 62 * ratio;
+      const marginBottom = 68 * ratio;
+      const plotWidth = width - marginLeft - marginRight;
+      const plotHeight = height - marginTop - marginBottom;
+      const originX = marginLeft;
+      const originY = height - marginBottom;
+      const maxValue = Math.max(0.01, ...points.flatMap((point) => [point.potentialDecrease, point.kineticIncrease])) * 1.32;
+
+      ctx.strokeStyle = 'rgba(219, 234, 254, 0.16)';
+      ctx.lineWidth = 1 * ratio;
+      ctx.fillStyle = '#dbeafe';
+      ctx.font = `${11 * ratio}px system-ui, sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i <= 5; i += 1) {
+        const value = (maxValue * i) / 5;
+        const y = originY - (plotHeight * i) / 5;
+        ctx.beginPath();
+        ctx.moveTo(originX, y);
+        ctx.lineTo(originX + plotWidth, y);
+        ctx.stroke();
+        ctx.fillText(value.toFixed(3), originX - 10 * ratio, y);
+      }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+      ctx.lineWidth = 1.6 * ratio;
+      ctx.beginPath();
+      ctx.moveTo(originX, marginTop);
+      ctx.lineTo(originX, originY);
+      ctx.lineTo(originX + plotWidth, originY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#dbeafe';
+      ctx.font = `${13 * ratio}px system-ui, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('能量变化 / J', originX, marginTop - 28 * ratio);
+      ctx.textAlign = 'center';
+      ctx.fillText('实验次数', originX + plotWidth / 2, height - 18 * ratio);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(originX + plotWidth - 242 * ratio, marginTop - 36 * ratio, 12 * ratio, 12 * ratio);
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillText('势能减小 mgh', originX + plotWidth - 224 * ratio, marginTop - 25 * ratio);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(originX + plotWidth - 108 * ratio, marginTop - 36 * ratio, 12 * ratio, 12 * ratio);
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillText('系统动能增加', originX + plotWidth - 90 * ratio, marginTop - 25 * ratio);
+
+      if (!points.length) return;
+
+      const groupWidth = plotWidth / points.length;
+      const barWidth = Math.min(42 * ratio, groupWidth * 0.24);
+      const hitPadding = 8 * ratio;
+      ctx.textBaseline = 'alphabetic';
+
+      points.forEach((point, order) => {
+        const groupCenter = originX + groupWidth * (order + 0.5);
+        const potentialHeight = (point.potentialDecrease / maxValue) * plotHeight;
+        const kineticHeight = (point.kineticIncrease / maxValue) * plotHeight;
+        const potentialX = groupCenter - barWidth - 5 * ratio;
+        const kineticX = groupCenter + 5 * ratio;
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(potentialX, originY - potentialHeight, barWidth, potentialHeight);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(kineticX, originY - kineticHeight, barWidth, kineticHeight);
+
+        chartHitAreas.push(
+          {
+            x: (potentialX - hitPadding) / ratio,
+            y: marginTop / ratio,
+            width: (barWidth + hitPadding * 2) / ratio,
+            height: (originY - marginTop) / ratio,
+            kind: 'potential',
+            point,
+            label: '势能减小 mgh',
+            value: point.potentialDecrease
+          },
+          {
+            x: (kineticX - hitPadding) / ratio,
+            y: marginTop / ratio,
+            width: (barWidth + hitPadding * 2) / ratio,
+            height: (originY - marginTop) / ratio,
+            kind: 'kinetic',
+            point,
+            label: '系统动能增加 1/2(M+m)(v₂²-v₁²)',
+            value: point.kineticIncrease
+          }
+        );
+
+        const selectedKind = activeChartSelection?.trial === point.trial ? activeChartSelection.kind : null;
+        if (selectedKind) {
+          const selectedArea = selectedKind === 'potential'
+            ? { x: potentialX, height: potentialHeight, color: '#fde68a' }
+            : { x: kineticX, height: kineticHeight, color: '#bae6fd' };
+          ctx.strokeStyle = selectedArea.color;
+          ctx.lineWidth = 2 * ratio;
+          ctx.strokeRect(selectedArea.x - 2 * ratio, originY - selectedArea.height - 2 * ratio, barWidth + 4 * ratio, selectedArea.height + 4 * ratio);
+        }
+
+        ctx.fillStyle = '#dbeafe';
+        ctx.font = `${13 * ratio}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`第${point.trial}次`, groupCenter, originY + 25 * ratio);
+
+      });
+    };
+
+    const padNumber = (value: number, size = 2) => String(value).padStart(size, '0');
+
+    const formatOnlineTimestamp = (timeMs: number) => {
+      const date = new Date(timeMs);
+      return [
+        `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`,
+        `${padNumber(date.getHours())}:${padNumber(date.getMinutes())}:${padNumber(date.getSeconds())}.${padNumber(date.getMilliseconds(), 3)}`
+      ].join(' ');
+    };
+
+    const drawVelocityChart = () => {
+      if (!velocityChart) return;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = velocityChart.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width * ratio));
+      const height = Math.max(1, Math.floor(rect.height * ratio));
+      velocityChart.width = width;
+      velocityChart.height = height;
+
+      const ctx = velocityChart.getContext('2d');
+      if (!ctx) return;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+
+      const padding = {
+        top: 44 * ratio,
+        right: 34 * ratio,
+        bottom: 64 * ratio,
+        left: 78 * ratio
+      };
+      const plotLeft = padding.left;
+      const plotTop = padding.top;
+      const plotWidth = Math.max(1, width - padding.left - padding.right);
+      const plotHeight = Math.max(1, height - padding.top - padding.bottom);
+      const plotBottom = plotTop + plotHeight;
+      const visible = velocityRecords.slice(-24);
+      const maxVelocity = Math.max(1, ...visible.map((record) => record.velocity)) * 1.18;
+
+      ctx.strokeStyle = 'rgba(219, 234, 254, 0.16)';
+      ctx.lineWidth = 1 * ratio;
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = `${12 * ratio}px system-ui, sans-serif`;
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i <= 5; i += 1) {
+        const y = plotTop + (plotHeight / 5) * i;
+        const value = maxVelocity - (maxVelocity / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(plotLeft, y);
+        ctx.lineTo(plotLeft + plotWidth, y);
+        ctx.stroke();
+        ctx.textAlign = 'right';
+        ctx.fillText(value.toFixed(2), plotLeft - 12 * ratio, y);
+      }
+
+      ctx.strokeStyle = 'rgba(226, 232, 240, 0.75)';
+      ctx.lineWidth = 1.6 * ratio;
+      ctx.beginPath();
+      ctx.moveTo(plotLeft, plotTop);
+      ctx.lineTo(plotLeft, plotBottom);
+      ctx.lineTo(plotLeft + plotWidth, plotBottom);
+      ctx.stroke();
+
+      ctx.fillStyle = '#dbeafe';
+      ctx.font = `${14 * ratio}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText('测量序号', plotLeft + plotWidth / 2, height - 22 * ratio);
+      ctx.save();
+      ctx.translate(22 * ratio, plotTop + plotHeight / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText('速度 / m/s', 0, 0);
+      ctx.restore();
+
+      ctx.textAlign = 'left';
+      ctx.font = `${12 * ratio}px system-ui, sans-serif`;
+      ctx.fillStyle = '#4ba6ff';
+      ctx.fillRect(plotLeft, 16 * ratio, 12 * ratio, 12 * ratio);
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillText('光电门1', plotLeft + 18 * ratio, 27 * ratio);
+      ctx.fillStyle = '#f4a51c';
+      ctx.fillRect(plotLeft + 86 * ratio, 16 * ratio, 12 * ratio, 12 * ratio);
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillText('光电门2', plotLeft + 104 * ratio, 27 * ratio);
+
+      if (!visible.length) {
+        ctx.fillStyle = 'rgba(226, 232, 240, 0.82)';
+        ctx.font = `${16 * ratio}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText('等待 ESP32-2gate 两双头光电门速度数据', plotLeft + plotWidth / 2, plotTop + plotHeight / 2);
+        return;
+      }
+
+      const slotWidth = plotWidth / visible.length;
+      const barWidth = Math.max(12 * ratio, Math.min(34 * ratio, slotWidth * 0.55));
+      visible.forEach((record, index) => {
+        const xCenter = plotLeft + slotWidth * (index + 0.5);
+        const barHeight = Math.max(2 * ratio, (record.velocity / maxVelocity) * plotHeight);
+        const x = xCenter - barWidth / 2;
+        const y = plotBottom - barHeight;
+        ctx.fillStyle = record.gateNumber === 2 ? '#f4a51c' : '#4ba6ff';
+        ctx.fillRect(x, y, barWidth, barHeight);
+
+        ctx.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        ctx.font = `${11 * ratio}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(String(record.id), xCenter, plotBottom + 20 * ratio);
+      });
+    };
+
+    const renderVelocityRecords = () => {
+      drawVelocityChart();
+      if (!velocityRecordTableBody) return;
+
+      if (!velocityRecords.length) {
+        velocityRecordTableBody.innerHTML = '<tr><td class="px-4 py-4 text-slate-500" colspan="8">等待两双头光电门触发</td></tr>';
+        return;
+      }
+
+      velocityRecordTableBody.innerHTML = velocityRecords
+        .slice()
+        .reverse()
+        .map((record) => `
+          <tr>
+            <td class="px-4 py-3 font-bold text-ink">${record.id}</td>
+            <td class="px-4 py-3">${record.source}</td>
+            <td class="px-4 py-3">${record.gateNumber === undefined ? '--' : `光电门${record.gateNumber}`}</td>
+            <td class="px-4 py-3 font-mono">${formatOnlineTimestamp(record.onlineTimeMs)}</td>
+            <td class="px-4 py-3 font-mono">${record.deviceTime === undefined ? '--' : record.deviceTime.toFixed(3)}</td>
+            <td class="px-4 py-3 font-mono">${record.gateDeltaS === undefined ? '--' : record.gateDeltaS.toFixed(6)}</td>
+            <td class="px-4 py-3 font-mono font-bold text-yucai-800">${record.velocity.toFixed(4)}</td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-2">
+                ${trialNumbers.map((trial) => `<button class="focus-ring rounded-md border border-yucai-600 px-2 py-1 text-xs font-bold text-yucai-700 transition hover:bg-yucai-50" data-fill-trial="${trial}" data-record-id="${record.id}" type="button">填入第${trial}次</button>`).join('')}
+              </div>
+            </td>
+          </tr>
+        `)
+        .join('');
+    };
+
+    const setInputStatus = (text: string) => {
+      if (inputStatus) inputStatus.textContent = text;
+    };
+
+    const appendVelocityRecord = (velocity: number, meta: CapturedVelocityMeta) => {
+      if (!Number.isFinite(velocity) || velocity < 0) return;
+      velocityRecordSequence += 1;
+      latestVelocity = velocity;
+      latestGateNumber = meta.gateNumber;
+      velocityRecords.push({
+        id: velocityRecordSequence,
+        velocity,
+        onlineTimeMs: Date.now(),
+        ...meta
+      });
+      if (velocityRecords.length > 200) velocityRecords.shift();
+      renderVelocityRecords();
+
+      const detailParts = [
+        meta.gateNumber !== undefined ? `光电门${meta.gateNumber}` : '',
+        meta.deviceTime !== undefined ? `设备时间 ${meta.deviceTime.toFixed(3)} s` : '',
+        meta.gateDeltaS !== undefined ? `时间差 ${meta.gateDeltaS.toFixed(6)} s` : ''
+      ].filter(Boolean);
+      setMode(meta.source === '串口' ? 'serial' : 'ble', `${meta.source}已记录速度 ${velocity.toFixed(4)} m/s${detailParts.length ? `，${detailParts.join('，')}` : ''}`);
+      render();
+    };
+
+    const fillVelocityRecordToTrial = (recordId: number, trial: number) => {
+      const record = velocityRecords.find((item) => item.id === recordId);
+      if (!record || !trialNumbers.includes(trial)) return;
+      const initialInput = getInputByTrial(initialSpeedInputs, trial);
+      const finalInput = getInputByTrial(finalSpeedInputs, trial);
+      if (!initialInput || !finalInput) return;
+
+      const initialValue = initialInput.value.trim();
+      const finalValue = finalInput.value.trim();
+      if (!initialValue) {
+        initialInput.value = record.velocity.toFixed(4);
+      } else if (!finalValue) {
+        finalInput.value = record.velocity.toFixed(4);
+      } else {
+        finalInput.value = record.velocity.toFixed(4);
+      }
+
+      latestVelocity = record.velocity;
+      latestGateNumber = record.gateNumber;
+      setInputStatus(`已将第 ${record.id} 条速度 ${record.velocity.toFixed(4)} m/s 按填入顺序写入第 ${trial} 次实验`);
+      render();
+    };
+
+    const getCurrentChartPoints = () => getChartPoints(readRows());
+
+    const hideEnergyTooltip = () => {
+      if (!energyTooltip) return;
+      energyTooltip.classList.add('hidden');
+      energyTooltip.textContent = '';
+    };
+
+    const findChartHitArea = (event: MouseEvent) => {
+      if (!barChart) return null;
+      const rect = barChart.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      return chartHitAreas.find((area) =>
+        x >= area.x &&
+        x <= area.x + area.width &&
+        y >= area.y &&
+        y <= area.y + area.height
+      ) || null;
+    };
+
+    const showEnergyTooltip = (area: ChartHitArea, event: MouseEvent) => {
+      if (!energyTooltip || !barChart?.parentElement) return;
+      const containerRect = barChart.parentElement.getBoundingClientRect();
+      const tooltipWidth = 240;
+      const left = Math.min(Math.max(event.clientX - containerRect.left + 14, 12), containerRect.width - tooltipWidth - 12);
+      const top = Math.min(Math.max(event.clientY - containerRect.top - 18, 12), containerRect.height - 124);
+      energyTooltip.style.left = `${left}px`;
+      energyTooltip.style.top = `${top}px`;
+      energyTooltip.innerHTML = `
+        <p class="font-bold text-white">第 ${area.point.trial} 次 ${area.label}</p>
+        <p><span class="text-blue-200">当前柱：</span><span class="font-mono font-bold">${formatEnergyValue(area.value)}</span></p>
+        <p><span class="text-amber-200">势能减小：</span><span class="font-mono">${formatEnergyValue(area.point.potentialDecrease)}</span></p>
+        <p><span class="text-sky-200">系统动能：</span><span class="font-mono">${formatEnergyValue(area.point.kineticIncrease)}</span></p>
+      `;
+      energyTooltip.classList.remove('hidden');
+    };
+
+    const handleChartPointer = (event: MouseEvent) => {
+      const area = findChartHitArea(event);
+      if (!area) {
+        activeChartSelection = null;
+        hideEnergyTooltip();
+        drawEnergyBarChart(getCurrentChartPoints());
+        return;
+      }
+
+      activeChartSelection = { trial: area.point.trial, kind: area.kind };
+      drawEnergyBarChart(getCurrentChartPoints());
+      showEnergyTooltip(area, event);
+    };
+
+    const updateSummary = (points: ChartPoint[]) => {
+      if (pointCountLabel) pointCountLabel.textContent = String(points.length);
+      if (latestVelocityLabel) {
+        const gateText = latestGateNumber === undefined ? '' : ` G${latestGateNumber}`;
+        latestVelocityLabel.textContent = latestVelocity === null ? '--' : `${latestVelocity.toFixed(4)} m/s${gateText}`;
+      }
+    };
+
+    const render = () => {
+      const rows = readRows();
+      for (const row of rows) {
+        setCell(row.trial, 'potential', formatNumber(row.potentialDecrease));
+        setCell(row.trial, 'kinetic', formatNumber(row.kineticIncrease));
+      }
+
+      const points = getChartPoints(rows);
+      if (activeChartSelection && !points.some((point) => point.trial === activeChartSelection?.trial)) {
+        activeChartSelection = null;
+        hideEnergyTooltip();
+      }
+      if (barChartEmpty) {
+        barChartEmpty.textContent = points.length ? '' : '请至少填写一组完整实验数据';
+      }
+      drawEnergyBarChart(points);
+      updateSummary(points);
+      return { rows, points };
+    };
+
+    const modeButtonBaseClass = 'focus-ring h-11 rounded-md border px-4 text-sm font-bold transition';
+    const modeButtonActiveClass = `${modeButtonBaseClass} border-yucai-600 bg-yucai-700 text-white hover:bg-yucai-800`;
+    const modeButtonInactiveClass = `${modeButtonBaseClass} border-slate-300 text-slate-700 hover:bg-slate-100`;
+
+    const styleModeButton = (button: HTMLButtonElement | null, active: boolean) => {
+      if (!button) return;
+      button.className = active ? modeButtonActiveClass : modeButtonInactiveClass;
+    };
+
+    const setMode = (mode: InputMode, statusText?: string) => {
+      currentMode = mode;
+      if (serialPanel) serialPanel.classList.toggle('hidden', mode !== 'serial');
+      if (blePanel) blePanel.classList.toggle('hidden', mode !== 'ble');
+      if (velocityRecordPanel) velocityRecordPanel.classList.toggle('hidden', mode === 'manual');
+
+      styleModeButton(manualButton, mode === 'manual');
+      styleModeButton(serialModeButton, mode === 'serial');
+      styleModeButton(bleModeButton, mode === 'ble');
+
+      const text = mode === 'manual' ? '手动录入' : mode === 'serial' ? '串口输入' : '蓝牙输入';
+      if (modeLabel) modeLabel.textContent = text;
+      setInputStatus(statusText || `当前为${text}`);
+      renderVelocityRecords();
+    };
+
+    const generateSimulatedData = () => {
+      if (cartMassGlobalInput) cartMassGlobalInput.value = String(DEFAULT_CART_MASS_G);
+      applyCartMassFromGlobal();
+      for (const trial of trialNumbers) {
+        const data = simulatedData[trial];
+        const hangerInput = getInputByTrial(hangerMassInputs, trial);
+        const heightInput = getInputByTrial(heightInputs, trial);
+        const initialInput = getInputByTrial(initialSpeedInputs, trial);
+        const finalInput = getInputByTrial(finalSpeedInputs, trial);
+        if (hangerInput) hangerInput.value = String(data.hangerMassG);
+        if (heightInput) heightInput.value = String(data.dropHeightCm);
+        if (initialInput) initialInput.value = data.initialSpeed.toFixed(4);
+        if (finalInput) finalInput.value = data.finalSpeed.toFixed(4);
+      }
+      latestVelocity = simulatedData[6].finalSpeed;
+      latestGateNumber = undefined;
+      setMode('manual', '已填入 AI 模拟数据');
+      render();
+    };
+
+    const clearData = () => {
+      if (cartMassGlobalInput) cartMassGlobalInput.value = String(DEFAULT_CART_MASS_G);
+      applyCartMassFromGlobal();
+      for (const trial of trialNumbers) {
+        const hangerInput = getInputByTrial(hangerMassInputs, trial);
+        const heightInput = getInputByTrial(heightInputs, trial);
+        const initialInput = getInputByTrial(initialSpeedInputs, trial);
+        const finalInput = getInputByTrial(finalSpeedInputs, trial);
+        const idx = trialNumbers.indexOf(trial);
+        const hangerDefault = DEFAULT_HANGER_MASSES_G[idx] ?? 20;
+        if (hangerInput) hangerInput.value = String(hangerDefault);
+        if (heightInput) heightInput.value = '';
+        if (initialInput) initialInput.value = '';
+        if (finalInput) finalInput.value = '';
+      }
+      latestVelocity = null;
+      latestGateNumber = undefined;
+      velocityRecords.length = 0;
+      velocityRecordSequence = 0;
+      activeChartSelection = null;
+      hideEnergyTooltip();
+      setMode('manual', '数据已清空');
+      render();
+    };
+
+    const appendSerialLog = (line: string) => {
+      if (!serialLog) return;
+      const previous = serialLog.textContent === '等待串口数据...' ? '' : serialLog.textContent ?? '';
+      serialLog.textContent = `${previous}${previous ? '\n' : ''}${line}`;
+      if (serialLog.textContent.length > maxLogLength) {
+        serialLog.textContent = serialLog.textContent.slice(-maxLogLength);
+      }
+      serialLog.scrollTop = serialLog.scrollHeight;
+    };
+
+    const parseSerialPhotogateLine = (line: string) => {
+      const numberPattern = '([+-]?\\d+(?:\\.\\d+)?(?:[eE][+-]?\\d+)?)';
+      const match = line.match(new RegExp(`光电门\\s*([12])\\s*速度是\\s*${numberPattern}\\s*m/s`));
+      if (!match) return null;
+
+      const gateNumber = Number(match[1]);
+      const velocity = Number(match[2]);
+      const deltaMatch = line.match(new RegExp(`时间差是\\s*${numberPattern}\\s*s`));
+      const timeMatch = line.match(new RegExp(`设备时间是\\s*${numberPattern}\\s*s`));
+      const gateDeltaS = deltaMatch ? Number(deltaMatch[1]) : undefined;
+      const deviceTime = timeMatch ? Number(timeMatch[1]) : undefined;
+      if (!Number.isFinite(velocity)) return null;
+
+      return {
+        gateNumber,
+        velocity,
+        gateDeltaS: Number.isFinite(gateDeltaS) ? gateDeltaS : undefined,
+        deviceTime: Number.isFinite(deviceTime) ? deviceTime : undefined
+      };
+    };
+
+    const handleSerialText = (text: string) => {
+      const cleaned = text.replace(/\x04/g, '');
+      if (!cleaned) return;
+      serialLineBuffer += cleaned;
+      const lines = serialLineBuffer.split(/\r?\n/);
+      serialLineBuffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        appendSerialLog(trimmed);
+        const parsed = parseSerialPhotogateLine(trimmed);
+        if (parsed) {
+          appendVelocityRecord(parsed.velocity, {
+            source: '串口',
+            gateNumber: parsed.gateNumber,
+            deviceTime: parsed.deviceTime,
+            gateDeltaS: parsed.gateDeltaS,
+            raw: trimmed
+          });
+        }
+      }
+    };
+
+    const startSerialReadLoop = () => {
+      if (!serialReader || serialReadLoopStarted) return;
+      serialReadLoopStarted = true;
+      const loop = async () => {
+        while (serialReader) {
+          try {
+            const { value, done } = await serialReader.read();
+            if (done) break;
+            if (!value) continue;
+            handleSerialText(decoder.decode(value, { stream: true }));
+          } catch (error) {
+            appendSerialLog(`串口读取已停止：${error instanceof Error ? error.message : String(error)}`);
+            break;
+          }
+        }
+        serialReadLoopStarted = false;
+      };
+      void loop();
+    };
+
+    const connectSerial = async () => {
+      const serialNavigator = navigator as SerialNavigator;
+      if (!serialNavigator.serial) {
+        setMode('serial', '当前浏览器不支持 Web Serial，请使用电脑端 Chrome 或 Edge');
+        appendSerialLog('当前浏览器不支持 Web Serial。');
+        return;
+      }
+
+      try {
+        if (!serialPort) {
+          serialPort = await serialNavigator.serial.requestPort();
+          await serialPort.open({ baudRate: 115200 });
+        }
+
+        if (!serialPort.readable || !serialPort.writable) {
+          throw new Error('串口读写流不可用');
+        }
+
+        serialReader = serialPort.readable.getReader();
+        startSerialReadLoop();
+        if (serialConnectButton) serialConnectButton.textContent = '已连接串口';
+        setMode('serial', '串口已打开，等待两双头光电门速度数据');
+        appendSerialLog('串口已打开，波特率 115200。');
+      } catch (error) {
+        console.error('[Air Track Lab] 串口连接失败', error);
+        setMode('serial', `串口连接失败：${error instanceof Error ? error.message : String(error)}`);
+      }
+    };
+
+    const getBleNamePrefix = () => bleNamePrefixInput?.value.trim() || 'ESP32-2gate';
+
+    const requestAllBluetoothDevices = (bluetooth: BluetoothLike) =>
+      bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: phyphoxServiceUuids
+      });
+
+    const requestNamedBluetoothDevice = (bluetooth: BluetoothLike) =>
+      bluetooth.requestDevice({
+        filters: [{ namePrefix: getBleNamePrefix() }],
+        optionalServices: [phyphoxDataServiceUuid]
+      });
+
+    const disconnectCurrentBleDevice = () => {
+      if (bleDataCharacteristic) {
+        bleDataCharacteristic.removeEventListener('characteristicvaluechanged', handleBleNotification);
+        bleDataCharacteristic = null;
+      }
+
+      if (selectedBleDevice?.gatt?.connected) {
+        selectedBleDevice.gatt.disconnect();
+      }
+
+      selectedBleDevice = null;
+      bleDeviceName = '';
+    };
+
+    const parseBlePacket = (value: DataView) => {
+      if (value.byteLength < 16) return null;
+      const gateNumber = Math.round(value.getFloat32(0, true));
+      const velocity = value.getFloat32(4, true);
+      const gateDeltaS = value.getFloat32(8, true);
+      const deviceTime = value.getFloat32(12, true);
+      if (!Number.isFinite(velocity) || !Number.isFinite(deviceTime)) return null;
+      return {
+        gateNumber: gateNumber === 1 || gateNumber === 2 ? gateNumber : undefined,
+        velocity,
+        gateDeltaS: Number.isFinite(gateDeltaS) ? gateDeltaS : undefined,
+        deviceTime
+      };
+    };
+
+    function handleBleNotification(event: Event) {
+      const value = (event.target as BluetoothRemoteGATTCharacteristicLike | null)?.value;
+      if (!value) return;
+      const parsed = parseBlePacket(value);
+      if (!parsed) {
+        if (bleStatus) bleStatus.textContent = `已连接 ${bleDeviceName}，收到 ${value.byteLength} 字节，等待 16 字节数据包`;
+        return;
+      }
+
+      const gateText = parsed.gateNumber === undefined ? '未知光电门' : `光电门${parsed.gateNumber}`;
+      if (bleStatus) bleStatus.textContent = `已连接 ${bleDeviceName}，${gateText} 速度 ${parsed.velocity.toFixed(4)} m/s，设备时间 ${parsed.deviceTime.toFixed(3)} s`;
+      appendVelocityRecord(parsed.velocity, {
+        source: '蓝牙',
+        gateNumber: parsed.gateNumber,
+        gateDeltaS: parsed.gateDeltaS,
+        deviceTime: parsed.deviceTime
+      });
+    }
+
+    const connectBleDataProbe = async (device: BluetoothDeviceLike, deviceName: string) => {
+      if (!device.gatt) throw new Error('设备不支持 GATT 连接');
+
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(phyphoxDataServiceUuid);
+      const characteristic = await service.getCharacteristic(phyphoxDataCharacteristicUuid);
+
+      if (bleDataCharacteristic) {
+        bleDataCharacteristic.removeEventListener('characteristicvaluechanged', handleBleNotification);
+      }
+
+      bleDeviceName = deviceName;
+      selectedBleDevice = device;
+      bleDataCharacteristic = characteristic;
+      characteristic.addEventListener('characteristicvaluechanged', handleBleNotification);
+      await characteristic.startNotifications();
+    };
+
+    const connectBluetooth = async (requestDevice: (bluetooth: BluetoothLike) => Promise<BluetoothDeviceLike>, searchText: string) => {
+      const bluetoothNavigator = navigator as Navigator & { bluetooth?: BluetoothLike };
+
+      if (!bluetoothNavigator.bluetooth) {
+        if (bleStatus) bleStatus.textContent = '当前浏览器不支持 Web Bluetooth，无法接收真实两双头光电门数据';
+        setMode('ble', '当前浏览器不支持 Web Bluetooth');
+        return;
+      }
+
+      try {
+        disconnectCurrentBleDevice();
+        if (bleStatus) bleStatus.textContent = searchText;
+        setMode('ble', searchText);
+        const device = await requestDevice(bluetoothNavigator.bluetooth);
+        const deviceName = device.name?.trim() || '未命名设备';
+        if (bleStatus) bleStatus.textContent = `已选择蓝牙设备：${deviceName}，正在连接 GATT...`;
+        await connectBleDataProbe(device, deviceName);
+        if (bleStatus) bleStatus.textContent = `已连接 ${deviceName}，等待光电门编号、速度、时间差和设备时间`;
+        setMode('ble', `已连接 ${deviceName}，等待光电门编号、速度、时间差和设备时间`);
+      } catch (error) {
+        console.error('[Air Track Lab] 蓝牙连接失败', error);
+        if (error instanceof DOMException && error.name === 'NotFoundError') {
+          if (bleStatus) bleStatus.textContent = '未选择蓝牙设备';
+          setMode('ble', '未选择蓝牙设备');
+          return;
+        }
+        if (bleStatus) bleStatus.textContent = '蓝牙连接或订阅失败，无法接收真实两双头光电门数据';
+        setMode('ble', '蓝牙连接或订阅失败');
+      }
+    };
+
+    const csvEscape = (value: string | number | null) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+
+    const buildCsv = (rows: AirTrackRow[]) => {
+      const gravity = getPositiveNumericValue(gravityInput, 9.788);
+      const lines: Array<Array<string | number | null>> = [
+        ['实验小组名称', readGroupName()],
+        ['实验名称', '气垫导轨验证系统机械能守恒定律'],
+        ['重力加速度 g / (m/s²)', gravity.toFixed(4)],
+        ['计算式', 'ΔEp=mgh；ΔEk=1/2(M+m)(v₂²-v₁²)'],
+        [],
+        ['实验次数', '重锤质量 m/g', '滑块质量 M/g', '重锤下落高度 h/cm', '初速度 v₁/(m/s)', '末速度 v₂/(m/s)', '重力势能减少量 ΔEp/J', '系统动能增加量 ΔEk/J']
+      ];
+
+      for (const row of rows) {
+        lines.push([
+          row.trial,
+          formatNumber(row.hangerMassG, 0),
+          formatNumber(row.cartMassG, 0),
+          formatNumber(row.dropHeightCm, 0),
+          formatNumber(row.initialSpeed),
+          formatNumber(row.finalSpeed),
+          formatNumber(row.potentialDecrease),
+          formatNumber(row.kineticIncrease)
+        ]);
+      }
+
+      return `\uFEFF${lines.map((line) => line.map(csvEscape).join(',')).join('\n')}`;
+    };
+
+    const sanitizeFileName = (value: string) => value.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '-').slice(0, 40) || '未命名小组';
+
+    const downloadBlob = (blob: Blob, filename: string) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    const timestamp = () => new Date().toISOString().replace(/[:.]/g, '-');
+
+    const exportCsv = () => {
+      const { rows } = render();
+      const csv = buildCsv(rows);
+      const filename = `气垫导轨机械能守恒-${sanitizeFileName(readGroupName())}-数据-${timestamp()}.csv`;
+      downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
+    };
+
+    const exportScreenshot = () => {
+      const { rows, points } = render();
+      const ratio = window.devicePixelRatio || 1;
+      const width = 1280;
+      const rowHeight = 38;
+      const height = 750 + rows.length * rowHeight;
+      const reportCanvas = document.createElement('canvas');
+      reportCanvas.width = width * ratio;
+      reportCanvas.height = height * ratio;
+      const ctx = reportCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.scale(ratio, ratio);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '700 30px system-ui, sans-serif';
+      ctx.fillText('气垫导轨验证系统机械能守恒定律', 48, 58);
+      ctx.font = '600 17px system-ui, sans-serif';
+      ctx.fillStyle = '#0f5ca8';
+      ctx.fillText(`实验小组名称：${readGroupName()}`, 48, 92);
+      ctx.fillStyle = '#475569';
+      ctx.fillText(`g=${getPositiveNumericValue(gravityInput, 9.788).toFixed(4)} m/s²    ΔEp=mgh    ΔEk=1/2(M+m)(v₂²-v₁²)`, 48, 122);
+
+      if (barChart) {
+        ctx.drawImage(barChart, 48, 150, 1184, 360);
+      }
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '700 18px system-ui, sans-serif';
+      ctx.fillText(`可绘图实验次数：${points.length}`, 48, 540);
+
+      const headers = ['次数', 'm/g', 'M/g', 'h/cm', 'v₁', 'v₂', 'ΔEp/J', 'ΔEk/J'];
+      const widths = [70, 90, 90, 105, 120, 120, 155, 155];
+      let x = 48;
+      let y = 576;
+      ctx.fillStyle = '#eaf5ff';
+      ctx.fillRect(48, y - 24, 1184, 36);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '700 14px system-ui, sans-serif';
+      headers.forEach((header, index) => {
+        ctx.fillText(header, x + 8, y);
+        x += widths[index];
+      });
+
+      ctx.font = '500 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+      rows.forEach((row, rowIndex) => {
+        x = 48;
+        y = 614 + rowIndex * rowHeight;
+        ctx.fillStyle = rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc';
+        ctx.fillRect(48, y - 24, 1184, rowHeight);
+        ctx.fillStyle = '#0f172a';
+        const values = [
+          row.trial,
+          formatNumber(row.hangerMassG, 0),
+          formatNumber(row.cartMassG, 0),
+          formatNumber(row.dropHeightCm, 0),
+          formatNumber(row.initialSpeed),
+          formatNumber(row.finalSpeed),
+          formatNumber(row.potentialDecrease),
+          formatNumber(row.kineticIncrease)
+        ];
+        values.forEach((value, index) => {
+          ctx.fillText(String(value), x + 8, y);
+          x += widths[index];
+        });
+      });
+
+      const filename = `气垫导轨机械能守恒-${sanitizeFileName(readGroupName())}-截图-${timestamp()}.png`;
+      reportCanvas.toBlob((blob) => {
+        if (blob) downloadBlob(blob, filename);
+      }, 'image/png');
+      reportCanvas.toDataURL('image/png');
+    };
+
+    cartMassGlobalInput?.addEventListener('input', () => {
+      applyCartMassFromGlobal();
+      if (currentMode !== 'manual') setInputStatus('已手动修改数据');
+      render();
+    });
+
+    for (const input of [...hangerMassInputs, ...cartMassInputs, ...heightInputs, ...initialSpeedInputs, ...finalSpeedInputs, gravityInput]) {
+      input?.addEventListener('input', () => {
+        if (currentMode !== 'manual') setInputStatus('已手动修改数据');
+        render();
+      });
+    }
+
+    manualButton?.addEventListener('click', () => setMode('manual'));
+    serialModeButton?.addEventListener('click', () => setMode('serial', '串口输入已就绪，请连接 ESP32 两双头光电门'));
+    bleModeButton?.addEventListener('click', () => setMode('ble', '蓝牙输入已就绪，请连接 ESP32-2gate 两双头光电门'));
+    simulateButton?.addEventListener('click', generateSimulatedData);
+    clearButton?.addEventListener('click', clearData);
+    clearVelocityRecordsButton?.addEventListener('click', () => {
+      velocityRecords.length = 0;
+      velocityRecordSequence = 0;
+      latestVelocity = null;
+      latestGateNumber = undefined;
+      renderVelocityRecords();
+      render();
+      setInputStatus('速度记录已清空');
+    });
+    exportCsvButton?.addEventListener('click', exportCsv);
+    exportScreenshotButton?.addEventListener('click', exportScreenshot);
+    serialConnectButton?.addEventListener('click', connectSerial);
+    serialClearLogButton?.addEventListener('click', () => {
+      if (serialLog) serialLog.textContent = '等待串口数据...';
+    });
+    bleConnectPrefixButton?.addEventListener('click', () => {
+      void connectBluetooth(requestNamedBluetoothDevice, `正在查找名称以 ${getBleNamePrefix()} 开头的两双头光电门...`);
+    });
+    bleConnectAllButton?.addEventListener('click', () => {
+      void connectBluetooth(requestAllBluetoothDevices, '正在显示所有可见的 BLE 设备，请选择 ESP32 两双头光电门...');
+    });
+    bleNamePrefixInput?.addEventListener('input', () => {
+      if (bleStatus) bleStatus.textContent = `等待连接 ${getBleNamePrefix()} 两双头光电门`;
+    });
+    velocityRecordTableBody?.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement | null;
+      const button = target?.closest<HTMLButtonElement>('[data-fill-trial][data-record-id]');
+      if (!button) return;
+      const trial = Number(button.dataset.fillTrial);
+      const recordId = Number(button.dataset.recordId);
+      if (!Number.isFinite(trial) || !Number.isFinite(recordId)) return;
+      fillVelocityRecordToTrial(recordId, trial);
+    });
+    if (barChart) {
+      barChart.addEventListener('mousemove', handleChartPointer);
+      barChart.addEventListener('click', handleChartPointer);
+      barChart.addEventListener('mouseleave', () => {
+        activeChartSelection = null;
+        hideEnergyTooltip();
+        drawEnergyBarChart(getCurrentChartPoints());
+      });
+    }
+    window.addEventListener('resize', () => {
+      render();
+      renderVelocityRecords();
+    });
+    setMode('manual');
+    applyCartMassFromGlobal();
+    render();
+    bindLabDraft({
+      experiment: 'air-track',
+      fields: {
+        group: groupNameInput, gravity: gravityInput, cartMass: cartMassGlobalInput,
+        ...Object.fromEntries(hangerMassInputs.map(input => [`hanger-${input.dataset.trial}`, input])),
+        ...Object.fromEntries(heightInputs.map(input => [`height-${input.dataset.trial}`, input])),
+        ...Object.fromEntries(initialSpeedInputs.map(input => [`initial-${input.dataset.trial}`, input])),
+        ...Object.fromEntries(finalSpeedInputs.map(input => [`final-${input.dataset.trial}`, input]))
+      },
+      onRestore: () => { applyCartMassFromGlobal(); render(); }
+    });
+  </script>
+</section>
+
+<ExperimentReview data={airTrackReview} slug="air-track" />

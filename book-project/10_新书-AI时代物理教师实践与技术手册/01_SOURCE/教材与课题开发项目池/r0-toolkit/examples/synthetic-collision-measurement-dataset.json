@@ -1,0 +1,217 @@
+{
+  "schema_version": "1.0",
+  "dataset_id": "SYNTH-COLLISION-POSITIONS-001",
+  "title": "等质量弹性碰撞位置序列：合成测量链示例",
+  "data_identity": "synthetic",
+  "description": "由人工设定的分段直线位置序列：碰前物体1以4 m/s向右、物体2静止；碰后两者交换速度。s03故意加入0.02 m的位置偏差，用于演示异常保留和人工排除留痕。",
+  "claim_ceiling": "只证明R0测量链结构、哈希、通道角色、变换和人工处置能够被本地校验；不是DIS、视频、传感器或课堂实测。",
+  "device": {
+    "kind": "software_generator",
+    "device_id": "R0-SYNTH-GEN-001",
+    "name": "R0固定表格合成器",
+    "model": "piecewise-linear-equal-mass-elastic-collision",
+    "version": "1.0",
+    "settings": {
+      "m1_kg": 1,
+      "m2_kg": 1,
+      "collision_time_s": 0,
+      "u1_m_per_s": 4,
+      "u2_m_per_s": 0,
+      "v1_m_per_s": 0,
+      "v2_m_per_s": 4,
+      "injected_anomaly_sample": "s03"
+    }
+  },
+  "calibration": {
+    "status": "not_applicable",
+    "method": "数据为确定性人工合成，没有物理传感器、标尺、时钟或校准过程。",
+    "references": ["device.settings中的显式生成参数"]
+  },
+  "raw_file": {
+    "path": "examples/synthetic-collision-positions.csv",
+    "media_type": "text/csv",
+    "sha256": "211b796f9163ca1d1ff999bd724d791b595cfc37c9f81f4b5c728051b6315938",
+    "rows": 6,
+    "immutable": true,
+    "identity_label": "synthetic"
+  },
+  "channels": [
+    {
+      "channel_id": "time_s",
+      "label": "合成时间",
+      "quantity": "time",
+      "unit": "s",
+      "data_identity": "synthetic",
+      "quantity_role": "direct",
+      "source_field_or_transformation": "CSV列time_s"
+    },
+    {
+      "channel_id": "x1_m",
+      "label": "物体1合成位置",
+      "quantity": "position_object_1",
+      "unit": "m",
+      "data_identity": "synthetic",
+      "quantity_role": "direct",
+      "source_field_or_transformation": "CSV列x1_m"
+    },
+    {
+      "channel_id": "x2_m",
+      "label": "物体2合成位置",
+      "quantity": "position_object_2",
+      "unit": "m",
+      "data_identity": "synthetic",
+      "quantity_role": "direct",
+      "source_field_or_transformation": "CSV列x2_m"
+    },
+    {
+      "channel_id": "u1_m_per_s",
+      "label": "物体1碰前速度",
+      "quantity": "pre_collision_velocity_object_1",
+      "unit": "m/s",
+      "data_identity": "synthetic",
+      "quantity_role": "derived",
+      "source_field_or_transformation": "TR-FIT-U1"
+    },
+    {
+      "channel_id": "u2_m_per_s",
+      "label": "物体2碰前速度",
+      "quantity": "pre_collision_velocity_object_2",
+      "unit": "m/s",
+      "data_identity": "synthetic",
+      "quantity_role": "derived",
+      "source_field_or_transformation": "TR-FIT-U2"
+    },
+    {
+      "channel_id": "v1_m_per_s",
+      "label": "物体1碰后速度",
+      "quantity": "post_collision_velocity_object_1",
+      "unit": "m/s",
+      "data_identity": "synthetic",
+      "quantity_role": "derived",
+      "source_field_or_transformation": "TR-FIT-V1"
+    },
+    {
+      "channel_id": "v2_m_per_s",
+      "label": "物体2碰后速度",
+      "quantity": "post_collision_velocity_object_2",
+      "unit": "m/s",
+      "data_identity": "synthetic",
+      "quantity_role": "derived",
+      "source_field_or_transformation": "TR-FIT-V2"
+    },
+    {
+      "channel_id": "p_before_kg_m_per_s",
+      "label": "碰前系统总动量",
+      "quantity": "total_momentum_before",
+      "unit": "kg·m/s",
+      "data_identity": "synthetic",
+      "quantity_role": "derived",
+      "source_field_or_transformation": "TR-P-BEFORE"
+    },
+    {
+      "channel_id": "p_after_kg_m_per_s",
+      "label": "碰后系统总动量",
+      "quantity": "total_momentum_after",
+      "unit": "kg·m/s",
+      "data_identity": "synthetic",
+      "quantity_role": "derived",
+      "source_field_or_transformation": "TR-P-AFTER"
+    }
+  ],
+  "transformations": [
+    {
+      "transformation_id": "TR-FIT-U1",
+      "input_channels": ["time_s", "x1_m"],
+      "output_channel": "u1_m_per_s",
+      "method": "碰撞前保留点的一阶线性斜率",
+      "expression_or_procedure": "使用s01、s02、s04；s03按人工处置记录排除；u1=Δx1/Δt=4 m/s",
+      "software_identity": "示例中给出可手算步骤；未调用拟合软件"
+    },
+    {
+      "transformation_id": "TR-FIT-U2",
+      "input_channels": ["time_s", "x2_m"],
+      "output_channel": "u2_m_per_s",
+      "method": "碰撞前保留点的一阶线性斜率",
+      "expression_or_procedure": "使用s01、s02、s04；u2=0 m/s",
+      "software_identity": "示例中给出可手算步骤；未调用拟合软件"
+    },
+    {
+      "transformation_id": "TR-FIT-V1",
+      "input_channels": ["time_s", "x1_m"],
+      "output_channel": "v1_m_per_s",
+      "method": "碰撞后点的一阶线性斜率",
+      "expression_or_procedure": "使用s04、s05、s06；v1=0 m/s",
+      "software_identity": "示例中给出可手算步骤；未调用拟合软件"
+    },
+    {
+      "transformation_id": "TR-FIT-V2",
+      "input_channels": ["time_s", "x2_m"],
+      "output_channel": "v2_m_per_s",
+      "method": "碰撞后点的一阶线性斜率",
+      "expression_or_procedure": "使用s04、s05、s06；v2=4 m/s",
+      "software_identity": "示例中给出可手算步骤；未调用拟合软件"
+    },
+    {
+      "transformation_id": "TR-P-BEFORE",
+      "input_channels": ["u1_m_per_s", "u2_m_per_s"],
+      "output_channel": "p_before_kg_m_per_s",
+      "method": "使用显式质量参数计算",
+      "expression_or_procedure": "p_before=m1*u1+m2*u2=1*4+1*0=4 kg·m/s",
+      "software_identity": "示例手算"
+    },
+    {
+      "transformation_id": "TR-P-AFTER",
+      "input_channels": ["v1_m_per_s", "v2_m_per_s"],
+      "output_channel": "p_after_kg_m_per_s",
+      "method": "使用显式质量参数计算",
+      "expression_or_procedure": "p_after=m1*v1+m2*v2=1*0+1*4=4 kg·m/s",
+      "software_identity": "示例手算"
+    }
+  ],
+  "manual_handling": {
+    "original_preserved": true,
+    "actions": [
+      {
+        "action_id": "MANUAL-EXCLUDE-S03",
+        "action": "excluded_from_derivation",
+        "sample_ids": ["s03"],
+        "reason": "该点是为验证删点留痕而故意注入的0.02 m合成偏差；从速度斜率计算中排除，但原CSV和哈希保持不变。",
+        "actor_role": "R0示例编制者",
+        "raw_data_retained": true
+      }
+    ]
+  },
+  "anomalies": [
+    {
+      "anomaly_id": "ANOM-S03",
+      "sample_ids": ["s03"],
+      "description": "按u1=4 m/s的分段直线，t=-0.05 s时x1应为-0.20 m；原始合成值为-0.18 m。",
+      "detection_identity": "known_injection",
+      "status": "excluded_from_derivation"
+    }
+  ],
+  "derived_summary": {
+    "m1_kg": 1,
+    "m2_kg": 1,
+    "u1_m_per_s": 4,
+    "u2_m_per_s": 0,
+    "v1_m_per_s": 0,
+    "v2_m_per_s": 4,
+    "p_before_kg_m_per_s": 4,
+    "p_after_kg_m_per_s": 4,
+    "momentum_residual_kg_m_per_s": 0
+  },
+  "conclusion_limit": "该例只能说明已知合成位置在透明人工排除后可恢复预设速度并完成动量手算；不能支持传感器精度、真实碰撞守恒、DIS稳定性、课堂可用性或学习效果。",
+  "sources": [
+    {
+      "source_id": "SYNTH-RAW-CSV",
+      "role": "带明确synthetic身份的原始合成位置序列",
+      "path_or_description": "examples/synthetic-collision-positions.csv"
+    },
+    {
+      "source_id": "S1-MODEL-CARD",
+      "role": "等质量弹性碰撞的模型条件与独立真值边界",
+      "path_or_description": "examples/s1-collision-model-card.json"
+    }
+  ]
+}

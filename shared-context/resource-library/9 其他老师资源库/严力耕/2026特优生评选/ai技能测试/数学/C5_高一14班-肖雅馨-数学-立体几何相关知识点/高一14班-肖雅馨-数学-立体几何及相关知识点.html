@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>立体几何·高一数学沉浸式科普 | 三维交互+例题精讲</title>
+    <!-- 引入 Three.js 核心库和扩展 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Poppins', 'Inter', 'Roboto', 'Microsoft YaHei', sans-serif;
+            background: #f1f5f9;
+            color: #0f172a;
+            overflow-x: hidden;
+        }
+
+        /* 主布局：左侧知识科普区，右侧交互3D画布 */
+        .master-container {
+            display: flex;
+            flex-wrap: wrap;
+            min-height: 100vh;
+        }
+
+        /* 左侧知识面板 — 层次分明，优雅滚动 */
+        .knowledge-sidebar {
+            width: 380px;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(2px);
+            box-shadow: 8px 0 30px rgba(0, 0, 0, 0.05);
+            z-index: 20;
+            overflow-y: auto;
+            padding: 2rem 1.8rem;
+            border-right: 1px solid rgba(100, 116, 139, 0.2);
+        }
+
+        /* 右侧 3D 画布区域 */
+        #canvas-3d {
+            flex: 1;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            background: #0a0f1a;
+            box-shadow: -5px 0 20px rgba(0,0,0,0.2);
+        }
+
+        /* 自定义滚动条 */
+        .knowledge-sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+        .knowledge-sidebar::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .knowledge-sidebar::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 10px;
+        }
+
+        /* 标题区 */
+        .hero {
+            margin-bottom: 2rem;
+        }
+        .hero h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(125deg, #0f2b3d, #1e4a76);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .hero p {
+            color: #334155;
+            border-left: 4px solid #3b82f6;
+            padding-left: 12px;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        /* 知识点卡片 — 美观现代 */
+        .knowledge-card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 1.3rem 1.5rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            border: 1px solid #eef2ff;
+        }
+        .knowledge-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 28px -12px rgba(0, 0, 0, 0.12);
+            border-color: #cbdff2;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1e293b;
+            border-bottom: 2px solid #e0edfa;
+            padding-bottom: 8px;
+        }
+        .card-header span:first-child {
+            font-size: 1.7rem;
+        }
+
+        .concept-text {
+            color: #1e293b;
+            line-height: 1.55;
+            font-size: 0.95rem;
+            margin: 0.6rem 0;
+        }
+        .highlight-box {
+            background: #f0f9ff;
+            border-left: 5px solid #3b82f6;
+            padding: 12px 14px;
+            border-radius: 20px;
+            margin: 12px 0;
+            font-size: 0.9rem;
+        }
+        .formula {
+            font-family: 'Courier New', 'JetBrains Mono', monospace;
+            background: #eef2ff;
+            padding: 0.2rem 0.4rem;
+            border-radius: 8px;
+            font-weight: 600;
+            color: #075985;
+        }
+        .example {
+            background: #fff7ed;
+            border-radius: 20px;
+            padding: 12px 15px;
+            margin-top: 14px;
+            border-left: 4px solid #f97316;
+        }
+        .example-title {
+            font-weight: 800;
+            color: #c2410c;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .btn-demo {
+            background: #eef2ff;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: #2563eb;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: 0.2s;
+        }
+        .btn-demo:hover {
+            background: #d9e6ff;
+            transform: scale(0.97);
+        }
+
+        /* 视频讲解卡片 */
+        .video-card {
+            background: linear-gradient(105deg, #f8fafc 0%, #ffffff 100%);
+            border-radius: 28px;
+            padding: 1.2rem 1.3rem;
+            margin: 1.5rem 0;
+            border: 1px solid #dce5f0;
+        }
+        .video-btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .video-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #0f172a;
+            color: white;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+        .video-link:hover {
+            background: #1e293b;
+            transform: translateY(-2px);
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            color: #5b6e8c;
+            margin-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1rem;
+        }
+
+        @media (max-width: 880px) {
+            .knowledge-sidebar {
+                width: 100%;
+                max-height: 55vh;
+                border-right: none;
+                border-bottom: 1px solid #cddfe7;
+            }
+            #canvas-3d {
+                height: 55vh;
+                position: relative;
+            }
+            .master-container {
+                flex-direction: column;
+            }
+        }
+
+        .badge-geo {
+            background: #e0f2fe;
+            color: #0369a1;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            padding: 2px 12px;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="master-container">
+    <div class="knowledge-sidebar">
+        <div class="hero">
+            <h1>📐 立体几何 · 高一完全指南</h1>
+            <p>空间想象 · 直观演示 | 3D互动 + 经典例题 + 高考视角</p>
+        </div>
+
+        <!-- 1. 空间几何体结构 -->
+        <div class="knowledge-card">
+            <div class="card-header">
+                <span>🧊</span> <span>1. 空间几何体结构</span>
+            </div>
+            <div class="badge-geo">棱柱 | 棱锥 | 棱台 | 圆柱 | 圆锥 | 球</div>
+            <div class="concept-text">
+                <strong>多面体</strong>：棱柱（两底面平行且全等，侧面平行四边形）、棱锥（底面多边形，侧面三角形）、棱台（棱锥被平行底面截面）。<br>
+                <strong>旋转体</strong>：圆柱(矩形绕一边)、圆锥(直角三角形绕直角边)、圆台(直角梯形)、球(半圆绕直径)。
+            </div>
+            <div class="highlight-box">
+                📐 <strong>核心公式</strong>：<br>
+                \(V_{柱}=Sh\) &nbsp;&nbsp; \(V_{锥}=\frac{1}{3}Sh\) &nbsp;&nbsp; \(V_{球}=\frac{4}{3}\pi R^3\)<br>
+                \(S_{球}=4\pi R^2\) &nbsp; 圆柱侧面积 \(2\pi r l\)
+            </div>
+            <div class="example">
+                <div class="example-title">📘 例题·长方体对角线</div>
+                <p>已知长方体长宽高分别为3,4,5，求体对角线长及表面积。</p>
+                <p><strong>解</strong>：对角线 \(d=\sqrt{3^2+4^2+5^2}=5\sqrt{2}\)；<br> 表面积 \(S=2(3×4+3×5+4×5)=94\)。</p>
+                <button class="btn-demo" data-demo="rect">🔍 观察长方体模型</button>
+            </div>
+        </div>
+
+        <!-- 2. 点线面位置关系 + 平行垂直 -->
+        <div class="knowledge-card">
+            <div class="card-header">
+                <span>📌</span> <span>2. 点·线·面 平行与垂直</span>
+            </div>
+            <div class="concept-text">
+                <strong>四大公理</strong>：不共线三点定平面；两平面交线唯一；直线两点在面内则线在面内；平行传递性。<br>
+                <strong>核心定理</strong>：线线平行 ⇨ 线面平行 ⇨ 面面平行； 线线垂直 ⇨ 线面垂直 ⇨ 面面垂直。
+            </div>
+            <div class="highlight-box">
+                ⚡ <strong>重要模型</strong>：正方体中的“墙角三线垂直”、“三垂线定理”。
+            </div>
+            <div class="example">
+                <div class="example-title">📘 例题·正方体证明</div>
+                <p>在正方体 \(ABCD-A_1B_1C_1D_1\) 中，求证：\(BD \perp\) 平面 \(ACC_1A_1\)。</p>
+                <p>👉 思路：BD ⊥ AC (正方形对角线)，且 BD ⊥ AA₁ (侧棱⊥底面)，所以 BD ⊥ 平面内两相交直线 ⇒ 垂直。</p>
+                <button class="btn-demo" data-demo="cube-perp">✨ 演示正方体+垂直关系</button>
+            </div>
+        </div>
+
+        <!-- 3. 空间角与距离（向量视角与几何法）-->
+        <div class="knowledge-card">
+            <div class="card-header">
+                <span>📐</span> <span>3. 空间角 & 距离</span>
+            </div>
+            <div class="concept-text">
+                • <strong>异面直线角</strong>：平移至相交，锐角/直角。<br>
+                • <strong>线面角</strong>：斜线与平面内射影夹角，范围 \([0°,90°]\)。<br>
+                • <strong>二面角</strong>：从棱出发的两个半平面所成角。<br>
+                • <strong>点面距</strong>：等体积法 或 向量法 \(d = \frac{|\vec{AP}·\vec{n}|}{|\vec{n}|}\).
+            </div>
+            <div class="example">
+                <div class="example-title">📘 例题·正四面体对棱角</div>
+                <p>棱长为 \(a\) 的正四面体，求对棱所成角。</p>
+                <p>✨ 解：取对棱中点，可证互相垂直，夹角 \(90°\)。 (也可用向量点积证明)</p>
+                <button class="btn-demo" data-demo="tetra">🔺 旋转观察正四面体</button>
+            </div>
+        </div>
+
+        <!-- 4. 表面积体积综合例题 -->
+        <div class="knowledge-card">
+            <div class="card-header">
+                <span>🧮</span> <span>4. 直观图与综合应用</span>
+            </div>
+            <div class="concept-text">
+                斜二测画法：横不变，纵减半，夹角45°或135°；原图面积是直观图 \(2\sqrt{2}\) 倍。<br>
+                外接球与内切球问题：长方体体对角线为外接球直径。
+            </div>
+            <div class="example">
+                <div class="example-title">⚡ 经典考题：三棱锥外接球</div>
+                <p>侧棱两两垂直的三棱锥，三条侧棱长分别为3,4,5，求外接球表面积。</p>
+                <p><strong>解法</strong>：构造长方体，体对角线即直径 \(2R = \sqrt{3^2+4^2+5^2}=5\sqrt{2}\)，<br> \(S=4\pi R^2=4\pi×(\frac{5\sqrt{2}}{2})^2=50\pi\)。</p>
+                <button class="btn-demo" data-demo="cylinder">🧴 演示圆柱旋转体</button>
+            </div>
+        </div>
+
+        <!-- 视频讲解区 + 交互提示 -->
+        <div class="video-card">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                <span>🎬</span> <strong style="font-size: 1.1rem;">名师视频精讲·立体几何思维</strong>
+            </div>
+            <p>配合3D模型理解更透彻，点击下方链接观看优质公开课：</p>
+            <div class="video-btn-group">
+                <a href="https://www.bilibili.com/video/BV1bW411N7fN?p=1" target="_blank" class="video-link">▶ 空间几何体与三视图</a>
+                <a href="https://www.bilibili.com/video/BV1Lv411r7kd" target="_blank" class="video-link">⚡ 线面垂直面面垂直专题</a>
+                <a href="https://www.bilibili.com/video/BV1hJ411n7zR" target="_blank" class="video-link">📐 空间向量与二面角</a>
+            </div>
+            <p style="font-size: 12px; margin-top: 12px;">※ 新窗口打开B站优质教学资源，立体几何考点全覆盖。</p>
+        </div>
+        <footer>🖱️ 右侧3D场景：鼠标拖拽旋转/右键平移/滚轮缩放 | 点击按钮动态切换模型，直观感知几何结构</footer>
+    </div>
+
+    <div id="canvas-3d"></div>
+</div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // --- 初始化场景、相机、渲染器 ---
+    const container = document.getElementById('canvas-3d');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0f1a);
+    scene.fog = new THREE.FogExp2(0x0a0f1a, 0.006);
+
+    const camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(4.5, 3.2, 5);
+    camera.lookAt(0, 0.5, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    // CSS2渲染文字标签（浮动标注）
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(container.clientWidth, container.clientHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    container.appendChild(labelRenderer.domElement);
+
+    // 轨道控制
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.rotateSpeed = 1.2;
+    controls.zoomSpeed = 1.2;
+    controls.panSpeed = 0.8;
+    controls.target.set(0, 0.6, 0);
+
+    // --- 灯光系统 营造干净大气氛围---
+    const ambient = new THREE.AmbientLight(0x404060);
+    scene.add(ambient);
+    const mainLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+    mainLight.position.set(3, 5, 2);
+    mainLight.castShadow = true;
+    scene.add(mainLight);
+    const fillLight = new THREE.PointLight(0x5588ff, 0.4);
+    fillLight.position.set(-2, 1, 3);
+    scene.add(fillLight);
+    const rimLight = new THREE.PointLight(0xffaa66, 0.35);
+    rimLight.position.set(1, 2, -3);
+    scene.add(rimLight);
+    
+    // 辅助网格地面 (半透明增加空间参考)
+    const gridHelper = new THREE.GridHelper(12, 20, 0x88aaff, 0x446688);
+    gridHelper.position.y = -1.3;
+    gridHelper.material.transparent = true;
+    gridHelper.material.opacity = 0.35;
+    scene.add(gridHelper);
+    
+    // 简易坐标轴 (淡色)
+    const axesHelper = new THREE.AxesHelper(3.2);
+    axesHelper.material.transparent = true;
+    axesHelper.material.opacity = 0.12;
+    scene.add(axesHelper);
+    
+    let currentGroup = null;
+    
+    // 清除模型
+    function clearModel() {
+        if (currentGroup) {
+            scene.remove(currentGroup);
+            if (currentGroup.children) {
+                currentGroup.children.forEach(child => {
+                    if (child.isMesh) {
+                        if (child.material) child.material.dispose();
+                        if (child.geometry) child.geometry.dispose();
+                    }
+                });
+            }
+            currentGroup = null;
+        }
+        // 移除多余CSS2D非永久物体（但保留不需要额外清理，重新添加即可）
+    }
+    
+    // 辅助生成CSS2D标签
+    function makeLabel(text, bgColor, position, fontSize = '0.9rem') {
+        const div = document.createElement('div');
+        div.textContent = text;
+        div.style.backgroundColor = bgColor;
+        div.style.color = 'white';
+        div.style.padding = '2px 10px';
+        div.style.borderRadius = '24px';
+        div.style.fontSize = fontSize;
+        div.style.fontWeight = 'bold';
+        div.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
+        div.style.backdropFilter = 'blur(2px)';
+        div.style.border = '1px solid rgba(255,255,255,0.3)';
+        const label = new CSS2DObject(div);
+        label.position.copy(position);
+        return label;
+    }
+    
+    // ------------------- 模型1: 长方体 (rectangular prism) ------------------
+    function createRectPrism() {
+        const group = new THREE.Group();
+        const w = 2.0, h = 1.5, d = 2.8;
+        const geometry = new THREE.BoxGeometry(w, h, d);
+        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.25, metalness: 0.1, transparent: true, opacity: 0.85 });
+        const box = new THREE.Mesh(geometry, material);
+        box.castShadow = true;
+        box.position.set(0, h/2, 0);
+        group.add(box);
+        // 边缘高亮
+        const edges = new THREE.EdgesGeometry(geometry);
+        const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffcc77 }));
+        wire.position.copy(box.position);
+        group.add(wire);
+        // 标签
+        const lbl = makeLabel('📦 长方体 (3,4,5类比)', 'rgba(30,64,175,0.8)', new THREE.Vector3(0, h+0.3, 0), '0.8rem');
+        group.add(lbl);
+        group.add(makeLabel('长', '#3b82f6', new THREE.Vector3(1.1, 0.9, 1.4)));
+        group.add(makeLabel('高', '#3b82f6', new THREE.Vector3(0, 1.4, 1.5)));
+        group.add(makeLabel('宽', '#3b82f6', new THREE.Vector3(1.2, 0.4, -1.2)));
+        return group;
+    }
+    
+    // ------------------- 模型2: 正方体 (展示垂直关系对角线) ------------------
+    function createCubeWithPerp() {
+        const group = new THREE.Group();
+        const size = 1.6;
+        const geometry = new THREE.BoxGeometry(size, size, size);
+        const material = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.2, transparent: true, opacity: 0.75 });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.castShadow = true;
+        cube.position.set(0, size/2, 0);
+        group.add(cube);
+        const edges = new THREE.EdgesGeometry(geometry);
+        const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xfacc15 }));
+        wire.position.copy(cube.position);
+        group.add(wire);
+        
+        // 绘制一条体对角线BD' 和 辅助平面示意（简单线段）
+        const start = new THREE.Vector3(-size/2, -size/2, size/2);
+        const end = new THREE.Vector3(size/2, size/2, -size/2);
+        const points = [start, end];
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const diagonalLine = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xff6666, linewidth: 2 }));
+        diagonalLine.position.copy(cube.position);
+        group.add(diagonalLine);
+        
+        const labelBD = makeLabel('🔴 体对角线 (垂直关系示例)', '#dc2626', new THREE.Vector3(0.2, 1.3, 0.4), '0.75rem');
+        group.add(labelBD);
+        group.add(makeLabel('A', '#aaa', new THREE.Vector3(-0.9, -0.1, 0.9)));
+        group.add(makeLabel('C₁', '#aaa', new THREE.Vector3(0.9, 1.5, -0.9)));
+        return group;
+    }
+    
+    // 正四面体模型 (边长为1.8)
+    function createTetraModel() {
+        const group = new THREE.Group();
+        const a = 1.8;
+        const h_high = Math.sqrt(2/3) * a;
+        const yBase = -h_high/2;
+        const yTop = h_high/2;
+        const r = a / Math.sqrt(3);
+        const verts = [];
+        for (let i = 0; i < 3; i++) {
+            const angle = (i * 120) * Math.PI/180;
+            const x = r * Math.cos(angle);
+            const z = r * Math.sin(angle);
+            verts.push(new THREE.Vector3(x, yBase, z));
+        }
+        const apex = new THREE.Vector3(0, yTop, 0);
+        const allV = [...verts, apex];
+        const faceMat = new THREE.MeshStandardMaterial({ color: 0x10b981, side: THREE.DoubleSide, transparent: true, opacity: 0.7, roughness: 0.3 });
+        const triIndices = [[0,1,2], [0,1,3], [1,2,3], [2,0,3]];
+        triIndices.forEach(idx => {
+            const geom = new THREE.BufferGeometry();
+            const posArr = [];
+            idx.forEach(i => {
+                posArr.push(allV[i].x, allV[i].y, allV[i].z);
+            });
+            geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posArr), 3));
+            geom.computeVertexNormals();
+            const meshFace = new THREE.Mesh(geom, faceMat);
+            group.add(meshFace);
+        });
+        // 边线
+        const edgesPairs = [[0,1],[1,2],[2,0],[0,3],[1,3],[2,3]];
+        const lineMat = new THREE.LineBasicMaterial({ color: 0xffb347 });
+        edgesPairs.forEach(pair => {
+            const pts = [allV[pair[0]], allV[pair[1]]];
+            const geoLine = new THREE.BufferGeometry().setFromPoints(pts);
+            const lineObj = new THREE.Line(geoLine, lineMat);
+            group.add(lineObj);
+        });
+        group.add(makeLabel('正四面体 (对棱垂直)', '#facc15', new THREE.Vector3(0, yTop+0.25, 0), '0.85rem'));
+        return group;
+    }
+    
+    // 圆柱模型
+    function createCylinderModel() {
+        const group = new THREE.Group();
+        const radius = 0.9;
+        const height = 2.2;
+        const geometry = new THREE.CylinderGeometry(radius, radius, height, 48, 32);
+        const material = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.3, transparent: true, opacity: 0.85 });
+        const cylinder = new THREE.Mesh(geometry, material);
+        cylinder.castShadow = true;
+        cylinder.position.y = 0;
+        group.add(cylinder);
+        const edgesGeo = new THREE.EdgesGeometry(geometry);
+        const wireframe = new THREE.LineSegments(edgesGeo, new THREE.LineBasicMaterial({ color: 0xffaa77 }));
+        wireframe.position.copy(cylinder.position);
+        group.add(wireframe);
+        group.add(makeLabel('圆柱 (旋转体)', '#2c6e9e', new THREE.Vector3(0, 1.4, 0.9)));
+        group.add(makeLabel('底面半径 r', '#70b9ff', new THREE.Vector3(0.8, -0.9, 0.7), '0.7rem'));
+        group.add(makeLabel('高 h', '#70b9ff', new THREE.Vector3(0.5, 0.2, 1.2), '0.7rem'));
+        return group;
+    }
+    
+    // 切换模型
+    function switchTo(modelType) {
+        clearModel();
+        let newGroup = null;
+        if (modelType === 'rect') newGroup = createRectPrism();
+        else if (modelType === 'cube-perp') newGroup = createCubeWithPerp();
+        else if (modelType === 'tetra') newGroup = createTetraModel();
+        else if (modelType === 'cylinder') newGroup = createCylinderModel();
+        if (newGroup) {
+            currentGroup = newGroup;
+            scene.add(currentGroup);
+            // 稍微调整目标点
+            controls.target.set(0, 0.6, 0);
+        }
+    }
+    
+    // 绑定按钮事件
+    document.querySelectorAll('.btn-demo').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const demo = btn.getAttribute('data-demo');
+            if (demo === 'rect') switchTo('rect');
+            else if (demo === 'cube-perp') switchTo('cube-perp');
+            else if (demo === 'tetra') switchTo('tetra');
+            else if (demo === 'cylinder') switchTo('cylinder');
+        });
+    });
+    
+    // 默认加载长方体模型
+    switchTo('rect');
+    
+    // 漂浮粒子点缀 (提升科技感)
+    const particleCount = 800;
+    const particlesGeo = new THREE.BufferGeometry();
+    const particlePositions = [];
+    for (let i = 0; i < particleCount; i++) {
+        particlePositions.push((Math.random() - 0.5) * 80);
+        particlePositions.push((Math.random() - 0.5) * 50);
+        particlePositions.push((Math.random() - 0.5) * 60 - 20);
+    }
+    particlesGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(particlePositions), 3));
+    const particleMat = new THREE.PointsMaterial({ color: 0x88aaff, size: 0.05, transparent: true, opacity: 0.4 });
+    const starsField = new THREE.Points(particlesGeo, particleMat);
+    scene.add(starsField);
+    
+    // 动画循环
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        starsField.rotation.y += 0.0003;
+        starsField.rotation.x += 0.0002;
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
+    }
+    animate();
+    
+    window.addEventListener('resize', onWindowResize);
+    function onWindowResize() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+        labelRenderer.setSize(width, height);
+    }
+    
+    // 简单控制台输出
+    console.log('立体几何交互科普已启动 | 点击按钮观察不同几何体，右侧视频辅助学习');
+</script>
+</body>
+</html>

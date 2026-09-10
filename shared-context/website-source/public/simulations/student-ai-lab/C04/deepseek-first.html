@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>乙烯加成反应：化学键的断裂与形成 | 交互演示</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Microsoft YaHei", "苹方", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 50px;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      letter-spacing: 2px;
+    }
+    #info h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #info h1 span {
+      color: #ffaa00;
+      font-weight: 700;
+    }
+    .control-panel {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(20, 20, 30, 0.8);
+      backdrop-filter: blur(15px);
+      border-radius: 60px;
+      padding: 15px 30px;
+      display: flex;
+      gap: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.25);
+      z-index: 10;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    button {
+      background: transparent;
+      border: 2px solid rgba(255,255,255,0.5);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 40px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      letter-spacing: 1px;
+      backdrop-filter: blur(5px);
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:hover {
+      background: rgba(255,170,0,0.7);
+      border-color: #ffaa00;
+      box-shadow: 0 0 20px rgba(255,170,0,0.6);
+      transform: translateY(-2px);
+    }
+    button.active {
+      background: #ffaa00;
+      border-color: #ffaa00;
+      color: #000;
+      box-shadow: 0 0 25px #ffaa00;
+    }
+    .legend {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 15px 20px;
+      color: #ddd;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border: 1px solid rgba(255,255,255,0.3);
+      z-index: 10;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .color-box {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+    .step-indicator {
+      position: absolute;
+      bottom: 130px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: white;
+      background: rgba(0,0,0,0.6);
+      padding: 6px 25px;
+      border-radius: 30px;
+      font-size: 1.2rem;
+      backdrop-filter: blur(5px);
+      z-index: 10;
+      white-space: nowrap;
+    }
+    @media (max-width: 700px) {
+      .control-panel {
+        gap: 10px;
+        padding: 12px 20px;
+        bottom: 20px;
+      }
+      button {
+        padding: 8px 18px;
+        font-size: 0.85rem;
+      }
+      #info {
+        top: 10px;
+        padding: 8px 18px;
+      }
+      #info h1 {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h1>⚛️ 乙烯 <span>加成反应</span> · 溴 (Br₂)</h1>
+  </div>
+  
+  <div class="legend">
+    <div class="legend-item"><div class="color-box" style="background:#404040;"></div> 碳原子 (C)</div>
+    <div class="legend-item"><div class="color-box" style="background:#ffffff; box-shadow:0 0 10px white;"></div> 氢原子 (H)</div>
+    <div class="legend-item"><div class="color-box" style="background:#8B4513; box-shadow:0 0 8px #a0522d;"></div> 溴原子 (Br)</div>
+    <div class="legend-item"><div class="color-box" style="background:#ffaa00; width:20px; height:4px; border-radius:4px;"></div> 化学键</div>
+  </div>
+
+  <div class="step-indicator" id="stepText">🔵 步骤 1/3：乙烯分子 (C₂H₄) · 双键完整</div>
+
+  <div class="control-panel">
+    <button id="btnStep1" class="active">🌱 1. 乙烯</button>
+    <button id="btnStep2">⚡ 2. 断键</button>
+    <button id="btnStep3">🧪 3. 加成产物</button>
+    <button id="btnReset">🔄 重置视角</button>
+  </div>
+
+  <!-- 引入 Three.js 核心库以及扩展 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ---------- 初始化场景 ----------
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a1a); // 深邃星空背景
+        
+    // 添加一些星星效果 (小点)
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsCount = 600;
+    const starsPositions = new Float32Array(starsCount * 3);
+    for (let i = 0; i < starsCount * 3; i += 3) {
+      starsPositions[i] = (Math.random() - 0.5) * 40;
+      starsPositions[i+1] = (Math.random() - 0.5) * 25;
+      starsPositions[i+2] = (Math.random() - 0.5) * 20;
+    }
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+    const starsMaterial = new THREE.PointsMaterial({color: 0xaaccff, size: 0.08});
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(stars);
+
+    // 环境光与点光源，使原子立体
+    const ambientLight = new THREE.AmbientLight(0x404066);
+    scene.add(ambientLight);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight1.position.set(1, 1, 1);
+    scene.add(dirLight1);
+    const dirLight2 = new THREE.DirectionalLight(0xccddff, 0.7);
+    dirLight2.position.set(-0.5, -0.5, -0.8);
+    scene.add(dirLight2);
+    
+    // 辅助地面网格 (可选，为了空间感)
+    const gridHelper = new THREE.GridHelper(6, 20, 0x335577, 0x224466);
+    gridHelper.position.y = -1.2;
+    scene.add(gridHelper);
+    
+    // ---------- 相机与渲染器 ----------
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 50);
+    camera.position.set(4.5, 2.8, 5.5);
+    camera.lookAt(0, 0.2, 0);
+
+    // WebGL渲染器
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setClearColor(0x0a0a1a);
+    document.body.appendChild(renderer.domElement);
+
+    // CSS2渲染器用于文字标签
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none'; // 让点击穿透到按钮
+    document.body.appendChild(labelRenderer.domElement);
+
+    // 控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 0.8;
+    controls.target.set(0, 0.2, 0);
+    controls.update();
+
+    // ---------- 全局组与状态 ----------
+    const moleculeGroup = new THREE.Group(); // 用于存放当前显示的所有原子和键
+    scene.add(moleculeGroup);
+    
+    // 存储当前对象引用，便于更新
+    let currentAtoms = [];
+    let currentBonds = [];
+    let currentLabels = [];
+    
+    // 当前步骤
+    let currentStep = 1; // 1:乙烯, 2:断键(双键变单键,溴分子靠近), 3:加成产物
+    
+    // 工具函数：创建原子球体
+    function createAtom(color, position, radius = 0.4, emissive = 0x000000) {
+      const geometry = new THREE.SphereGeometry(radius, 32, 16);
+      const material = new THREE.MeshStandardMaterial({ 
+        color: color,
+        roughness: 0.3,
+        metalness: 0.1,
+        emissive: new THREE.Color(emissive)
+      });
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.position.copy(position);
+      sphere.castShadow = true;
+      sphere.receiveShadow = true;
+      return sphere;
+    }
+    
+    // 创建圆柱体键 (连接两点)
+    function createBond(posA, posB, color = 0xffaa00, radius = 0.12, emissive = 0x331100) {
+      const start = posA.clone();
+      const end = posB.clone();
+      const direction = new THREE.Vector3().subVectors(end, start);
+      const length = direction.length();
+      const midPoint = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+      
+      const geometry = new THREE.CylinderGeometry(radius, radius, length, 8);
+      const material = new THREE.MeshStandardMaterial({ 
+        color: color,
+        roughness: 0.4,
+        metalness: 0.2,
+        emissive: new THREE.Color(emissive)
+      });
+      const cylinder = new THREE.Mesh(geometry, material);
+      cylinder.position.copy(midPoint);
+      
+      // 旋转使圆柱体Y轴指向direction方向
+      cylinder.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction.clone().normalize()
+      );
+      cylinder.castShadow = true;
+      cylinder.receiveShadow = true;
+      return cylinder;
+    }
+    
+    // 创建文字标签
+    function createLabel(text, position, color = '#ffffff', fontSize = '0.9rem') {
+      const div = document.createElement('div');
+      div.textContent = text;
+      div.style.color = color;
+      div.style.fontWeight = 'bold';
+      div.style.fontSize = fontSize;
+      div.style.textShadow = '1px 1px 3px black';
+      div.style.background = 'rgba(20,20,30,0.8)';
+      div.style.padding = '2px 8px';
+      div.style.borderRadius = '12px';
+      const label = new CSS2DObject(div);
+      label.position.copy(position);
+      return label;
+    }
+    
+    // 清除当前分子组
+    function clearMolecule() {
+      while(moleculeGroup.children.length > 0) {
+        moleculeGroup.remove(moleculeGroup.children[0]);
+      }
+      currentAtoms = [];
+      currentBonds = [];
+      currentLabels = [];
+    }
+    
+    // ---------- 定义分子结构数据 ----------
+    // 乙烯结构：C1在左(-0.7,0,0), C2在右(0.7,0,0)
+    // H原子位置：围绕碳原子平面 (近似sp2杂化，角度120°)
+    const c1Pos = new THREE.Vector3(-0.7, 0, 0);
+    const c2Pos = new THREE.Vector3(0.7, 0, 0);
+    
+    // 氢原子相对位置 (相对于各自碳原子)
+    const hOffsetsC1 = [
+      new THREE.Vector3(-0.55, 0.85, 0),  // 左上
+      new THREE.Vector3(-0.55, -0.85, 0), // 左下
+    ];
+    const hOffsetsC2 = [
+      new THREE.Vector3(0.55, 0.85, 0),   // 右上
+      new THREE.Vector3(0.55, -0.85, 0),  // 右下
+    ];
+    
+    // 溴分子位置 (初始远离，在右侧外部)
+    const br2StartPos = new THREE.Vector3(2.5, 0.2, 0.8);
+    // 溴原子相对偏移
+    const brOffset1 = new THREE.Vector3(0, 0.35, 0);
+    const brOffset2 = new THREE.Vector3(0, -0.35, 0);
+    
+    // 加成产物中溴的位置 (连接到碳上)
+    const br1FinalPos = new THREE.Vector3(-0.7, 0.9, 0.65); // 连接到C1
+    const br2FinalPos = new THREE.Vector3(0.7, -0.9, -0.65); // 连接到C2
+    
+    // 步骤1：乙烯分子 (双键)
+    function buildEthene() {
+      clearMolecule();
+      // 碳原子
+      const c1 = createAtom(0x404040, c1Pos, 0.45, 0x111111);
+      const c2 = createAtom(0x404040, c2Pos, 0.45, 0x111111);
+      moleculeGroup.add(c1); moleculeGroup.add(c2);
+      currentAtoms.push(c1, c2);
+      
+      // 氢原子
+      hOffsetsC1.forEach(offset => {
+        const pos = c1Pos.clone().add(offset);
+        const h = createAtom(0xffffff, pos, 0.3, 0x222222);
+        moleculeGroup.add(h);
+        currentAtoms.push(h);
+      });
+      hOffsetsC2.forEach(offset => {
+        const pos = c2Pos.clone().add(offset);
+        const h = createAtom(0xffffff, pos, 0.3, 0x222222);
+        moleculeGroup.add(h);
+        currentAtoms.push(h);
+      });
+      
+      // 化学键：C-H 键
+      const allHPositions = [];
+      hOffsetsC1.forEach(off => allHPositions.push(c1Pos.clone().add(off)));
+      hOffsetsC2.forEach(off => allHPositions.push(c2Pos.clone().add(off)));
+      
+      allHPositions.forEach(hPos => {
+        const carbonPos = hPos.x < 0 ? c1Pos : c2Pos;
+        const bond = createBond(carbonPos, hPos, 0xffaa00, 0.1);
+        moleculeGroup.add(bond);
+        currentBonds.push(bond);
+      });
+      
+      // 碳碳双键 (两条平行圆柱体表示)
+      const doubleBondOffset = 0.15;
+      const bondDir = new THREE.Vector3().subVectors(c2Pos, c1Pos).normalize();
+      const perp = new THREE.Vector3(0, 0, 1); // 垂直于平面方向
+      // 第一条键偏移
+      const mid1 = c1Pos.clone().add(c2Pos).multiplyScalar(0.5).add(perp.clone().multiplyScalar(doubleBondOffset));
+      const bond1 = createBond(c1Pos.clone().add(perp.clone().multiplyScalar(doubleBondOffset)), 
+                               c2Pos.clone().add(perp.clone().multiplyScalar(doubleBondOffset)), 
+                               0xffaa00, 0.1);
+      // 第二条键反向偏移
+      const mid2 = c1Pos.clone().add(c2Pos).multiplyScalar(0.5).add(perp.clone().multiplyScalar(-doubleBondOffset));
+      const bond2 = createBond(c1Pos.clone().add(perp.clone().multiplyScalar(-doubleBondOffset)), 
+                               c2Pos.clone().add(perp.clone().multiplyScalar(-doubleBondOffset)), 
+                               0xffaa00, 0.1);
+      moleculeGroup.add(bond1);
+      moleculeGroup.add(bond2);
+      currentBonds.push(bond1, bond2);
+      
+      // 标签
+      const labelC1 = createLabel('C', c1Pos.clone().add(new THREE.Vector3(-0.25, 0.25, 0.2)), '#cccccc');
+      const labelC2 = createLabel('C', c2Pos.clone().add(new THREE.Vector3(0.25, 0.25, 0.2)), '#cccccc');
+      moleculeGroup.add(labelC1); moleculeGroup.add(labelC2);
+      currentLabels.push(labelC1, labelC2);
+      
+      // 氢标签 (简化，只标几个)
+      const hLabelPositions = [
+        c1Pos.clone().add(hOffsetsC1[0]).add(new THREE.Vector3(-0.2, 0.2, 0.1)),
+        c2Pos.clone().add(hOffsetsC2[0]).add(new THREE.Vector3(0.2, 0.2, 0.1))
+      ];
+      hLabelPositions.forEach(pos => {
+        const label = createLabel('H', pos, '#ffffff', '0.7rem');
+        moleculeGroup.add(label);
+        currentLabels.push(label);
+      });
+    }
+    
+    // 步骤2：断键状态 (双键断裂一条，显示为单键+自由基电子云感觉，同时溴分子靠近)
+    function buildBondBreaking() {
+      clearMolecule();
+      // 碳原子位置不变
+      const c1 = createAtom(0x404040, c1Pos, 0.45, 0x111111);
+      const c2 = createAtom(0x404040, c2Pos, 0.45, 0x111111);
+      moleculeGroup.add(c1); moleculeGroup.add(c2);
+      currentAtoms.push(c1, c2);
+      
+      // 氢原子
+      hOffsetsC1.forEach(offset => {
+        const pos = c1Pos.clone().add(offset);
+        const h = createAtom(0xffffff, pos, 0.3, 0x222222);
+        moleculeGroup.add(h);
+        currentAtoms.push(h);
+      });
+      hOffsetsC2.forEach(offset => {
+        const pos = c2Pos.clone().add(offset);
+        const h = createAtom(0xffffff, pos, 0.3, 0x222222);
+        moleculeGroup.add(h);
+        currentAtoms.push(h);
+      });
+      
+      // C-H 键
+      const allHPositions = [];
+      hOffsetsC1.forEach(off => allHPositions.push(c1Pos.clone().add(off)));
+      hOffsetsC2.forEach(off => allHPositions.push(c2Pos.clone().add(off)));
+      allHPositions.forEach(hPos => {
+        const carbonPos = hPos.x < 0 ? c1Pos : c2Pos;
+        const bond = createBond(carbonPos, hPos, 0xffaa00, 0.1);
+        moleculeGroup.add(bond);
+        currentBonds.push(bond);
+      });
+      
+      // 碳碳键：只显示一条单键 (代表π键断裂，σ键保留)
+      const singleBond = createBond(c1Pos, c2Pos, 0xffaa00, 0.13, 0x442200);
+      moleculeGroup.add(singleBond);
+      currentBonds.push(singleBond);
+      
+      // 添加表示未成对电子的半透明小球或光点 (自由基示意)
+      const radicalPos1 = c1Pos.clone().add(new THREE.Vector3(0.25, 0.25, 0.4));
+      const radicalPos2 = c2Pos.clone().add(new THREE.Vector3(-0.25, -0.25, -0.4));
+      const radMaterial = new THREE.MeshStandardMaterial({ color: 0xff5500, emissive: new THREE.Color(0x331100), transparent: true, opacity: 0.7 });
+      const rad1 = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8), radMaterial);
+      const rad2 = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8), radMaterial);
+      rad1.position.copy(radicalPos1);
+      rad2.position.copy(radicalPos2);
+      moleculeGroup.add(rad1); moleculeGroup.add(rad2);
+      currentAtoms.push(rad1, rad2); // 作为特效原子
+      
+      // 溴分子靠近 (但未连接)
+      const brCenter = new THREE.Vector3(2.0, 0.3, 0.7);
+      const br1Pos = brCenter.clone().add(brOffset1);
+      const br2Pos = brCenter.clone().add(brOffset2);
+      const br1 = createAtom(0x8B4513, br1Pos, 0.42, 0x221100);
+      const br2 = createAtom(0x8B4513, br2Pos, 0.42, 0x221100);
+      moleculeGroup.add(br1); moleculeGroup.add(br2);
+      currentAtoms.push(br1, br2);
+      
+      // Br-Br 键
+      const brBond = createBond(br1Pos, br2Pos, 0xcc8844, 0.11);
+      moleculeGroup.add(brBond);
+      currentBonds.push(brBond);
+      
+      // 标签
+      moleculeGroup.add(createLabel('C', c1Pos.clone().add(new THREE.Vector3(-0.25,0.25,0.2)), '#cccccc'));
+      moleculeGroup.add(createLabel('C', c2Pos.clone().add(new THREE.Vector3(0.25,0.25,0.2)), '#cccccc'));
+      moleculeGroup.add(createLabel('Br', br1Pos.clone().add(new THREE.Vector3(0.25,0.2,0)), '#cc8844'));
+      moleculeGroup.add(createLabel('Br', br2Pos.clone().add(new THREE.Vector3(0.25,-0.2,0)), '#cc8844'));
+    }
+    
+    // 步骤3：加成产物 1,2-二溴乙烷
+    function buildProduct() {
+      clearMolecule();
+      // 碳原子
+      const c1 = createAtom(0x404040, c1Pos, 0.45, 0x111111);
+      const c2 = createAtom(0x404040, c2Pos, 0.45, 0x111111);
+      moleculeGroup.add(c1); moleculeGroup.add(c2);
+      currentAtoms.push(c1, c2);
+      
+      // 氢原子 (保持不变)
+      hOffsetsC1.forEach(offset => {
+        const pos = c1Pos.clone().add(offset);
+        const h = createAtom(0xffffff, pos, 0.3, 0x222222);
+        moleculeGroup.add(h);
+        currentAtoms.push(h);
+      });
+      hOffsetsC2.forEach(offset => {
+        const pos = c2Pos.clone().add(offset);
+        const h = createAtom(0xffffff, pos, 0.3, 0x222222);
+        moleculeGroup.add(h);
+        currentAtoms.push(h);
+      });
+      
+      // C-H 键
+      const allHPositions = [];
+      hOffsetsC1.forEach(off => allHPositions.push(c1Pos.clone().add(off)));
+      hOffsetsC2.forEach(off => allHPositions.push(c2Pos.clone().add(off)));
+      allHPositions.forEach(hPos => {
+        const carbonPos = hPos.x < 0 ? c1Pos : c2Pos;
+        const bond = createBond(carbonPos, hPos, 0xffaa00, 0.1);
+        moleculeGroup.add(bond);
+        currentBonds.push(bond);
+      });
+      
+      // 碳碳单键
+      const ccBond = createBond(c1Pos, c2Pos, 0xffaa00, 0.13);
+      moleculeGroup.add(ccBond);
+      currentBonds.push(ccBond);
+      
+      // 溴原子连接到碳上
+      const br1Pos = c1Pos.clone().add(new THREE.Vector3(-0.55, 0.9, 0.65));
+      const br2Pos = c2Pos.clone().add(new THREE.Vector3(0.55, -0.9, -0.65));
+      const br1 = createAtom(0x8B4513, br1Pos, 0.42, 0x221100);
+      const br2 = createAtom(0x8B4513, br2Pos, 0.42, 0x221100);
+      moleculeGroup.add(br1); moleculeGroup.add(br2);
+      currentAtoms.push(br1, br2);
+      
+      // C-Br 键
+      const cbr1Bond = createBond(c1Pos, br1Pos, 0xcc8844, 0.11);
+      const cbr2Bond = createBond(c2Pos, br2Pos, 0xcc8844, 0.11);
+      moleculeGroup.add(cbr1Bond); moleculeGroup.add(cbr2Bond);
+      currentBonds.push(cbr1Bond, cbr2Bond);
+      
+      // 标签
+      moleculeGroup.add(createLabel('C', c1Pos.clone().add(new THREE.Vector3(-0.25,0.25,0.2)), '#cccccc'));
+      moleculeGroup.add(createLabel('C', c2Pos.clone().add(new THREE.Vector3(0.25,0.25,0.2)), '#cccccc'));
+      moleculeGroup.add(createLabel('Br', br1Pos.clone().add(new THREE.Vector3(-0.25,0.2,0.1)), '#cc8844'));
+      moleculeGroup.add(createLabel('Br', br2Pos.clone().add(new THREE.Vector3(0.25,-0.2,0.1)), '#cc8844'));
+    }
+    
+    // 更新UI和步骤文字
+    function updateUIForStep(step) {
+      document.getElementById('btnStep1').classList.remove('active');
+      document.getElementById('btnStep2').classList.remove('active');
+      document.getElementById('btnStep3').classList.remove('active');
+      
+      const stepText = document.getElementById('stepText');
+      if (step === 1) {
+        document.getElementById('btnStep1').classList.add('active');
+        stepText.innerHTML = '🔵 步骤 1/3：乙烯分子 (C₂H₄) · 碳碳双键';
+        buildEthene();
+      } else if (step === 2) {
+        document.getElementById('btnStep2').classList.add('active');
+        stepText.innerHTML = '🟠 步骤 2/3：π键断裂 · 溴分子靠近 (Br₂)';
+        buildBondBreaking();
+      } else if (step === 3) {
+        document.getElementById('btnStep3').classList.add('active');
+        stepText.innerHTML = '🟢 步骤 3/3：加成产物 1,2-二溴乙烷 (C₂H₄Br₂)';
+        buildProduct();
+      }
+      currentStep = step;
+    }
+    
+    // 绑定按钮事件
+    document.getElementById('btnStep1').addEventListener('click', () => updateUIForStep(1));
+    document.getElementById('btnStep2').addEventListener('click', () => updateUIForStep(2));
+    document.getElementById('btnStep3').addEventListener('click', () => updateUIForStep(3));
+    document.getElementById('btnReset').addEventListener('click', () => {
+      camera.position.set(4.5, 2.8, 5.5);
+      controls.target.set(0, 0.2, 0);
+      controls.update();
+    });
+    
+    // 窗口大小调整
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    // 动画循环
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 星星缓慢旋转
+      stars.rotation.y += 0.0002;
+      stars.rotation.x += 0.0001;
+      
+      // 更新控制器
+      controls.update();
+      
+      // 渲染主场景
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+    
+    // 启动默认步骤
+    updateUIForStep(1);
+    animate();
+    
+    console.log('乙烯加成反应演示已启动！使用按钮切换步骤观察化学键变化。');
+  </script>
+</body>
+</html>

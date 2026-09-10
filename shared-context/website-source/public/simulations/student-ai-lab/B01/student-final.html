@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DNA真实物理形态·可编辑碱基 | 互补自动配对 | 半保留复制</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e6f2ff 0%, #cfe7ff 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', 'Noto Sans', system-ui;
+            padding: 20px;
+        }
+
+        .card {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 30px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #0b2d2a;
+            background: linear-gradient(95deg, #064e3b 0%, #0f5e4a 100%);
+            color: white;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-weight: 700;
+            font-size: 1.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .header h1 span {
+            background: #fbbf24;
+            color: #064e3b;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-size: 1rem;
+        }
+
+        .sub {
+            opacity: 0.85;
+            font-size: 0.9rem;
+        }
+
+        .canvas-container {
+            padding: 1rem;
+            background: #fefcf5;
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+        }
+
+        canvas {
+            background: #fffff0;
+            border-radius: 32px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            display: block;
+            width: auto;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .controls {
+            padding: 1.5rem 2rem 2rem;
+            background: #ffffffdd;
+        }
+
+        .slider-area {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 18px;
+            background: #ecfdf3;
+            padding: 0.7rem 1.2rem;
+            border-radius: 60px;
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            font-weight: 700;
+            background: #065f46;
+            color: white;
+            padding: 5px 16px;
+            border-radius: 32px;
+            font-size: 0.85rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            width: 20px;
+            height: 20px;
+            background: #0f766e;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+
+        .progress-value {
+            background: #1e293b;
+            color: white;
+            font-family: monospace;
+            font-weight: bold;
+            padding: 4px 14px;
+            border-radius: 32px;
+            font-size: 0.85rem;
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #eef2ff;
+            padding: 5px 16px;
+            border-radius: 40px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .speed-value {
+            background: #0f172a;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .extend-group {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin: 8px 0;
+        }
+
+        .btn {
+            border: none;
+            background: #f1f5f9;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #0f766e;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0d5c54;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #eef2ff;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-warning {
+            background: #fef9c3;
+            color: #854d0e;
+            border: 1px solid #fde047;
+        }
+
+        .explanation {
+            background: #f8fafc;
+            margin-top: 20px;
+            border-radius: 24px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #14b8a6;
+            font-size: 0.85rem;
+            line-height: 1.45;
+            color: #0f172a;
+        }
+
+        .badge {
+            background: #ccfbf1;
+            border-radius: 30px;
+            padding: 2px 12px;
+            font-weight: bold;
+            margin-right: 8px;
+            color: #115e59;
+            font-size: 0.7rem;
+            display: inline-block;
+        }
+
+        .enzyme-note {
+            background: #ffedd5;
+            border-radius: 20px;
+            padding: 6px 12px;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 12px;
+            color: #475569;
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>
+            🧬 DNA半保留复制 · 可编辑核苷酸
+            <span>点击碱基 | 自动配对 | 动态移动</span>
+        </h1>
+        <div class="sub">✏️ 点击任意蓝色模板链上的碱基 → 输入新字母(A/T/G/C) → 互补链自动更新 → 重置复制过程 ✨</div>
+    </div>
+    <div class="canvas-container">
+        <canvas id="dnaCanvas" width="1100" height="580" style="width:100%; height:auto; max-width:1100px; aspect-ratio:1100/580"></canvas>
+    </div>
+    <div class="controls">
+        <div class="slider-area">
+            <span class="slider-label">🔁 复制进度</span>
+            <input type="range" id="progressSlider" min="0" max="1" step="0.002" value="0">
+            <span id="progressPercent" class="progress-value">0% 复制</span>
+        </div>
+        <div class="speed-control">
+            <span>🐢 复制速度</span>
+            <input type="range" id="speedSlider" min="0.3" max="3.0" step="0.05" value="1.0">
+            <span id="speedValue" class="speed-value">1.0x</span>
+            <span>🐇 核苷酸移动速度同步</span>
+        </div>
+        <div class="button-group">
+            <button id="playBtn" class="btn btn-primary">▶ 开始复制</button>
+            <button id="resetBtn" class="btn btn-secondary">⟳ 重置进度</button>
+            <button id="fullBtn" class="btn btn-secondary">⚡ 完成复制</button>
+        </div>
+        <div class="extend-group">
+            <button id="extendBtn" class="btn btn-warning">➕ 延长DNA链 (+2碱基对)</button>
+            <button id="resetLengthBtn" class="btn btn-secondary">🔄 重置链长(10对)</button>
+        </div>
+        <div class="explanation">
+            <p><span class="badge">✏️ 编辑核苷酸</span> <strong>点击任意蓝色模板链上的碱基球</strong>，输入 A/T/G/C 即可改变该位点，<strong>互补链自动配对</strong>，复制进度重置，立即展示新序列。</p>
+            <p><span class="badge">🧬 真实物理形态</span> 核苷酸为3D球体，氢键为橙色虚线；解旋酶为<strong>环形六聚体</strong>；DNA聚合酶为<strong>拇指-手掌结构</strong>，游离dNTP粒子动态移动掺入。</p>
+            <p><span class="badge">📈 无限延伸</span> 每完整复制一次周期，DNA链自动增加2bp；也可手动延长。</p>
+            <p><span class="badge">🎚️ 速度可调</span> 调整复制速度，核苷酸移动速度自动同步。</p>
+        </div>
+        <div class="enzyme-note">
+            <span>🔷 解旋酶: 六聚体环状结构 (ATP水解发光)</span>
+            <span>🔶 DNA聚合酶: 拇指-手掌结构域，捕获游离核苷酸</span>
+            <span>💧 发光小球: 游离dNTP，移动到聚合酶后加入子链</span>
+            <span>✏️ 点击蓝色碱基 → 编辑序列 → 互补链自动配对</span>
+        </div>
+    </div>
+    <footer>💡 编辑模式：单击模板链（蓝色）碱基，修改后另一条链即时互补 | 粒子系统动态掺入</footer>
+</div>
+
+<script>
+    (function(){
+        // ---------- 动态DNA序列 ----------
+        let leftSeq = ['A', 'C', 'G', 'T', 'A', 'G', 'C', 'T', 'G', 'C'];
+        function getComp(base) {
+            if(base === 'A') return 'T';
+            if(base === 'T') return 'A';
+            if(base === 'G') return 'C';
+            if(base === 'C') return 'G';
+            return '?';
+        }
+        function updateRightSeq() { return leftSeq.map(b => getComp(b)); }
+        let rightSeq = updateRightSeq();
+        let BP_COUNT = leftSeq.length;
+        
+        // 画布
+        const canvas = document.getElementById('dnaCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = 1100, height = 580;
+        canvas.width = width; canvas.height = height;
+        
+        let progress = 0.0;
+        let animationId = null;
+        let isPlaying = false;
+        let loopEnabled = true;
+        let speedFactor = 1.0;
+        const BASE_STEP = 0.0015;
+        
+        // 粒子系统
+        let particles = [];
+        const MAX_PARTICLES = 12;
+        let lastGenFrame = 0;
+        let frameCount = 0;
+        
+        // DOM 元素
+        const slider = document.getElementById('progressSlider');
+        const percentSpan = document.getElementById('progressPercent');
+        const playBtn = document.getElementById('playBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const fullBtn = document.getElementById('fullBtn');
+        const extendBtn = document.getElementById('extendBtn');
+        const resetLengthBtn = document.getElementById('resetLengthBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedSpan = document.getElementById('speedValue');
+        
+        // 几何参数
+        let startY = 70, endY = 500;
+        let stepY = (endY - startY) / (BP_COUNT - 1);
+        const centerX = 550;
+        const fullHelixRadius = 52;
+        const totalAngle = 2 * Math.PI * 1.6;
+        let angleStep = totalAngle / (BP_COUNT - 1);
+        const leftSubCenter = 310;
+        const rightSubCenter = 790;
+        const subRadius = 36;
+        
+        // 获取当前聚合酶位置 (用于粒子目标)
+        function getCurrentPolymerasePos() {
+            if(progress <= 0 || progress >= 1) return null;
+            const forkIdx = progress * (BP_COUNT - 1);
+            const floorIdx = Math.floor(forkIdx);
+            if(floorIdx < 0 || floorIdx >= BP_COUNT) return null;
+            const leftHelix = getHelixPointsForSub(floorIdx, leftSubCenter, subRadius);
+            const rightHelix = getHelixPointsForSub(floorIdx, rightSubCenter, subRadius);
+            return {
+                left: { x: leftHelix.rightX + 12, y: leftHelix.y - 6 },
+                right: { x: rightHelix.leftX - 12, y: rightHelix.y - 6 }
+            };
+        }
+        
+        // 生成游离核苷酸粒子
+        function generateParticle() {
+            if(!isPlaying) return;
+            if(progress <= 0 || progress >= 1) return;
+            const polyPos = getCurrentPolymerasePos();
+            if(!polyPos) return;
+            const side = Math.random() < 0.5 ? 'left' : 'right';
+            const target = polyPos[side];
+            if(!target) return;
+            const bases = ['A', 'T', 'G', 'C'];
+            const base = bases[Math.floor(Math.random() * 4)];
+            let startX, startY;
+            if(side === 'left') {
+                startX = 50 + Math.random() * 180;
+                startY = target.y + (Math.random() - 0.5) * 80;
+            } else {
+                startX = width - 50 - Math.random() * 180;
+                startY = target.y + (Math.random() - 0.5) * 80;
+            }
+            particles.push({
+                x: startX, y: startY,
+                targetX: target.x, targetY: target.y,
+                base: base,
+                side: side,
+                speed: 1.2 + Math.random() * 1.5,
+                active: true
+            });
+            if(particles.length > MAX_PARTICLES) particles.shift();
+        }
+        
+        let flashEffects = [];
+        function updateParticles() {
+            if(!isPlaying) return;
+            if(progress <= 0 || progress >= 1) {
+                particles = [];
+                return;
+            }
+            const polyPos = getCurrentPolymerasePos();
+            if(!polyPos) return;
+            for(let i=0; i<particles.length; i++) {
+                const p = particles[i];
+                const target = polyPos[p.side];
+                if(!target) { particles.splice(i,1); i--; continue; }
+                p.targetX = target.x;
+                p.targetY = target.y;
+                const dx = p.targetX - p.x;
+                const dy = p.targetY - p.y;
+                const dist = Math.hypot(dx, dy);
+                if(dist < 5) {
+                    flashEffects.push({ x: p.targetX, y: p.targetY, life: 0.8 });
+                    particles.splice(i,1);
+                    i--;
+                } else {
+                    const step = Math.min(p.speed * (0.8 + speedFactor * 0.5), dist);
+                    const angle = Math.atan2(dy, dx);
+                    p.x += Math.cos(angle) * step;
+                    p.y += Math.sin(angle) * step;
+                }
+            }
+            frameCount++;
+            if(frameCount % Math.max(8, Math.floor(12 / speedFactor)) === 0 && particles.length < MAX_PARTICLES) {
+                if(Math.random() < 0.6) generateParticle();
+            }
+            for(let i=0; i<flashEffects.length; i++) {
+                flashEffects[i].life -= 0.05;
+                if(flashEffects[i].life <= 0) flashEffects.splice(i,1), i--;
+            }
+        }
+        
+        function drawParticles() {
+            for(const p of particles) {
+                ctx.save();
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = '#facc15';
+                const grad = ctx.createRadialGradient(p.x-2, p.y-2, 2, p.x, p.y, 8);
+                grad.addColorStop(0, '#ffedd5');
+                grad.addColorStop(1, '#f59e0b');
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 8, 0, Math.PI*2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.strokeStyle = '#b45309';
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+                ctx.font = `bold 12px "Segoe UI", monospace`;
+                ctx.fillStyle = '#1f2937';
+                ctx.fillText(p.base, p.x-5, p.y+4);
+                ctx.restore();
+            }
+            for(const f of flashEffects) {
+                ctx.save();
+                ctx.globalAlpha = f.life;
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, 12, 0, Math.PI*2);
+                ctx.fillStyle = '#fef08a';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, 6, 0, Math.PI*2);
+                ctx.fillStyle = '#facc15';
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+        
+        function recalcGeometry() {
+            stepY = (endY - startY) / (BP_COUNT - 1);
+            angleStep = totalAngle / (BP_COUNT - 1);
+        }
+        
+        function getForkIndex() { return progress * (BP_COUNT - 1); }
+        
+        function getUnwoundRadius(idx, prog) {
+            const forkIdx = prog * (BP_COUNT - 1);
+            if(idx <= forkIdx) return fullHelixRadius;
+            let dist = idx - forkIdx;
+            const transition = 5;
+            let factor = Math.min(1, dist / transition);
+            factor = Math.max(0, Math.min(1, factor));
+            factor = 1 - Math.pow(1 - factor, 1.5);
+            return fullHelixRadius * factor;
+        }
+        
+        function getDynamicHelixPoints(idx, prog) {
+            const y = startY + idx * stepY;
+            const angle = idx * angleStep;
+            const radius = getUnwoundRadius(idx, prog);
+            const leftX = centerX + radius * Math.sin(angle);
+            const rightX = centerX + radius * Math.sin(angle + Math.PI);
+            return { leftX, rightX, y };
+        }
+        
+        function isReplicated(idx) { return (idx / (BP_COUNT - 1)) <= progress; }
+        
+        // 真实物理形态绘制函数
+        function drawNucleotideReal(x, y, letter, color, isNewStrand, isTemplate = true) {
+            ctx.save();
+            ctx.shadowBlur = 0;
+            const grad = ctx.createRadialGradient(x-3, y-3, 2, x, y, 8);
+            grad.addColorStop(0, color);
+            grad.addColorStop(1, color);
+            ctx.beginPath();
+            ctx.arc(x, y, 9, 0, Math.PI*2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = '#2c3e33';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x-2, y-2, 2, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fill();
+            ctx.font = `bold 14px "Segoe UI", "Fira Code", monospace`;
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowBlur = 1;
+            ctx.shadowColor = '#00000080';
+            ctx.fillText(letter, x-6, y+5);
+            if(isNewStrand) {
+                ctx.font = `bold 10px monospace`;
+                ctx.fillStyle = '#ffdd99';
+                ctx.fillText("*", x+7, y-7);
+            }
+            ctx.restore();
+        }
+        
+        function drawHydrogenBond(x1, y1, x2, y2) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = '#f97316';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const mx = (x1+x2)/2, my = (y1+y2)/2;
+            ctx.beginPath();
+            ctx.arc(mx, my, 2, 0, Math.PI*2);
+            ctx.fillStyle = '#facc15';
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        function drawBasePairReal(x1, y1, base1, x2, y2, base2, color1, color2, isNew1, isNew2) {
+            drawNucleotideReal(x1, y1, base1, color1, isNew1);
+            drawNucleotideReal(x2, y2, base2, color2, isNew2);
+            drawHydrogenBond(x1, y1, x2, y2);
+        }
+        
+        function drawSkeleton(points, color, lineWidth) {
+            if(points.length < 2) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.lineCap = 'round';
+            ctx.moveTo(points[0].x, points[0].y);
+            for(let i=1; i<points.length; i++) {
+                const xc = (points[i-1].x + points[i].x)/2;
+                const yc = (points[i-1].y + points[i].y)/2;
+                ctx.quadraticCurveTo(points[i-1].x, points[i-1].y, xc, yc);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+        
+        function drawHelicaseReal(x, y) {
+            ctx.save();
+            ctx.shadowBlur = 4;
+            ctx.shadowColor = '#3b82f6';
+            const radiusRing = 18;
+            for(let i=0; i<6; i++) {
+                const angle = i * Math.PI*2/6;
+                const cx = x + radiusRing * Math.cos(angle);
+                const cy = y + radiusRing * Math.sin(angle);
+                const grad = ctx.createRadialGradient(cx-2, cy-2, 2, cx, cy, 7);
+                grad.addColorStop(0, '#60a5fa');
+                grad.addColorStop(1, '#1e3a8a');
+                ctx.beginPath();
+                ctx.arc(cx, cy, 7, 0, Math.PI*2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.strokeStyle = '#1e40af';
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.arc(x, y, 12, 0, Math.PI*2);
+            ctx.fillStyle = '#facc15';
+            ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            ctx.font = 'bold 12px monospace';
+            ctx.fillText("ATP", x-9, y+4);
+            ctx.restore();
+        }
+        
+        function drawPolymeraseReal(x, y, side = 'left') {
+            ctx.save();
+            ctx.shadowBlur = 3;
+            ctx.shadowColor = '#d97706';
+            ctx.beginPath();
+            ctx.ellipse(x, y, 12, 16, 0, 0, Math.PI*2);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+            ctx.strokeStyle = '#b45309';
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.ellipse(x + (side==='left'? 8 : -8), y-5, 6, 10, 0.5, 0, Math.PI*2);
+            ctx.fillStyle = '#fbbf24';
+            ctx.fill();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x + (side==='left'? 4 : -4), y+2, 4, 0, Math.PI*2);
+            ctx.fillStyle = '#dc2626';
+            ctx.fill();
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 8px monospace';
+            ctx.fillText("Pol", x-5, y+4);
+            ctx.restore();
+        }
+        
+        function getHelixPointsForSub(idx, centerXVal, radius) {
+            const y = startY + idx * stepY;
+            const angle = idx * angleStep;
+            const leftX = centerXVal + radius * Math.sin(angle);
+            const rightX = centerXVal + radius * Math.sin(angle + Math.PI);
+            return { leftX, rightX, y };
+        }
+        
+        function drawEnzymesReal() {
+            if(progress <= 0 || progress >= 1) return;
+            const forkIdx = getForkIndex();
+            const floorIdx = Math.floor(forkIdx);
+            if(floorIdx < 0 || floorIdx >= BP_COUNT) return;
+            const forkY = startY + floorIdx * stepY;
+            drawHelicaseReal(centerX, forkY - 8);
+            if(floorIdx >= 0 && floorIdx < BP_COUNT) {
+                const leftHelix = getHelixPointsForSub(floorIdx, leftSubCenter, subRadius);
+                const leftNewX = leftHelix.rightX;
+                const leftNewY = leftHelix.y;
+                drawPolymeraseReal(leftNewX + 12, leftNewY - 6, 'left');
+                const rightHelix = getHelixPointsForSub(floorIdx, rightSubCenter, subRadius);
+                const rightNewX = rightHelix.leftX;
+                const rightNewY = rightHelix.y;
+                drawPolymeraseReal(rightNewX - 12, rightNewY - 6, 'right');
+            }
+        }
+        
+        // ========== 点击编辑碱基功能 ==========
+        // 存储当前所有核苷酸位置（用于点击检测）
+        let currentNucleotidePositions = []; // {x, y, idx, side, isTemplate}
+        
+        function collectNucleotidePositions() {
+            currentNucleotidePositions = [];
+            // 遍历所有碱基对，记录模板链（蓝色）的位置，用于编辑
+            for(let idx=0; idx<BP_COUNT; idx++) {
+                const replicated = isReplicated(idx);
+                const yPos = startY + idx * stepY;
+                if(!replicated) {
+                    const { leftX, rightX, y } = getDynamicHelixPoints(idx, progress);
+                    // 蓝色链（模板链）就是左链和右链（均为蓝色），都记录为可编辑（修改左链）
+                    currentNucleotidePositions.push({ x: leftX, y: y, idx: idx, side: 'leftTemplate', isTemplate: true });
+                    currentNucleotidePositions.push({ x: rightX, y: y, idx: idx, side: 'rightTemplate', isTemplate: true });
+                } else {
+                    // 已复制区：左侧子DNA的模板链（蓝色左链）和右侧子DNA的模板链（蓝色右链）
+                    const leftHelix = getHelixPointsForSub(idx, leftSubCenter, subRadius);
+                    currentNucleotidePositions.push({ x: leftHelix.leftX, y: yPos, idx: idx, side: 'leftChildTemplate', isTemplate: true });
+                    const rightHelix = getHelixPointsForSub(idx, rightSubCenter, subRadius);
+                    currentNucleotidePositions.push({ x: rightHelix.rightX, y: yPos, idx: idx, side: 'rightChildTemplate', isTemplate: true });
+                }
+            }
+        }
+        
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            collectNucleotidePositions();
+            let minDist = 20;
+            let hit = null;
+            for(const pos of currentNucleotidePositions) {
+                const dx = pos.x - mouseX;
+                const dy = pos.y - mouseY;
+                const dist = Math.hypot(dx, dy);
+                if(dist < minDist) {
+                    minDist = dist;
+                    hit = pos;
+                }
+            }
+            if(hit && hit.isTemplate) {
+                const currentBase = leftSeq[hit.idx];
+                let newBase = prompt(`编辑第 ${hit.idx+1} 位碱基 (当前: ${currentBase})\n请输入 A, T, G 或 C`, currentBase);
+                if(newBase) {
+                    newBase = newBase.toUpperCase().trim();
+                    if(['A','T','G','C'].includes(newBase) && newBase !== currentBase) {
+                        // 修改左侧序列
+                        leftSeq[hit.idx] = newBase;
+                        // 自动生成互补链
+                        rightSeq = updateRightSeq();
+                        // 重置复制进度和动画
+                        stopAutoPlay();
+                        progress = 0;
+                        setProgress(0);
+                        particles = [];
+                        flashEffects = [];
+                        playBtn.innerHTML = '▶ 开始复制';
+                        playBtn.classList.add('btn-primary');
+                        playBtn.classList.remove('btn-secondary');
+                        render();
+                    } else if(newBase === currentBase) {
+                        // 相同则无变化
+                    } else {
+                        alert('请输入有效的碱基字母: A, T, G, C');
+                    }
+                }
+            }
+        }
+        
+        // 主渲染
+        function render() {
+            if(!ctx) return;
+            ctx.clearRect(0, 0, width, height);
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            for(let y=50; y<height; y+=50) {
+                ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(width,y); ctx.stroke();
+            }
+            for(let x=80; x<width; x+=80) {
+                ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,height); ctx.stroke();
+            }
+            ctx.restore();
+            
+            let originLeft=[], originRight=[];
+            let leftOld=[], leftNew=[], rightOld=[], rightNew=[];
+            
+            for(let idx=0; idx<BP_COUNT; idx++) {
+                const replicated = isReplicated(idx);
+                const yPos = startY + idx * stepY;
+                const leftBase = leftSeq[idx];
+                const rightBase = rightSeq[idx];
+                if(!replicated) {
+                    const {leftX, rightX, y} = getDynamicHelixPoints(idx, progress);
+                    originLeft.push({x: leftX, y});
+                    originRight.push({x: rightX, y});
+                    drawBasePairReal(leftX, y, leftBase, rightX, y, rightBase, '#3b82f6', '#3b82f6', false, false);
+                } else {
+                    const leftHelix = getHelixPointsForSub(idx, leftSubCenter, subRadius);
+                    const leftTemplateX = leftHelix.leftX, leftNewX = leftHelix.rightX;
+                    const leftNewBase = getComp(leftBase);
+                    leftOld.push({x: leftTemplateX, y: yPos});
+                    leftNew.push({x: leftNewX, y: yPos});
+                    drawBasePairReal(leftTemplateX, yPos, leftBase, leftNewX, yPos, leftNewBase, '#3b82f6', '#e67e22', false, true);
+                    
+                    const rightHelix = getHelixPointsForSub(idx, rightSubCenter, subRadius);
+                    const rightTemplateX = rightHelix.rightX, rightNewX = rightHelix.leftX;
+                    const rightNewBase = getComp(rightBase);
+                    rightOld.push({x: rightTemplateX, y: yPos});
+                    rightNew.push({x: rightNewX, y: yPos});
+                    drawBasePairReal(rightNewX, yPos, rightNewBase, rightTemplateX, yPos, rightBase, '#e67e22', '#3b82f6', true, false);
+                }
+            }
+            
+            if(originLeft.length>1) drawSkeleton(originLeft, '#2563eb', 2.5);
+            if(originRight.length>1) drawSkeleton(originRight, '#2563eb', 2.5);
+            if(leftOld.length>1) drawSkeleton(leftOld, '#2563eb', 2.5);
+            if(leftNew.length>1) drawSkeleton(leftNew, '#e67e22', 2.5);
+            if(rightNew.length>1) drawSkeleton(rightNew, '#e67e22', 2.5);
+            if(rightOld.length>1) drawSkeleton(rightOld, '#2563eb', 2.5);
+            
+            drawEnzymesReal();
+            drawParticles();
+            
+            if(progress>0 && progress<1) {
+                const forkIdx = getForkIndex();
+                const floorIdx = Math.floor(forkIdx);
+                if(floorIdx>=0 && floorIdx<BP_COUNT){
+                    const forkY = startY + floorIdx * stepY;
+                    ctx.font = "italic 11px 'Segoe UI'";
+                    ctx.fillStyle = '#0369a1';
+                    ctx.fillText("环形解旋酶 → 打开双链", centerX-95, forkY-22);
+                    ctx.fillStyle = '#c2410c';
+                    ctx.fillText("聚合酶捕获游离核苷酸 →", centerX-50, forkY+28);
+                }
+            }
+            ctx.font = "11px 'Segoe UI'";
+            ctx.fillStyle = "#334155";
+            ctx.fillText(`✏️ 点击蓝色碱基可编辑 | 链长: ${BP_COUNT} bp | 速度: ${speedFactor.toFixed(2)}x`, 30, 35);
+            ctx.fillText("💧 发光小球: 游离核苷酸 → 移动到聚合酶 → 加入子链 | 互补链自动配对", 30, 58);
+            if(progress >= 0.99) {
+                ctx.font = "bold 14px 'Segoe UI'";
+                ctx.fillStyle = "#0f766e";
+                if(loopEnabled && isPlaying) ctx.fillText(`🔄 周期完成，自动增加2bp (新长度 ${BP_COUNT} bp) 继续循环`, centerX-240, 88);
+                else ctx.fillText("✓ 复制完成! 可编辑碱基或开启循环", centerX-180, 88);
+            } else if(progress === 0) {
+                ctx.font = "italic 12px 'Segoe UI'";
+                ctx.fillStyle = "#1f5e54";
+                ctx.fillText("点击蓝色碱基修改序列 → 互补链自动更新 → 重新开始复制", centerX-240, 88);
+            } else {
+                ctx.font = "12px 'Segoe UI'";
+                ctx.fillStyle = "#0f5b7a";
+                ctx.fillText(`编辑模式激活: 单击模板链碱基可改变遗传信息 | 链长 ${BP_COUNT} bp`, centerX-220, 88);
+            }
+        }
+        
+        // 链长操作
+        function extendDNAChain(increment=2) {
+            stopAutoPlay();
+            const possible = ['A','T','G','C'];
+            for(let i=0; i<increment; i++) leftSeq.push(possible[Math.floor(Math.random()*4)]);
+            rightSeq = updateRightSeq();
+            BP_COUNT = leftSeq.length;
+            recalcGeometry();
+            progress = 0;
+            setProgress(0);
+            particles = [];
+        }
+        
+        function resetChainLength() {
+            stopAutoPlay();
+            leftSeq = ['A','C','G','T','A','G','C','T','G','C'];
+            rightSeq = updateRightSeq();
+            BP_COUNT = leftSeq.length;
+            recalcGeometry();
+            progress = 0;
+            setProgress(0);
+            particles = [];
+        }
+        
+        function setProgress(value) {
+            progress = Math.min(1, Math.max(0, value));
+            slider.value = progress;
+            percentSpan.innerText = `${Math.round(progress*100)}% 复制`;
+            render();
+        }
+        
+        function startAutoPlay() {
+            if(animationId) cancelAnimationFrame(animationId);
+            isPlaying = true;
+            function animate() {
+                if(!isPlaying) return;
+                let step = BASE_STEP * speedFactor;
+                let np = progress + step;
+                if(np >= 1.0) {
+                    if(loopEnabled) {
+                        extendDNAChain(2);
+                        setProgress(0);
+                        animationId = requestAnimationFrame(animate);
+                        return;
+                    } else {
+                        setProgress(1.0);
+                        isPlaying = false;
+                        playBtn.innerHTML = '▶ 开始复制';
+                        return;
+                    }
+                }
+                setProgress(np);
+                updateParticles();
+                render();
+                animationId = requestAnimationFrame(animate);
+            }
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        function stopAutoPlay() {
+            if(animationId) { cancelAnimationFrame(animationId); animationId = null; }
+            isPlaying = false;
+        }
+        
+        function resetReplication() { stopAutoPlay(); setProgress(0); playBtn.innerHTML = '▶ 开始复制'; particles = []; }
+        function completeReplication() { stopAutoPlay(); setProgress(1); playBtn.innerHTML = '▶ 开始复制'; particles = []; }
+        function updateSpeed() { speedFactor = parseFloat(speedSlider.value); speedSpan.innerText = speedFactor.toFixed(2)+'x'; render(); }
+        
+        // 事件绑定
+        slider.addEventListener('input', (e) => { stopAutoPlay(); setProgress(parseFloat(e.target.value)); playBtn.innerHTML = '▶ 开始复制'; particles = []; });
+        playBtn.addEventListener('click', () => {
+            if(isPlaying) { stopAutoPlay(); playBtn.innerHTML = '▶ 开始复制'; }
+            else { if(progress>=0.99 && loopEnabled) setProgress(0); startAutoPlay(); playBtn.innerHTML = '⏸ 暂停'; }
+        });
+        resetBtn.addEventListener('click', resetReplication);
+        fullBtn.addEventListener('click', completeReplication);
+        extendBtn.addEventListener('click', () => { stopAutoPlay(); extendDNAChain(2); });
+        resetLengthBtn.addEventListener('click', resetChainLength);
+        speedSlider.addEventListener('input', updateSpeed);
+        canvas.addEventListener('click', handleCanvasClick);
+        
+        window.addEventListener('resize', ()=>{
+            const container = canvas.parentElement;
+            const maxW = Math.min(1100, container.clientWidth);
+            canvas.style.width = `${maxW}px`;
+            render();
+        });
+        recalcGeometry();
+        setProgress(0);
+        updateSpeed();
+    })();
+</script>
+</body>
+</html>

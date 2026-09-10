@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>动量守恒定律 · 思维导图与高考真题 | 高中物理人教版必修二</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动文本影响体验，但不影响复制 */
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f7ff 0%, #e9f0fa 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
+            overflow: hidden;
+            padding: 20px 24px 30px 24px;
+            transition: all 0.2s;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1A4D8C, #2C7DA0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.25rem;
+            display: inline-block;
+        }
+
+        .sub {
+            color: #2c6e9e;
+            border-left: 4px solid #2c7da0;
+            padding-left: 12px;
+            margin: 8px 0 20px 0;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* 双栏布局 */
+        .mindmap-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-top: 10px;
+        }
+
+        /* canvas 区域 思维导图 */
+        .canvas-area {
+            flex: 2;
+            min-width: 280px;
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            padding: 12px;
+            transition: all 0.2s;
+        }
+
+        .canvas-wrapper {
+            background: #FEFCF5;
+            border-radius: 24px;
+            padding: 8px;
+            box-shadow: inset 0 1px 4px #0001, 0 6px 12px -6px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #FFFEF7;
+            border-radius: 20px;
+            cursor: pointer;
+            margin: 0 auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        /* 右侧真题面板 */
+        .questions-area {
+            flex: 1.2;
+            min-width: 260px;
+            background: #ffffffea;
+            border-radius: 28px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            backdrop-filter: blur(2px);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .qa-header {
+            background: #1e466e;
+            padding: 18px 20px;
+            color: white;
+            border-radius: 28px 28px 0 0;
+        }
+
+        .qa-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .qa-header p {
+            font-size: 0.8rem;
+            opacity: 0.85;
+            margin-top: 6px;
+        }
+
+        .questions-list {
+            flex: 1;
+            padding: 16px 18px;
+            overflow-y: auto;
+            max-height: 550px;
+        }
+
+        .question-card {
+            background: #f9fafc;
+            border-radius: 20px;
+            padding: 16px;
+            margin-bottom: 18px;
+            border-left: 5px solid #2c7da0;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        }
+
+        .question-card:hover {
+            transform: translateY(-2px);
+            background: #ffffff;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        .q-year {
+            font-weight: 700;
+            color: #1e466e;
+            background: #e2edf7;
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .q-text {
+            font-weight: 500;
+            color: #1f2f3e;
+            line-height: 1.45;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .q-answer {
+            background: #eef2f7;
+            border-radius: 14px;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            color: #2c5270;
+            border-top: 1px dashed #bdd4e4;
+            margin-top: 5px;
+        }
+
+        .q-tag {
+            font-size: 0.7rem;
+            color: #3c7e9c;
+            background: #e4f0f7;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 16px;
+            margin-bottom: 8px;
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: #6c86a3;
+            padding: 30px 20px;
+            font-style: italic;
+        }
+
+        .reset-btn {
+            background: #f0f3f8;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1e466e;
+            cursor: pointer;
+            transition: 0.2s;
+            margin: 10px 18px 18px auto;
+            display: inline-block;
+            width: fit-content;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .reset-btn:hover {
+            background: #e0e8f2;
+            transform: scale(0.97);
+        }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6b8eaa;
+            margin-top: 25px;
+            border-top: 1px solid #cbdde9;
+            padding-top: 18px;
+        }
+
+        /* 自定义滚动条 */
+        .questions-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .questions-list::-webkit-scrollbar-track {
+            background: #e2e8f0;
+            border-radius: 8px;
+        }
+        .questions-list::-webkit-scrollbar-thumb {
+            background: #2c7da0;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 780px) {
+            .container {
+                padding: 15px;
+            }
+            .qa-header h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📐 动量守恒定律 · 思维导图</h1>
+    <div class="sub">🌌 核心概念 · 网状拓展 · 高考真题精析（人教版必修二 / 动量专题）</div>
+
+    <div class="mindmap-panel">
+        <!-- 思维导图Canvas区 -->
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="mindMapCanvas" width="900" height="580" style="width:100%; height:auto; max-width:900px; aspect-ratio:900/580"></canvas>
+            </div>
+            <div style="font-size:12px; text-align:center; margin-top:12px; color:#4a627a;">✨ 点击任意知识点节点 → 右侧展示相关高考真题 | 网状结构从中心向外延伸</div>
+        </div>
+
+        <!-- 右侧真题区 + 重置 -->
+        <div class="questions-area">
+            <div class="qa-header">
+                <h2>📚 历年高考真题 · 动量守恒</h2>
+                <p>依据点击的知识点智能筛选 · 精准突破</p>
+            </div>
+            <div style="display: flex; justify-content: flex-end; padding-right: 8px;">
+                <button id="resetQuestionsBtn" class="reset-btn">🔄 显示全部真题</button>
+            </div>
+            <div id="questionsContainer" class="questions-list">
+                <!-- 动态渲染真题列表 -->
+                <div class="empty-msg">加载真题数据中...</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-note">
+        💡 思维导图布局：中心「动量守恒定律」→ 五大分支 → 二级应用细节。点击节点高亮并联动右侧真题，掌握高考命题脉络。
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------------- 1. 定义思维导图节点（基于树状父子结构） ----------------
+        // 节点原始定义: id, label, parentId
+        const nodeDefs = [
+            { id: "center", label: "动量守恒定律", parent: null },
+            // 一级分支（核心拓展）
+            { id: "theorem", label: "动量定理", parent: "center" },
+            { id: "condition", label: "守恒条件", parent: "center" },
+            { id: "collision", label: "碰撞类型", parent: "center" },
+            { id: "recoil", label: "反冲运动", parent: "center" },
+            { id: "application", label: "典型应用", parent: "center" },
+            // 二级分支: 动量定理子节点
+            { id: "impulse", label: "冲量 I=Ft", parent: "theorem" },
+            { id: "momentum_change", label: "动量变化 Δp", parent: "theorem" },
+            // 守恒条件子节点
+            { id: "no_external", label: "不受外力/合外力为零", parent: "condition" },
+            { id: "internal_force", label: "内力远大于外力", parent: "condition" },
+            // 碰撞子节点
+            { id: "elastic", label: "弹性碰撞", parent: "collision" },
+            { id: "inelastic", label: "非弹性碰撞", parent: "collision" },
+            { id: "perfect_inelastic", label: "完全非弹性碰撞", parent: "collision" },
+            // 反冲子节点
+            { id: "rocket", label: "火箭推进", parent: "recoil" },
+            { id: "man_boat", label: "人船模型", parent: "recoil" },
+            // 应用实例子节点
+            { id: "bullet_block", label: "子弹打木块", parent: "application" },
+            { id: "explosion", label: "爆炸/分力问题", parent: "application" },
+            { id: "spring_model", label: "弹簧连接体", parent: "application" }
+        ];
+
+        // 建立节点映射表
+        let nodesMap = new Map();
+        nodeDefs.forEach(def => { nodesMap.set(def.id, { ...def, x: 0, y: 0, children: [] }); });
+        // 构建 children 关系方便布局时使用（但不影响后续）
+        nodeDefs.forEach(def => {
+            if(def.parent) {
+                const parentNode = nodesMap.get(def.parent);
+                if(parentNode) parentNode.children.push(def.id);
+            }
+        });
+
+        // 转换为数组用于渲染
+        let nodes = Array.from(nodesMap.values());
+
+        // ---------------- 2. 自动布局算法（中心放射 + 二级围绕父节点） ----------------
+        const canvas = document.getElementById('mindMapCanvas');
+        const ctx = canvas.getContext('2d');
+        let canvasWidth = 900, canvasHeight = 580;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        // 中心坐标
+        const centerX = canvasWidth/2;
+        const centerY = canvasHeight/2;
+        
+        // 布局参数
+        const radiusLevel1 = 160;   // 一级节点半径距离
+        const radiusLevel2 = 130;   // 二级节点相对于父节点的距离
+
+        // 先给中心节点坐标
+        const centerNode = nodesMap.get("center");
+        if(centerNode) { centerNode.x = centerX; centerNode.y = centerY; }
+
+        // 获取一级节点 (parent === "center")
+        const level1Nodes = nodes.filter(n => n.parent === "center");
+        const angleStep = (Math.PI * 2) / level1Nodes.length;
+        // 为了一级节点美观，根据索引分配角度
+        level1Nodes.forEach((node, idx) => {
+            const angle = idx * angleStep - Math.PI/2; // 从 -90° 开始，顶部开始逆时针旋转更美观
+            node.x = centerX + radiusLevel1 * Math.cos(angle);
+            node.y = centerY + radiusLevel1 * Math.sin(angle);
+        });
+
+        // 二级节点布局：基于父节点位置，围绕父节点在朝向中心相反一侧的扇形区域分布 (也可均匀)
+        // 获取所有二级节点 (parent非null且不是center)
+        const level2Nodes = nodes.filter(n => n.parent && n.parent !== "center");
+        // 按父节点分组
+        const childrenMap = new Map();
+        level2Nodes.forEach(node => {
+            if(!childrenMap.has(node.parent)) childrenMap.set(node.parent, []);
+            childrenMap.get(node.parent).push(node);
+        });
+        
+        // 对每组子节点，根据父节点位置计算子节点坐标：避开重叠，按角度半圆分布（远离中心的方向为轴线）
+        for(let [parentId, childrenArr] of childrenMap.entries()) {
+            const parentNode = nodesMap.get(parentId);
+            if(!parentNode) continue;
+            const px = parentNode.x, py = parentNode.y;
+            // 计算父节点相对于中心的方向角 (从中心指向父节点)
+            let dirAngle = Math.atan2(py - centerY, px - centerX);
+            // 子节点应该分布在相对于父节点“外侧”，即从父节点沿远离中心的方向再偏移左右分布
+            // 设定偏移范围 -50° ～ 50° 之间均匀分布
+            const offsetRange = 70 * Math.PI / 180; // ±70度 范围更舒展
+            const count = childrenArr.length;
+            if(count === 1) {
+                // 单个子节点: 沿着远离中心的方向偏移 radiusLevel2
+                const angleOut = dirAngle;
+                childrenArr[0].x = px + radiusLevel2 * Math.cos(angleOut);
+                childrenArr[0].y = py + radiusLevel2 * Math.sin(angleOut);
+            } else {
+                // 多个子节点均匀分布，中心角度为远离中心的方向
+                const startAngle = dirAngle - offsetRange/2;
+                const step = offsetRange / (count - 1 || 1);
+                childrenArr.forEach((child, i) => {
+                    const angle = startAngle + i * step;
+                    child.x = px + radiusLevel2 * Math.cos(angle);
+                    child.y = py + radiusLevel2 * Math.sin(angle);
+                });
+            }
+        }
+        
+        // 碰撞边界微调：避免超出画布（简单夹边）
+        nodes.forEach(node => {
+            node.x = Math.min(canvasWidth - 40, Math.max(40, node.x));
+            node.y = Math.min(canvasHeight - 40, Math.max(40, node.y));
+        });
+
+        // 构建边集合 (基于父子关系)
+        let edges = [];
+        nodes.forEach(node => {
+            if(node.parent) {
+                const parentNode = nodesMap.get(node.parent);
+                if(parentNode) {
+                    edges.push({ from: parentNode, to: node });
+                }
+            }
+        });
+
+        // ---------- 3. 高考真题数据库 (与动量守恒知识点强相关) ----------
+        // 每个真题关联知识点id列表（支持多个标签便于联动）
+        const questionsDB = [
+            { id: 1, year: "2022 · 全国乙卷", text: "一质量为m的物块在光滑水平面上与劲度系数为k的弹簧相连，另一质量也为m的物体以速度v0与物块发生弹性碰撞，求碰撞后两物体的速度。", answer: "由动量守恒和机械能守恒得：v1' = 0, v2' = v0 (等质量弹性碰撞速度交换)", tags: ["elastic","collision"], keywords: "弹性碰撞" },
+            { id: 2, year: "2021 · 广东卷", text: "如图，反冲小车静止在光滑水平面，车上固定一水平炮管，炮弹射出时，小车获得反向速度。已知炮弹质量m，小车总质量M，炮弹相对地面速度v，求小车反冲速度。", answer: "根据动量守恒：0 = mv + M V → V = -mv/M (反冲速度方向相反)", tags: ["rocket","recoil","man_boat"] },
+            { id: 3, year: "2020 · 全国III卷", text: "甲、乙两冰球运动员在光滑冰面上相向运动，质量均为m，甲速度大小为v1，乙速度大小为v2，发生完全非弹性碰撞后共同速度大小？", answer: "以甲原方向为正，动量守恒：mv1 - mv2 = 2mv → v = (v1 - v2)/2", tags: ["perfect_inelastic","collision"] },
+            { id: 4, year: "2019 · 北京卷", text: "如图所示，子弹水平射入放在光滑水平面上的木块并留在其中，子弹质量m，初速v0，木块质量M，求木块最终速度及系统损失的机械能。", answer: "动量守恒：mv0 = (M+m)v → v = mv0/(M+m)；ΔE = ½mv0² - ½(M+m)v²", tags: ["bullet_block","application"] },
+            { id: 5, year: "2023 · 湖南卷", text: "质量相等的A、B两小球用轻弹簧连接，静止在光滑水平面。给A一个瞬时冲量，获得速度v0，求弹簧压缩最大时两球速度，及弹性势能最大值。", answer: "弹簧压缩最大时共速：mv0=2mv → v=v0/2；Ep_max = ½mv0² - ½·2m·(v0/2)² = mv0²/4", tags: ["spring_model","application"] },
+            { id: 6, year: "2018 · 江苏卷", text: "光滑水平轨道上，质量为m1的球以速度v0与静止的m2球发生弹性正碰，求碰后m1的速度范围。", answer: "由动量守恒和动能守恒得v1' = (m1-m2)v0/(m1+m2)，当m1 < m2时反弹", tags: ["elastic","collision"] },
+            { id: 7, year: "2017 · 天津卷", text: "一质量为M的火箭竖直发射瞬间，喷出质量为Δm的燃气相对火箭速度u，求火箭获得的初速度（不计重力及空气阻力）。", answer: "取向上为正，0 = (M-Δm)v + Δm(-u+ v)近似得 v = (Δm·u)/M", tags: ["rocket","recoil"] },
+            { id: 8, year: "2022· 甲卷", text: "人船模型中，船长L，质量M，人质量m，从船头走到船尾，求船移动距离。", answer: "人船系统动量守恒，相对位移关系：m·x人 = M·x船，x人+x船=L → x船 = mL/(M+m)", tags: ["man_boat","recoil"] }
+        ];
+        
+        // 给每个节点关联对应的真题索引（基于节点id与真题tags匹配）
+        function buildNodeToQuestions() {
+            let map = new Map();
+            nodes.forEach(node => {
+                let matched = [];
+                questionsDB.forEach(q => {
+                    // 如果真题tags中包含节点id 或者节点标签与题目关键词相关，加强匹配
+                    if(q.tags.includes(node.id) || 
+                       (node.id === "application" && q.tags.some(t => ["bullet_block","spring_model","explosion"].includes(t))) ||
+                       (node.id === "collision" && q.tags.some(t => ["elastic","inelastic","perfect_inelastic"].includes(t))) ||
+                       (node.id === "condition" && (q.text.includes("动量守恒条件") || q.text.includes("合外力"))) ||
+                       (node.id === "theorem" && q.text.includes("冲量")) ||
+                       (node.id === "momentum_change" && q.text.includes("动量变化")) ||
+                       (q.tags.includes(node.id))
+                    ) {
+                        matched.push(q);
+                    } else {
+                        // 额外细节：针对二级精准
+                        if(node.id === "bullet_block" && q.tags.includes("bullet_block")) matched.push(q);
+                        if(node.id === "spring_model" && q.tags.includes("spring_model")) matched.push(q);
+                        if(node.id === "elastic" && q.tags.includes("elastic")) matched.push(q);
+                        if(node.id === "perfect_inelastic" && q.tags.includes("perfect_inelastic")) matched.push(q);
+                        if(node.id === "rocket" && q.tags.includes("rocket")) matched.push(q);
+                        if(node.id === "man_boat" && q.tags.includes("man_boat")) matched.push(q);
+                    }
+                });
+                // 去重
+                const unique = [];
+                const ids = new Set();
+                matched.forEach(q => {
+                    if(!ids.has(q.id)) {
+                        ids.add(q.id);
+                        unique.push(q);
+                    }
+                });
+                map.set(node.id, unique);
+            });
+            return map;
+        }
+        
+        const nodeQuestionsMap = buildNodeToQuestions();
+        // 所有真题列表
+        let allQuestions = [...questionsDB];
+        
+        // ---------- 渲染控制 ----------
+        let selectedNodeId = null;      // 当前高亮的节点id
+        
+        // 绘制思维导图 (带曲线连接，高亮效果)
+        function drawMindMap() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            // 1. 画连线 (半透明曲线)
+            edges.forEach(edge => {
+                const from = edge.from;
+                const to = edge.to;
+                ctx.beginPath();
+                ctx.moveTo(from.x, from.y);
+                // 使用二次贝塞尔曲线使得连接线柔和: 控制点取中点偏移
+                const midX = (from.x + to.x) / 2;
+                const midY = (from.y + to.y) / 2;
+                const offsetX = (midY - centerY) * 0.15;
+                const offsetY = (centerX - midX) * 0.15;
+                ctx.quadraticCurveTo(midX + offsetX, midY + offsetY, to.x, to.y);
+                ctx.strokeStyle = "#89b9d9";
+                ctx.lineWidth = 1.8;
+                ctx.setLineDash([5, 6]);
+                ctx.stroke();
+            });
+            ctx.setLineDash([]);
+            
+            // 2. 绘制节点 (圆形 + 文本)
+            nodes.forEach(node => {
+                const isSelected = (selectedNodeId === node.id);
+                // 阴影效果
+                ctx.shadowBlur = 0;
+                // 外发光高亮
+                if(isSelected) {
+                    ctx.shadowColor = "#f5b042";
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, 26, 0, 2*Math.PI);
+                    ctx.fillStyle = "#FFF4E0";
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+                // 圆背景渐变
+                const gradient = ctx.createRadialGradient(node.x-5, node.y-5, 5, node.x, node.y, 24);
+                if(isSelected) {
+                    gradient.addColorStop(0, "#FFE6B3");
+                    gradient.addColorStop(1, "#FFC98F");
+                } else {
+                    gradient.addColorStop(0, "#EFF6FF");
+                    gradient.addColorStop(1, "#CBE0F5");
+                }
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 23, 0, 2*Math.PI);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                ctx.strokeStyle = isSelected ? "#E09530" : "#427d9d";
+                ctx.lineWidth = isSelected ? 2.8 : 1.5;
+                ctx.stroke();
+                // 文字 (多行支持小字体)
+                ctx.fillStyle = "#1f3b4c";
+                ctx.font = isSelected ? "bold 13px 'Segoe UI', 'PingFang SC'" : "12px 'Segoe UI', 'PingFang SC'";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                let label = node.label;
+                // 手动换行支持少量长文本
+                if(label.length > 12) {
+                    let part1 = label.slice(0,10);
+                    let part2 = label.slice(10);
+                    ctx.fillText(part1, node.x, node.y-5);
+                    ctx.fillText(part2, node.x, node.y+9);
+                } else {
+                    ctx.fillText(label, node.x, node.y);
+                }
+                // 额外小标注：如果是动量守恒中心加特殊icon
+                if(node.id === "center") {
+                    ctx.font = "18px 'Segoe UI'";
+                    ctx.fillStyle = "#b45f2b";
+                    ctx.fillText("⚡", node.x-28, node.y-8);
+                }
+            });
+            // 加中心装饰光晕
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 32, 0, 2*Math.PI);
+            ctx.strokeStyle = "#ffbc6e";
+            ctx.lineWidth = 1.2;
+            ctx.setLineDash([2, 8]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        
+        // ---------- 右侧真题渲染 (基于节点筛选) ----------
+        function renderQuestions(selectedNodeIdParam) {
+            const container = document.getElementById('questionsContainer');
+            let questionsToShow = [];
+            if(selectedNodeIdParam && nodeQuestionsMap.has(selectedNodeIdParam)) {
+                const qlist = nodeQuestionsMap.get(selectedNodeIdParam);
+                if(qlist && qlist.length > 0) {
+                    questionsToShow = qlist;
+                } else {
+                    // 无匹配展示提示
+                    container.innerHTML = `<div class="empty-msg">📌 当前知识点暂无直接真题记录，但可查看全部真题 🧩<br>点击“全部真题”或尝试其他节点~</div>`;
+                    return;
+                }
+            } else {
+                questionsToShow = allQuestions;
+            }
+            
+            if(questionsToShow.length === 0 && selectedNodeIdParam) {
+                container.innerHTML = `<div class="empty-msg">✨ 该知识点暂未收录真题，<br>点击重置按钮显示所有高考原题</div>`;
+                return;
+            }
+            
+            let html = '';
+            questionsToShow.forEach(q => {
+                html += `
+                    <div class="question-card">
+                        <div class="q-year">📅 ${q.year}</div>
+                        <div class="q-text">📖 ${q.text}</div>
+                        <div class="q-answer">🔍 答案与解析：${q.answer}</div>
+                        <div class="q-tag">🎯 关联考点：${q.keywords || q.tags.join('、')}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+        
+        // 重置高亮并显示全部真题
+        function resetSelection() {
+            selectedNodeId = null;
+            drawMindMap();
+            renderQuestions(null);
+        }
+        
+        // 处理canvas点击 (获取点击节点)
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;   // canvas实际像素比
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+            
+            // 反向查找节点 (距离阈值)
+            let minDist = 30;
+            let clickedNode = null;
+            for(let node of nodes) {
+                const dx = node.x - mouseX;
+                const dy = node.y - mouseY;
+                const dist = Math.hypot(dx, dy);
+                if(dist < minDist) {
+                    minDist = dist;
+                    clickedNode = node;
+                }
+            }
+            if(clickedNode) {
+                selectedNodeId = clickedNode.id;
+                drawMindMap();
+                renderQuestions(selectedNodeId);
+            } else {
+                // 点击空白区域可保留高亮不清除？更好的体验:不重置，但用户可手动重置
+                // 但为了友好，保留之前状态，但是不改变
+                // do nothing
+            }
+        }
+        
+        // 初始化事件与适配
+        function init() {
+            drawMindMap();
+            renderQuestions(null);
+            canvas.addEventListener('click', handleCanvasClick);
+            document.getElementById('resetQuestionsBtn').addEventListener('click', () => {
+                resetSelection();
+            });
+            // 窗口自适应保留比例（重绘）
+            window.addEventListener('resize', () => {
+                // 无需重新布局，但由于css缩放可能导致点击偏移，但canvas尺寸固定不变，坐标不受影响
+                drawMindMap();
+            });
+        }
+        
+        // 再加一个小优化: 鼠标悬浮手型
+        canvas.style.cursor = 'pointer';
+        init();
+    })();
+</script>
+</body>
+</html>

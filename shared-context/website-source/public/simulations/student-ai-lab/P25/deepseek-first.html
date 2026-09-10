@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中物理：机械能守恒定律 - 单摆实验模拟</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动时误选文字，但保留输入框可编辑 */
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .experiment-container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* 头部 */
+        .header {
+            background: #1e2a3e;
+            color: white;
+            padding: 1.2rem 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 0.5rem 0 0;
+            opacity: 0.8;
+            font-size: 1rem;
+        }
+
+        /* 双栏布局: 左侧画布+控制区, 右侧数据+分析 */
+        .split-panel {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .sim-panel {
+            flex: 1.4;
+            min-width: 300px;
+            background: #ffffffcc;
+            padding: 1.2rem;
+            border-right: 1px solid rgba(0,0,0,0.08);
+        }
+        .data-panel {
+            flex: 1;
+            min-width: 280px;
+            background: #fefefe;
+            padding: 1.2rem 1.5rem;
+        }
+
+        /* canvas 区域 */
+        .canvas-wrapper {
+            background: #fef9e8;
+            border-radius: 28px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 10px 20px -5px rgba(0,0,0,0.15);
+            padding: 12px;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 20px;
+            cursor: grab;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* 控制栏 */
+        .controls {
+            margin-top: 1.3rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .param-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f0f2f5;
+            padding: 5px 12px;
+            border-radius: 40px;
+        }
+        .param-group label {
+            font-weight: 600;
+            color: #1e466e;
+        }
+        input, button {
+            font-size: 0.9rem;
+            padding: 5px 10px;
+            border-radius: 30px;
+            border: 1px solid #ccc;
+            background: white;
+            font-weight: 500;
+        }
+        input {
+            width: 65px;
+            text-align: center;
+        }
+        button {
+            background: #2c5f8a;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #1f4564;
+            transform: scale(0.97);
+        }
+        .btn-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* 实时能量条 */
+        .energy-bar {
+            margin: 15px 0 10px;
+            background: #e2e8f0;
+            border-radius: 20px;
+            height: 30px;
+            overflow: hidden;
+            display: flex;
+        }
+        .kinetic-bar {
+            background: #2b9348;
+            transition: width 0.05s linear;
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 10px;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        .potential-bar {
+            background: #e9c46a;
+            transition: width 0.05s linear;
+            width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: #3a2c1b;
+            font-weight: bold;
+        }
+        .energy-nums {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 6px;
+        }
+
+        /* 表格与数据区 */
+        .exp-section {
+            margin-bottom: 1.8rem;
+        }
+        .exp-section h3 {
+            font-size: 1.2rem;
+            border-left: 5px solid #2c5f8a;
+            padding-left: 12px;
+            margin: 0 0 0.8rem 0;
+            color: #1e2a3e;
+        }
+        .exp-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            background: #f9fafc;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .exp-table th, .exp-table td {
+            border: 1px solid #ddd;
+            padding: 8px 6px;
+            text-align: center;
+        }
+        .exp-table th {
+            background: #dfe6ed;
+            font-weight: 600;
+        }
+        .note {
+            font-size: 0.75rem;
+            color: #4a5568;
+            margin-top: 8px;
+            text-align: center;
+        }
+        .error-box {
+            background: #fff3e0;
+            padding: 12px;
+            border-radius: 20px;
+            border-left: 4px solid #f4a261;
+            font-size: 0.85rem;
+        }
+        hr {
+            margin: 15px 0;
+            border-color: #e2e8f0;
+        }
+        footer {
+            background: #eef2f7;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.7rem;
+            color: #6c757d;
+        }
+        @media (max-width: 750px) {
+            .param-group { padding: 3px 8px; }
+            .split-panel { flex-direction: column; }
+            .sim-panel { border-right: none; border-bottom: 1px solid #ddd; }
+        }
+    </style>
+</head>
+<body>
+<div class="experiment-container">
+    <div class="header">
+        <h1>⚡ 机械能守恒定律 · 单摆实验模拟</h1>
+        <p>理想无阻力环境下 | 动能 + 重力势能 = 总机械能(恒定) | 可交互摆锤</p>
+    </div>
+
+    <div class="split-panel">
+        <!-- 左侧模拟及控制 -->
+        <div class="sim-panel">
+            <div class="canvas-wrapper">
+                <canvas id="pendulumCanvas" width="700" height="400" style="width:100%; height:auto; max-width:700px; aspect-ratio:700/400"></canvas>
+            </div>
+            <div class="controls">
+                <div class="param-group">
+                    <label>摆长 L (m)</label>
+                    <input type="number" id="lengthInput" step="0.1" value="1.2" min="0.5" max="2.0">
+                </div>
+                <div class="param-group">
+                    <label>质量 m (kg)</label>
+                    <input type="number" id="massInput" step="0.1" value="0.5" min="0.2" max="2.0">
+                </div>
+                <div class="param-group">
+                    <label>初始角度 θ (°)</label>
+                    <input type="number" id="angleInput" step="5" value="30" min="5" max="70">
+                </div>
+                <div class="btn-group">
+                    <button id="resetBtn">🔄 重置实验</button>
+                    <button id="pausePlayBtn">⏸️ 暂停</button>
+                </div>
+            </div>
+            <!-- 实时能量可视化 -->
+            <div class="energy-bar">
+                <div class="kinetic-bar" id="kineticBar">动能</div>
+                <div class="potential-bar" id="potentialBar">势能</div>
+            </div>
+            <div class="energy-nums">
+                <span>💥 动能 Ek: <strong id="ekValue">0.00</strong> J</span>
+                <span>📐 势能 Ep: <strong id="epValue">0.00</strong> J</span>
+                <span>🔷 总机械能 E: <strong id="totalEnergy">0.00</strong> J</span>
+            </div>
+            <div class="note">🎯 提示：鼠标在画布上左右拖动可手动释放摆锤角度（松开后开始摆动）| 理论无阻尼，机械能守恒</div>
+        </div>
+
+        <!-- 右侧实验数据与结论 -->
+        <div class="data-panel">
+            <div class="exp-section">
+                <h3>📊 实验数据记录 (选取特殊位置)</h3>
+                <table class="exp-table" id="dataTable">
+                    <thead>
+                        <tr><th>位置</th><th>高度 h (m)</th><th>势能 Ep (J)</th><th>动能 Ek (J)</th><th>机械能 E (J)</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>最高点(左)</td><td id="h_left">--</td><td id="ep_left">--</td><td id="ek_left">0.00</td><td id="e_left">--</td></tr>
+                        <tr><td>最低点</td><td id="h_bottom">--</td><td id="ep_bottom">--</td><td id="ek_bottom">--</td><td id="e_bottom">--</td></tr>
+                        <tr><td>实时采样</td><td id="h_current">--</td><td id="ep_current">--</td><td id="ek_current">--</td><td id="e_current">--</td></tr>
+                    </tbody>
+                </table>
+                <div class="note">※ 理论值: 最高点势能最大, 动能0；最低点动能最大, 势能最小；总机械能≈恒定值。</div>
+            </div>
+            <div class="exp-section">
+                <h3>📝 实验结论</h3>
+                <div style="background:#eef2fa; padding:10px 14px; border-radius: 24px;">
+                    <p style="margin:0 0 8px">✔ 在只有重力做功的理想系统中，摆锤的<strong>动能 + 重力势能 = 常量</strong>。</p>
+                    <p style="margin:0">✔ 实验数据显示任意时刻机械能数值基本不变（微小偏差源于浮点计算），验证了<strong>机械能守恒定律</strong>。</p>
+                </div>
+            </div>
+            <div class="exp-section">
+                <h3>⚠️ 误差分析</h3>
+                <div class="error-box">
+                    <ul style="margin:0; padding-left: 18px;">
+                        <li><strong>空气阻力/摩擦</strong>：本模拟为理想无阻尼，真实实验中摆幅会逐渐减小，机械能转化为内能。</li>
+                        <li><strong>测量误差</strong>：角度、摆长、质量测量引入初始数据偏差；本模拟使用精确公式，但真实实验测高及速度有误差。</li>
+                        <li><strong>系统简化</strong>：视为质点、忽略摆绳质量与形变；实际单摆有微小修正。</li>
+                        <li><strong>数值截断</strong>：计算时小数点后保留三位，微小舍入不影响守恒原理展示。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>🔬 物理模拟：基于机械能守恒微分方程数值解 | 角度随时间演化，展示能量转换过程</footer>
+</div>
+
+<script>
+    (function(){
+        // ----- 物理参数 -----
+        let g = 9.8;               // 重力加速度 m/s²
+        let length = 1.2;          // 摆长 m
+        let mass = 0.5;            // 质量 kg
+        let theta0_deg = 30;       // 初始角度 度
+        
+        // 状态变量
+        let theta = theta0_deg * Math.PI / 180;   // 当前弧度
+        let omega = 0;             // 角速度 rad/s
+        
+        let isRunning = true;
+        let lastTimestamp = 0;
+        let animationId = null;
+        
+        // DOM 元素
+        const canvas = document.getElementById('pendulumCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const lengthInput = document.getElementById('lengthInput');
+        const massInput = document.getElementById('massInput');
+        const angleInput = document.getElementById('angleInput');
+        const resetBtn = document.getElementById('resetBtn');
+        const pausePlayBtn = document.getElementById('pausePlayBtn');
+        
+        // 能量显示元素
+        const kineticBar = document.getElementById('kineticBar');
+        const potentialBar = document.getElementById('potentialBar');
+        const ekValueSpan = document.getElementById('ekValue');
+        const epValueSpan = document.getElementById('epValue');
+        const totalEnergySpan = document.getElementById('totalEnergy');
+        
+        // 表格元素
+        const hLeftSpan = document.getElementById('h_left');
+        const epLeftSpan = document.getElementById('ep_left');
+        const eLeftSpan = document.getElementById('e_left');
+        const hBottomSpan = document.getElementById('h_bottom');
+        const epBottomSpan = document.getElementById('ep_bottom');
+        const ekBottomSpan = document.getElementById('ek_bottom');
+        const eBottomSpan = document.getElementById('e_bottom');
+        const hCurrentSpan = document.getElementById('h_current');
+        const epCurrentSpan = document.getElementById('ep_current');
+        const ekCurrentSpan = document.getElementById('ek_current');
+        const eCurrentSpan = document.getElementById('e_current');
+        
+        // 辅助函数：计算当前高度 (相对于最低点)
+        function computeHeight(thetaRad, L) {
+            // 最低点势能为0: h = L - L*cos(theta) = L*(1 - cos(theta))
+            return L * (1 - Math.cos(thetaRad));
+        }
+        
+        // 计算势能
+        function computePE(height) {
+            return mass * g * height;
+        }
+        
+        // 计算动能
+        function computeKE(omegaRad, L, m) {
+            // 线速度 v = L * omega, 动能 = 1/2 * m * v^2
+            let v = L * omegaRad;
+            return 0.5 * m * v * v;
+        }
+        
+        // 更新所有UI数据 (能量条, 数字, 表格内的实时/特殊位置)
+        function updateDisplay(thetaRad, omegaRad, L, m, isRealTime = true) {
+            let h = computeHeight(thetaRad, L);
+            let ep = computePE(h);
+            let ek = computeKE(omegaRad, L, m);
+            let total = ep + ek;
+            
+            // 更新实时数字
+            ekValueSpan.innerText = ek.toFixed(3);
+            epValueSpan.innerText = ep.toFixed(3);
+            totalEnergySpan.innerText = total.toFixed(4);
+            
+            // 能量条比例（防止除零）
+            let maxEnergy = Math.max(ep + ek, 0.01);
+            let kinPct = (ek / maxEnergy) * 100;
+            let potPct = (ep / maxEnergy) * 100;
+            kineticBar.style.width = kinPct + "%";
+            potentialBar.style.width = potPct + "%";
+            // 动态文本
+            kineticBar.innerText = ek > 0.01 ? `${ek.toFixed(2)}J` : "动能";
+            potentialBar.innerText = ep > 0.01 ? `${ep.toFixed(2)}J` : "势能";
+            
+            // 实时采样行数据 (只有当前展示)
+            hCurrentSpan.innerText = h.toFixed(4);
+            epCurrentSpan.innerText = ep.toFixed(3);
+            ekCurrentSpan.innerText = ek.toFixed(3);
+            eCurrentSpan.innerText = total.toFixed(4);
+        }
+        
+        // 刷新特殊位置表格 (最高点和最低点理论值基于当前theta_max)
+        // 根据当前系统的最大摆角（振幅）计算理论最高点势能、最低点动能
+        function updateSpecialPositions(currentThetaRad, currentOmegaRad, L, m) {
+            // 为了准确，能量守恒下总机械能恒定，我们使用当前总机械能作为参考。
+            let h_now = computeHeight(currentThetaRad, L);
+            let ep_now = computePE(h_now);
+            let ek_now = computeKE(currentOmegaRad, L, m);
+            let totalConst = ep_now + ek_now;    // 守恒量
+            
+            // 最高点：速度=0，高度 h_max 满足 mgh_max = totalConst => h_max = totalConst/(mg)
+            let h_max = totalConst / (mass * g);
+            if (h_max < 0) h_max = 0;
+            let ep_max = totalConst;
+            let ek_max = 0.0;
+            
+            // 最低点：高度=0, 动能= totalConst
+            let h_min = 0;
+            let ep_min = 0;
+            let ek_min = totalConst;
+            
+            // 但注意实际最高点高度也需符合几何约束: h_max = L*(1-cos(theta_max))，显示一致性。
+            // 由于机械能严格守恒，这些值应当一致。为了教育展示，使用总机械能反推。
+            hLeftSpan.innerText = h_max.toFixed(4);
+            epLeftSpan.innerText = ep_max.toFixed(3);
+            // 最高点动能显示0
+            document.getElementById('ek_left').innerText = "0.000";
+            eLeftSpan.innerText = totalConst.toFixed(4);
+            
+            hBottomSpan.innerText = h_min.toFixed(4);
+            epBottomSpan.innerText = ep_min.toFixed(3);
+            ekBottomSpan.innerText = ek_min.toFixed(3);
+            eBottomSpan.innerText = totalConst.toFixed(4);
+        }
+        
+        // 核心物理更新 (欧拉-辛普森风格，更稳定)
+        function updatePhysics(dt, L, m, thetaRef, omegaRef) {
+            // 运动方程: alpha = - (g/L) * sin(theta)
+            let alpha = -(g / L) * Math.sin(thetaRef);
+            let newOmega = omegaRef + alpha * dt;
+            let newTheta = thetaRef + newOmega * dt;   // 半隐式欧拉 更稳定
+            return { theta: newTheta, omega: newOmega };
+        }
+        
+        // 重绘摆锤 (canvas)
+        let canvasWidth = 700, canvasHeight = 400;
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const w = container.clientWidth;
+            canvas.width = Math.min(700, w);
+            canvas.height = 400;
+            canvasWidth = canvas.width;
+            canvasHeight = canvas.height;
+            drawPendulum(theta);
+        }
+        window.addEventListener('resize', () => resizeCanvas());
+        
+        function drawPendulum(thetaRad) {
+            if (!ctx) return;
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+            
+            // 定义悬挂点 (x0, y0)
+            const pivotX = w / 2;
+            const pivotY = 70;
+            // 摆长映射到画布长度（像素），基于真实比例最大2m摆长，最大摆角可达70°，确保不超出边界
+            let maxLenPx = Math.min(pivotY - 10, (w / 2) - 20);
+            let scale = maxLenPx / 2.0;   // 摆长2m时占最大像素；length最大2m，比例系数
+            let lenPx = Math.min(length * scale, maxLenPx);
+            // 重新矫正使长摆合理
+            if (lenPx < 10) lenPx = 40;
+            const bobX = pivotX + lenPx * Math.sin(thetaRad);
+            const bobY = pivotY + lenPx * Math.cos(thetaRad);
+            
+            // 绘制支架
+            ctx.beginPath();
+            ctx.moveTo(pivotX - 35, pivotY);
+            ctx.lineTo(pivotX + 35, pivotY);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#6b4c3b";
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.rect(pivotX - 5, pivotY - 8, 10, 12);
+            ctx.fillStyle = "#aa7c5c";
+            ctx.fill();
+            
+            // 绘制摆线
+            ctx.beginPath();
+            ctx.moveTo(pivotX, pivotY);
+            ctx.lineTo(bobX, bobY);
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#4a4e69";
+            ctx.stroke();
+            
+            // 绘制摆球
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(bobX, bobY, 16, 0, 2 * Math.PI);
+            ctx.fillStyle = "#e76f51";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(bobX, bobY, 16, 0, 2 * Math.PI);
+            ctx.strokeStyle = "#bc6c25";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = "#f4a261";
+            ctx.beginPath();
+            ctx.arc(bobX-2, bobY-2, 3, 0, 2*Math.PI);
+            ctx.fill();
+            // 显示角度文字
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#2c3e4e";
+            ctx.fillText(`θ = ${(thetaRad * 180 / Math.PI).toFixed(1)}°`, pivotX+10, pivotY-10);
+        }
+        
+        // 重置所有参数 (从UI读取)
+        function resetSimulation() {
+            length = parseFloat(lengthInput.value);
+            mass = parseFloat(massInput.value);
+            theta0_deg = parseFloat(angleInput.value);
+            if (isNaN(length)) length = 1.2;
+            if (isNaN(mass)) mass = 0.5;
+            if (isNaN(theta0_deg)) theta0_deg = 30;
+            // 限制范围
+            length = Math.min(2.0, Math.max(0.5, length));
+            mass = Math.min(2.0, Math.max(0.2, mass));
+            theta0_deg = Math.min(70, Math.max(5, theta0_deg));
+            lengthInput.value = length;
+            massInput.value = mass;
+            angleInput.value = theta0_deg;
+            
+            theta = theta0_deg * Math.PI / 180;
+            omega = 0;
+            isRunning = true;
+            pausePlayBtn.innerText = "⏸️ 暂停";
+            // 更新一次显示
+            let hNow = computeHeight(theta, length);
+            let epNow = computePE(hNow);
+            let ekNow = computeKE(omega, length, mass);
+            let total = epNow + ekNow;
+            updateDisplay(theta, omega, length, mass, true);
+            updateSpecialPositions(theta, omega, length, mass);
+            drawPendulum(theta);
+        }
+        
+        // 更新物理参数但不重置运动 (摆长或质量改变会破坏守恒，因此重置角度速度以当前角度速度重新开始)
+        function syncParametersAndResetMotion() {
+            let newL = parseFloat(lengthInput.value);
+            let newM = parseFloat(massInput.value);
+            if (isNaN(newL)) newL = length;
+            if (isNaN(newM)) newM = mass;
+            newL = Math.min(2.0, Math.max(0.5, newL));
+            newM = Math.min(2.0, Math.max(0.2, newM));
+            // 保持当前角度不变，但角速度要重新匹配以确保能量合理? 对于参数突变，为物理连贯，重置速度为零，重新从当前角释放
+            // 确保物理演示清晰，用户改变参数后，取当前角度，速度为0，类似于重新释放。
+            length = newL;
+            mass = newM;
+            // 速度置0让系统从当前摆角静止释放（自然振荡展示守恒）
+            omega = 0;
+            // 更新显示
+            updateDisplay(theta, omega, length, mass, true);
+            updateSpecialPositions(theta, omega, length, mass);
+            drawPendulum(theta);
+        }
+        
+        // 动画循环
+        let lastFrameTime = null;
+        function animate(currentTimeMs) {
+            if (!isRunning) {
+                // 暂停时只绘制当前状态
+                drawPendulum(theta);
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+            if (!lastFrameTime) {
+                lastFrameTime = currentTimeMs;
+                animationId = requestAnimationFrame(animate);
+                drawPendulum(theta);
+                return;
+            }
+            let dt = Math.min(0.033, (currentTimeMs - lastFrameTime) / 1000);
+            if (dt <= 0) {
+                lastFrameTime = currentTimeMs;
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+            lastFrameTime = currentTimeMs;
+            
+            // 更新物理 (最多迭代一次)
+            let { theta: newTheta, omega: newOmega } = updatePhysics(dt, length, mass, theta, omega);
+            theta = newTheta;
+            omega = newOmega;
+            
+            // 更新UI显示
+            updateDisplay(theta, omega, length, mass, true);
+            updateSpecialPositions(theta, omega, length, mass);
+            drawPendulum(theta);
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 鼠标交互: 拖动改变角度 (手动释放)
+        let isDragging = false;
+        function getMouseAngle(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            const pivotX = canvas.width / 2;
+            const pivotY = 70;
+            let dx = canvasX - pivotX;
+            let dy = canvasY - pivotY;
+            let rawAngle = Math.atan2(dx, dy);  // 相对于竖直向下方向
+            // 限制角度范围 -70°~70° 避免剧烈
+            let maxTheta = 70 * Math.PI/180;
+            let newTheta = Math.min(maxTheta, Math.max(-maxTheta, rawAngle));
+            return newTheta;
+        }
+        
+        function startDrag(e) {
+            e.preventDefault();
+            isDragging = true;
+            if (animationId) cancelAnimationFrame(animationId);
+            isRunning = false;
+            pausePlayBtn.innerText = "▶️ 启动";
+            canvas.style.cursor = 'grabbing';
+        }
+        function onDrag(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            let newTheta = getMouseAngle(e);
+            theta = newTheta;
+            omega = 0;
+            updateDisplay(theta, omega, length, mass, true);
+            updateSpecialPositions(theta, omega, length, mass);
+            drawPendulum(theta);
+        }
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+            canvas.style.cursor = 'grab';
+            // 松开后自动开始运动
+            isRunning = true;
+            pausePlayBtn.innerText = "⏸️ 暂停";
+            lastFrameTime = null; // 重置时间避免跳跃
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        canvas.addEventListener('mousedown', startDrag);
+        window.addEventListener('mousemove', onDrag);
+        window.addEventListener('mouseup', endDrag);
+        canvas.addEventListener('touchstart', startDrag);
+        window.addEventListener('touchmove', onDrag);
+        window.addEventListener('touchend', endDrag);
+        canvas.style.cursor = 'grab';
+        
+        resetBtn.addEventListener('click', () => {
+            resetSimulation();
+            lastFrameTime = null;
+            if (!isRunning) {
+                isRunning = true;
+                pausePlayBtn.innerText = "⏸️ 暂停";
+            }
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(animate);
+        });
+        
+        pausePlayBtn.addEventListener('click', () => {
+            isRunning = !isRunning;
+            pausePlayBtn.innerText = isRunning ? "⏸️ 暂停" : "▶️ 启动";
+            if (isRunning) {
+                lastFrameTime = null;
+                if (animationId) cancelAnimationFrame(animationId);
+                animationId = requestAnimationFrame(animate);
+            } else {
+                drawPendulum(theta);
+            }
+        });
+        
+        lengthInput.addEventListener('change', () => { syncParametersAndResetMotion(); });
+        massInput.addEventListener('change', () => { syncParametersAndResetMotion(); });
+        angleInput.addEventListener('change', () => {
+            resetSimulation(); 
+            lastFrameTime = null;
+            if(!isRunning){ isRunning = true; pausePlayBtn.innerText = "⏸️ 暂停"; }
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(animate);
+        });
+        
+        // 初始化
+        resizeCanvas();
+        resetSimulation();
+        animationId = requestAnimationFrame(animate);
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三角函数 · 单位圆 / 诱导公式 / 和差角交互学习页</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#2b3a4a; --sub:#64748b;
+    --accent:#e11d48; --accent-soft:#ffe4e6; --line:#e2e8f0;
+    --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-border:#fcd34d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink);}
+  header.app{background:linear-gradient(120deg,#be123c,#e11d48); color:#fff; padding:18px 28px;}
+  header.app h1{font-size:22px; letter-spacing:1px;}
+  header.app p{font-size:13px; opacity:.92; margin-top:4px;}
+  .tab-bar{display:flex; gap:8px; flex-wrap:wrap; padding:12px 20px; max-width:1440px; margin:0 auto;}
+  button.tab{appearance:none; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; padding:8px 16px; font-size:13px; cursor:pointer;}
+  button.tab.active{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .wrap{display:grid; grid-template-columns:1fr 340px; gap:16px; padding:0 20px 16px; max-width:1440px; margin:0 auto; align-items:start;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(15,23,42,.05);}
+  .panel h2{font-size:15px; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:12px;}
+  .panel h3{font-size:13px; color:var(--ink); margin:12px 0 6px;}
+  .panel p, .panel li{font-size:13px; line-height:1.7;}
+  .panel ul{padding-left:18px;}
+  .formula{background:var(--accent-soft); border-radius:8px; padding:9px 12px; margin:7px 0; font-family:"Cambria Math",Georgia,serif; font-size:14px; color:#9f1239; text-align:center; word-break:break-all;}
+  .warn{background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-ink); border-radius:8px; padding:10px 12px; margin-top:10px; font-size:12.5px; line-height:1.6;}
+  .warn b{display:block; margin-bottom:4px; font-size:13px;}
+  .canvas-box{background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px;}
+  canvas.cv{display:block; width:100%; height:auto; border-radius:6px;}
+  .canvas-cap{font-size:12px; color:var(--sub); margin-top:6px; line-height:1.5;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  button.btn{appearance:none; border:none; border-radius:8px; padding:9px 14px; font-size:13px; cursor:pointer; color:#fff; background:var(--accent); transition:filter .15s;}
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.ghost{background:#fff; color:var(--accent); border:1px solid var(--accent);}
+  button.btn.active{background:#881337; box-shadow:0 0 0 2px #fda4af inset;}
+  .slider-field{margin-top:12px;}
+  .slider-field label{display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px;}
+  .slider-field label output{color:var(--accent); font-family:"SF Mono",Menlo,monospace; font-weight:600;}
+  input[type=range]{width:100%; accent-color:var(--accent); cursor:pointer;}
+  .readout{background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:12px;}
+  .readout table{width:100%; border-collapse:collapse;}
+  .readout td{padding:6px 4px; font-size:13px; border-bottom:1px dashed var(--line);}
+  .readout td:first-child{color:var(--sub);}
+  .readout td:last-child{text-align:right; font-family:"Cambria Math","SF Mono",monospace; font-size:14px; font-weight:600; color:#9f1239;}
+  .idn-list{margin-top:8px;}
+  .idn-item{display:flex; justify-content:space-between; align-items:center; padding:8px 10px; border:1px solid var(--line); border-radius:8px; margin-top:6px; font-family:"Cambria Math",Georgia,serif; font-size:14px;}
+  .idn-item .chk{color:#16a34a; font-size:12px;}
+  .status-msg{margin-top:8px; font-size:13px; min-height:20px;}
+  .status-msg.ok{color:#16a34a;}
+  table.special{width:100%; border-collapse:collapse; margin-top:8px; font-size:12.5px;}
+  table.special th,table.special td{border:1px solid var(--line); padding:6px; text-align:center;}
+  table.special th{background:var(--accent-soft); color:#9f1239;}
+  @media(max-width:1000px){ .wrap{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>◐ 三角函数 · 单位圆 / 诱导 / 和差角</h1>
+  <p>单位圆定义、诱导公式 k·π/2 形式、和差角与二倍角 —— 数学（必修一）互动课堂</p>
+</header>
+
+<div class="tab-bar" role="tablist">
+  <button type="button" class="tab active" data-tab="unit" role="tab">① 单位圆动态演示</button>
+  <button type="button" class="tab" data-tab="proof" role="tab">② 和差角几何证明</button>
+  <button type="button" class="tab" data-tab="reduction" role="tab">③ 诱导公式区</button>
+  <button type="button" class="tab" data-tab="trig" role="tab">④ sin/cos/tan 动态演示</button>
+  <button type="button" class="tab" data-tab="identity" role="tab">⑤ 恒等变换区</button>
+</div>
+
+<div class="wrap">
+
+  <!-- 左栏：标签页内容 -->
+  <section class="panel" aria-label="演示画布区" id="tabContent">
+
+    <!-- ① 单位圆 -->
+    <div class="tab-pane" id="pane-unit">
+      <h2>① 单位圆动态演示</h2>
+      <div class="canvas-box">
+        <canvas id="cvUnit" class="cv" aria-label="单位圆动态演示画布，实时显示 sinθ 与 cosθ 投影线"></canvas>
+      </div>
+      <p class="canvas-cap">动点绕单位圆运动：cosθ=x₀/r、sinθ=y₀/r（r=1），红色为 sinθ 投影、蓝色为 cosθ 投影。</p>
+      <div class="slider-field">
+        <label for="sTheta">角度 θ <output id="oTheta">π/2</output></label>
+        <input type="range" id="sTheta" min="0" max="360" step="1" value="90">
+      </div>
+      <div class="readout">
+        <table>
+          <tr><td>sinθ（投影读数）</td><td id="uSin">1</td></tr>
+          <tr><td>cosθ（投影读数）</td><td id="uCos">0</td></tr>
+          <tr><td>tanθ（无定义时显示 ∞）</td><td id="uTan">∞</td></tr>
+        </table>
+      </div>
+      <table class="special" aria-label="特殊角精确值表">
+        <thead><tr><th>θ</th><th>sin</th><th>cos</th><th>tan</th></tr></thead>
+        <tbody>
+          <tr><td>π/6 (30°)</td><td>1/2</td><td>√3/2</td><td>√3/3</td></tr>
+          <tr><td>π/4 (45°)</td><td>√2/2</td><td>√2/2</td><td>1</td></tr>
+          <tr><td>π/3 (60°)</td><td>√3/2</td><td>1/2</td><td>√3</td></tr>
+          <tr><td>π/2 (90°)</td><td>1</td><td>0</td><td>无定义</td></tr>
+        </tbody>
+      </table>
+      <div class="status-msg" id="stUnit" role="status"></div>
+    </div>
+
+    <!-- ② 和差角几何证明 -->
+    <div class="tab-pane" id="pane-proof" style="display:none">
+      <h2>② 和差角几何证明</h2>
+      <div class="canvas-box">
+        <canvas id="cvProof" class="cv" aria-label="和差角公式几何证明画布"></canvas>
+      </div>
+      <p class="canvas-cap">单位圆内构造三角形展示 sin(α+β)=sinα·cosβ + cosα·sinβ 的推导路径（一般角证明，非特殊角代入）。</p>
+      <div class="slider-field">
+        <label for="sAlpha">角 α <output id="oAlpha">π/6</output></label>
+        <input type="range" id="sAlpha" min="5" max="80" step="1" value="30">
+      </div>
+      <div class="slider-field">
+        <label for="sBeta">角 β <output id="oBeta">π/6</output></label>
+        <input type="range" id="sBeta" min="5" max="80" step="1" value="30">
+      </div>
+      <div class="readout">
+        <table>
+          <tr><td>sin(α+β) 读数</td><td id="pSinSum">—</td></tr>
+          <tr><td>sinα·cosβ + cosα·sinβ</td><td id="pSinCalc">—</td></tr>
+          <tr><td>两者之差</td><td id="pDiff">—</td></tr>
+        </table>
+      </div>
+      <div class="formula">sin(α+β) = sinα·cosβ + cosα·sinβ</div>
+      <div class="formula">cos(α+β) = cosα·cosβ − sinα·sinβ</div>
+      <div class="status-msg" id="stProof" role="status"></div>
+    </div>
+
+    <!-- ③ 诱导公式区 -->
+    <div class="tab-pane" id="pane-reduction" style="display:none">
+      <h2>③ 诱导公式区（k·π/2 形式）</h2>
+      <p>诱导公式统一用 <b>k·π/2 ± α</b> 形式表述（k∈Z），记忆口诀「<b>奇变偶不变，符号看象限</b>」。</p>
+      <div class="idn-list" id="idnList"></div>
+      <h3>一般角证明路径</h3>
+      <p style="font-size:12.5px;" id="reductProof">对任意角 α：取单位圆上角 (π/2−α) 与角 α 的终边，由「同一角的余角关系」及坐标轴对称（关于直线 y=x 对称），可得 sin(π/2−α)=cosα、cos(π/2−α)=sinα；再对 k 的奇偶分类：k 为奇数时函数名变为余函数，k 为偶数时函数名不变，符号由 α 视为锐角时终边所在象限确定。</p>
+      <h3>手算验证（特殊值代入）</h3>
+      <div class="readout">
+        <table>
+          <tr><td>sin(π/2 − π/6) = sin(π/3)</td><td id="r1">√3/2</td></tr>
+          <tr><td>cos(π/6)</td><td id="r2">√3/2</td></tr>
+          <tr><td>sin(π + π/4) = sin(5π/4)</td><td id="r3">−√2/2</td></tr>
+          <tr><td>−sin(π/4)</td><td id="r4">−√2/2</td></tr>
+        </table>
+      </div>
+      <div class="status-msg" id="stReduct" role="status"></div>
+    </div>
+
+    <!-- ④ sin/cos/tan 动态演示 -->
+    <div class="tab-pane" id="pane-trig" style="display:none">
+      <h2>④ sin / cos / tan 动态演示</h2>
+      <div class="controls">
+        <button type="button" class="btn ghost active" id="btnSin">sin</button>
+        <button type="button" class="btn ghost" id="btnCos">cos</button>
+        <button type="button" class="btn ghost" id="btnTan">tan</button>
+      </div>
+      <div class="canvas-box">
+        <canvas id="cvTrig" class="cv" aria-label="三角函数波形动态演示画布"></canvas>
+      </div>
+      <p class="canvas-cap">波形随时间滚动绘制：sin/cos 周期标注为 <b>2π</b>，tan 周期标注为 <b>π</b> 且在其无定义点 θ=π/2+kπ 显示<b>渐近线</b>（虚线），不画成连续曲线。</p>
+      <div class="slider-field">
+        <label for="sAnim">进度（角度 t）<output id="oAnim">0°</output></label>
+        <input type="range" id="sAnim" min="0" max="1080" step="5" value="0">
+      </div>
+      <div class="readout">
+        <table>
+          <tr><td>当前函数</td><td id="tFn">sin</td></tr>
+          <tr><td>周期 T</td><td id="tPeriod">2π</td></tr>
+          <tr><td>当前读数</td><td id="tVal">0</td></tr>
+        </table>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn" id="btnPlay">▶ 播放</button>
+        <button type="button" class="btn ghost" id="btnPause">⏸ 暂停</button>
+      </div>
+      <div class="status-msg" id="stTrig" role="status"></div>
+    </div>
+
+    <!-- ⑤ 恒等变换区 -->
+    <div class="tab-pane" id="pane-identity" style="display:none">
+      <h2>⑤ 恒等变换区</h2>
+      <h3>和差角公式</h3>
+      <div class="formula">sin(α±β) = sinα·cosβ ± cosα·sinβ</div>
+      <div class="formula">cos(α±β) = cosα·cosβ ∓ sinα·sinβ</div>
+      <h3>二倍角公式</h3>
+      <div class="formula">sin 2α = 2·sinα·cosα</div>
+      <div class="formula">cos 2α = cos²α − sin²α</div>
+      <h3>应用与手算验证</h3>
+      <div class="controls">
+        <button type="button" class="btn ghost active" id="btnIAngle">和差角</button>
+        <button type="button" class="btn ghost" id="btnIDouble">二倍角</button>
+        <button type="button" class="btn ghost" id="btnIReduce">诱导应用</button>
+      </div>
+      <div class="readout">
+        <table>
+          <tr><td>公式演示</td><td id="iDemo">—</td></tr>
+        </table>
+      </div>
+      <div class="status-msg" id="stIdentity" role="status"></div>
+      <div class="warn">
+        <b>🧭 观察与结论</b>
+        <ul style="padding-left:16px;">
+          <li>诱导公式「奇变偶不变，符号看象限」：k 为奇数函数名变（sin↔cos），k 为偶数不变。</li>
+          <li>和差角公式证明必须走一般角路径，特殊角代入只是验证。</li>
+          <li>二倍角是两角和公式中 β=α 的特例。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 右栏：公式切换与读数 -->
+  <section class="panel" aria-label="公式切换与读数区">
+    <h2>公式切换与读数</h2>
+    <p style="font-size:12.5px;">在 sin/cos/tan、和差角、诱导公式间快速切换查看。</p>
+    <div class="controls">
+      <button type="button" class="btn ghost active" id="swUnit">单位圆</button>
+      <button type="button" class="btn ghost" id="swProof">和差角</button>
+      <button type="button" class="btn ghost" id="swReduct">诱导公式</button>
+      <button type="button" class="btn ghost" id="swTrig">sin/cos/tan</button>
+      <button type="button" class="btn ghost" id="swIdn">恒等变换</button>
+    </div>
+
+    <h3>数学规格速览</h3>
+    <div class="formula">sinθ = y₀/r，cosθ = x₀/r（r=1）</div>
+    <div class="formula">周期：sin/cos = 2π，tan = π</div>
+    <div class="formula">tan 无定义点：θ = π/2 + kπ（k∈Z）</div>
+    <div class="formula">弧度制，坐标轴标注 rad</div>
+
+    <div class="panel" style="box-shadow:none;padding:0;margin-top:14px;border:none;">
+      <h3>🧭 特殊角精确值</h3>
+      <table class="special">
+        <thead><tr><th>θ</th><th>sinθ</th><th>cosθ</th></tr></thead>
+        <tbody>
+          <tr><td>π/6</td><td>1/2</td><td>√3/2</td></tr>
+          <tr><td>π/4</td><td>√2/2</td><td>√2/2</td></tr>
+          <tr><td>π/3</td><td>√3/2</td><td>1/2</td></tr>
+          <tr><td>π/2</td><td>1</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var PI = Math.PI;
+  var SQ2 = Math.SQRT2;
+  var SQ3 = Math.sqrt(3);
+
+  function setText(el, t){ if (el) el.textContent = t; }
+  function setHTML(el, h){ if (el) el.innerHTML = h; }
+
+  // 精确值字符串
+  function exactVal(fn, theta){
+    // theta 弧度
+    var t = ((theta % (2*PI)) + 2*PI) % (2*PI);
+    var eps = 1e-9;
+    var sinMap = [
+      {k:0, s:'0'}, {k:PI/6, s:'1/2'}, {k:PI/4, s:'√2/2'}, {k:PI/3, s:'√3/2'}, {k:PI/2, s:'1'},
+      {k:2*PI/3, s:'√3/2'}, {k:3*PI/4, s:'√2/2'}, {k:5*PI/6, s:'1/2'}, {k:PI, s:'0'},
+      {k:7*PI/6, s:'−1/2'}, {k:5*PI/4, s:'−√2/2'}, {k:4*PI/3, s:'−√3/2'}, {k:3*PI/2, s:'−1'},
+      {k:5*PI/3, s:'−√3/2'}, {k:7*PI/4, s:'−√2/2'}, {k:11*PI/6, s:'−1/2'}
+    ];
+    var best = null;
+    for (var i = 0; i < sinMap.length; i++){
+      if (Math.abs(sinMap[i].k - t) < eps){ best = sinMap[i].s; break; }
+    }
+    if (fn === 'sin') return best === null ? fnSin(theta).toFixed(3) : best;
+    if (fn === 'cos') return exactVal('sin', theta + PI/2);
+    if (fn === 'tan'){
+      if (Math.abs(Math.cos(theta)) < 1e-9) return '无定义 (∞)';
+      var t = ((theta % PI) + PI) % PI;
+      var tanMap = [
+        {k:0, s:'0'}, {k:PI/6, s:'√3/3'}, {k:PI/4, s:'1'}, {k:PI/3, s:'√3'}
+      ];
+      var tb = null;
+      for (var j = 0; j < tanMap.length; j++){
+        if (Math.abs(tanMap[j].k - t) < 1e-9){ tb = tanMap[j].s; break; }
+      }
+      if (tb !== null) return tb;
+      return fnTan(theta).toFixed(3);
+    }
+    return '';
+  }
+  function fnSin(x){ return Math.sin(x); }
+  function fnCos(x){ return Math.cos(x); }
+  function fnTan(x){ return Math.tan(x); }
+
+  // ---------- 标签页切换 ----------
+  var tabs = document.querySelectorAll('.tab');
+  var panes = {
+    unit: document.getElementById('pane-unit'),
+    proof: document.getElementById('pane-proof'),
+    reduction: document.getElementById('pane-reduction'),
+    trig: document.getElementById('pane-trig'),
+    identity: document.getElementById('pane-identity')
+  };
+  function switchTab(name){
+    for (var i = 0; i < tabs.length; i++){
+      tabs[i].classList.toggle('active', tabs[i].getAttribute('data-tab') === name);
+    }
+    for (var key in panes){
+      if (panes[key]) panes[key].style.display = (key === name) ? '' : 'none';
+    }
+    if (name === 'reduction') renderReduction();
+    if (name === 'identity') renderIdentity();
+  }
+  for (var tj = 0; tj < tabs.length; tj++){
+    tabs[tj].addEventListener('click', function(){ switchTab(this.getAttribute('data-tab')); });
+  }
+
+  // 右栏切换按钮
+  var sw = {
+    unit: document.getElementById('swUnit'),
+    proof: document.getElementById('swProof'),
+    reduct: document.getElementById('swReduct'),
+    trig: document.getElementById('swTrig'),
+    idn: document.getElementById('swIdn')
+  };
+  function setSwitchActive(name){
+    for (var key in sw){ if (sw[key]) sw[key].classList.toggle('active', key === name); }
+  }
+  sw.unit.addEventListener('click', function(){ switchTab('unit'); setSwitchActive('unit'); });
+  sw.proof.addEventListener('click', function(){ switchTab('proof'); setSwitchActive('proof'); });
+  sw.reduct.addEventListener('click', function(){ switchTab('reduction'); setSwitchActive('reduct'); });
+  sw.trig.addEventListener('click', function(){ switchTab('trig'); setSwitchActive('trig'); });
+  sw.idn.addEventListener('click', function(){ switchTab('identity'); setSwitchActive('idn'); });
+
+  // ---------- ① 单位圆 ----------
+  var cvUnit = document.getElementById('cvUnit');
+  var ctxU = cvUnit.getContext('2d');
+  var sTheta = document.getElementById('sTheta');
+  var oTheta = document.getElementById('oTheta');
+  var uSin = document.getElementById('uSin');
+  var uCos = document.getElementById('uCos');
+  var uTan = document.getElementById('uTan');
+  var stUnit = document.getElementById('stUnit');
+
+  function setupCanvas(cv, w, h){
+    var dpr = window.devicePixelRatio || 1;
+    cv.width = w * dpr; cv.height = h * dpr;
+    cv.style.width = w + 'px'; cv.style.height = h + 'px';
+    return cv.getContext('2d');
+  }
+  setupCanvas(cvUnit, 560, 560);
+
+  function thetaRad(){ return parseFloat(sTheta.value) * PI / 180; }
+
+  function fmtThetaDeg(){ return sTheta.value + '°'; }
+
+  function drawUnit(){
+    var ctx = ctxU;
+    var W = 560, H = 560, cx = W/2, cy = H/2, R = 210;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    // 网格
+    ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
+    for (var gx = -2; gx <= 2; gx++){
+      ctx.beginPath(); ctx.moveTo(cx + gx*R/2, cy - R - 20); ctx.lineTo(cx + gx*R/2, cy + R + 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx - R - 20, cy + gx*R/2); ctx.lineTo(cx + R + 20, cy + gx*R/2); ctx.stroke();
+    }
+    // 轴
+    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx - R - 30, cy); ctx.lineTo(cx + R + 30, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - R - 30); ctx.lineTo(cx, cy + R + 30); ctx.stroke();
+    ctx.fillStyle = '#64748b'; ctx.font = '12px sans-serif';
+    ctx.fillText('x (rad)', cx + R + 8, cy + 14);
+    ctx.fillText('y', cx - 14, cy - R - 14);
+    // 单位圆
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2*PI); ctx.stroke();
+    ctx.fillStyle = '#475569';
+    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, 2*PI); ctx.fill();
+    ctx.fillText('O', cx - 16, cy + 4);
+
+    var th = thetaRad();
+    var px = cx + Math.cos(th)*R, py = cy - Math.sin(th)*R;
+
+    // cos 投影（蓝）
+    ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, cy); ctx.stroke();
+    // sin 投影（红）
+    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(px, cy); ctx.lineTo(px, py); ctx.stroke();
+    // 半径
+    ctx.strokeStyle = '#334155'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+    // 动点
+    ctx.fillStyle = '#e11d48';
+    ctx.beginPath(); ctx.arc(px, py, 6, 0, 2*PI); ctx.fill();
+    // 角度弧
+    ctx.strokeStyle = '#e11d48'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 34, 0, th > 0 ? -th : 0, th > 0 ? 0 : -th, true);
+    ctx.stroke();
+
+    // 标签
+    ctx.fillStyle = '#2563eb'; ctx.font = '12px sans-serif';
+    ctx.fillText('cosθ', cx + (Math.cos(th)*R)/2 - 22, cy - 8);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillText('sinθ', px + 8, cy - (Math.sin(th)*R)/2);
+    ctx.fillStyle = '#334155';
+    ctx.fillText('θ=' + fmtThetaDeg(), px + 10, py - 10);
+
+    // 读数
+    var sinV = Math.sin(th), cosV = Math.cos(th);
+    setText(oTheta, fmtThetaDeg());
+    setText(uSin, exactVal('sin', th));
+    setText(uCos, exactVal('cos', th));
+    var tanV = Math.abs(Math.cos(th)) < 1e-9 ? Infinity : Math.tan(th);
+    setText(uTan, isFinite(tanV) ? exactVal('tan', th) : '无定义 (∞)');
+    setText(stUnit, 'θ = ' + fmtThetaDeg() + '，sinθ = ' + sinV.toFixed(4) + '，cosθ = ' + cosV.toFixed(4));
+    cvUnit.setAttribute('aria-label', '单位圆动态演示：θ=' + fmtThetaDeg() + '，sinθ=' + sinV.toFixed(3) + '，cosθ=' + cosV.toFixed(3));
+  }
+  sTheta.addEventListener('input', drawUnit);
+
+  // ---------- ② 和差角证明 ----------
+  var cvProof = document.getElementById('cvProof');
+  setupCanvas(cvProof, 560, 420);
+  var ctxP = cvProof.getContext('2d');
+  var sAlpha = document.getElementById('sAlpha');
+  var sBeta = document.getElementById('sBeta');
+  var oAlpha = document.getElementById('oAlpha');
+  var oBeta = document.getElementById('oBeta');
+  var pSinSum = document.getElementById('pSinSum');
+  var pSinCalc = document.getElementById('pSinCalc');
+  var pDiff = document.getElementById('pDiff');
+  var stProof = document.getElementById('stProof');
+
+  function drawProof(){
+    var ctx = ctxP;
+    var W = 560, H = 420, cx = W/2, cy = H/2, R = 150;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx - R - 30, cy); ctx.lineTo(cx + R + 30, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - R - 30); ctx.lineTo(cx, cy + R + 30); ctx.stroke();
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 2*PI); ctx.stroke();
+    ctx.fillStyle = '#475569'; ctx.fillText('O', cx - 16, cy + 4);
+
+    var a = parseFloat(sAlpha.value) * PI / 180;
+    var b = parseFloat(sBeta.value) * PI / 180;
+    // 角 α 终边
+    var ax = cx + Math.cos(a)*R, ay = cy - Math.sin(a)*R;
+    // 角 β 终边（从 α 继续叠加 β = α+β 总角）
+    var sx = cx + Math.cos(a+b)*R, sy = cy - Math.sin(a+b)*R;
+    // 垂直投影
+    var hx = cx + Math.cos(a+b)*R, hy = cy;
+    var vx = hx, vy = sy;
+
+    // 角度标注
+    ctx.fillStyle = '#e11d48';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('α', cx + Math.cos(a/2)*36, cy - Math.sin(a/2)*36 + 4);
+    ctx.fillText('α+β', cx + Math.cos((a+b)/2)*50, cy - Math.sin((a+b)/2)*50 + 4);
+
+    // 半径 OA（α）
+    ctx.strokeStyle = '#e11d48'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(ax, ay); ctx.stroke();
+    // 半径 OB（α+β）
+    ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(sx, sy); ctx.stroke();
+    // 投影线段
+    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(hx, hy); ctx.stroke(); // 竖
+    ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(hx, hy); ctx.stroke(); // 横
+    // 端点标记
+    ctx.fillStyle = '#7c3aed'; ctx.beginPath(); ctx.arc(sx, sy, 5, 0, 2*PI); ctx.fill();
+    ctx.fillStyle = '#e11d48'; ctx.beginPath(); ctx.arc(ax, ay, 5, 0, 2*PI); ctx.fill();
+
+    // 读数
+    var sinSum = Math.sin(a+b);
+    var sinCalc = Math.sin(a)*Math.cos(b) + Math.cos(a)*Math.sin(b);
+    setText(oAlpha, Math.round(a*180/PI) + '° (' + (a===PI/6?'π/6': a===PI/4?'π/4':a===PI/3?'π/3':'') + ')');
+    setText(oBeta, Math.round(b*180/PI) + '° (' + (b===PI/6?'π/6': b===PI/4?'π/4':b===PI/3?'π/3':'') + ')');
+    setText(pSinSum, sinSum.toFixed(4) + ' = ' + exactVal('sin', a+b));
+    setText(pSinCalc, sinCalc.toFixed(4) + ' = ' + exactVal('sin', a) + '×' + exactVal('cos', b) + ' + ' + exactVal('cos', a) + '×' + exactVal('sin', b));
+    setText(pDiff, Math.abs(sinSum - sinCalc).toExponential(2));
+    setText(stProof, '几何构造：单位圆上 OA 与 OB 夹角为 β，OB 到 x 轴的竖直投影即 sin(α+β)，由三角形关系拆解为 sinα·cosβ + cosα·sinβ。');
+    cvProof.setAttribute('aria-label', '和差角公式几何证明：α=' + Math.round(a*180/PI) + '°，β=' + Math.round(b*180/PI) + '°，sin(α+β)=' + sinSum.toFixed(3));
+  }
+  sAlpha.addEventListener('input', drawProof);
+  sBeta.addEventListener('input', drawProof);
+
+  // ---------- ③ 诱导公式 ----------
+  function renderReduction(){
+    var list = document.getElementById('idnList');
+    var items = [
+      ['sin(π/2 − α) = cos α', true],
+      ['sin(π/2 + α) = cos α', true],
+      ['sin(π + α) = −sin α', true],
+      ['cos(π − α) = −cos α', true],
+      ['sin(2π − α) = −sin α', true],
+      ['cos(π/2 − α) = sin α', true],
+      ['cos(π + α) = −cos α', true],
+      ['tan(π + α) = tan α', true]
+    ];
+    var html = '';
+    for (var i = 0; i < items.length; i++){
+      html += '<div class="idn-item"><span>' + items[i][0] + '</span><span class="chk">' + (items[i][1] ? '✓ 一般角成立' : '') + '</span></div>';
+    }
+    setHTML(list, html);
+    // 手算验证（写死精确值）
+    var v1 = exactVal('sin', PI/2 - PI/6);   // sin(π/3)=√3/2
+    var v2 = exactVal('cos', PI/6);          // √3/2
+    var v3 = exactVal('sin', PI + PI/4);     // sin(5π/4)=−√2/2
+    var v4 = '−' + exactVal('sin', PI/4);    // −√2/2
+    setText(document.getElementById('r1'), v1);
+    setText(document.getElementById('r2'), v2);
+    setText(document.getElementById('r3'), v3);
+    setText(document.getElementById('r4'), v4);
+    setText(document.getElementById('stReduct'), '✓ sin(π/2−α)=cosα 与 sin(π+α)=−sinα 均已按 k·π/2 形式给出并手算验证一致。');
+  }
+
+  // ---------- ④ sin/cos/tan ----------
+  var trigMode = 'sin';
+  var cvTrig = document.getElementById('cvTrig');
+  setupCanvas(cvTrig, 820, 360);
+  var ctxT = cvTrig.getContext('2d');
+  var sAnim = document.getElementById('sAnim');
+  var oAnim = document.getElementById('oAnim');
+  var tFn = document.getElementById('tFn');
+  var tPeriod = document.getElementById('tPeriod');
+  var tVal = document.getElementById('tVal');
+  var stTrig = document.getElementById('stTrig');
+  var btnSin = document.getElementById('btnSin');
+  var btnCos = document.getElementById('btnCos');
+  var btnTan = document.getElementById('btnTan');
+  var btnPlay = document.getElementById('btnPlay');
+  var btnPause = document.getElementById('btnPause');
+  var playTimer = null;
+
+  function drawTrig(){
+    var ctx = ctxT;
+    var W = 820, H = 360, M = {l:46, r:20, t:20, b:44};
+    var pw = W - M.l - M.r, ph = H - M.t - M.b;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    // 横向范围：0 ~ 2π（tan 显示到 2π 但标出渐近线）
+    var x0 = 0, x1 = 2*PI;
+    function px(x){ return M.l + (x - x0)/(x1 - x0)*pw; }
+    function py(y){ return M.t + (1.3 - y)/(2.6)*ph; }
+    // 网格
+    ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
+    for (var gx = 0; gx <= 6; gx++){
+      ctx.beginPath(); ctx.moveTo(px(gx*PI/3), M.t); ctx.lineTo(px(gx*PI/3), M.t+ph); ctx.stroke();
+    }
+    for (var gy = -2; gy <= 2; gy++){
+      ctx.beginPath(); ctx.moveTo(M.l, py(gy)); ctx.lineTo(M.l+pw, py(gy)); ctx.stroke();
+    }
+    // 轴
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(M.l, py(0)); ctx.lineTo(M.l+pw, py(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px(0), M.t); ctx.lineTo(px(0), M.t+ph); ctx.stroke();
+    ctx.fillStyle = '#64748b'; ctx.font = '11px sans-serif';
+    for (var tx = 0; tx <= 4; tx++){
+      ctx.fillText((tx===0?'0': tx===1?'π/2':tx===2?'π':tx===3?'3π/2':'2π'), px(tx*PI/2), py(0)+16);
+    }
+    ctx.fillText('rad', M.l + pw - 30, py(0) + 16);
+
+    var th = parseFloat(sAnim.value) * PI / 180;
+
+    if (trigMode === 'tan'){
+      // tan 周期 π，在 π/2、3π/2 处画渐近线（虚线），不连续
+      var asym = [PI/2, 3*PI/2];
+      ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1.5;
+      ctx.setLineDash([6,4]);
+      for (var ai = 0; ai < asym.length; ai++){
+        ctx.beginPath(); ctx.moveTo(px(asym[ai]), M.t); ctx.lineTo(px(asym[ai]), M.t+ph); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#b45309';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('渐近线', px(PI/2)-18, M.t+12);
+    }
+
+    // 波形（分段画，跳过渐近线）
+    ctx.strokeStyle = trigMode === 'sin' ? '#dc2626' : trigMode === 'cos' ? '#2563eb' : '#f59e0b';
+    ctx.lineWidth = 2.5;
+    var segStart = 0, first = true;
+    for (var i = 0; i <= 400; i++){
+      var x = x0 + (x1 - x0)*i/400;
+      var y;
+      if (trigMode === 'sin') y = Math.sin(x);
+      else if (trigMode === 'cos') y = Math.cos(x);
+      else y = Math.tan(x);
+      if (!isFinite(y) || Math.abs(y) > 2.6){
+        first = true;
+        continue;
+      }
+      if (first){ ctx.beginPath(); ctx.moveTo(px(x), py(y)); first = false; }
+      else ctx.lineTo(px(x), py(y));
+    }
+    ctx.stroke();
+
+    // 当前进度点
+    var curY;
+    if (trigMode === 'sin') curY = Math.sin(th);
+    else if (trigMode === 'cos') curY = Math.cos(th);
+    else curY = Math.tan(th);
+    if (isFinite(curY) && Math.abs(curY) <= 2.6){
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath(); ctx.arc(px(th), py(curY), 5, 0, 2*PI); ctx.fill();
+    }
+    // 垂线
+    ctx.strokeStyle = 'rgba(15,23,42,.3)';
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(px(th), M.t); ctx.lineTo(px(th), M.t+ph); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 周期标注
+    ctx.fillStyle = '#0891b2';
+    ctx.font = '12px sans-serif';
+    ctx.fillText(trigMode === 'tan' ? '周期 T = π' : '周期 T = 2π', M.l, M.t - 4);
+
+    // 读数
+    setText(oAnim, Math.round(th*180/PI) % 360 + '°');
+    setText(tFn, trigMode);
+    setText(tPeriod, trigMode === 'tan' ? 'π' : '2π');
+    setText(tVal, isFinite(curY) ? curY.toFixed(3) : '∞（无定义）');
+    setText(stTrig, trigMode + '(' + Math.round(th*180/PI) + '°) = ' + (isFinite(curY) ? curY.toFixed(4) : '无定义') + '；tan 在 θ=π/2+kπ 无定义（渐近线）。');
+    cvTrig.setAttribute('aria-label', '三角函数动态演示：当前函数 ' + trigMode + '，进度 ' + Math.round(th*180/PI) + '°，读数 ' + (isFinite(curY)?curY.toFixed(3):'无定义'));
+  }
+
+  btnSin.addEventListener('click', function(){
+    trigMode = 'sin';
+    btnSin.classList.add('active'); btnSin.classList.remove('ghost');
+    btnCos.classList.remove('active'); btnCos.classList.add('ghost');
+    btnTan.classList.remove('active'); btnTan.classList.add('ghost');
+    drawTrig();
+  });
+  btnCos.addEventListener('click', function(){
+    trigMode = 'cos';
+    btnCos.classList.add('active'); btnCos.classList.remove('ghost');
+    btnSin.classList.remove('active'); btnSin.classList.add('ghost');
+    btnTan.classList.remove('active'); btnTan.classList.add('ghost');
+    drawTrig();
+  });
+  btnTan.addEventListener('click', function(){
+    trigMode = 'tan';
+    btnTan.classList.add('active'); btnTan.classList.remove('ghost');
+    btnSin.classList.remove('active'); btnSin.classList.add('ghost');
+    btnCos.classList.remove('active'); btnCos.classList.add('ghost');
+    drawTrig();
+  });
+  sAnim.addEventListener('input', drawTrig);
+
+  btnPlay.addEventListener('click', function(){
+    if (playTimer) return;
+    playTimer = setInterval(function(){
+      var v = parseFloat(sAnim.value);
+      v = (v + 2) % 1080;
+      sAnim.value = String(v);
+      drawTrig();
+    }, 30);
+  });
+  btnPause.addEventListener('click', function(){
+    if (playTimer){ clearInterval(playTimer); playTimer = null; }
+  });
+
+  // ---------- ⑤ 恒等变换 ----------
+  var idnMode = 'angle';
+  var iDemo = document.getElementById('iDemo');
+  var stIdentity = document.getElementById('stIdentity');
+  function renderIdentity(){
+    var html = '';
+    if (idnMode === 'angle'){
+      // α=π/6, β=π/6 手算验证
+      html = '取 α=π/6、β=π/6：<br>' +
+        'sin(π/6+π/6) = sin(π/3) = <b>√3/2</b>；<br>' +
+        '按公式 sin(π/6)cos(π/6) + cos(π/6)sin(π/6) = 1/2×√3/2 + √3/2×1/2 = <b>√3/2</b>；<br>' +
+        '<span style="color:#16a34a;">两者一致 ✓</span>';
+    } else if (idnMode === 'double'){
+      // α=π/4 二倍角
+      html = '取 α=π/4：<br>' +
+        'sin(2·π/4) = sin(π/2) = <b>1</b>；<br>' +
+        '按公式 2·sin(π/4)·cos(π/4) = 2×(√2/2)×(√2/2) = <b>1</b>；<br>' +
+        '<span style="color:#16a34a;">两者一致 ✓</span>';
+    } else {
+      html = '诱导公式应用：sin(2π−α) = −sinα。<br>' +
+        '取 α=π/6：sin(2π−π/6)=sin(11π/6)=−1/2，−sin(π/6)=−1/2。<br>' +
+        '<span style="color:#16a34a;">两者一致 ✓</span>';
+    }
+    setHTML(iDemo, html);
+    setText(stIdentity, '✓ 恒等变换已按写死的标准算例展示，可直接对照手算。');
+  }
+  document.getElementById('btnIAngle').addEventListener('click', function(){
+    idnMode = 'angle';
+    var btns = ['btnIAngle','btnIDouble','btnIReduce'];
+    for (var i = 0; i < btns.length; i++){
+      var el = document.getElementById(btns[i]);
+      el.classList.toggle('active', btns[i] === 'btnIAngle');
+      el.classList.toggle('ghost', btns[i] !== 'btnIAngle');
+    }
+    renderIdentity();
+  });
+  document.getElementById('btnIDouble').addEventListener('click', function(){
+    idnMode = 'double';
+    var btns = ['btnIAngle','btnIDouble','btnIReduce'];
+    for (var i = 0; i < btns.length; i++){
+      var el = document.getElementById(btns[i]);
+      el.classList.toggle('active', btns[i] === 'btnIDouble');
+      el.classList.toggle('ghost', btns[i] !== 'btnIDouble');
+    }
+    renderIdentity();
+  });
+  document.getElementById('btnIReduce').addEventListener('click', function(){
+    idnMode = 'reduce';
+    var btns = ['btnIAngle','btnIDouble','btnIReduce'];
+    for (var i = 0; i < btns.length; i++){
+      var el = document.getElementById(btns[i]);
+      el.classList.toggle('active', btns[i] === 'btnIReduce');
+      el.classList.toggle('ghost', btns[i] !== 'btnIReduce');
+    }
+    renderIdentity();
+  });
+
+  // ---------- 初始化 ----------
+  drawUnit();
+  drawProof();
+  drawTrig();
+  renderReduction();
+  renderIdentity();
+  switchTab('unit');
+})();
+</script>
+</body>
+</html>

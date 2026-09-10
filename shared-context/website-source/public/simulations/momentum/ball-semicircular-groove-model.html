@@ -1,0 +1,2623 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="小球与光滑半圆槽模型模拟，演示小球从右上方落入可移动半圆槽后，槽的往复运动以及小球离槽时为何做竖直上抛。">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:,">
+  <title>小球-半圆槽模型 | 模拟实验室</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --yucai-blue: #0b63c7;
+      --yucai-50: #eef7ff;
+      --yucai-100: #d8ecff;
+      --yucai-200: #b7dcff;
+      --yucai-700: #074f9f;
+      --yucai-800: #0a437f;
+      --yucai-900: #0d3969;
+      --ink: #102033;
+      --lab: #f5f8fb;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --signal: #f4a51c;
+      --green: #059669;
+      --red: #b8442b;
+      --surface: rgba(255, 255, 255, 0.94);
+      --shadow-soft: 0 18px 60px rgba(16, 32, 51, 0.12);
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--lab);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      touch-action: manipulation;
+    }
+
+    ::selection {
+      background: var(--yucai-200);
+      color: var(--ink);
+    }
+
+    .page-shell {
+      width: min(1120px, calc(100% - 32px));
+      margin-inline: auto;
+    }
+
+    .focus-ring {
+      outline: 3px solid transparent;
+      outline-offset: 3px;
+    }
+
+    .focus-ring:focus-visible {
+      outline-color: #85c6ff;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid var(--slate-200);
+      background: #fff;
+    }
+
+    .header-row {
+      display: flex;
+      height: 64px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 12px;
+      color: inherit;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #fff 0%, var(--yucai-50) 100%);
+      border: 1px solid var(--yucai-100);
+      box-shadow: 0 8px 20px rgba(16, 32, 51, 0.08);
+    }
+
+    .brand-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .desktop-nav,
+    .mobile-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .desktop-nav a,
+    .mobile-nav a {
+      border-radius: 6px;
+      color: var(--slate-700);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .desktop-nav a {
+      padding: 8px 12px;
+    }
+
+    .mobile-nav {
+      display: none;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+
+    .mobile-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mobile-nav a {
+      min-width: fit-content;
+      flex: 1 0 auto;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .desktop-nav a:hover,
+    .mobile-nav a:hover {
+      background: var(--slate-100);
+      color: var(--yucai-800);
+    }
+
+    .desktop-nav a.active,
+    .mobile-nav a.active {
+      background: var(--yucai-100);
+      color: var(--yucai-800);
+    }
+
+    .hero {
+      padding: 44px 0 28px;
+      background: linear-gradient(180deg, rgba(238, 247, 255, 0.94), rgba(245, 248, 251, 0.98));
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(320px, 0.58fr);
+      gap: 34px;
+      align-items: end;
+    }
+
+    .hero-grid > *,
+    .tool-grid > *,
+    .principle-grid > * {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--yucai-blue);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+    }
+
+    h1 {
+      margin: 12px 0 0;
+      color: var(--ink);
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.05;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 780px;
+      margin: 20px 0 0;
+      color: var(--slate-700);
+      font-size: 17px;
+      line-height: 1.95;
+    }
+
+    .model-card,
+    .principle-card,
+    .answer-card {
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(16, 32, 51, 0.08);
+    }
+
+    .model-card {
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow-soft);
+      padding: 18px;
+    }
+
+    .model-card h2,
+    .principle-card h2,
+    .answer-card h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 20px;
+      line-height: 1.35;
+      font-weight: 950;
+    }
+
+    .model-card h2 {
+      font-size: 18px;
+    }
+
+    .model-card p,
+    .principle-card p,
+    .principle-card li,
+    .answer-card p,
+    .answer-card li {
+      color: var(--slate-700);
+      font-size: 15px;
+      line-height: 1.9;
+    }
+
+    .model-card p {
+      margin: 10px 0 0;
+      color: var(--slate-600);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .formula-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .formula-line {
+      display: grid;
+      grid-template-columns: 86px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      border-radius: 6px;
+      background: var(--yucai-50);
+      padding: 9px 10px;
+      color: var(--slate-700);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .formula-line span {
+      color: var(--yucai-800);
+      font-weight: 900;
+    }
+
+    .formula-line code {
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      white-space: normal;
+      word-break: break-word;
+    }
+
+    .main-section {
+      padding: 24px 0 72px;
+    }
+
+    .panel-label {
+      margin: 0;
+      color: var(--yucai-700);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .tool-surface {
+      overflow: hidden;
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .simulation-area {
+      display: flex;
+      min-width: 0;
+      min-height: 0;
+      flex-direction: column;
+      background: #fff;
+    }
+
+    .stage-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--slate-200);
+      padding: 14px 16px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .simulation-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr);
+      align-items: stretch;
+      min-height: 0;
+    }
+
+    .stage-wrap {
+      min-width: 0;
+      padding: 14px;
+      border-right: 1px solid var(--slate-200);
+    }
+
+    .animation-shell {
+      position: relative;
+    }
+
+    .canvas-key-jumps {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 3;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-width: 68%;
+      justify-content: flex-end;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .controls h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.25;
+      font-weight: 950;
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+    }
+
+    .control > label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .case-toggle {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .case-button {
+      min-height: 108px;
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--slate-700);
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .case-button:hover {
+      border-color: var(--yucai-200);
+      background: var(--yucai-50);
+    }
+
+    .case-button[aria-pressed="true"] {
+      border-color: var(--yucai-blue);
+      background: var(--yucai-50);
+      box-shadow: inset 0 0 0 1px var(--yucai-blue);
+    }
+
+    .case-button strong {
+      display: block;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 950;
+    }
+
+    .case-button span {
+      display: block;
+      margin-top: 4px;
+      color: var(--yucai-800);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .case-button p {
+      margin: 6px 0 0;
+      color: var(--slate-600);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .button-row,
+    .toolbar-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-tools {
+      justify-content: flex-end;
+      gap: 8px 12px;
+    }
+
+    .button {
+      min-height: 36px;
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      padding: 0 13px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .button.primary {
+      border-color: var(--yucai-blue);
+      background: var(--yucai-blue);
+      color: #fff;
+    }
+
+    .button.secondary,
+    .key-button {
+      border-color: var(--slate-200);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--slate-700);
+    }
+
+    .button:hover,
+    .key-button:hover {
+      background: var(--yucai-50);
+      border-color: var(--yucai-200);
+    }
+
+    .button.primary:hover {
+      background: var(--yucai-800);
+    }
+
+    .key-button {
+      min-height: 32px;
+      padding: 0 9px;
+      font-size: 12px;
+      backdrop-filter: blur(4px);
+    }
+
+    .time-readout {
+      min-width: 96px;
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--slate-600);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      padding: 8px 10px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .scene {
+      display: block;
+      width: 100%;
+      min-height: 330px;
+      aspect-ratio: 16 / 5.5;
+      background:
+        linear-gradient(rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+        #ffffff;
+      background-size: 34px 34px, 34px 34px, auto;
+    }
+
+    .ground {
+      stroke: #334155;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+
+    .ground-hatch {
+      stroke: #94a3b8;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .groove-body {
+      fill: #fff7da;
+      fill-rule: evenodd;
+      stroke: #102033;
+      stroke-width: 3;
+      stroke-linejoin: round;
+    }
+
+    .groove-arc {
+      fill: none;
+      stroke: #0b63c7;
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .groove-lip {
+      display: none;
+      stroke: #102033;
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .ball {
+      fill: url(#ballGradient);
+      stroke: #102033;
+      stroke-width: 3;
+    }
+
+    .ball-shadow {
+      fill: rgba(16, 32, 51, 0.14);
+    }
+
+    .cm-line,
+    .height-line,
+    .flight-line,
+    .rim-guide {
+      fill: none;
+      stroke-linecap: round;
+    }
+
+    .cm-line {
+      stroke: rgba(11, 99, 199, 0.62);
+      stroke-width: 1.8;
+      stroke-dasharray: 7 6;
+    }
+
+    .height-line {
+      stroke: rgba(244, 165, 28, 0.88);
+      stroke-width: 2.4;
+      stroke-dasharray: 7 6;
+    }
+
+    .rim-guide {
+      display: none;
+    }
+
+    .flight-line {
+      stroke: rgba(184, 68, 43, 0.58);
+      stroke-width: 3;
+      stroke-dasharray: 8 7;
+    }
+
+    .path-trace {
+      fill: none;
+      stroke: rgba(11, 99, 199, 0.42);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .key-guide {
+      fill: none;
+      stroke: rgba(184, 68, 43, 0.48);
+      stroke-width: 2.2;
+      stroke-dasharray: 7 7;
+      stroke-linecap: round;
+    }
+
+    .key-point {
+      fill: #fff;
+      stroke: var(--red);
+      stroke-width: 3;
+    }
+
+    .key-point.bottom {
+      stroke: var(--yucai-blue);
+    }
+
+    .key-point.apex {
+      fill: #fff8e6;
+      stroke: var(--signal);
+    }
+
+    .key-label {
+      fill: var(--slate-700);
+      font-size: 12px;
+      font-weight: 900;
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .velocity {
+      stroke-width: 6.5;
+      stroke-linecap: round;
+      opacity: 0.96;
+    }
+
+    .velocity-ball {
+      stroke: var(--yucai-blue);
+      marker-end: url(#arrowBlue);
+    }
+
+    .velocity-groove {
+      stroke: var(--signal);
+      marker-end: url(#arrowOrange);
+    }
+
+    .scene-label,
+    .axis-label,
+    .tiny-label,
+    .velocity-label {
+      font-weight: 850;
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .scene-label {
+      fill: var(--slate-700);
+      font-size: 14px;
+    }
+
+    .axis-label,
+    .tiny-label {
+      fill: var(--slate-600);
+      font-size: 12px;
+    }
+
+    .velocity-label {
+      font-size: 13px;
+    }
+
+    .velocity-label-ball {
+      fill: var(--yucai-blue);
+    }
+
+    .velocity-label-groove {
+      fill: #a35f05;
+    }
+
+    .axis,
+    .grid-line {
+      stroke: #cbd5e1;
+      stroke-width: 1.3;
+    }
+
+    .axis {
+      stroke: #334155;
+      stroke-width: 2;
+      marker-end: url(#axisArrow);
+    }
+
+    .curve-ball {
+      fill: none;
+      stroke: var(--yucai-blue);
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .curve-groove {
+      fill: none;
+      stroke: var(--signal);
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .curve-future {
+      opacity: 0.22;
+    }
+
+    .graph-cursor {
+      stroke: var(--red);
+      stroke-width: 2;
+      stroke-dasharray: 5 5;
+    }
+
+    .graph-event {
+      stroke: rgba(11, 99, 199, 0.55);
+      stroke-width: 1.8;
+      stroke-dasharray: 6 5;
+      opacity: 0.85;
+    }
+
+    .readable-text {
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .energy-panel-bg {
+      fill: rgba(255, 255, 255, 0.92);
+      stroke: rgba(16, 32, 51, 0.1);
+      stroke-width: 1;
+      rx: 8;
+    }
+
+    .energy-bar-bg {
+      fill: var(--slate-100);
+      stroke: var(--slate-200);
+      stroke-width: 1;
+    }
+
+    .energy-k {
+      fill: var(--yucai-blue);
+    }
+
+    .energy-u {
+      fill: var(--green);
+    }
+
+    .energy-groove {
+      fill: var(--signal);
+    }
+
+    .scene #energyPanel {
+      display: none;
+    }
+
+    .energy-panel {
+      margin-top: 10px;
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 10px 12px;
+    }
+
+    .energy-panel-head {
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .energy-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px 14px;
+    }
+
+    .energy-item {
+      display: grid;
+      grid-template-columns: minmax(58px, auto) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .energy-item-label {
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .energy-bar-track {
+      height: 12px;
+      overflow: hidden;
+      border: 1px solid var(--slate-200);
+      border-radius: 4px;
+      background: var(--slate-100);
+    }
+
+    .energy-bar-fill {
+      width: 0;
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.08s linear;
+    }
+
+    .energy-ball { background: var(--yucai-blue); }
+
+    .energy-groove-fill { background: var(--signal); }
+
+    .energy-u-fill { background: var(--green); }
+
+    .energy-item-value {
+      min-width: 42px;
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .chart-card {
+      margin-top: 10px;
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 12px 14px 14px;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .chart-card h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.25;
+      font-weight: 950;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px 12px;
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--yucai-blue);
+    }
+
+    .legend-dot.groove {
+      background: var(--signal);
+    }
+
+    .vt-graph {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 90 / 19;
+      overflow: visible;
+    }
+
+    .side-panel {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.05fr);
+      gap: 18px;
+      border-top: 1px solid var(--slate-200);
+      background: #fff;
+      padding: 22px 24px;
+    }
+
+    .control output {
+      color: var(--slate-600);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .current-demo {
+      border-radius: 6px;
+      background: var(--yucai-50);
+      padding: 16px;
+    }
+
+    .current-demo h2,
+    .control-group h2 {
+      margin: 8px 0 0;
+      color: var(--ink);
+      font-size: 21px;
+      line-height: 1.25;
+      font-weight: 950;
+    }
+
+    .current-demo p {
+      margin: 10px 0 0;
+      color: var(--slate-700);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      padding: 10px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--slate-500);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--yucai-800);
+      font-size: 17px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .control-group h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--yucai-700);
+    }
+
+    .toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      border-top: 1px solid var(--slate-200);
+      padding-top: 12px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 850;
+      line-height: 1.45;
+    }
+
+    .toggle input {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      accent-color: var(--yucai-700);
+    }
+
+    .model-check {
+      margin-top: 0;
+      border-top: 1px solid var(--slate-200);
+      padding: 12px 0 0;
+      color: var(--slate-600);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .model-check summary {
+      color: var(--ink);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .check-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .check-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-radius: 6px;
+      background: var(--slate-50);
+      padding: 8px 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .teaching-note {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 14px;
+      line-height: 1.85;
+    }
+
+    .principle-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+      margin-top: 24px;
+    }
+
+    .principle-card,
+    .answer-card {
+      padding: 22px;
+    }
+
+    .principle-card h3,
+    .answer-card h3 {
+      margin: 18px 0 8px;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.4;
+      font-weight: 900;
+    }
+
+    .principle-card p,
+    .answer-card p {
+      margin: 10px 0 0;
+    }
+
+    .principle-card ul,
+    .answer-card ul,
+    .answer-card ol {
+      margin: 12px 0 0;
+      padding-left: 1.25rem;
+    }
+
+    .principle-card li + li,
+    .answer-card li + li {
+      margin-top: 6px;
+    }
+
+    .answer-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 32px;
+      border-radius: 6px;
+      background: var(--yucai-blue);
+      color: #fff;
+      padding: 0 12px;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .footer {
+      border-top: 1px solid var(--slate-200);
+      background: #fff;
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 32px 0;
+      color: var(--slate-600);
+      font-size: 14px;
+    }
+
+    .footer strong {
+      display: block;
+      color: var(--ink);
+      font-size: 16px;
+    }
+
+    .footer p {
+      margin: 0;
+    }
+
+    @media (max-width: 900px) {
+      .desktop-nav {
+        display: none;
+      }
+
+      .mobile-nav {
+        display: flex;
+      }
+
+      .header-row {
+        height: 58px;
+      }
+
+      .hero {
+        padding-top: 32px;
+      }
+
+      .hero-grid,
+      .side-panel,
+      .principle-grid,
+      .simulation-workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-wrap {
+        border-right: 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+
+      .scene {
+        min-height: 280px;
+      }
+
+      .energy-row {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .chart-legend {
+        justify-content: flex-start;
+      }
+
+      .stage-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .canvas-key-jumps {
+        position: static;
+        max-width: none;
+        margin-bottom: 8px;
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-shell {
+        width: min(100% - 22px, 1120px);
+      }
+
+      .brand-mark {
+        width: 36px;
+        height: 36px;
+      }
+
+      .brand-name {
+        font-size: 15px;
+      }
+
+      .hero-copy {
+        font-size: 15px;
+        line-height: 1.85;
+      }
+
+      .mode-panel,
+      .model-card,
+      .principle-card,
+      .answer-card {
+        padding: 16px;
+      }
+
+      .side-panel {
+        padding: 16px;
+      }
+
+      .scene {
+        min-height: 250px;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .formula-line {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  
+    .gif-download-panel {
+      width: min(1120px, calc(100% - 32px));
+      margin: 28px auto 0;
+      padding: 22px;
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 18px 60px rgba(16, 32, 51, 0.10);
+    }
+    .gif-download-panel h2 {
+      margin: 0;
+      color: #102033;
+      font-size: 1.25rem;
+      font-weight: 900;
+    }
+    .gif-download-panel p {
+      margin: 8px 0 0;
+      color: #475569;
+      line-height: 1.8;
+    }
+    .gif-download-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .gif-download-actions a {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: 1px solid #0b63c7;
+      background: #0b63c7;
+      color: #fff;
+      padding: 9px 14px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .gif-download-actions a:hover {
+      background: #074f9f;
+    }
+    @media (max-width: 640px) {
+      .gif-download-actions a { width: 100%; }
+    }
+
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="page-shell header-row">
+      <a class="brand focus-ring" href="/" aria-label="返回育才物理创新实验室首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 30 30" role="img">
+            <circle cx="15" cy="15" r="12" fill="#eef7ff" stroke="#0b63c7" stroke-width="2"/>
+            <path d="M8 17c4-7 10-7 14 0" fill="none" stroke="#f4a51c" stroke-width="2.4" stroke-linecap="round"/>
+            <circle cx="15" cy="15" r="2.8" fill="#0b63c7"/>
+          </svg>
+        </span>
+        <span class="brand-name">育才物理创新实验室</span>
+      </a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <a class="focus-ring" href="/">首页</a>
+        <a class="focus-ring" href="/programming/">在线编程</a>
+        <a class="focus-ring" href="/dis/">网页版 DIS</a>
+        <a class="focus-ring" href="/photogate-comparison/">光电门对比</a>
+        <a class="focus-ring" href="/online-lab/">在线实验室</a>
+        <a class="focus-ring active" href="/simulations/">模拟实验室</a>
+      </nav>
+    </div>
+    <nav class="page-shell mobile-nav" aria-label="移动端导航">
+      <a class="focus-ring" href="/">首页</a>
+      <a class="focus-ring" href="/programming/">在线编程</a>
+      <a class="focus-ring" href="/dis/">网页版 DIS</a>
+      <a class="focus-ring" href="/photogate-comparison/">光电门对比</a>
+      <a class="focus-ring" href="/online-lab/">在线实验室</a>
+      <a class="focus-ring active" href="/simulations/">模拟实验室</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="page-shell hero-grid">
+        <div>
+          <p class="eyebrow">SIMULATION LAB</p>
+          <h1>小球与光滑半圆槽</h1>
+          <p class="hero-copy">用动画观察这道多选题中的两个关键点：半圆槽为什么会先向右、再向左做往复运动；小球第一次离开槽时为什么不是斜抛，而是竖直上抛。</p>
+        </div>
+        <aside class="model-card" aria-label="模型假设和守恒关系">
+          <h2>模型假设</h2>
+          <p>半圆槽和水平地面都光滑，小球与槽之间无摩擦。系统水平方向不受外力，所以水平总动量始终为 0；机械能只在重力势能和动能之间转化。</p>
+          <div class="formula-list">
+            <div class="formula-line"><span>水平动量</span><code>m v<sub>x</sub> + M V = 0</code></div>
+            <div class="formula-line"><span>初始能量</span><code>E = m g (R + h)</code></div>
+            <div class="formula-line"><span>离槽瞬间</span><code>cosθ = 0，所以 v<sub>x</sub> = V = 0</code></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="main-section">
+      <div class="page-shell">
+        <section class="tool-surface" aria-labelledby="toolTitle">
+          <div class="simulation-area">
+            <div class="stage-toolbar">
+              <div class="button-row">
+                <button class="button primary focus-ring" id="playPause" type="button">播放</button>
+                <button class="button secondary focus-ring" id="reset" type="button">复位</button>
+                <button class="button secondary focus-ring" id="step" type="button">单步</button>
+              </div>
+              <div class="toolbar-tools">
+                <button class="button key-button focus-ring" id="jumpRight" type="button">右上接触</button>
+                <button class="button key-button focus-ring" id="jumpBottom" type="button">最低点</button>
+                <button class="button key-button focus-ring" id="jumpLeft" type="button">左上接触</button>
+                <button class="button key-button focus-ring" id="jumpApex" type="button">最高点</button>
+                <div class="time-readout" id="timeReadout">t = 0.00 s</div>
+              </div>
+            </div>
+
+            <div class="simulation-workspace">
+              <div class="stage-wrap">
+                <div class="animation-shell">
+                  <svg class="scene" id="scene" viewBox="0 70 960 330" role="img" aria-labelledby="svgTitle svgDesc">
+                <title id="svgTitle">小球与光滑半圆槽模型模拟动画</title>
+                <desc id="svgDesc">画面显示小球进入可移动半圆槽的运动、速度箭头、质心线和关键位置。</desc>
+                <defs>
+                  <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0 0 L10 5 L0 10 Z" fill="#0b63c7"/>
+                  </marker>
+                  <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0 0 L10 5 L0 10 Z" fill="#f4a51c"/>
+                  </marker>
+                  <marker id="axisArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L8,3 L0,6 Z" fill="#334155"/>
+                  </marker>
+                  <radialGradient id="ballGradient" cx="35%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="48%" stop-color="#9ca3af"/>
+                    <stop offset="100%" stop-color="#1f2937"/>
+                  </radialGradient>
+                </defs>
+
+                <text class="scene-label readable-text" x="58" y="42">动画：小球与可移动半圆槽</text>
+
+                <line class="ground" id="ground" x1="48" y1="370" x2="912" y2="370"/>
+                <g id="groundHatches" aria-hidden="true"></g>
+
+                <path class="cm-line" id="cmLine" d="M480 78 L480 448"/>
+                <text class="axis-label readable-text" id="cmLabel" x="490" y="90">系统质心竖线</text>
+                <path class="height-line" id="heightLine" d=""/>
+                <text class="scene-label readable-text" id="heightLabel" x="0" y="0">释放高度 h</text>
+                <path class="rim-guide" id="rimGuide" d=""/>
+                <path class="flight-line" id="flightLine" d=""/>
+                <path class="path-trace" id="pathTrace" d=""/>
+
+                <path class="groove-body" id="grooveBody" d=""/>
+                <path class="groove-arc" id="grooveArc" d=""/>
+                <line class="groove-lip" id="leftLip" x1="0" y1="0" x2="0" y2="0"/>
+                <line class="groove-lip" id="rightLip" x1="0" y1="0" x2="0" y2="0"/>
+                <text class="scene-label readable-text" id="grooveLabel" x="0" y="0">半圆槽 M</text>
+
+                <g id="keyMarkers" aria-label="关键位置标记">
+                  <line class="key-guide" id="apexGuide" x1="0" y1="0" x2="0" y2="0"/>
+                  <circle class="key-point" id="markRight" cx="0" cy="0" r="5"/>
+                  <text class="key-label" id="labelRight" x="0" y="0">右上接触点</text>
+                  <circle class="key-point bottom" id="markBottom" cx="0" cy="0" r="5"/>
+                  <text class="key-label" id="labelBottom" x="0" y="0">最低点</text>
+                  <circle class="key-point" id="markLeft" cx="0" cy="0" r="5"/>
+                  <text class="key-label" id="labelLeft" x="0" y="0">左上接触点</text>
+                  <circle class="key-point apex" id="markApex" cx="0" cy="0" r="5"/>
+                  <text class="key-label" id="labelApex" x="0" y="0">最高点</text>
+                </g>
+
+                <ellipse class="ball-shadow" id="ballShadow" cx="0" cy="0" rx="18" ry="6"/>
+                <circle class="ball" id="ball" cx="0" cy="0" r="18"/>
+                <text class="scene-label readable-text" id="ballLabel" x="0" y="0">小球 m</text>
+
+                <line class="velocity velocity-ball" id="velBall" x1="0" y1="0" x2="0" y2="0"/>
+                <text class="velocity-label velocity-label-ball" id="velBallLabel" x="0" y="0">v</text>
+                <line class="velocity velocity-groove" id="velGroove" x1="0" y1="0" x2="0" y2="0"/>
+                <text class="velocity-label velocity-label-groove" id="velGrooveLabel" x="0" y="0">V</text>
+
+                <g id="energyPanel">
+                  <rect class="energy-panel-bg" x="54" y="56" width="852" height="88"/>
+                  <text class="scene-label" x="78" y="84">能量同模校验</text>
+                  <text class="tiny-label" x="78" y="112">小球动能</text>
+                  <rect class="energy-bar-bg" x="154" y="100" width="185" height="14" rx="4"/>
+                  <rect class="energy-k" id="barBallK" x="154" y="100" width="0" height="14" rx="4"/>
+                  <text class="tiny-label" x="374" y="112">槽动能</text>
+                  <rect class="energy-bar-bg" x="430" y="100" width="185" height="14" rx="4"/>
+                  <rect class="energy-groove" id="barGrooveK" x="430" y="100" width="0" height="14" rx="4"/>
+                  <text class="tiny-label" x="650" y="112">重力势能</text>
+                  <rect class="energy-bar-bg" x="722" y="100" width="138" height="14" rx="4"/>
+                  <rect class="energy-u" id="barU" x="722" y="100" width="0" height="14" rx="4"/>
+                  <text class="tiny-label" id="energySumText" x="430" y="136">总机械能误差：0.000%</text>
+                </g>
+
+                  </svg>
+                </div>
+
+                <div class="energy-panel" id="externalEnergyPanel" aria-label="能量分配">
+                  <div class="energy-panel-head">能量分配</div>
+                  <div class="energy-row">
+                    <div class="energy-item">
+                      <span class="energy-item-label">小球动能</span>
+                      <div class="energy-bar-track" aria-hidden="true">
+                        <div class="energy-bar-fill energy-ball" id="panelBallK"></div>
+                      </div>
+                      <span class="energy-item-value" id="panelBallKText">0.0%</span>
+                    </div>
+                    <div class="energy-item">
+                      <span class="energy-item-label">槽动能</span>
+                      <div class="energy-bar-track" aria-hidden="true">
+                        <div class="energy-bar-fill energy-groove-fill" id="panelGrooveK"></div>
+                      </div>
+                      <span class="energy-item-value" id="panelGrooveKText">0.0%</span>
+                    </div>
+                    <div class="energy-item">
+                      <span class="energy-item-label">重力势能</span>
+                      <div class="energy-bar-track" aria-hidden="true">
+                        <div class="energy-bar-fill energy-u-fill" id="panelU"></div>
+                      </div>
+                      <span class="energy-item-value" id="panelUText">0.0%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chart-card" aria-label="小球和半圆槽速度时间图像">
+                  <div class="chart-head">
+                    <h3>v-t 图像</h3>
+                    <div class="chart-legend" aria-live="polite">
+                      <span class="legend-item"><span class="legend-dot ball" aria-hidden="true"></span>小球 v<sub>x</sub></span>
+                      <span class="legend-item"><span class="legend-dot groove" aria-hidden="true"></span>半圆槽 V</span>
+                      <span class="legend-item" id="graphPhaseText">初始：小球在右上沿</span>
+                    </div>
+                  </div>
+                  <svg class="vt-graph" id="vtGraph" viewBox="0 395 960 270" role="img" aria-label="小球和半圆槽水平速度随时间变化图像">
+                    <line class="grid-line graph-y-grid" x1="96" y1="445" x2="900" y2="445"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="490" x2="900" y2="490"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="535" x2="900" y2="535"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="580" x2="900" y2="580"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="625" x2="900" y2="625"/>
+                    <line class="axis" id="xAxis" x1="96" y1="625" x2="910" y2="625"/>
+                    <line class="axis" x1="96" y1="650" x2="96" y2="425"/>
+                    <text class="axis-label readable-text" x="918" y="630">t/s</text>
+                    <text class="axis-label readable-text" x="66" y="422">v/(m·s⁻¹)</text>
+                    <text class="axis-label readable-text" id="vMaxLabel" x="58" y="449">1</text>
+                    <text class="axis-label readable-text" id="vMidLabel" x="58" y="509">0</text>
+                    <text class="axis-label readable-text" id="vZeroLabel" x="70" y="629">0</text>
+                    <text class="axis-label readable-text" id="vMinLabel" x="52" y="658">-1</text>
+                    <text class="axis-label readable-text" id="tMaxLabel" x="872" y="648">4.0</text>
+                    <line class="graph-event" id="leaveMarker" x1="96" y1="425" x2="96" y2="625"/>
+                    <path class="curve-ball curve-future" id="curveBallFuture" d=""/>
+                    <path class="curve-groove curve-future" id="curveGrooveFuture" d=""/>
+                    <path class="curve-ball" id="curveBall" d=""/>
+                    <path class="curve-groove" id="curveGroove" d=""/>
+                    <line class="graph-cursor" id="graphCursor" x1="96" y1="425" x2="96" y2="650"/>
+                    <circle id="pointBall" r="5.5" fill="#0b63c7" cx="96" cy="625"/>
+                    <circle id="pointGroove" r="5.5" fill="#f4a51c" cx="96" cy="625"/>
+                  </svg>
+                </div>
+              </div>
+
+              <aside class="controls" aria-label="参数调节">
+                <h2>参数调节</h2>
+
+                <div class="control" aria-label="题型选择">
+                  <label>题型选择</label>
+                  <div class="case-toggle" role="group" aria-label="选择释放方式">
+                    <button class="case-button focus-ring" id="edgeCase" type="button" aria-pressed="true">
+                      <strong>题型一：右上沿静止释放</strong>
+                      <span>h = 0</span>
+                      <p>小球到左、右边缘时速度降为 0，只在槽内反向滑回，槽做往复运动。</p>
+                    </button>
+                    <button class="case-button focus-ring" id="heightCase" type="button" aria-pressed="false">
+                      <strong>题型二：右上方自由释放</strong>
+                      <span>h &gt; 0</span>
+                      <p>小球第一次到左边缘时仍有竖直向上速度，水平速度为 0，离槽后竖直上抛。</p>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="control">
+                  <label for="heightRatio">释放高度 h / R <output id="heightOutput">0.00</output></label>
+                  <input class="focus-ring" id="heightRatio" type="range" min="0" max="0.75" step="0.01" value="0" aria-label="释放高度与半径之比">
+                </div>
+                <div class="control">
+                  <label for="massRatio">槽质量 M / m <output id="massOutput">3.0</output></label>
+                  <input class="focus-ring" id="massRatio" type="range" min="1" max="8" step="0.1" value="3" aria-label="半圆槽质量与小球质量之比">
+                </div>
+                <div class="control">
+                  <label for="speedScale">播放倍率 <output id="speedOutput">1.00x</output></label>
+                  <input class="focus-ring" id="speedScale" type="range" min="0.25" max="2.5" step="0.05" value="1" aria-label="播放速度倍率">
+                </div>
+
+                <div class="toggle-row">
+                  <label class="toggle"><input id="showVelocity" type="checkbox" checked>速度箭头</label>
+                  <label class="toggle"><input id="showTrace" type="checkbox" checked>运动轨迹</label>
+                  <label class="toggle"><input id="showEnergy" type="checkbox" checked>能量条</label>
+                  <label class="toggle"><input id="showFullCurve" type="checkbox" checked>完整 v-t 曲线</label>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          <aside class="side-panel" aria-label="状态和学习提示">
+            <div class="current-demo">
+              <p class="panel-label">CURRENT STATE</p>
+              <h2 id="toolTitle">右上沿静止释放</h2>
+              <p id="stateText">h = 0，小球在半圆槽内往复，槽也在水平面上做往复运动。</p>
+              <div class="metrics">
+                <div class="metric">
+                  <span>当前阶段</span>
+                  <strong id="phaseText">槽内运动</strong>
+                </div>
+                <div class="metric">
+                  <span>槽的速度</span>
+                  <strong id="grooveSpeedText">0.00 m/s</strong>
+                </div>
+                <div class="metric">
+                  <span>小球水平速度</span>
+                  <strong id="ballVxText">0.00 m/s</strong>
+                </div>
+                <div class="metric">
+                  <span>第一次离槽判断</span>
+                  <strong id="leaveText">不会离槽</strong>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <details class="model-check" open>
+                <summary>模型校验：读数来自同一套运动方程</summary>
+                <div class="check-list">
+                  <div class="check-row"><span>水平总动量</span><strong id="momentumText">0.000 kg·m/s</strong></div>
+                  <div class="check-row"><span>水平动量误差</span><strong id="momentumError">0.000%</strong></div>
+                  <div class="check-row"><span>机械能误差</span><strong id="energyError">0.000%</strong></div>
+                  <div class="check-row"><span>理论离槽竖直速度</span><strong id="leaveVyText">0.00 m/s</strong></div>
+                </div>
+              </details>
+
+              <p class="teaching-note">课堂提示：画面采用地面参考系。让学生盯住 v-t 图中蓝线 v<sub>x</sub> 与橙线 V 始终反号，且满足 m v<sub>x</sub> + M V = 0；小球到达左右边缘时切线竖直，离槽瞬间水平速度都为 0。</p>
+            </div>
+          </aside>
+        </section>
+
+        <section class="principle-grid" aria-label="原理说明和题目解析">
+          <article class="principle-card">
+            <h2>为什么会这样运动</h2>
+            <h3>1. 建立模型</h3>
+            <p>设半圆槽质量为 M，小球质量为 m，半径为 R。槽只允许在水平面上运动，小球沿光滑半圆面运动；若小球离槽，则在空中只受重力。</p>
+            <h3>2. 水平方向守恒</h3>
+            <p>地面和重力都不给系统水平方向的外力，所以任何时刻都有：</p>
+            <div class="formula-list">
+              <div class="formula-line"><span>守恒式</span><code>m v<sub>x</sub> + M V = 0</code></div>
+            </div>
+            <p>这说明小球向左运动时，槽会向右；小球向右运动时，槽会向左。槽不是一直向右，而是往复运动。</p>
+            <h3>3. 离槽瞬间</h3>
+            <p>小球在半圆槽边缘处的切线是竖直的。此时小球相对槽没有水平速度，若离开槽，球和槽的水平速度相同；再由水平总动量为 0，可知二者水平速度都为 0。</p>
+            <div class="formula-list">
+              <div class="formula-line"><span>结论</span><code>v<sub>x</sub> = V = 0，小球只剩竖直速度</code></div>
+            </div>
+          </article>
+
+          <article class="answer-card">
+            <h2>题目判断</h2>
+            <p><span class="answer-badge">答案：B、C</span></p>
+            <ol>
+              <li>A 错：第一次离槽时，小球水平速度为 0，不会向右上方斜抛。</li>
+              <li>B 对：若从右上方释放，小球第一次到另一侧边缘时仍有竖直向上速度，因此做竖直上抛。</li>
+              <li>C 对：小球竖直上抛后会落回同一侧边缘，随后反向经过半圆槽，整个过程重复，槽做往复运动。</li>
+              <li>D 错：槽先向右，后向左，不是一直向右运动。</li>
+            </ol>
+            <h3>观察任务</h3>
+            <ul>
+              <li>把 h / R 调为 0，观察小球到两侧边缘时速度如何变化。</li>
+              <li>把 h / R 调大，观察小球第一次离槽时速度箭头是否水平倾斜。</li>
+              <li>观察质心竖线：系统水平方向质心为什么不动？</li>
+              <li>比较槽的速度读数：什么时候为正、什么时候为负、什么时候为 0？</li>
+            </ul>
+          </article>
+        </section>
+      </div>
+    </section>
+  </main>
+  <section class="gif-download-panel" aria-label="动画下载">
+    <h2>动画下载</h2>
+    <p>小球-半圆槽模型动画 可下载为 GIF，方便插入课件、班级群或复习资料。</p>
+    <div class="gif-download-actions">
+      <a href="exports/ball-semicircular-groove-case1.gif" download>题型一：右上沿释放</a>
+      <a href="exports/ball-semicircular-groove-case2.gif" download>题型二：高处释放</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="page-shell footer-inner">
+      <div>
+        <strong>育才物理创新实验室</strong>
+      </div>
+      <p>面向物理实验、创新教具和学生作品发布的校园实验室门户</p>
+    </div>
+  </footer>
+
+  <script>
+    const els = {
+      edgeCase: document.querySelector("#edgeCase"),
+      heightCase: document.querySelector("#heightCase"),
+      playPause: document.querySelector("#playPause"),
+      step: document.querySelector("#step"),
+      reset: document.querySelector("#reset"),
+      jumpRight: document.querySelector("#jumpRight"),
+      jumpBottom: document.querySelector("#jumpBottom"),
+      jumpLeft: document.querySelector("#jumpLeft"),
+      jumpApex: document.querySelector("#jumpApex"),
+      timeReadout: document.querySelector("#timeReadout"),
+      heightRatio: document.querySelector("#heightRatio"),
+      massRatio: document.querySelector("#massRatio"),
+      speedScale: document.querySelector("#speedScale"),
+      heightOutput: document.querySelector("#heightOutput"),
+      massOutput: document.querySelector("#massOutput"),
+      speedOutput: document.querySelector("#speedOutput"),
+      showVelocity: document.querySelector("#showVelocity"),
+      showTrace: document.querySelector("#showTrace"),
+      showEnergy: document.querySelector("#showEnergy"),
+      showFullCurve: document.querySelector("#showFullCurve"),
+      toolTitle: document.querySelector("#toolTitle"),
+      stateText: document.querySelector("#stateText"),
+      phaseText: document.querySelector("#phaseText"),
+      grooveSpeedText: document.querySelector("#grooveSpeedText"),
+      ballVxText: document.querySelector("#ballVxText"),
+      leaveText: document.querySelector("#leaveText"),
+      momentumText: document.querySelector("#momentumText"),
+      momentumError: document.querySelector("#momentumError"),
+      energyError: document.querySelector("#energyError"),
+      leaveVyText: document.querySelector("#leaveVyText"),
+      scene: document.querySelector("#scene"),
+      groundHatches: document.querySelector("#groundHatches"),
+      cmLine: document.querySelector("#cmLine"),
+      cmLabel: document.querySelector("#cmLabel"),
+      heightLine: document.querySelector("#heightLine"),
+      heightLabel: document.querySelector("#heightLabel"),
+      rimGuide: document.querySelector("#rimGuide"),
+      flightLine: document.querySelector("#flightLine"),
+      pathTrace: document.querySelector("#pathTrace"),
+      grooveBody: document.querySelector("#grooveBody"),
+      grooveArc: document.querySelector("#grooveArc"),
+      leftLip: document.querySelector("#leftLip"),
+      rightLip: document.querySelector("#rightLip"),
+      grooveLabel: document.querySelector("#grooveLabel"),
+      apexGuide: document.querySelector("#apexGuide"),
+      markRight: document.querySelector("#markRight"),
+      labelRight: document.querySelector("#labelRight"),
+      markBottom: document.querySelector("#markBottom"),
+      labelBottom: document.querySelector("#labelBottom"),
+      markLeft: document.querySelector("#markLeft"),
+      labelLeft: document.querySelector("#labelLeft"),
+      markApex: document.querySelector("#markApex"),
+      labelApex: document.querySelector("#labelApex"),
+      ballShadow: document.querySelector("#ballShadow"),
+      ball: document.querySelector("#ball"),
+      ballLabel: document.querySelector("#ballLabel"),
+      velBall: document.querySelector("#velBall"),
+      velBallLabel: document.querySelector("#velBallLabel"),
+      velGroove: document.querySelector("#velGroove"),
+      velGrooveLabel: document.querySelector("#velGrooveLabel"),
+      energyPanel: document.querySelector("#energyPanel"),
+      barBallK: document.querySelector("#barBallK"),
+      barGrooveK: document.querySelector("#barGrooveK"),
+      barU: document.querySelector("#barU"),
+      energySumText: document.querySelector("#energySumText"),
+      externalEnergyPanel: document.querySelector("#externalEnergyPanel"),
+      panelBallK: document.querySelector("#panelBallK"),
+      panelGrooveK: document.querySelector("#panelGrooveK"),
+      panelU: document.querySelector("#panelU"),
+      panelBallKText: document.querySelector("#panelBallKText"),
+      panelGrooveKText: document.querySelector("#panelGrooveKText"),
+      panelUText: document.querySelector("#panelUText"),
+      curveBall: document.querySelector("#curveBall"),
+      curveGroove: document.querySelector("#curveGroove"),
+      curveBallFuture: document.querySelector("#curveBallFuture"),
+      curveGrooveFuture: document.querySelector("#curveGrooveFuture"),
+      graphCursor: document.querySelector("#graphCursor"),
+      graphGrids: document.querySelectorAll(".graph-y-grid"),
+      leaveMarker: document.querySelector("#leaveMarker"),
+      pointBall: document.querySelector("#pointBall"),
+      pointGroove: document.querySelector("#pointGroove"),
+      graphPhaseText: document.querySelector("#graphPhaseText"),
+      vMaxLabel: document.querySelector("#vMaxLabel"),
+      vMidLabel: document.querySelector("#vMidLabel"),
+      vZeroLabel: document.querySelector("#vZeroLabel"),
+      vMinLabel: document.querySelector("#vMinLabel"),
+      tMaxLabel: document.querySelector("#tMaxLabel")
+    };
+
+    const g = 9.8;
+    const eps = 1e-6;
+    const scene = {
+      centerX: 365,
+      groundY: 370,
+      bottomY: 326,
+      scale: 175,
+      wallPad: 48,
+      ballR: 16,
+      graph: { left: 96, right: 900, top: 425, bottom: 625 }
+    };
+
+    const graphData = {
+      duration: 6,
+      leaveTime: null,
+      samples: []
+    };
+
+    const state = {
+      running: false,
+      phase: "bound",
+      time: 0,
+      lastFrame: 0,
+      theta: Math.PI / 2,
+      omega: 0,
+      boundStartTheta: Math.PI / 2,
+      boundStartX: 0,
+      dropY: 1,
+      dropVy: 0,
+      flightSide: "left",
+      flightTrackX: 0,
+      flightBallX: 0,
+      flightVy0: 0,
+      flightTime: 0,
+      trail: [],
+      trailClock: 0
+    };
+
+    function captureState() {
+      return {
+        running: state.running,
+        phase: state.phase,
+        time: state.time,
+        lastFrame: state.lastFrame,
+        theta: state.theta,
+        omega: state.omega,
+        boundStartTheta: state.boundStartTheta,
+        boundStartX: state.boundStartX,
+        dropY: state.dropY,
+        dropVy: state.dropVy,
+        flightSide: state.flightSide,
+        flightTrackX: state.flightTrackX,
+        flightBallX: state.flightBallX,
+        flightVy0: state.flightVy0,
+        flightTime: state.flightTime,
+        trail: [...state.trail],
+        trailClock: state.trailClock
+      };
+    }
+
+    function restoreState(saved) {
+      Object.assign(state, saved);
+      state.trail = [...saved.trail];
+    }
+
+    function initSimulation() {
+      const p = params();
+      state.time = 0;
+      state.lastFrame = 0;
+      state.trail = [];
+      state.trailClock = 0;
+
+      if (p.H > 1e-5) {
+        state.phase = "drop";
+        state.dropY = p.R + p.H;
+        state.dropVy = 0;
+        state.theta = Math.PI / 2;
+        state.omega = 0;
+        state.boundStartTheta = Math.PI / 2;
+        state.boundStartX = 0;
+      } else {
+        state.phase = "bound";
+        state.theta = Math.PI / 2;
+        state.omega = 0;
+        state.boundStartTheta = Math.PI / 2;
+        state.boundStartX = 0;
+      }
+
+      addTrailPoint();
+    }
+
+    function computeGraphDuration() {
+      const saved = captureState();
+      initSimulation();
+      const p = params();
+      const dt = 1 / 240;
+      const maxTime = 16;
+      let duration = 6;
+      let leaveTime = null;
+
+      if (p.H > 1e-5) {
+        while (state.time < maxTime) {
+          advanceOneStep(dt);
+          state.time += dt;
+          if (leaveTime === null && state.phase === "flight" && state.flightSide === "left") {
+            leaveTime = state.time - state.flightTime;
+          }
+          if (state.phase === "flight" && state.flightSide === "left" && state.flightTime >= p.leaveVy / g) {
+            duration = state.time + 0.25;
+            break;
+          }
+        }
+      } else {
+        let passedLeft = false;
+        while (state.time < maxTime) {
+          advanceOneStep(dt);
+          state.time += dt;
+          if (state.phase === "bound" && state.theta < -Math.PI / 2 + 0.08) passedLeft = true;
+          if (passedLeft && state.phase === "bound" && state.theta >= Math.PI / 2 - 0.04 && Math.abs(state.omega) < 0.2) {
+            duration = state.time + 0.35;
+            break;
+          }
+        }
+      }
+
+      restoreState(saved);
+      graphData.duration = Math.max(2.5, duration);
+      graphData.leaveTime = leaveTime;
+      return graphData.duration;
+    }
+
+    function buildGraphSamples() {
+      const saved = captureState();
+      initSimulation();
+      const duration = graphData.duration;
+      const samples = [];
+
+      for (let i = 0; i <= 240; i += 1) {
+        const target = duration * i / 240;
+        while (state.time < target - 1e-9) {
+          const step = Math.min(1 / 360, target - state.time);
+          advanceOneStep(step);
+          state.time += step;
+        }
+        const kin = currentKinematics();
+        samples.push({ t: state.time, ballVx: kin.ballVx, trackV: kin.trackV });
+      }
+
+      restoreState(saved);
+      graphData.samples = samples;
+    }
+
+    function refreshGraphData() {
+      computeGraphDuration();
+      buildGraphSamples();
+    }
+
+    function graphScale() {
+      const values = [];
+      graphData.samples.forEach((sample) => {
+        values.push(sample.ballVx, sample.trackV);
+      });
+      if (!values.length) {
+        return { min: -1, max: 1 };
+      }
+      const min = Math.min(0, ...values);
+      const max = Math.max(0, ...values);
+      const pad = Math.max(0.25, (max - min) * 0.12);
+      return { min: min - pad, max: max + pad };
+    }
+
+    function graphPoint(t, v, scale) {
+      const g = scene.graph;
+      const x = g.left + (t / graphData.duration) * (g.right - g.left);
+      const y = g.bottom - ((v - scale.min) / (scale.max - scale.min)) * (g.bottom - g.top);
+      return { x, y };
+    }
+
+    function graphY(value, scale) {
+      const g = scene.graph;
+      return g.bottom - ((value - scale.min) / (scale.max - scale.min)) * (g.bottom - g.top);
+    }
+
+    function graphPath(which, scale, visibleDuration) {
+      const parts = [];
+      let started = false;
+      graphData.samples.forEach((sample) => {
+        if (sample.t > visibleDuration + 1e-9) return;
+        const point = graphPoint(sample.t, which === "ball" ? sample.ballVx : sample.trackV, scale);
+        parts.push(`${started ? "L" : "M"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`);
+        started = true;
+      });
+      return parts.join(" ");
+    }
+
+    function graphPhaseLabel(kin) {
+      const p = kin.p;
+      if (p.H > 1e-5 && state.phase === "flight") {
+        return kin.ballVy > 0.05 ? "竖直上抛：v_x = 0，V = 0" : "下落返回：仍无水平速度";
+      }
+      if (state.phase === "drop") return "自由下落：尚未进入半圆槽";
+      if (Math.abs(kin.ballVx) < 0.05 && Math.abs(kin.trackV) < 0.05 && Math.abs(Math.abs(state.theta) - Math.PI / 2) < 0.05) {
+        return "边缘换向：水平速度瞬间为 0";
+      }
+      if (Math.abs(kin.ballVx + p.M * kin.trackV / p.m) < 0.05) {
+        return "水平动量守恒：v_x 与 V 反号";
+      }
+      return kin.stage;
+    }
+
+    function updateGraphAxis(scale) {
+      const tickValues = [scale.max, (scale.max + 0) / 2, 0, (scale.min + 0) / 2, scale.min];
+      els.graphGrids.forEach((line, index) => {
+        const y = graphY(tickValues[index], scale);
+        line.setAttribute("y1", y);
+        line.setAttribute("y2", y);
+      });
+      const zeroY = graphY(0, scale);
+      els.vZeroLabel.setAttribute("y", zeroY + 4);
+      els.vMaxLabel.setAttribute("y", graphY(scale.max, scale) + 4);
+      els.vMidLabel.setAttribute("y", graphY(tickValues[1], scale) + 4);
+      els.vMinLabel.setAttribute("y", graphY(scale.min, scale) + 4);
+      els.vMaxLabel.textContent = scale.max.toFixed(1);
+      els.vMidLabel.textContent = tickValues[1].toFixed(1);
+      els.vMinLabel.textContent = scale.min.toFixed(1);
+      els.tMaxLabel.textContent = graphData.duration.toFixed(1);
+    }
+
+    function renderGraph(kin) {
+      const scale = graphScale();
+      updateGraphAxis(scale);
+      const shownTime = Math.min(state.time, graphData.duration);
+      const ballPoint = graphPoint(shownTime, kin.ballVx, scale);
+      const groovePoint = graphPoint(shownTime, kin.trackV, scale);
+
+      els.curveBall.setAttribute("d", graphPath("ball", scale, shownTime));
+      els.curveGroove.setAttribute("d", graphPath("groove", scale, shownTime));
+      els.curveBallFuture.setAttribute("d", els.showFullCurve.checked ? graphPath("ball", scale, graphData.duration) : "");
+      els.curveGrooveFuture.setAttribute("d", els.showFullCurve.checked ? graphPath("groove", scale, graphData.duration) : "");
+      els.graphCursor.setAttribute("x1", ballPoint.x);
+      els.graphCursor.setAttribute("x2", ballPoint.x);
+      els.pointBall.setAttribute("cx", ballPoint.x);
+      els.pointBall.setAttribute("cy", ballPoint.y);
+      els.pointGroove.setAttribute("cx", groovePoint.x);
+      els.pointGroove.setAttribute("cy", groovePoint.y);
+      els.graphPhaseText.textContent = graphPhaseLabel(kin);
+
+      const leaveTime = graphData.leaveTime;
+      if (leaveTime && kin.p.H > 1e-5) {
+        const x = scene.graph.left + (leaveTime / graphData.duration) * (scene.graph.right - scene.graph.left);
+        els.leaveMarker.style.display = "";
+        els.leaveMarker.setAttribute("x1", x);
+        els.leaveMarker.setAttribute("x2", x);
+        els.leaveMarker.setAttribute("y1", scene.graph.top);
+        els.leaveMarker.setAttribute("y2", scene.graph.bottom);
+      } else {
+        els.leaveMarker.style.display = "none";
+      }
+    }
+
+    function num(input) {
+      return Number.parseFloat(input.value);
+    }
+
+    function params() {
+      const m = 1;
+      const M = num(els.massRatio);
+      const R = 1;
+      const hRatio = num(els.heightRatio);
+      const H = hRatio * R;
+      const total = m + M;
+      const beta = m / total;
+      const alpha = M / total;
+      const initialEnergy = m * g * (R + H);
+      const leaveVy = Math.sqrt(Math.max(0, 2 * g * H));
+      return { m, M, R, H, hRatio, total, beta, alpha, initialEnergy, leaveVy };
+    }
+
+    function setAttr(el, attrs) {
+      Object.entries(attrs).forEach(([key, value]) => el.setAttribute(key, value));
+    }
+
+    function screenX(worldX) {
+      return scene.centerX + worldX * scene.scale;
+    }
+
+    function screenY(worldY) {
+      return scene.bottomY - worldY * scene.scale;
+    }
+
+    function semicirclePoints(cx, p, direction = "leftToRight") {
+      const points = [];
+      const samples = 42;
+      for (let i = 0; i <= samples; i += 1) {
+        const theta = direction === "leftToRight"
+          ? -Math.PI / 2 + Math.PI * i / samples
+          : Math.PI / 2 - Math.PI * i / samples;
+        const x = cx + p.R * scene.scale * Math.sin(theta);
+        const y = screenY(p.R * (1 - Math.cos(theta)));
+        points.push({ x, y });
+      }
+      return points;
+    }
+
+    function pointsPath(points) {
+      return points
+        .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+        .join(" ");
+    }
+
+    function arcPath(cx, p) {
+      return pointsPath(semicirclePoints(cx, p, "leftToRight"));
+    }
+
+    function grooveBodyPath(cx, p) {
+      const r = p.R * scene.scale;
+      const leftX = cx - r;
+      const rightX = cx + r;
+      const rimY = screenY(p.R);
+      const leftOuter = leftX - scene.wallPad;
+      const rightOuter = rightX + scene.wallPad;
+      const innerArc = semicirclePoints(cx, p, "rightToLeft")
+        .slice(1)
+        .map((point) => `L ${point.x.toFixed(2)} ${point.y.toFixed(2)}`);
+      return [
+        `M ${leftOuter.toFixed(2)} ${scene.groundY.toFixed(2)}`,
+        `L ${leftOuter.toFixed(2)} ${rimY.toFixed(2)}`,
+        `L ${rightOuter.toFixed(2)} ${rimY.toFixed(2)}`,
+        `L ${rightOuter.toFixed(2)} ${scene.groundY.toFixed(2)}`,
+        "Z",
+        `M ${leftX.toFixed(2)} ${rimY.toFixed(2)}`,
+        `L ${rightX.toFixed(2)} ${rimY.toFixed(2)}`,
+        ...innerArc,
+        "Z"
+      ].join(" ");
+    }
+
+    function updateHatches() {
+      const svgNS = "http://www.w3.org/2000/svg";
+      els.groundHatches.textContent = "";
+      for (let x = 58; x <= 900; x += 32) {
+        const line = document.createElementNS(svgNS, "line");
+        line.setAttribute("class", "ground-hatch");
+        line.setAttribute("x1", x);
+        line.setAttribute("y1", scene.groundY + 2);
+        line.setAttribute("x2", x - 24);
+        line.setAttribute("y2", scene.groundY + 28);
+        els.groundHatches.appendChild(line);
+      }
+    }
+
+    function acceleration(theta, omega, p) {
+      const sin = Math.sin(theta);
+      const cos = Math.cos(theta);
+      const f = sin * sin + p.alpha * cos * cos;
+      return -(p.beta * sin * cos * omega * omega + (g / p.R) * sin) / Math.max(1e-9, f);
+    }
+
+    function rk4(theta, omega, dt, p) {
+      const a1 = acceleration(theta, omega, p);
+      const k1Theta = omega;
+      const k1Omega = a1;
+
+      const a2 = acceleration(theta + 0.5 * dt * k1Theta, omega + 0.5 * dt * k1Omega, p);
+      const k2Theta = omega + 0.5 * dt * k1Omega;
+      const k2Omega = a2;
+
+      const a3 = acceleration(theta + 0.5 * dt * k2Theta, omega + 0.5 * dt * k2Omega, p);
+      const k3Theta = omega + 0.5 * dt * k2Omega;
+      const k3Omega = a3;
+
+      const a4 = acceleration(theta + dt * k3Theta, omega + dt * k3Omega, p);
+      const k4Theta = omega + dt * k3Omega;
+      const k4Omega = a4;
+
+      return {
+        theta: theta + dt * (k1Theta + 2 * k2Theta + 2 * k3Theta + k4Theta) / 6,
+        omega: omega + dt * (k1Omega + 2 * k2Omega + 2 * k3Omega + k4Omega) / 6
+      };
+    }
+
+    function boundTrackX(theta, p) {
+      return state.boundStartX - p.beta * p.R * (Math.sin(theta) - Math.sin(state.boundStartTheta));
+    }
+
+    function currentKinematics() {
+      const p = params();
+
+      if (state.phase === "drop") {
+        return {
+          p,
+          trackX: 0,
+          trackV: 0,
+          ballX: p.R,
+          ballY: state.dropY,
+          ballVx: 0,
+          ballVy: state.dropVy,
+          theta: Math.PI / 2,
+          stage: "自由下落"
+        };
+      }
+
+      if (state.phase === "flight") {
+        const t = state.flightTime;
+        const ballY = p.R + state.flightVy0 * t - 0.5 * g * t * t;
+        const ballVy = state.flightVy0 - g * t;
+        return {
+          p,
+          trackX: state.flightTrackX,
+          trackV: 0,
+          ballX: state.flightBallX,
+          ballY,
+          ballVx: 0,
+          ballVy,
+          theta: state.flightSide === "left" ? -Math.PI / 2 : Math.PI / 2,
+          stage: state.flightSide === "left" ? "左侧竖直上抛" : "右侧竖直上抛"
+        };
+      }
+
+      const theta = state.theta;
+      const omega = state.omega;
+      const cos = Math.cos(theta);
+      const sin = Math.sin(theta);
+      const trackX = boundTrackX(theta, p);
+      const trackV = -p.beta * p.R * cos * omega;
+      const ballX = trackX + p.R * sin;
+      const ballY = p.R * (1 - Math.cos(theta));
+      const ballVx = trackV + p.R * cos * omega;
+      const ballVy = p.R * sin * omega;
+      return {
+        p,
+        trackX,
+        trackV,
+        ballX,
+        ballY,
+        ballVx,
+        ballVy,
+        theta,
+        stage: boundStageText(theta, omega)
+      };
+    }
+
+    function boundStageText(theta, omega) {
+      if (Math.abs(omega) < 0.02 && Math.abs(Math.abs(theta) - Math.PI / 2) < 0.04) {
+        return "边缘换向";
+      }
+      if (omega < 0 && theta > 0) return "右侧下滑，槽向右";
+      if (omega < 0 && theta <= 0) return "左侧上升，槽减速";
+      if (omega > 0 && theta < 0) return "左侧下滑，槽向左";
+      if (omega > 0 && theta >= 0) return "右侧上升，槽减速";
+      return "槽内运动";
+    }
+
+    function enterBoundFrom(side, downwardSpeed) {
+      const p = params();
+      state.phase = "bound";
+      state.theta = side === "left" ? -Math.PI / 2 : Math.PI / 2;
+      state.omega = side === "left" ? downwardSpeed / p.R : -downwardSpeed / p.R;
+      state.boundStartTheta = state.theta;
+      state.boundStartX = side === "left" ? 2 * p.beta * p.R : 0;
+    }
+
+    function enterFlight(side) {
+      const p = params();
+      const trackX = side === "left" ? 2 * p.beta * p.R : 0;
+      state.phase = "flight";
+      state.flightSide = side;
+      state.flightTrackX = trackX;
+      state.flightBallX = trackX + (side === "left" ? -p.R : p.R);
+      state.flightVy0 = p.leaveVy;
+      state.flightTime = 0;
+      state.theta = side === "left" ? -Math.PI / 2 : Math.PI / 2;
+      state.omega = 0;
+    }
+
+    function omegaAtTheta(theta, sign, p) {
+      const sin = Math.sin(theta);
+      const cos = Math.cos(theta);
+      const height = p.R * (1 - Math.cos(theta));
+      const available = Math.max(0, p.m * g * (p.R + p.H - height));
+      const coefficient = p.m * p.R * p.R * (sin * sin + p.alpha * cos * cos);
+      if (available <= 1e-9) return 0;
+      return sign * Math.sqrt(2 * available / Math.max(1e-9, coefficient));
+    }
+
+    function jumpToKey(kind) {
+      const p = params();
+      state.running = false;
+      els.playPause.textContent = "播放";
+      initSimulation();
+
+      if (kind === "right") {
+        state.phase = "bound";
+        state.theta = Math.PI / 2;
+        state.omega = p.H > 1e-5 ? -p.leaveVy / p.R : 0;
+        state.boundStartTheta = Math.PI / 2;
+        state.boundStartX = 0;
+        state.time = p.H > 1e-5 ? Math.sqrt(2 * p.H / g) : 0;
+      }
+
+      if (kind === "bottom") {
+        state.phase = "bound";
+        state.theta = 0;
+        state.omega = omegaAtTheta(0, -1, p);
+        state.boundStartTheta = Math.PI / 2;
+        state.boundStartX = 0;
+        state.time = 0;
+      }
+
+      if (kind === "left") {
+        state.phase = "bound";
+        state.theta = -Math.PI / 2;
+        state.omega = p.H > 1e-5 ? -p.leaveVy / p.R : 0;
+        state.boundStartTheta = Math.PI / 2;
+        state.boundStartX = 0;
+        state.time = 0;
+      }
+
+      if (kind === "apex") {
+        if (p.H > 1e-5) {
+          state.phase = "flight";
+          state.flightSide = "left";
+          state.flightTrackX = 2 * p.beta * p.R;
+          state.flightBallX = state.flightTrackX - p.R;
+          state.flightVy0 = p.leaveVy;
+          state.flightTime = p.leaveVy / g;
+          state.theta = -Math.PI / 2;
+          state.omega = 0;
+          state.time = 0;
+        } else {
+          state.phase = "bound";
+          state.theta = -Math.PI / 2;
+          state.omega = 0;
+          state.boundStartTheta = Math.PI / 2;
+          state.boundStartX = 0;
+          state.time = 0;
+        }
+      }
+
+      state.trail = [];
+      addTrailPoint();
+      render();
+    }
+
+    function advanceOneStep(dt) {
+      const p = params();
+
+      if (state.phase === "drop") {
+        state.dropVy -= g * dt;
+        state.dropY += state.dropVy * dt;
+        if (state.dropY <= p.R) {
+          enterBoundFrom("right", p.leaveVy);
+        }
+        return;
+      }
+
+      if (state.phase === "flight") {
+        state.flightTime += dt;
+        const y = p.R + state.flightVy0 * state.flightTime - 0.5 * g * state.flightTime * state.flightTime;
+        if (y <= p.R && state.flightTime > 0.02) {
+          enterBoundFrom(state.flightSide, p.leaveVy);
+        }
+        return;
+      }
+
+      const next = rk4(state.theta, state.omega, dt, p);
+      state.theta = next.theta;
+      state.omega = next.omega;
+
+      if (state.theta <= -Math.PI / 2 && state.omega < 0) {
+        if (p.H > 1e-5) {
+          enterFlight("left");
+        } else {
+          state.theta = -Math.PI / 2;
+          state.omega = 0;
+          state.boundStartTheta = -Math.PI / 2;
+          state.boundStartX = 2 * p.beta * p.R;
+        }
+      }
+
+      if (state.theta >= Math.PI / 2 && state.omega > 0) {
+        if (p.H > 1e-5) {
+          enterFlight("right");
+        } else {
+          state.theta = Math.PI / 2;
+          state.omega = 0;
+          state.boundStartTheta = Math.PI / 2;
+          state.boundStartX = 0;
+        }
+      }
+    }
+
+    function advance(seconds) {
+      const rate = num(els.speedScale);
+      let remaining = seconds * rate;
+      while (remaining > 0) {
+        const dt = Math.min(remaining, 1 / 360);
+        advanceOneStep(dt);
+        state.time += dt;
+        state.trailClock += dt;
+        if (state.trailClock > 0.035) {
+          addTrailPoint();
+          state.trailClock = 0;
+        }
+        remaining -= dt;
+      }
+    }
+
+    function addTrailPoint() {
+      const kin = currentKinematics();
+      state.trail.push({ x: kin.ballX, y: kin.ballY });
+      if (state.trail.length > 520) state.trail.shift();
+    }
+
+    function drawVelocity(line, label, x, y, vx, vy, className, text) {
+      const show = els.showVelocity.checked;
+      const speed = Math.hypot(vx, vy);
+      line.style.display = show && speed > 0.025 ? "" : "none";
+      label.style.display = show && speed > 0.025 ? "" : "none";
+      if (!show || speed <= 0.025) return;
+      const scale = Math.min(34, Math.max(18, 100 / Math.max(speed, 0.1)));
+      const dx = vx * scale;
+      const dy = -vy * scale;
+      setAttr(line, {
+        class: `velocity ${className}`,
+        x1: x,
+        y1: y,
+        x2: x + dx,
+        y2: y + dy
+      });
+      label.textContent = `${text}=${speed.toFixed(2)}m/s`;
+      setAttr(label, { x: x + dx + 8, y: y + dy - 8 });
+    }
+
+    function drawEnergy(kin) {
+      const p = kin.p;
+      const visible = els.showEnergy.checked;
+      els.energyPanel.style.display = visible ? "" : "none";
+      els.externalEnergyPanel.style.display = visible ? "" : "none";
+      if (!visible) return;
+      const kBall = 0.5 * p.m * (kin.ballVx * kin.ballVx + kin.ballVy * kin.ballVy);
+      const kGroove = 0.5 * p.M * kin.trackV * kin.trackV;
+      const potential = p.m * g * Math.max(0, kin.ballY);
+      const total = kBall + kGroove + potential;
+      const widthA = 185;
+      const widthB = 138;
+      els.barBallK.setAttribute("width", Math.min(widthA, widthA * kBall / p.initialEnergy));
+      els.barGrooveK.setAttribute("width", Math.min(widthA, widthA * kGroove / p.initialEnergy));
+      els.barU.setAttribute("width", Math.min(widthB, widthB * potential / p.initialEnergy));
+      const error = Math.abs(total - p.initialEnergy) / Math.max(1e-9, p.initialEnergy);
+      els.energySumText.textContent = `总机械能误差：${(error * 100).toFixed(3)}%`;
+      const panelItems = [
+        [els.panelBallK, els.panelBallKText, kBall],
+        [els.panelGrooveK, els.panelGrooveKText, kGroove],
+        [els.panelU, els.panelUText, potential]
+      ];
+      for (const [bar, label, value] of panelItems) {
+        const percent = Math.max(0, Math.min(100, value / Math.max(1e-9, p.initialEnergy) * 100));
+        bar.style.width = `${percent.toFixed(1)}%`;
+        label.textContent = `${percent.toFixed(1)}%`;
+      }
+    }
+
+    function updateText(kin) {
+      const p = kin.p;
+      const high = p.H > 1e-5;
+      els.toolTitle.textContent = high ? "右上方自由释放" : "右上沿静止释放";
+      els.stateText.textContent = high
+        ? "h > 0，小球到另一侧边缘时仍有竖直速度；离槽后先竖直上抛，再落回槽内。"
+        : "h = 0，小球到两侧边缘时速度降为 0，不会离开半圆槽，只在槽内往复。";
+      els.phaseText.textContent = kin.stage;
+      els.grooveSpeedText.textContent = `${kin.trackV.toFixed(2)} m/s`;
+      els.ballVxText.textContent = `${kin.ballVx.toFixed(2)} m/s`;
+      els.leaveText.textContent = high ? "竖直上抛" : "不会离槽";
+      els.leaveVyText.textContent = `${p.leaveVy.toFixed(2)} m/s`;
+
+      const momentum = p.m * kin.ballVx + p.M * kin.trackV;
+      const kBall = 0.5 * p.m * (kin.ballVx * kin.ballVx + kin.ballVy * kin.ballVy);
+      const kGroove = 0.5 * p.M * kin.trackV * kin.trackV;
+      const potential = p.m * g * Math.max(0, kin.ballY);
+      const totalEnergy = kBall + kGroove + potential;
+      const momentumRef = Math.max(1, p.m * Math.max(1, p.leaveVy));
+      const momentumErr = Math.abs(momentum) / momentumRef;
+      const energyErr = Math.abs(totalEnergy - p.initialEnergy) / Math.max(1e-9, p.initialEnergy);
+
+      els.momentumText.textContent = `${momentum.toFixed(4)} kg·m/s`;
+      els.momentumError.textContent = `${(momentumErr * 100).toFixed(3)}%`;
+      els.energyError.textContent = `${(energyErr * 100).toFixed(3)}%`;
+      els.timeReadout.textContent = `t = ${state.time.toFixed(2)} s`;
+    }
+
+    function syncLabels() {
+      const p = params();
+      els.heightOutput.textContent = p.hRatio.toFixed(2);
+      els.massOutput.textContent = num(els.massRatio).toFixed(1);
+      els.speedOutput.textContent = `${num(els.speedScale).toFixed(2)}x`;
+      const high = p.H > 1e-5;
+      els.edgeCase.setAttribute("aria-pressed", String(!high));
+      els.heightCase.setAttribute("aria-pressed", String(high));
+    }
+
+    function renderKeyMarkers(p, trackCx) {
+      const r = p.R * scene.scale;
+      const rightX = trackCx + r;
+      const rightY = screenY(p.R);
+      const bottomX = trackCx;
+      const bottomY = screenY(0);
+      const leftX = trackCx - r;
+      const leftY = screenY(p.R);
+      const apexX = leftX;
+      const apexY = screenY(p.R + p.H);
+
+      setAttr(els.markRight, { cx: rightX, cy: rightY });
+      setAttr(els.labelRight, { x: rightX + 12, y: rightY - 18 });
+      setAttr(els.markBottom, { cx: bottomX, cy: bottomY });
+      setAttr(els.labelBottom, { x: bottomX + 12, y: bottomY + 30 });
+      setAttr(els.markLeft, { cx: leftX, cy: leftY });
+      setAttr(els.labelLeft, { x: leftX - 82, y: leftY - 18 });
+      setAttr(els.markApex, { cx: apexX, cy: apexY });
+      setAttr(els.labelApex, { x: apexX + 12, y: apexY - 24 });
+      setAttr(els.apexGuide, { x1: leftX, y1: leftY, x2: apexX, y2: apexY });
+      els.apexGuide.style.display = p.H > 1e-5 ? "" : "none";
+      els.labelApex.textContent = p.H > 1e-5 ? "最高点" : "最高点(重合)";
+    }
+
+    function render() {
+      const kin = currentKinematics();
+      const p = kin.p;
+      const trackCx = screenX(kin.trackX, p);
+      const r = p.R * scene.scale;
+      const leftX = trackCx - r;
+      const rightX = trackCx + r;
+      const rimY = screenY(p.R);
+      const ballX = screenX(kin.ballX, p);
+      const ballY = screenY(kin.ballY);
+      const cmX = screenX(p.beta * p.R);
+
+      setAttr(els.cmLine, { d: `M ${cmX.toFixed(2)} 78 L ${cmX.toFixed(2)} 358` });
+      setAttr(els.cmLabel, { x: cmX + 10, y: 90 });
+
+      els.grooveBody.setAttribute("d", grooveBodyPath(trackCx, p));
+      els.grooveArc.setAttribute("d", arcPath(trackCx, p));
+      setAttr(els.leftLip, { x1: leftX - scene.wallPad + 4, y1: rimY - 8, x2: leftX + 10, y2: rimY - 8 });
+      setAttr(els.rightLip, { x1: rightX - 10, y1: rimY - 8, x2: rightX + scene.wallPad - 4, y2: rimY - 8 });
+      setAttr(els.grooveLabel, { x: rightX + 22, y: scene.groundY - 24 });
+
+      setAttr(els.ball, { cx: ballX, cy: ballY, r: scene.ballR });
+      setAttr(els.ballShadow, {
+        cx: ballX,
+        cy: Math.min(scene.groundY - 8, screenY(0) + 20),
+        rx: 18 + Math.max(0, Math.min(16, (scene.groundY - ballY) / 22)),
+        ry: 5
+      });
+      const ballLabelY = kin.ballY > p.R + 0.04 ? ballY + 5 : ballY - 20;
+      setAttr(els.ballLabel, { x: ballX + 26, y: ballLabelY });
+
+      const releaseY = screenY(p.R + p.H);
+      const rightRimX = screenX(p.R);
+      els.heightLine.style.display = p.H > 1e-5 ? "" : "none";
+      els.heightLabel.style.display = p.H > 1e-5 ? "" : "none";
+      if (p.H > 1e-5) {
+        els.heightLine.setAttribute("d", `M ${rightRimX + 46} ${rimY} L ${rightRimX + 46} ${releaseY}`);
+        setAttr(els.heightLabel, { x: rightRimX + 54, y: (rimY + releaseY) / 2 });
+      }
+
+      els.rimGuide.setAttribute("d", `M ${leftX} ${rimY} L ${rightX} ${rimY}`);
+      const leftFlightX = screenX(2 * p.beta * p.R - p.R, p);
+      const rightFlightX = screenX(p.R, p);
+      els.flightLine.style.display = p.H > 1e-5 ? "" : "none";
+      if (p.H > 1e-5) {
+        els.flightLine.setAttribute("d", `M ${leftFlightX} ${rimY} L ${leftFlightX} ${screenY(p.R + p.H)} M ${rightFlightX} ${rimY} L ${rightFlightX} ${screenY(p.R + p.H)}`);
+      }
+
+      renderKeyMarkers(p, trackCx);
+
+      if (els.showTrace.checked && state.trail.length > 1) {
+        const d = state.trail.map((pt, index) => {
+          const x = screenX(pt.x, p);
+          const y = screenY(pt.y);
+          return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+        }).join(" ");
+        els.pathTrace.style.display = "";
+        els.pathTrace.setAttribute("d", d);
+      } else {
+        els.pathTrace.style.display = "none";
+      }
+
+      drawVelocity(els.velBall, els.velBallLabel, ballX, ballY, kin.ballVx, kin.ballVy, "velocity-ball", "v球");
+      drawVelocity(els.velGroove, els.velGrooveLabel, trackCx, scene.groundY - 24, kin.trackV, 0, "velocity-groove", "V槽");
+      drawEnergy(kin);
+      updateText(kin);
+      renderGraph(kin);
+    }
+
+    function reset(keepRunning = state.running) {
+      state.running = keepRunning;
+      initSimulation();
+      els.playPause.textContent = state.running ? "暂停" : "播放";
+      syncLabels();
+      refreshGraphData();
+      render();
+    }
+
+    function frame(timestamp) {
+      if (!state.lastFrame) state.lastFrame = timestamp;
+      const elapsed = Math.min(0.05, (timestamp - state.lastFrame) / 1000);
+      state.lastFrame = timestamp;
+      if (state.running) {
+        advance(elapsed);
+        render();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    els.playPause.addEventListener("click", () => {
+      state.running = !state.running;
+      els.playPause.textContent = state.running ? "暂停" : "播放";
+      state.lastFrame = 0;
+    });
+
+    els.step.addEventListener("click", () => {
+      state.running = false;
+      els.playPause.textContent = "播放";
+      advance(1 / 12);
+      render();
+    });
+
+    els.reset.addEventListener("click", () => reset(state.running));
+    els.jumpRight.addEventListener("click", () => jumpToKey("right"));
+    els.jumpBottom.addEventListener("click", () => jumpToKey("bottom"));
+    els.jumpLeft.addEventListener("click", () => jumpToKey("left"));
+    els.jumpApex.addEventListener("click", () => jumpToKey("apex"));
+    els.edgeCase.addEventListener("click", () => {
+      els.heightRatio.value = "0";
+      reset(state.running);
+    });
+    els.heightCase.addEventListener("click", () => {
+      els.heightRatio.value = "0.65";
+      reset(state.running);
+    });
+
+    [els.heightRatio, els.massRatio].forEach((input) => {
+      input.addEventListener("input", () => reset(state.running));
+    });
+
+    els.speedScale.addEventListener("input", syncLabels);
+    [els.showVelocity, els.showTrace, els.showEnergy, els.showFullCurve].forEach((input) => {
+      input.addEventListener("input", render);
+    });
+
+    updateHatches();
+    reset(false);
+    requestAnimationFrame(frame);
+
+    window.simExport = {
+      reset,
+      render,
+      advance,
+      getGraphDuration() {
+        return graphData.duration;
+      },
+      configure(options = {}) {
+        const {
+          caseButtonId,
+          heightRatio,
+          massRatio = "3",
+          speedScale = "1",
+          showVelocity = true,
+          showTrace = true,
+          showEnergy = false,
+          showFullCurve = true
+        } = options;
+
+        if (caseButtonId) {
+          document.querySelector(`#${caseButtonId}`)?.click();
+        }
+        if (heightRatio != null) els.heightRatio.value = heightRatio;
+        els.massRatio.value = massRatio;
+        els.speedScale.value = speedScale;
+        els.showVelocity.checked = showVelocity;
+        els.showTrace.checked = showTrace;
+        els.showEnergy.checked = showEnergy;
+        els.showFullCurve.checked = showFullCurve;
+        reset(false);
+      }
+    };
+  </script>
+</body>
+</html>

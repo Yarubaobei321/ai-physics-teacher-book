@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA 的复制 · 交互演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #0d1420; color: #dbe7f5; overflow: hidden;
+  }
+  header {
+    height: 56px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; background: linear-gradient(90deg,#101b30,#16233f);
+    border-bottom: 2px solid #2a3f63;
+  }
+  header h1 { font-size: 1.2rem; color: #8fd0ff; }
+  #stageBadge {
+    padding: 6px 16px; border-radius: 20px; font-size: 0.95rem; font-weight: 600;
+    background: #1d3a5f; color: #ffd54f; border: 1px solid #35608f;
+  }
+  main { display: flex; gap: 14px; padding: 12px; height: calc(100vh - 56px); }
+  .col-canvas {
+    flex: 1 1 0; min-width: 0; background: #101a2c; border: 1px solid #22304a;
+    border-radius: 10px; display: flex; flex-direction: column; align-items: center; padding: 8px;
+  }
+  canvas#scene {
+    width: 100%; height: calc(100% - 60px); max-width: 100%; max-height: 100%;
+    display: block; background: radial-gradient(circle at 50% 40%, #0f1a30 0%, #0a1120 100%);
+    border-radius: 8px;
+  }
+  #stageText {
+    width: 100%; min-height: 48px; margin-top: 6px; padding: 8px 12px;
+    background: #16233f; border-radius: 8px; font-size: 0.88rem; line-height: 1.6; color: #dce8f7;
+  }
+  #stageText b { color: #ffd54f; }
+  aside {
+    width: 360px; background: #111c30; border: 1px solid #22304a; border-radius: 10px;
+    padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  }
+  aside h2 { font-size: 0.95rem; color: #ffd54f; border-bottom: 1px solid #2a3f63; padding-bottom: 6px; }
+  .btnrow { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  button {
+    font-size: 0.88rem; padding: 9px 6px; border-radius: 8px; cursor: pointer;
+    border: 1px solid #3a5b86; background: #1c2f4d; color: #e6f0fb; font-weight: 600;
+  }
+  button:hover { background: #274465; }
+  button:active { transform: translateY(1px); }
+  button.act { background: #14532d; border-color: #2e9e5b; }
+  .kb-item { border: 1px solid #23344e; border-radius: 8px; padding: 8px 10px; margin-top: 6px; background: #0f1a2c; }
+  .kb-item h3 { font-size: 0.85rem; color: #8fd0ff; margin-bottom: 3px; }
+  .kb-item p { font-size: 0.78rem; color: #a9c2e0; line-height: 1.5; }
+  .pair-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 6px; }
+  .pair-table th, .pair-table td { border: 1px solid #2a3f63; padding: 4px 8px; text-align: center; }
+  .pair-table th { background: #16233f; color: #8fd0ff; }
+  .hb { font-size: 0.8rem; color: #9fe8b5; margin-top: 4px; }
+  .legend { font-size: 0.8rem; line-height: 1.7; color: #c7d8ee; margin-top: 6px; }
+  .sw { display: inline-block; width: 16px; height: 10px; border-radius: 3px; margin-right: 5px; }
+  .note { font-size: 0.74rem; color: #7fa3c9; line-height: 1.5; margin-top: 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧬 DNA 的复制 · 交互演示</h1>
+  <span id="stageBadge" role="status">初始状态</span>
+</header>
+<main>
+  <section class="col-canvas">
+    <canvas id="scene" width="700" height="720"
+      aria-label="DNA复制画布：双螺旋DNA、复制叉处解旋酶、前导链连续合成与后随链冈崎片段不连续合成、RNA引物、DNA连接酶；终局展示两个子代DNA双螺旋（各含一条母链一条新链）。"></canvas>
+    <div id="stageText" role="status">初始：一段双链 DNA（双螺旋），准备复制。点击「解旋酶」→「DNA 聚合酶」分步推进。</div>
+  </section>
+
+  <aside aria-label="侧栏知识库">
+    <div>
+      <h2>🎛 分步按钮</h2>
+      <div class="btnrow">
+        <button id="resetBtn" aria-label="重置">↺ 重置</button>
+        <button id="helicaseBtn" aria-label="解旋酶 解旋">🔓 解旋酶</button>
+        <button id="polBtn" aria-label="DNA聚合酶 合成">🧬 DNA聚合酶</button>
+      </div>
+      <p class="note">流程：重置 → 解旋酶（解旋，打开双链）→ DNA 聚合酶（按碱基互补配对合成新链，前导链连续、后随链以冈崎片段不连续）。</p>
+    </div>
+
+    <div>
+      <h2>🧪 碱基配对表（DNA 层面）</h2>
+      <table class="pair-table">
+        <tr><th>模板链</th><th>互补新链</th><th>氢键数</th></tr>
+        <tr><td>A</td><td>T</td><td>2 键（A＝T）</td></tr>
+        <tr><td>T</td><td>A</td><td>2 键（T＝A）</td></tr>
+        <tr><td>G</td><td>C</td><td>3 键（G≡C）</td></tr>
+        <tr><td>C</td><td>G</td><td>3 键（C≡G）</td></tr>
+      </table>
+      <p class="hb">氢键数标注：A＝T 两键、G≡C 三键。</p>
+    </div>
+
+    <div>
+      <h2>📚 核心知识库</h2>
+      <div class="kb-item"><h3>解旋酶</h3><p>在复制叉前方解开 DNA 双螺旋的氢键，使两条链分开，分别作为模板。</p></div>
+      <div class="kb-item"><h3>DNA 聚合酶</h3><p>按碱基互补配对（A—T、G—C）将游离核苷酸连接成新链；新链合成方向均为 5′→3′。</p></div>
+      <div class="kb-item"><h3>半保留复制</h3><p>每个子代 DNA 含一条母链（旧链）+ 一条新链，1 个 DNA → 2 个子代 DNA，遗传信息不变。</p></div>
+      <div class="kb-item"><h3>前导链 / 后随链</h3><p>前导链与解旋方向一致、连续合成；后随链与解旋方向相反、以冈崎片段不连续合成。两者方向相反但合成方向均为 5′→3′。</p></div>
+      <div class="kb-item"><h3>冈崎片段</h3><p>后随链上不连续合成的新链小片段，最终由 DNA 连接酶连接成完整链。</p></div>
+      <div class="kb-item"><h3>RNA 引物</h3><p>DNA 聚合酶不能从无到有合成，需先由 RNA 引物提供游离 3′-OH 才能起始合成。</p></div>
+      <div class="kb-item"><h3>DNA 连接酶</h3><p>将冈崎片段之间的缺口连接起来，形成完整的后随链。</p></div>
+    </div>
+
+    <div>
+      <h2>🎨 图例</h2>
+      <div class="legend">
+        <span class="sw" style="background:#4fc3f7"></span>母链（旧链，作模板）<br>
+        <span class="sw" style="background:#ffb74d"></span>新链（新合成，5′→3′）<br>
+        <span class="sw" style="background:#f48fb1"></span>RNA 引物<br>
+        <span class="sw" style="background:#ba68c8"></span>解旋酶 / DNA 聚合酶 / 连接酶
+      </div>
+    </div>
+  </aside>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var cv = document.getElementById('scene');
+  var ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+
+  // ---------- 数据 ----------
+  var TOP = 'ATGCGATCGTAC';   // 上链 3'→5'（左3'右5'）
+  var LEN = TOP.length;
+  function comp(b) { return b === 'A' ? 'T' : b === 'T' ? 'A' : b === 'G' ? 'C' : 'G'; }
+  var BOT = TOP.split('').map(comp).join('');  // 下链 5'→3'（左5'右3'）
+  var NEWBOT = [];  // 以上链为模板的新链（前导链，连续）
+  var NEWTOP = [];  // 以下链为模板的新链（后随链，冈崎片段）
+
+  // 阶段：0 初始，1 解旋，2 合成（含动画），3 完成（两个子代）
+  var stage = 0;
+  var synthT = 0;          // 合成动画进度 0..1
+  var playing = false;
+
+  var STAGE_TEXT = {
+    0: '初始状态：一段双链 DNA（双螺旋）。模板链方向：上链 <b>3′→5′</b>、下链 <b>5′→3′</b>。点击「解旋酶」开始。',
+    1: '<b>解旋阶段：</b>解旋酶（环形）在复制叉前方打开双链的氢键，两条母链分开，各自暴露为模板；模板链方向 3′→5′。',
+    2: '<b>合成阶段：</b>DNA 聚合酶按碱基互补配对（A—T、G—C）合成新链：<b>前导链连续合成</b>（5′→3′），<b>后随链以冈崎片段不连续合成</b>（每个片段需 RNA 引物起始，片段间由 DNA 连接酶连接）。',
+    3: '<b>完成阶段：</b>1 个 DNA 分子 → <b>2 个子代 DNA 分子</b>；每个子代 DNA 含一条母链（蓝）+ 一条新链（橙），体现<b>半保留复制</b>。'
+  };
+
+  function setStage(s) {
+    stage = s;
+    synthT = 0;
+    playing = false;
+    document.getElementById('stageBadge').textContent =
+      ['初始状态', '解旋阶段', '合成阶段', '完成（2 个子代）'][s];
+    document.getElementById('stageText').innerHTML = STAGE_TEXT[s];
+    document.getElementById('helicaseBtn').classList.toggle('act', s >= 1);
+    document.getElementById('polBtn').classList.toggle('act', s >= 2);
+    updateStatusBar();
+  }
+
+  function updateStatusBar() {
+    document.getElementById('stageBadge').textContent =
+      ['初始状态', '解旋阶段', '合成阶段', '完成（2 个子代）'][stage];
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', function () { setStage(0); });
+  document.getElementById('helicaseBtn').addEventListener('click', function () {
+    if (stage < 1) setStage(1);
+  });
+  document.getElementById('polBtn').addEventListener('click', function () {
+    if (stage < 1) setStage(1);
+    if (stage === 1 || stage === 2) {
+      if (stage === 1) { stage = 2; synthT = 0; playing = true; }
+      else if (!playing) { playing = true; }
+      updateStatusBar();
+      document.getElementById('stageText').innerHTML = STAGE_TEXT[2];
+    }
+  });
+
+  // ---------- 绘制 ----------
+  function baseColor(b) {
+    return b === 'A' ? '#ef5350' : b === 'T' ? '#26a69a' : b === 'G' ? '#fdd835' : '#5c6bc0';
+  }
+  function drawBase(x, y, b, r) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = baseColor(b); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#0b1220'; ctx.font = 'bold 12px "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b, x, y + 0.5);
+  }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function label(x, y, t, c, s) {
+    ctx.fillStyle = c || '#a9c2e0'; ctx.font = (s || 12) + 'px "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, x, y);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var cy = H / 2;
+    var amp = 40, x0 = 60, dx = (W - 180) / (LEN - 1), turn = 2 * Math.PI / 7;
+
+    if (stage === 0) {
+      // 完整双螺旋
+      var pT = [], pB = [];
+      for (var i = 0; i < LEN; i++) {
+        var th = i * turn;
+        var x = x0 + i * dx;
+        var yT = cy - amp * Math.sin(th), yB = cy + amp * Math.sin(th);
+        pT.push({ x: x, y: yT }); pB.push({ x: x, y: yB });
+        ctx.beginPath(); ctx.moveTo(x, yT); ctx.lineTo(x, yB);
+        ctx.strokeStyle = 'rgba(120,170,220,.2)'; ctx.lineWidth = 2; ctx.stroke();
+        drawBase(x, yT, TOP[i], 12);
+        drawBase(x, yB, BOT[i], 12);
+      }
+      drawStrand(pT, '#4fc3f7', 3); drawStrand(pB, '#4fc3f7', 3);
+      label(x0 - 26, pT[0].y, '3′', '#ff8a80', 13);
+      label(x0 + (LEN - 1) * dx + 26, pT[LEN - 1].y, '5′', '#ff8a80', 13);
+      label(x0 - 26, pB[0].y, '5′', '#80cbc4', 13);
+      label(x0 + (LEN - 1) * dx + 26, pB[LEN - 1].y, '3′', '#80cbc4', 13);
+      // 氢键标注
+      ctx.fillStyle = '#9fe8b5'; ctx.font = '11px sans-serif';
+      ctx.fillText('氢键：A＝T 2 键 · G≡C 3 键', W / 2, 30);
+      // 示例碱基对氢键数
+      ctx.beginPath(); ctx.arc(x0 + 2 * dx, cy - amp * Math.sin(2 * turn) - 24, 6, 0, 7);
+      label(x0 + 2 * dx, cy - amp * Math.sin(2 * turn) - 24, 'A＝T 2键', '#9fe8b5', 10);
+      ctx.beginPath(); ctx.arc(x0 + 5 * dx, cy + amp * Math.sin(5 * turn) + 24, 6, 0, 7);
+      label(x0 + 5 * dx, cy + amp * Math.sin(5 * turn) + 24, 'G≡C 3键', '#9fe8b5', 10);
+      label(W / 2, H - 40, '双击本地打开即可运行 · 一段双链 DNA 等待复制', '#5c7d9e', 12);
+    } else if (stage === 1 || stage === 2) {
+      var fp = stage === 1 ? LEN * 0.45 : LEN * 0.45 + synthT * LEN * 0.55;
+      fp = clamp(fp, 2, LEN);
+      var pT = [], pB = [];
+      for (var j = 0; j < LEN; j++) {
+        var o = clamp((fp - j) / 2, 0, 1);
+        var sepF = fp > 0 ? clamp((fp - j) / fp, 0, 1) : 0;
+        var th2 = j * turn;
+        var x2 = x0 + j * dx;
+        var yT = cy - (1 - o) * amp * Math.sin(th2) - o * sepF * 130;
+        var yB = cy + (1 - o) * amp * Math.sin(th2) + o * sepF * 130;
+        pT.push({ x: x2, y: yT }); pB.push({ x: x2, y: yB });
+        if (o < 0.6) {
+          ctx.beginPath(); ctx.moveTo(x2, yT); ctx.lineTo(x2, yB);
+          ctx.strokeStyle = 'rgba(120,170,220,.18)'; ctx.lineWidth = 2; ctx.stroke();
+        }
+        drawBase(x2, yT, TOP[j], 12);
+        drawBase(x2, yB, BOT[j], 12);
+      }
+      drawStrand(pT, '#4fc3f7', 3); drawStrand(pB, '#4fc3f7', 3);
+      label(x0 - 26, pT[0].y, '3′', '#ff8a80', 13);
+      label(x0 + (LEN - 1) * dx + 26, pT[LEN - 1].y, '5′', '#ff8a80', 13);
+      label(x0 - 26, pB[0].y, '5′', '#80cbc4', 13);
+      label(x0 + (LEN - 1) * dx + 26, pB[LEN - 1].y, '3′', '#80cbc4', 13);
+
+      // 合成动画：新链长度
+      if (stage === 2) {
+        var synL = Math.round(synthT * LEN);
+        // 前导链：以 top 为模板，连续合成，位置在 top 下方（5'→3' 向左到右）
+        var pNL = [], pNLpts = [];
+        for (var a = 0; a < synL; a++) pNLpts.push({ x: x0 + a * dx, y: pT[a].y + 26 });
+        if (pNLpts.length) {
+          drawStrand(pNLpts, '#ffb74d', 3);
+          for (var b = 0; b < pNLpts.length; b++) drawBase(pNLpts[b].x, pNLpts[b].y, comp(TOP[b]), 11);
+        }
+        label(x0 + 40, pT[0].y + 46, '前导链（连续，5′→3′）', '#ffb74d', 11);
+
+        // 后随链：以 bottom 为模板，冈崎片段（每片段约3个碱基），5'→3' 从右向左
+        var frag = 3;
+        var nFrag = Math.ceil(synL / frag);
+        for (var f = 0; f < nFrag; f++) {
+          var start = synL - 1 - f * frag;
+          var end = Math.max(0, start - frag + 1);
+          var pts = [];
+          for (var bb = start; bb >= end; bb--) pts.push({ x: x0 + bb * dx, y: pB[bb].y - 26 });
+          if (pts.length) {
+            drawStrand(pts, '#ffb74d', 3);
+            for (var c = 0; c < pts.length; c++) drawBase(pts[c].x, pts[c].y, comp(BOT[start - c]), 11);
+            // RNA 引物（片段起始端，粉色）
+            ctx.strokeStyle = '#f48fb1'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+            ctx.lineTo(pts[pts.length - 1].x + 10, pts[pts.length - 1].y);
+            ctx.stroke();
+          }
+        }
+        // DNA 连接酶
+        if (synL >= 4) {
+          for (var g = 2; g < synL - 1; g += frag) {
+            ctx.fillStyle = '#ba68c8';
+            ctx.beginPath(); ctx.arc(x0 + g * dx, pB[g].y - 26, 6, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        label(x0 + (LEN - 1) * dx - 40, pB[LEN - 1].y - 44, '后随链（冈崎片段，5′→3′）', '#ffb74d', 11);
+        label(x0 + (LEN - 1) * dx - 40, pB[LEN - 1].y + 44, '● RNA引物 ｜ 〇 DNA连接酶', '#c39bff', 10);
+
+        if (synL >= LEN) {
+          playing = false;
+          setTimeout(function () { setStage(3); }, 1200);
+        }
+      }
+
+      // 解旋酶
+      var fx = clamp(x0 + fp * dx, x0 + 20, x0 + (LEN - 1) * dx);
+      ctx.fillStyle = 'rgba(186,104,200,.25)';
+      ctx.beginPath();
+      for (var h = 0; h < 6; h++) {
+        var ang = Math.PI / 3 * h - Math.PI / 6;
+        var hx = fx + 17 * Math.cos(ang), hy = cy + 17 * Math.sin(ang);
+        if (h === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#ba68c8'; ctx.lineWidth = 3; ctx.stroke();
+      label(fx, cy + 34, '解旋酶', '#ba68c8', 12);
+
+      // DNA 聚合酶
+      if (stage === 2 && synL > 0) {
+        ctx.fillStyle = 'rgba(129,212,250,.3)';
+        ctx.beginPath(); ctx.ellipse(pT[synL - 1].x + 12, pT[synL - 1].y + 26, 24, 13, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#81d4fa'; ctx.lineWidth = 2; ctx.stroke();
+        label(pT[synL - 1].x + 12, pT[synL - 1].y + 46, 'DNA聚合酶', '#81d4fa', 10);
+      }
+      label(W / 2, 30, '复制叉：解旋酶在前 · DNA 聚合酶合成新链', '#8fd0ff', 12);
+    } else {
+      // 完成：两个子代双螺旋
+      var cyA = H * 0.28, cyB = H * 0.78;
+      drawDaughter(cyA, '子代 DNA ①', TOP, NEWBOT.length ? NEWBOT : BOT.split('').map(comp), '#4fc3f7', '#ffb74d');
+      drawDaughter(cyB, '子代 DNA ②', BOT, NEWTOP.length ? NEWTOP : TOP.split('').map(comp), '#4fc3f7', '#ffb74d');
+      label(W / 2, 34, '1 个 DNA → 2 个子代 DNA：每个均含一条母链（蓝）+ 一条新链（橙）= 半保留复制', '#7fe0a8', 13);
+    }
+  }
+
+  function drawDaughter(cy, name, template, newStr, colOld, colNew) {
+    var amp = 34, x0 = 60, dx = (W - 180) / (LEN - 1), turn = 2 * Math.PI / 7;
+    var pT = [], pB = [];
+    for (var i = 0; i < LEN; i++) {
+      var th = i * turn;
+      var x = x0 + i * dx;
+      var yT = cy - amp * Math.sin(th), yB = cy + amp * Math.sin(th);
+      pT.push({ x: x, y: yT }); pB.push({ x: x, y: yB });
+      ctx.beginPath(); ctx.moveTo(x, yT); ctx.lineTo(x, yB);
+      ctx.strokeStyle = 'rgba(120,170,220,.15)'; ctx.lineWidth = 2; ctx.stroke();
+      drawBase(x, yT, template[i], 12);
+      drawBase(x, yB, newStr[i], 12);
+    }
+    drawStrand(pT, colOld, 3); drawStrand(pB, colNew, 3);
+    label(x0 - 26, pT[0].y, '5′', '#ff8a80', 12);
+    label(x0 + (LEN - 1) * dx + 26, pT[LEN - 1].y, '3′', '#ff8a80', 12);
+    label(x0 - 26, pB[0].y, '3′', '#80cbc4', 12);
+    label(x0 + (LEN - 1) * dx + 26, pB[LEN - 1].y, '5′', '#80cbc4', 12);
+    label(x0 + 6, cy - amp - 36, name + '：上链=母链，下链=新链（5′→3′）', '#8fd0ff', 12, 'left');
+    ctx.textAlign = 'center';
+  }
+
+  function drawStrand(points, color, w) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (var i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+
+  // ---------- 动画 ----------
+  var last = 0;
+  function loop(t) {
+    if (last && playing) {
+      synthT += (t - last) / 1000 * 0.35;
+      if (synthT >= 1) synthT = 1;
+    }
+    last = t;
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // 准备终局的新链序列
+  function prepareFinal() {
+    NEWBOT = TOP.split('').map(comp);
+    NEWTOP = BOT.split('').map(comp);
+  }
+  prepareFinal();
+
+  setStage(0);
+  requestAnimationFrame(loop);
+
+  // 自检
+  console.log('[B04 自检] 模板 ATGC → 新链', 'ATGC'.split('').map(comp).join(''), '(期望 TACG，无 A-U)');
+  console.log('[B04 自检] 阶段顺序：0重置→1解旋→2合成→3完成两个子代');
+})();
+</script>
+</body>
+</html>

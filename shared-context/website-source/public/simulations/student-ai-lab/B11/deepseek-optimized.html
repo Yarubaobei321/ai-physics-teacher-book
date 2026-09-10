@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>遗传学与减数分裂 · 杂交模拟 + 时期数目表</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1c2733; --sub:#5b6b7a;
+    --line:#dbe4ee; --accent:#0d9488; --accent2:#f43f5e;
+    --ok:#16a34a; --err:#dc2626;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:0.95rem; line-height:1.55;
+  }
+  header{
+    background:linear-gradient(120deg,#115e59,#0d9488 55%,#14b8a6);
+    color:#fff; padding:16px 24px;
+  }
+  header h1{font-size:1.35rem;}
+  header p{font-size:.9rem; opacity:.92; margin-top:2px;}
+  .layout{
+    display:grid; grid-template-columns:.9fr 1.1fr 1.2fr; gap:14px;
+    padding:14px 18px; max-width:1500px; margin:0 auto; align-items:start;
+  }
+  @media (max-width:1200px){ .layout{grid-template-columns:1fr;} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:0 1px 3px rgba(16,42,67,.06);}
+  .card h2{font-size:1.02rem; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:10px;}
+  button{
+    font-family:inherit; font-size:.9rem; border:1px solid var(--line); background:#fff;
+    color:var(--ink); border-radius:8px; padding:7px 12px; cursor:pointer; transition:all .15s;
+  }
+  button:hover:not(:disabled){border-color:var(--accent); color:var(--accent);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button.primary:hover:not(:disabled){background:#0f766e; color:#fff;}
+  .row{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
+  .tab-btn.on{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+  .hint{font-size:.88rem; color:var(--sub); background:#f0fdfa; border-radius:8px; padding:8px 10px; margin:6px 0;}
+  .banner{background:#ccfbf1; border:1px solid #5eead4; color:#134e4a; border-radius:10px; padding:9px 12px; font-size:.9rem; margin:8px 0;}
+  table{border-collapse:collapse; width:100%; font-size:.9rem;}
+  th,td{border:1px solid var(--line); padding:6px 8px; text-align:center;}
+  th{background:#f0fdfa; color:#134e4a;}
+  tr.sel td{background:#ccfbf1; font-weight:700; border-color:#5eead4;}
+  .cross-box{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:8px 0; background:#fff;}
+  .cross-box h4{font-size:.92rem; color:#115e59; margin-bottom:6px;}
+  .ratio{font-weight:700; color:#0f766e; font-size:1rem;}
+  .detail{background:#f0fdfa; border:1px solid #5eead4; color:#134e4a; border-radius:10px; padding:9px 12px; font-size:.9rem; min-height:44px; margin-top:8px;}
+  .qa{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:10px 0; background:#fff;}
+  .qa .ans{display:none; background:#f0fdf4; border:1px solid #bbf7d0; color:#14532d; border-radius:8px; padding:8px 10px; margin-top:8px; font-size:.9rem;}
+  .observe{border:1px dashed #5eead4; border-radius:10px; padding:10px 12px; background:#fbfdfd; font-size:.9rem;}
+  .badge{display:inline-block; background:#ccfbf1; color:#0f766e; border-radius:20px; padding:1px 10px; font-size:.8rem; margin-right:4px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧫 遗传学与减数分裂交互讲学</h1>
+  <p>模块一：遗传杂交模拟（1–3 对等位基因） · 模块二：减数分裂 2n=4 各时期数目表</p>
+</header>
+
+<div class="layout">
+
+  <!-- ============ 页签切换区 ============ -->
+  <section class="card" aria-label="模块页签与对比题">
+    <h2>🧭 模块页签</h2>
+    <div class="row">
+      <button id="tabH" class="primary tab-btn on">① 遗传杂交</button>
+      <button id="tabM" class="tab-btn">② 减数分裂</button>
+    </div>
+    <div class="banner">📏 计数口径声明：全表按 <b>每个细胞</b>、染色体按 <b>着丝粒计数</b>；末期I / 末期II 分别按「每个子细胞」读数。</div>
+
+    <div class="qa">
+      <h4 style="font-size:.92rem;">🧐 对比题：减Ⅱ 起始细胞倍性 vs 有丝分裂起始细胞倍性</h4>
+      <p style="font-size:.9rem;">减Ⅱ 起始细胞是单倍体（n）还是二倍体（2n）？与有丝分裂起始细胞有何不同？</p>
+      <button class="primary" id="qaBtn1" style="margin-top:6px;">查看答案</button>
+      <div class="ans" id="qaAns1">答案：减Ⅱ 起始细胞为<b>单倍体（n）</b>，染色体已减半、不含同源染色体；有丝分裂起始细胞为<b>二倍体（2n）</b>，含同源染色体。二者起始倍性不同。</div>
+    </div>
+
+    <div class="observe">
+      <h4 style="font-size:.92rem;">🔍 观察任务</h4>
+      <p style="font-size:.9rem;">观察下方时期表并归纳两条规律：<b>①核 DNA 在 S 期加倍</b>（由 4→8）；<b>②染色体数在后期Ⅱ 加倍</b>（着丝粒分裂，由 2→4）。</p>
+    </div>
+  </section>
+
+  <!-- ============ 遗传杂交模块 ============ -->
+  <section class="card" id="panelH" aria-label="遗传杂交模块">
+    <h2>🧬 遗传杂交模拟</h2>
+    <p class="hint">选择独立等位基因的对数（1/2/3），点击「模拟杂交」，查看 P→F1→F2 表现型比例（分数）与配子种类数。</p>
+    <div class="row">
+      <button id="pairs1" class="primary">1 对（Aa）</button>
+      <button id="pairs2">2 对（AaBb）</button>
+      <button id="pairs3">3 对（AaBbCc）</button>
+    </div>
+    <div class="row">
+      <button id="btnCross" class="primary">🧬 模拟杂交</button>
+    </div>
+    <div id="crossOut">
+      <p style="color:var(--sub); font-size:.9rem;">尚未模拟。请选择等位基因对数后点击「模拟杂交」。</p>
+    </div>
+  </section>
+
+  <!-- ============ 减数分裂模块 ============ -->
+  <section class="card" id="panelM" aria-label="减数分裂时期数目表" style="display:none;">
+    <h2>🧮 减数分裂 2n=4 各时期数目表</h2>
+    <p class="hint">点击时期按钮，高亮对应行并显示核 DNA、染色体、染色单体三列读数与关键事件解释。</p>
+    <div class="row" id="stageBtns">
+      <button>G1</button>
+      <button>S</button>
+      <button>G2</button>
+      <button>前期I</button>
+      <button>中期I</button>
+      <button>后期I</button>
+      <button>末期I</button>
+      <button>前期II</button>
+      <button>中期II</button>
+      <button>后期II</button>
+      <button>末期II</button>
+    </div>
+    <table aria-label="减数分裂各时期核 DNA、染色体、染色单体数目表">
+      <thead>
+        <tr><th>时期</th><th>核 DNA</th><th>染色体</th><th>染色单体</th></tr>
+      </thead>
+      <tbody id="meiBody"></tbody>
+    </table>
+    <div class="detail" id="meiDetail">请点击上方时期按钮查看该时期读数与关键事件。</div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  /* ===== 页签切换 ===== */
+  const tabH = document.getElementById("tabH");
+  const tabM = document.getElementById("tabM");
+  const panelH = document.getElementById("panelH");
+  const panelM = document.getElementById("panelM");
+  function showTab(which){
+    tabH.classList.toggle("on", which === "H");
+    tabM.classList.toggle("on", which === "M");
+    panelH.style.display = which === "H" ? "block" : "none";
+    panelM.style.display = which === "M" ? "block" : "none";
+  }
+  tabH.addEventListener("click", function(){ showTab("H"); });
+  tabM.addEventListener("click", function(){ showTab("M"); });
+
+  /* ===== 杂交模块 ===== */
+  let pairs = 1;
+  const pb = {1:document.getElementById("pairs1"), 2:document.getElementById("pairs2"), 3:document.getElementById("pairs3")};
+  function setPairs(n){
+    pairs = n;
+    Object.keys(pb).forEach(function(k){ pb[k].classList.toggle("primary", Number(k) === n); });
+  }
+  pb[1].addEventListener("click", function(){ setPairs(1); });
+  pb[2].addEventListener("click", function(){ setPairs(2); });
+  pb[3].addEventListener("click", function(){ setPairs(3); });
+
+  const CROSS = {
+    1:{
+      P:"AA × aa",
+      F1:"Aa（全部为显性）",
+      gametes:"2 种（A、a）",
+      F2:"表现型比 3:1 ＝ 显性 3/4 : 隐性 1/4（(3:1)¹）"
+    },
+    2:{
+      P:"AABB × aabb",
+      F1:"AaBb（全部为显性）",
+      gametes:"4 种（AB、Ab、aB、ab）",
+      F2:"表现型比 9:3:3:1 ＝ 9/16 : 3/16 : 3/16 : 1/16（(3:1)²）"
+    },
+    3:{
+      P:"AABBCC × aabbcc",
+      F1:"AaBbCc（全部为显性）",
+      gametes:"8 种（ABC、ABc、AbC、Abc、aBC、aBc、abC、abc）",
+      F2:"表现型比 27:9:9:9:3:3:3:1 ＝ 27/64 : 9/64 ×3 : 3/64 ×3 : 1/64（(3:1)³）"
+    }
+  };
+  document.getElementById("btnCross").addEventListener("click", function(){
+    const c = CROSS[pairs];
+    const html =
+      '<div class="cross-box"><h4>P 亲本杂交</h4><p>P：' + c.P + '</p></div>' +
+      '<div class="cross-box"><h4>F1 子一代</h4><p>' + c.F1 + '</p></div>' +
+      '<div class="cross-box"><h4>配子种类数</h4><p class="ratio">' + c.gametes + '</p><p style="font-size:.85rem;color:var(--sub);">配子种类数 = 2ⁿ（n 为杂合等位基因对数）。</p></div>' +
+      '<div class="cross-box"><h4>F2 子二代（F1 自交）</h4><p class="ratio">' + c.F2 + '</p></div>';
+    document.getElementById("crossOut").innerHTML = html;
+  });
+
+  /* ===== 减数分裂时期表 ===== */
+  const STAGES = [
+    {name:"G1", dna:4, chr:4, mono:0, desc:"分裂间期 G1 期：DNA 尚未复制，每条染色体为单条 DNA，无姐妹染色单体。"},
+    {name:"S", dna:8, chr:4, mono:8, desc:"分裂间期 S 期：DNA 复制完成，核 DNA 由 4 加倍为 8；着丝粒数不变，染色体仍为 4；每条染色体含 2 条姐妹染色单体。"},
+    {name:"G2", dna:8, chr:4, mono:8, desc:"分裂间期 G2 期：DNA 保持 8，染色体 4，染色单体 8，为分裂做准备。"},
+    {name:"前期I", dna:8, chr:4, mono:8, desc:"减Ⅰ前期：同源染色体联会形成四分体，可发生交叉互换；数目仍为 DNA=8、染色体=4、染色单体=8。"},
+    {name:"中期I", dna:8, chr:4, mono:8, desc:"减Ⅰ中期：同源染色体成对排列在赤道板两侧；DNA=8、染色体=4、染色单体=8。"},
+    {name:"后期I", dna:8, chr:4, mono:8, desc:"减Ⅰ后期：同源染色体分离、分别移向两极，着丝粒未分裂，染色体仍按 4 计（不是 8）；DNA=8、染色单体=8。"},
+    {name:"末期I", dna:4, chr:2, mono:4, desc:"减Ⅰ末期（按每个子细胞）：细胞一分为二，染色体数减半为 n=2，DNA=4、染色单体=4。"},
+    {name:"前期II", dna:4, chr:2, mono:4, desc:"减Ⅱ前期（每个子细胞）：染色体 n=2，DNA=4、染色单体=4。"},
+    {name:"中期II", dna:4, chr:2, mono:4, desc:"减Ⅱ中期（每个子细胞）：着丝粒排列于赤道板，DNA=4、染色体=2、染色单体=4。"},
+    {name:"后期II", dna:4, chr:4, mono:0, desc:"减Ⅱ后期（每个细胞）：着丝粒分裂、姐妹染色单体分离，染色体数由 2 加倍为 4；DNA=4、染色单体=0。"},
+    {name:"末期II", dna:2, chr:2, mono:0, desc:"减Ⅱ末期：形成 4 个单倍体配子，每个核 DNA=2、染色体=2、染色单体=0。"}
+  ];
+  const meiBody = document.getElementById("meiBody");
+  const meiDetail = document.getElementById("meiDetail");
+  const stgButtons = document.getElementById("stageBtns").children;
+  let selIdx = -1;
+
+  STAGES.forEach(function(s){
+    const tr = document.createElement("tr");
+    tr.id = "meirow-" + s.name;
+    tr.innerHTML = "<td>" + s.name + "</td><td>" + s.dna + "</td><td>" + s.chr + "</td><td>" + s.mono + "</td>";
+    meiBody.appendChild(tr);
+  });
+  function selectStage(i){
+    selIdx = i;
+    for(let k=0;k<stgButtons.length;k++){
+      stgButtons[k].classList.toggle("primary", k === i);
+    }
+    for(let k=0;k<STAGES.length;k++){
+      const tr = document.getElementById("meirow-" + STAGES[k].name);
+      tr.classList.toggle("sel", k === i);
+    }
+    const s = STAGES[i];
+    let extra = "";
+    if(s.name === "后期I"){
+      extra = "（重点：着丝粒未分裂，染色体仍按 4 计，绝不为 8）";
+    }
+    if(s.name === "后期II"){
+      extra = "（与有丝分裂后期区别：减Ⅱ后期着丝粒分裂、染色体在该细胞内由 2 变 4；有丝分裂后期，体细胞 2n=4 着丝粒分裂时染色体由 4 变 8，均分到两极各 4）";
+    }
+    meiDetail.innerHTML = "<b>" + s.name + "</b>：核 DNA = " + s.dna + "，染色体 = " + s.chr + "，染色单体 = " + s.mono + "。" + s.desc + extra;
+  }
+  for(let k=0;k<stgButtons.length;k++){
+    stgButtons[k].addEventListener("click", function(){ selectStage(k); });
+  }
+
+  /* ===== 对比题 ===== */
+  document.getElementById("qaBtn1").addEventListener("click", function(){
+    document.getElementById("qaAns1").style.display = "block";
+  });
+
+  /* 初始 */
+  showTab("H");
+})();
+</script>
+</body>
+</html>

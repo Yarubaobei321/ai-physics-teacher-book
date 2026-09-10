@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA 的转录与翻译 · 互动配对</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #eef3f9; color: #23354d; min-height: 100vh;
+  }
+  header {
+    background: #ffffff; border-bottom: 2px solid #d8e2ee; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;
+  }
+  header h1 { font-size: 1.35rem; color: #2c4a76; }
+  .tabs { display: flex; gap: 6px; }
+  .tab {
+    font-size: 0.95rem; padding: 8px 20px; border-radius: 20px; border: 1px solid #b9c9de;
+    background: #f2f6fb; color: #33507a; cursor: pointer; font-weight: 600;
+  }
+  .tab.active { background: #2c6bb4; color: #fff; border-color: #2c6bb4; }
+  main { max-width: 1080px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: #fff; border: 1px solid #d8e2ee; border-radius: 12px; padding: 16px 18px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 1.05rem; color: #2c6bb4; margin-bottom: 6px; }
+  .card .sub { font-size: 0.85rem; color: #6b7f9c; margin-bottom: 12px; }
+  .module { display: none; }
+  .module.active { display: block; }
+  .chain-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .end5, .end3 { font-size: 0.85rem; font-weight: 700; color: #c0392b; }
+  .end5b, .end3b { font-size: 0.85rem; font-weight: 700; color: #177a5a; }
+  .base-chip {
+    width: 42px; height: 42px; border-radius: 9px; display: inline-flex; align-items: center;
+    justify-content: center; font-size: 1rem; font-weight: 700; border: 1px solid #c3d1e2;
+  }
+  .b-A { background: #ffd6d6; color: #a11616; } .b-U { background: #c9efe4; color: #0d6b4f; }
+  .b-T { background: #d3e7f5; color: #12507a; } .b-G { background: #fbeec3; color: #8a6a00; }
+  .b-C { background: #d9defa; color: #24307e; }
+  .slot {
+    width: 42px; height: 42px; border-radius: 9px; border: 2px dashed #9db4d1;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700;
+    background: #f7fafd; cursor: pointer; transition: background .15s;
+  }
+  .slot.locked { border: 2px solid #2e9e5b; background: #dff5e6; color: #166b37; cursor: default; }
+  .slot.hover { background: #e3f0fc; }
+  .tray {
+    display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; padding: 12px; border-radius: 10px;
+    background: #f2f6fb; border: 1px solid #d8e2ee;
+  }
+  .tray .tlabel { font-size: 0.85rem; color: #6b7f9c; align-self: center; margin-right: 4px; }
+  .pick-btn {
+    width: 46px; height: 46px; border-radius: 10px; font-size: 1.05rem; font-weight: 700;
+    border: 1px solid #c3d1e2; cursor: pointer; user-select: none;
+  }
+  .pick-btn:active { transform: scale(.95); }
+  .pick-btn.selected { outline: 3px solid #2c6bb4; outline-offset: 1px; }
+  .anti-btn { padding: 8px 12px; border-radius: 10px; border: 1px solid #c3d1e2; cursor: pointer; font-size: 0.95rem; font-weight: 700; }
+  .anti-btn.selected { outline: 3px solid #2c6bb4; outline-offset: 1px; }
+  .release-btn { padding: 8px 12px; border-radius: 10px; border: 1px solid #c0392b; background: #ffe1de; color: #a11616; cursor: pointer; font-size: 0.9rem; font-weight: 700; }
+  #feedback {
+    margin: 10px 0; padding: 10px 14px; border-radius: 10px; font-size: 0.92rem; line-height: 1.6; display: none;
+  }
+  #feedback.err { display: block; background: #ffe4e1; border: 1px solid #e07a6a; color: #8f2317; }
+  #feedback.ok { display: block; background: #e2f7e8; border: 1px solid #7bc693; color: #176b35; }
+  .control-bar { display: flex; gap: 10px; align-items: center; margin-top: 4px; }
+  button.ctl {
+    font-size: 0.95rem; padding: 9px 18px; border-radius: 9px; border: 1px solid #b9c9de;
+    background: #2c6bb4; color: #fff; cursor: pointer; font-weight: 600;
+  }
+  button.ctl.secondary { background: #f2f6fb; color: #33507a; }
+  #progress { font-size: 0.9rem; color: #2c6bb4; font-weight: 700; }
+  .codon-box { border: 1px solid #c3d1e2; border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+  .codon-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .codon { display: flex; gap: 3px; }
+  .codon .cb {
+    width: 34px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700; border: 1px solid #c3d1e2;
+  }
+  .anti-slot {
+    width: 58px; height: 40px; border-radius: 8px; border: 2px dashed #9db4d1; background: #f7fafd;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  }
+  .anti-slot.locked { border: 2px solid #2e9e5b; background: #dff5e6; color: #166b37; cursor: default; }
+  .anti-slot.stop { border: 2px solid #c0392b; background: #ffe1de; color: #a11616; cursor: default; }
+  .peptide-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+  .aa-chip {
+    padding: 6px 12px; border-radius: 18px; background: #2c6bb4; color: #fff; font-size: 0.9rem; font-weight: 700;
+  }
+  .aa-chip.stop { background: #c0392b; }
+  .legend { font-size: 0.82rem; color: #6b7f9c; margin-top: 10px; line-height: 1.7; }
+  .pair-ref { font-size: 0.85rem; color: #177a5a; font-weight: 600; }
+  @media (max-width: 720px) {
+    .base-chip, .slot { width: 34px; height: 34px; font-size: 0.85rem; }
+    .codon .cb { width: 28px; height: 28px; font-size: 0.78rem; }
+    .anti-slot { width: 48px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧬 DNA 的转录与翻译 · 互动配对</h1>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-m="trans" role="tab" aria-selected="true">📄 转录 DNA→mRNA</button>
+    <button class="tab" data-m="tl" role="tab" aria-selected="false">🔬 翻译 mRNA→多肽</button>
+  </div>
+</header>
+
+<main>
+  <!-- 反馈 -->
+  <div id="feedback" role="alert"></div>
+
+  <!-- ============ 模块一 · 转录 ============ -->
+  <section class="card module active" id="mod-trans">
+    <h2>模块一 · 转录（DNA 模板链 → mRNA）</h2>
+    <p class="sub">配对规则：A—U、T—A、G—C、C—G（RNA 用 U 代替 T）。把碱基拖入 mRNA 空槽，或先点击碱基再点击空槽；配对正确会锁定为绿色。请从 mRNA 5′ 端开始按顺序配对。</p>
+
+    <div class="chain-row">
+      <span class="end5">5′</span>
+      <div id="tlCoding"></div>
+      <span class="end3">3′</span>
+      <span class="legend" style="margin-left:8px;">编码链（非模板链，仅参考）</span>
+    </div>
+    <div class="chain-row">
+      <span class="end3">3′</span>
+      <div id="tTemplate"></div>
+      <span class="end5">5′</span>
+      <span class="pair-ref" style="margin-left:8px;">DNA 模板链（3′→5′）</span>
+    </div>
+    <div class="chain-row">
+      <span class="end5b">5′</span>
+      <div id="mRNAslots"></div>
+      <span class="end3b">3′</span>
+      <span class="pair-ref" style="margin-left:8px;">mRNA 槽位（合成方向 5′→3′）</span>
+    </div>
+
+    <div class="tray" role="toolbar" aria-label="RNA碱基库">
+      <span class="tlabel">碱基库：</span>
+      <button class="pick-btn b-A" draggable="true" data-base="A" aria-label="碱基A">A</button>
+      <button class="pick-btn b-U" draggable="true" data-base="U" aria-label="碱基U">U</button>
+      <button class="pick-btn b-G" draggable="true" data-base="G" aria-label="碱基G">G</button>
+      <button class="pick-btn b-C" draggable="true" data-base="C" aria-label="碱基C">C</button>
+    </div>
+    <div class="control-bar">
+      <button class="ctl secondary" id="resetTrans">↺ 重置转录</button>
+    </div>
+  </section>
+
+  <!-- ============ 模块二 · 翻译 ============ -->
+  <section class="card module" id="mod-tl">
+    <h2>模块二 · 翻译（mRNA 密码子 → tRNA 反密码子 → 多肽）</h2>
+    <p class="sub">从 mRNA 5′ 端 AUG 起，每次一个密码子（3 个核苷酸）。把互补的 tRNA 反密码子拖入密码子下方的槽；遇到终止密码子 UGA 时无 tRNA，点击「释放因子」结束。配对正确会锁定为绿色。</p>
+
+    <div class="chain-row">
+      <span class="end5b">5′</span>
+      <div id="mRNAdisplay"></div>
+      <span class="end3b">3′</span>
+    </div>
+
+    <div class="codon-box">
+      <div class="codon-row">
+        <span class="legend" style="width:90px;">密码子 ①</span>
+        <div class="codon" data-ci="0"></div>
+        <span style="font-size:0.85rem;color:#6b7f9c;">反密码子：</span>
+        <span class="anti-slot" data-ci="0" role="button" aria-label="密码子0反密码子槽"></span>
+      </div>
+      <div class="codon-row" style="margin-top:8px;">
+        <span class="legend" style="width:90px;">密码子 ②</span>
+        <div class="codon" data-ci="1"></div>
+        <span style="font-size:0.85rem;color:#6b7f9c;">反密码子：</span>
+        <span class="anti-slot" data-ci="1" role="button" aria-label="密码子1反密码子槽"></span>
+      </div>
+      <div class="codon-row" style="margin-top:8px;">
+        <span class="legend" style="width:90px;">密码子 ③</span>
+        <div class="codon" data-ci="2"></div>
+        <span style="font-size:0.85rem;color:#6b7f9c;">反密码子：</span>
+        <span class="anti-slot" data-ci="2" role="button" aria-label="密码子2反密码子槽"></span>
+      </div>
+      <div class="codon-row" style="margin-top:8px;">
+        <span class="legend" style="width:90px;">密码子 ④</span>
+        <div class="codon" data-ci="3"></div>
+        <span style="font-size:0.85rem;color:#6b7f9c;">终止：</span>
+        <span class="anti-slot" data-ci="3" role="button" aria-label="终止密码子槽"></span>
+      </div>
+    </div>
+
+    <div class="tray" role="toolbar" aria-label="tRNA反密码子库">
+      <span class="tlabel">tRNA 反密码子库：</span>
+      <button class="anti-btn" draggable="true" data-anti="UAC" aria-label="反密码子UAC">UAC</button>
+      <button class="anti-btn" draggable="true" data-anti="GGA" aria-label="反密码子GGA">GGA</button>
+      <button class="anti-btn" draggable="true" data-anti="UUC" aria-label="反密码子UUC">UUC</button>
+      <span style="font-size:0.85rem;color:#c0392b;align-self:center;">（UGA 无 tRNA）</span>
+    </div>
+    <div class="control-bar" style="margin:6px 0;">
+      <button class="release-btn" id="releaseBtn" draggable="true" aria-label="释放因子">🧪 释放因子（用于 UGA 终止）</button>
+    </div>
+
+    <div class="peptide-row">
+      <span class="legend">多肽产物：</span>
+      <span id="peptideBox" class="legend">（翻译完成后显示）</span>
+    </div>
+    <div class="control-bar">
+      <button class="ctl secondary" id="resetTl">↺ 重置翻译</button>
+    </div>
+  </section>
+
+  <!-- 底部控制 -->
+  <div class="card" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+    <div style="display:flex; gap:10px; align-items:center;">
+      <button class="ctl" id="nextBtn">下一步 →</button>
+      <button class="ctl secondary" id="resetAll">♻ 全部重置</button>
+    </div>
+    <span id="progress">转录进度：0/12 ｜ 翻译进度：0/4</span>
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  // ---------- 标准序列 ----------
+  var TEMPLATE = 'TACGGATTCACT';   // 模板链 3'→5'
+  var mRNA = 'AUGCCUAAGUGA';       // 5'→3'
+  var CODONS = ['AUG', 'CCU', 'AAG', 'UGA'];
+  var ANTI = { AUG: 'UAC', CCU: 'GGA', AAG: 'UUC', UGA: null };
+  var AA = { AUG: 'Met', CCU: 'Pro', AAG: 'Lys', UGA: '终止' };
+  var COMP_RULE = { A: 'U', T: 'A', G: 'C', C: 'G' };
+
+  // 编码链 = 模板互补（DNA 层面，U→T）
+  var codingSeq = TEMPLATE.split('').map(function (b) { return b === 'A' ? 'T' : b === 'T' ? 'A' : b === 'G' ? 'C' : 'G'; }).join('');
+
+  // ---------- 状态 ----------
+  var transLocked = {};    // 槽位 -> 碱基
+  var transNext = 0;
+  var tlLocked = {};       // 密码子下标 -> 反密码子
+  var tlNext = 0;
+  var selectedBase = null;
+  var selectedAnti = null;
+
+  // ---------- 构建 UI ----------
+  function buildRows() {
+    var codingEl = document.getElementById('tlCoding');
+    var tplEl = document.getElementById('tTemplate');
+    var mrnaEl = document.getElementById('mRNAslots');
+    codingEl.innerHTML = '';
+    tplEl.innerHTML = '';
+    mrnaEl.innerHTML = '';
+    for (var i = 0; i < 12; i++) {
+      codingEl.innerHTML += '<span class="base-chip b-' + codingSeq[i] + '">' + codingSeq[i] + '</span>';
+      tplEl.innerHTML += '<span class="base-chip b-' + TEMPLATE[i] + '">' + TEMPLATE[i] + '</span>';
+      mrnaEl.innerHTML += '<span class="slot" data-slot="' + i + '" role="button" aria-label="mRNA第' + (i + 1) + '槽"></span>';
+    }
+    // mRNA 显示（翻译模块）
+    var md = document.getElementById('mRNAdisplay');
+    md.innerHTML = '';
+    for (var j = 0; j < 12; j++) {
+      md.innerHTML += '<span class="base-chip b-' + mRNA[j] + '">' + mRNA[j] + '</span>';
+    }
+    // 密码子组
+    document.querySelectorAll('.codon').forEach(function (el) {
+      var ci = parseInt(el.getAttribute('data-ci'), 10);
+      var c = CODONS[ci];
+      el.innerHTML = c.split('').map(function (b) { return '<span class="cb b-' + b + '">' + b + '</span>'; }).join('');
+    });
+  }
+
+  // ---------- 转录配对 ----------
+  function tryTrans(i, base) {
+    if (transLocked[i]) {
+      feedback('该槽已锁定，不可二次操作。', 'err');
+      return false;
+    }
+    if (i !== transNext) {
+      feedback('顺序错误：请从 mRNA 5′ 端第 ' + (transNext + 1) + ' 个槽开始，按 5′→3′ 顺序配对。', 'err');
+      return false;
+    }
+    var tpl = TEMPLATE[i];
+    var correct = COMP_RULE[tpl];          // 期望的 RNA 碱基
+    if (base === correct) {
+      transLocked[i] = base;
+      var el = document.querySelector('.slot[data-slot="' + i + '"]');
+      el.textContent = base;
+      el.classList.add('locked');
+      transNext++;
+      feedback('✔ 正确！模板第 ' + (i + 1) + ' 位 ' + tpl + ' → mRNA ' + base + '（' + ruleText(tpl) + '）。', 'ok');
+      updateProgress();
+      if (transNext === 12) {
+        feedback('🎉 转录完成！mRNA = <b>AUG CCU AAG UGA</b>（5′→3′），与模板逐位互补。点击「下一步 →」进入翻译。', 'ok');
+      }
+      return true;
+    }
+    feedback('✘ 错误：模板第 ' + (i + 1) + ' 位为 <b>' + tpl + '</b>，转录应配 <b>' + correct + '</b>（' + ruleText(tpl) + '），你拖入的是 <b>' + base + '</b>。已锁定槽位：' + transNext + ' 个。', 'err');
+    return false;
+  }
+  function ruleText(tpl) {
+    if (tpl === 'A') return '模板为 A，转录应配 U（RNA 用 U 代替 T），而非 T';
+    if (tpl === 'T') return '模板为 T，转录应配 A';
+    if (tpl === 'G') return '模板为 G，转录应配 C';
+    return '模板为 C，转录应配 G';
+  }
+
+  // ---------- 翻译配对 ----------
+  function tryTl(ci, anti) {
+    if (ci > tlNext) {
+      feedback('顺序错误：请从 mRNA 5′ 端起始密码子 AUG 起，按顺序配对。当前应处理密码子 ' + (tlNext + 1) + '（' + CODONS[tlNext] + '）。', 'err');
+      return false;
+    }
+    if (tlLocked[ci]) {
+      feedback('该槽已锁定，不可二次操作。', 'err');
+      return false;
+    }
+    var codon = CODONS[ci];
+    if (codon === 'UGA') {
+      feedback('UGA 是终止密码子：<b>没有 tRNA 与之配对</b>，应点击「释放因子」结束翻译，而不是拖入反密码子。', 'err');
+      return false;
+    }
+    if (anti === ANTI[codon]) {
+      tlLocked[ci] = anti;
+      var el = document.querySelector('.anti-slot[data-ci="' + ci + '"]');
+      el.textContent = anti;
+      el.classList.add('locked');
+      tlNext = Math.max(tlNext, ci + 1);
+      updatePeptide();
+      feedback('✔ 正确！密码子 ' + codon + ' ↔ 反密码子 ' + anti + '（方向互补），添加 ' + AA[codon] + '。', 'ok');
+      updateProgress();
+      return true;
+    }
+    feedback('✘ 错误：密码子 <b>' + codon + '</b> 的反密码子应为 <b>' + ANTI[codon] + '</b>（与密码子互补），你拖入的是 <b>' + anti + '</b>。', 'err');
+    return false;
+  }
+
+  function doStop() {
+    var ci = tlNext;
+    if (ci !== 3) {
+      feedback('顺序错误：应先完成密码子 ①②③ 的配对，最后才处理第 4 个密码子 UGA 的终止。', 'err');
+      return;
+    }
+    if (tlLocked[3]) { feedback('终止已完成。', 'ok'); return; }
+    tlLocked[3] = 'RELEASE';
+    var el = document.querySelector('.anti-slot[data-ci="3"]');
+    el.textContent = '终止';
+    el.classList.add('stop');
+    updatePeptide();
+    feedback('🎉 翻译完成！遇到 UGA 终止密码子，释放因子识别终止，无 tRNA 参与；多肽 = <b>Met—Pro—Lys</b>。', 'ok');
+    updateProgress();
+  }
+
+  function updatePeptide() {
+    var box = document.getElementById('peptideBox');
+    var parts = [];
+    if (tlLocked[0]) parts.push('Met');
+    if (tlLocked[1]) parts.push('Pro');
+    if (tlLocked[2]) parts.push('Lys');
+    var html = parts.map(function (p) { return '<span class="aa-chip">' + p + '</span>'; }).join(' → ');
+    if (tlLocked[3]) html += ' → <span class="aa-chip stop">终止（UGA）</span>';
+    box.innerHTML = html || '（翻译完成后显示）';
+  }
+
+  function updateProgress() {
+    var t = Object.keys(transLocked).length;
+    var l = Object.keys(tlLocked).length;
+    document.getElementById('progress').textContent = '转录进度：' + t + '/12 ｜ 翻译进度：' + l + '/4';
+  }
+
+  function feedback(msg, cls) {
+    var f = document.getElementById('feedback');
+    f.className = cls;
+    f.innerHTML = msg;
+    f.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
+  // ---------- 交互：拖拽 + 点击 ----------
+  var baseBtns = document.querySelectorAll('.pick-btn');
+  function selectBase(btn) {
+    selectedBase = btn ? btn.getAttribute('data-base') : null;
+    baseBtns.forEach(function (b) { b.classList.toggle('selected', b === btn); });
+  }
+  baseBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      selectBase(btn === document.querySelector('.pick-btn.selected') ? null : btn);
+    });
+    btn.addEventListener('dragstart', function (e) {
+      e.dataTransfer.setData('text/plain', btn.getAttribute('data-base'));
+    });
+  });
+
+  document.querySelectorAll('.slot').forEach(function (slot) {
+    slot.addEventListener('click', function () {
+      var i = parseInt(slot.getAttribute('data-slot'), 10);
+      if (selectedBase) { tryTrans(i, selectedBase); selectBase(null); }
+      else feedback('请先在碱基库点击一个碱基，再点击空槽；或把碱基直接拖入空槽。', 'err');
+    });
+    slot.addEventListener('dragover', function (e) { e.preventDefault(); slot.classList.add('hover'); });
+    slot.addEventListener('dragleave', function () { slot.classList.remove('hover'); });
+    slot.addEventListener('drop', function (e) {
+      e.preventDefault(); slot.classList.remove('hover');
+      var base = e.dataTransfer.getData('text/plain');
+      if (base) tryTrans(parseInt(slot.getAttribute('data-slot'), 10), base);
+    });
+  });
+
+  // tRNA 按钮
+  var antiBtns = document.querySelectorAll('.anti-btn');
+  function selectAnti(btn) {
+    selectedAnti = btn ? btn.getAttribute('data-anti') : null;
+    antiBtns.forEach(function (b) { b.classList.toggle('selected', b === btn); });
+  }
+  antiBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      selectAnti(btn === document.querySelector('.anti-btn.selected') ? null : btn);
+    });
+    btn.addEventListener('dragstart', function (e) {
+      e.dataTransfer.setData('text/plain', btn.getAttribute('data-anti'));
+    });
+  });
+
+  document.querySelectorAll('.anti-slot').forEach(function (slot) {
+    slot.addEventListener('click', function () {
+      var ci = parseInt(slot.getAttribute('data-ci'), 10);
+      if (ci === 3) { doStop(); return; }
+      if (selectedAnti) { tryTl(ci, selectedAnti); selectAnti(null); }
+      else feedback('请先在 tRNA 库点击一个反密码子，再点击空槽；或把反密码子拖入空槽。', 'err');
+    });
+    slot.addEventListener('dragover', function (e) { e.preventDefault(); });
+    slot.addEventListener('drop', function (e) {
+      e.preventDefault();
+      var ci = parseInt(slot.getAttribute('data-ci'), 10);
+      var anti = e.dataTransfer.getData('text/plain');
+      if (ci === 3) { if (anti) feedback('UGA 无 tRNA，请点击「释放因子」。', 'err'); return; }
+      if (anti) tryTl(ci, anti);
+    });
+  });
+  document.getElementById('releaseBtn').addEventListener('click', doStop);
+  document.getElementById('releaseBtn').addEventListener('dragstart', function (e) {
+    e.dataTransfer.setData('text/plain', 'RELEASE');
+  });
+
+  // ---------- 重置与切换 ----------
+  function resetTrans() {
+    transLocked = {}; transNext = 0;
+    document.querySelectorAll('.slot').forEach(function (s) {
+      s.textContent = ''; s.classList.remove('locked');
+    });
+    selectBase(null);
+    updateProgress();
+    feedback('', 'ok'); document.getElementById('feedback').style.display = 'none';
+  }
+  function resetTl() {
+    tlLocked = {}; tlNext = 0;
+    document.querySelectorAll('.anti-slot').forEach(function (s) {
+      s.textContent = ''; s.classList.remove('locked', 'stop');
+    });
+    selectAnti(null);
+    updatePeptide();
+    updateProgress();
+  }
+  document.getElementById('resetTrans').addEventListener('click', resetTrans);
+  document.getElementById('resetTl').addEventListener('click', resetTl);
+  document.getElementById('resetAll').addEventListener('click', function () {
+    resetTrans(); resetTl();
+    document.querySelector('.tab[data-m="trans"]').click();
+    feedback('已全部重置。', 'ok');
+  });
+  document.getElementById('nextBtn').addEventListener('click', function () {
+    if (transNext < 12) {
+      feedback('请先完成转录（剩余 ' + (12 - transNext) + ' 个槽）再进入翻译。', 'err');
+      return;
+    }
+    if (Object.keys(tlLocked).length < 4) {
+      document.querySelector('.tab[data-m="tl"]').click();
+      return;
+    }
+    feedback('全部完成！转录 mRNA = AUG CCU AAG UGA；翻译多肽 = Met—Pro—Lys（UGA 终止，无 tRNA）。', 'ok');
+  });
+
+  // 阶段切换 tab
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      tab.classList.add('active'); tab.setAttribute('aria-selected', 'true');
+      var m = tab.getAttribute('data-m');
+      document.getElementById('mod-trans').classList.toggle('active', m === 'trans');
+      document.getElementById('mod-tl').classList.toggle('active', m === 'tl');
+    });
+  });
+
+  // ---------- 初始化 ----------
+  buildRows();
+  updateProgress();
+
+  // 自检
+  console.log('[B05 自检] 模板 TACGGATTCACT → mRNA', mRNA, '(期望 AUGCCUAAGUGA)');
+  console.log('[B05 自检] AUG↔UAC, CCU↔GGA, AAG↔UUC, UGA=终止无tRNA');
+})();
+</script>
+</body>
+</html>

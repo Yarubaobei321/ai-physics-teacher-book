@@ -1,0 +1,533 @@
+---
+import type { WorkbenchConfig } from '../data/project-learning';
+
+type Props = {
+  title: string;
+  intro: string;
+  workbenches: WorkbenchConfig[];
+  embedded?: boolean;
+};
+
+const { title, intro, workbenches, embedded = false } = Astro.props;
+const instanceId = `project-workbench-${Math.random().toString(36).slice(2)}`;
+const showTabs = workbenches.length > 1;
+---
+
+<section
+  class:list={[
+    'overflow-hidden',
+    embedded ? 'rounded-md border border-slate-200 bg-white' : 'tool-surface'
+  ]}
+  data-project-workbench
+  id={instanceId}
+>
+  <div class:list={[
+    'border-b border-slate-200 bg-yucai-50/80',
+    embedded ? 'p-4 sm:p-5' : 'p-5 sm:p-6'
+  ]}>
+    <p class="eyebrow">DATA WORKBENCH</p>
+    <h2 class:list={[
+      'mt-2 font-black text-ink',
+      embedded ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl'
+    ]}>{title}</h2>
+    <p class="mt-3 max-w-3xl leading-7 text-slate-700">{intro}</p>
+  </div>
+
+  <div class="p-5 sm:p-6">
+    {showTabs && (
+      <div class="flex flex-wrap gap-2" data-workbench-tabs>
+        {
+          workbenches.map((item, index) => (
+            <button
+              type="button"
+              class="focus-ring rounded-md border px-4 py-2 text-sm font-bold transition data-[active=true]:border-yucai-700 data-[active=true]:bg-yucai-700 data-[active=true]:text-white data-[active=false]:border-slate-300 data-[active=false]:bg-white data-[active=false]:text-slate-700 data-[active=false]:hover:border-yucai-300"
+              data-workbench-tab={index}
+              data-active={index === 0 ? 'true' : 'false'}
+            >
+              {item.title}
+            </button>
+          ))
+        }
+      </div>
+    )}
+
+    <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+      <div class="min-w-0">
+        <div class="rounded-md border border-slate-200 bg-white">
+          <div class="border-b border-slate-100 p-4">
+            <h3 class="text-lg font-black text-ink" data-workbench-title>{workbenches[0]?.title}</h3>
+            <p class="mt-1 text-sm leading-6 text-slate-600" data-workbench-subtitle>{workbenches[0]?.subtitle}</p>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[720px] text-left text-sm">
+              <thead class="bg-slate-100 text-xs font-black text-slate-600" data-workbench-head></thead>
+              <tbody class="divide-y divide-slate-100" data-workbench-body></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button type="button" class="focus-ring h-10 rounded-md bg-yucai-700 px-4 text-sm font-bold text-white transition hover:bg-yucai-800" data-load-sample>
+            载入示例数据
+          </button>
+          <button type="button" class="focus-ring h-10 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100" data-add-row>
+            添加一行
+          </button>
+          <button type="button" class="focus-ring h-10 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100" data-clear-rows>
+            清空表格
+          </button>
+          <button type="button" class="focus-ring h-10 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100" data-export-csv>
+            导出 CSV
+          </button>
+          <button type="button" class="focus-ring h-10 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100" data-export-png>
+            导出结果图片
+          </button>
+        </div>
+      </div>
+
+      <aside class="min-w-0">
+        <div class="rounded-md border border-yucai-200 bg-white p-4">
+          <p class="text-sm font-black text-yucai-700" data-result-label>{workbenches[0]?.resultLabel}</p>
+          <p class="mt-2 font-mono text-2xl font-black text-ink" data-result-value>—</p>
+          <p class="mt-1 font-mono text-xs leading-5 text-slate-500" data-result-detail>填写数据后自动计算</p>
+        </div>
+        <canvas class="mt-4 h-[320px] w-full rounded-md border border-slate-200 bg-white" data-workbench-chart aria-label="项目式学习数据图表"></canvas>
+        <ul class="mt-4 space-y-2 rounded-md bg-lab p-4 text-sm leading-6 text-slate-700" data-workbench-notes></ul>
+      </aside>
+    </div>
+  </div>
+
+  <script is:inline type="application/json" data-workbench-config set:html={JSON.stringify(workbenches)} />
+</section>
+
+<script is:inline>
+  (() => {
+    const roots = Array.from(document.querySelectorAll('[data-project-workbench]:not([data-workbench-ready])'));
+
+    const finite = (value) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    const fmt = (value, digits = 3) => Number.isFinite(value) ? value.toFixed(digits) : '';
+    const triggerDownload = (blob, filename) => {
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = filename;
+      anchor.style.display = 'none';
+      document.body.appendChild(anchor);
+      anchor.click();
+      window.setTimeout(() => {
+        URL.revokeObjectURL(url);
+        anchor.remove();
+      }, 1200);
+    };
+    const avg = (values) => {
+      const valid = values.filter(Number.isFinite);
+      return valid.length ? valid.reduce((sum, value) => sum + value, 0) / valid.length : NaN;
+    };
+
+    const fitLine = (points) => {
+      const pts = points.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+      const n = pts.length;
+      if (n < 2) return null;
+      let sx = 0, sy = 0, sxx = 0, sxy = 0;
+      for (const p of pts) {
+        sx += p.x;
+        sy += p.y;
+        sxx += p.x * p.x;
+        sxy += p.x * p.y;
+      }
+      const denom = n * sxx - sx * sx;
+      if (Math.abs(denom) < 1e-12) return null;
+      const slope = (n * sxy - sx * sy) / denom;
+      const intercept = (sy - slope * sx) / n;
+      const meanY = sy / n;
+      let ssTot = 0, ssRes = 0;
+      for (const p of pts) {
+        const predicted = slope * p.x + intercept;
+        ssTot += (p.y - meanY) ** 2;
+        ssRes += (p.y - predicted) ** 2;
+      }
+      return { slope, intercept, r2: ssTot < 1e-12 ? 1 : 1 - ssRes / ssTot };
+    };
+
+    const derivedColumns = (kind) => {
+      const commonG = [
+        { key: 'g', label: 'g / (m/s²)', digits: 3 },
+        { key: 'error', label: '误差 / %', digits: 2 }
+      ];
+      const map = {
+        'phone-slowmo': [{ key: 't', label: 't / s', digits: 3 }, ...commonG],
+        pendulum: [{ key: 'T', label: 'T / s', digits: 3 }, ...commonG],
+        accelerometer: [{ key: 'g', label: '合加速度 / (m/s²)', digits: 3 }, { key: 'error', label: '误差 / %', digits: 2 }],
+        'water-drop': [{ key: 't', label: 't / s', digits: 3 }, ...commonG],
+        'spring-scale': commonG,
+        ht2: [{ key: 't2', label: 't² / s²', digits: 4 }],
+        t2l: [{ key: 'T2', label: 'T² / s²', digits: 4 }],
+        fm: commonG,
+        t2m: [{ key: 'T2', label: 'T² / s²', digits: 4 }],
+        momentum: [
+          { key: 'pBefore', label: '碰前总动量', digits: 4 },
+          { key: 'pAfter', label: '碰后总动量', digits: 4 },
+          { key: 'diff', label: '偏差 / %', digits: 2 }
+        ]
+      };
+      return map[kind] ?? [];
+    };
+
+    const calculateRow = (row, kind) => {
+      const out = {};
+      if (kind === 'phone-slowmo') {
+        const h = finite(row.h), frames = finite(row.frames), fps = finite(row.fps);
+        out.t = fps > 0 ? frames / fps : NaN;
+        out.g = out.t > 0 ? (2 * h) / (out.t ** 2) : NaN;
+      } else if (kind === 'pendulum') {
+        const L = finite(row.L), totalTime = finite(row.totalTime), cycles = finite(row.cycles);
+        out.T = cycles > 0 ? totalTime / cycles : NaN;
+        out.g = out.T > 0 ? (4 * Math.PI ** 2 * L) / (out.T ** 2) : NaN;
+      } else if (kind === 'accelerometer') {
+        const ax = finite(row.ax), ay = finite(row.ay), az = finite(row.az);
+        out.g = Math.sqrt(ax ** 2 + ay ** 2 + az ** 2);
+      } else if (kind === 'water-drop') {
+        const h = finite(row.h), totalTime = finite(row.totalTime), drops = finite(row.drops);
+        out.t = drops > 0 ? totalTime / drops : NaN;
+        out.g = out.t > 0 ? (2 * h) / (out.t ** 2) : NaN;
+      } else if (kind === 'spring-scale' || kind === 'fm') {
+        const m = finite(row.m), F = finite(row.F);
+        out.g = m > 0 ? F / m : NaN;
+      } else if (kind === 'ht2') {
+        const t = finite(row.t);
+        out.t2 = t ** 2;
+      } else if (kind === 't2l' || kind === 't2m') {
+        const T = finite(row.T);
+        out.T2 = T ** 2;
+      } else if (kind === 'momentum') {
+        const m1 = finite(row.m1), u1 = finite(row.u1), m2 = finite(row.m2), u2 = finite(row.u2), v1 = finite(row.v1), v2 = finite(row.v2);
+        out.pBefore = m1 * u1 + m2 * u2;
+        out.pAfter = m1 * v1 + m2 * v2;
+        out.diff = Math.abs(out.pBefore) > 1e-9 ? Math.abs((out.pAfter - out.pBefore) / out.pBefore) * 100 : NaN;
+      }
+      if ('g' in out) out.error = Number.isFinite(out.g) ? ((out.g - 9.8) / 9.8) * 100 : NaN;
+      return out;
+    };
+
+    const chartPoints = (config, rows, derived) => {
+      if (config.kind === 'spring-scale' || config.kind === 'fm') return rows.map((row) => ({ x: finite(row.m), y: finite(row.F) }));
+      if (config.kind === 'ht2') return rows.map((row, index) => ({ x: derived[index].t2, y: finite(row.h) }));
+      if (config.kind === 't2l') return rows.map((row, index) => ({ x: finite(row.L), y: derived[index].T2 }));
+      if (config.kind === 't2m') return rows.map((row, index) => ({ x: finite(row.m), y: derived[index].T2 }));
+      if (config.kind === 'momentum') return rows.flatMap((_row, index) => [
+        { group: `第${index + 1}组`, label: '碰前', value: derived[index].pBefore },
+        { group: `第${index + 1}组`, label: '碰后', value: derived[index].pAfter }
+      ]);
+      return derived.map((row, index) => ({ label: `第${index + 1}组`, value: row.g }));
+    };
+
+    const resultText = (config, rows, derived) => {
+      const points = chartPoints(config, rows, derived);
+      if (config.kind === 'ht2') {
+        const fit = fitLine(points);
+        return fit ? { value: `${(2 * fit.slope).toFixed(3)} m/s²`, detail: `h = ${fit.slope.toFixed(4)}·t² ${fit.intercept >= 0 ? '+' : '-'} ${Math.abs(fit.intercept).toFixed(4)}，R²=${fit.r2.toFixed(4)}` } : { value: '—', detail: '至少需要 2 个有效点' };
+      }
+      if (config.kind === 't2l') {
+        const fit = fitLine(points);
+        return fit && Math.abs(fit.slope) > 1e-12 ? { value: `${(4 * Math.PI ** 2 / fit.slope).toFixed(3)} m/s²`, detail: `T² = ${fit.slope.toFixed(4)}·L ${fit.intercept >= 0 ? '+' : '-'} ${Math.abs(fit.intercept).toFixed(4)}，R²=${fit.r2.toFixed(4)}` } : { value: '—', detail: '至少需要 2 个有效点' };
+      }
+      if (config.kind === 't2m') {
+        const fit = fitLine(points);
+        return fit && Math.abs(fit.slope) > 1e-12 ? { value: `${(4 * Math.PI ** 2 / fit.slope).toFixed(2)} N/m`, detail: `T² = ${fit.slope.toFixed(4)}·m ${fit.intercept >= 0 ? '+' : '-'} ${Math.abs(fit.intercept).toFixed(4)}，R²=${fit.r2.toFixed(4)}` } : { value: '—', detail: '至少需要 2 个有效点' };
+      }
+      if (config.kind === 'spring-scale' || config.kind === 'fm') {
+        const fit = fitLine(points);
+        return fit ? { value: `${fit.slope.toFixed(3)} m/s²`, detail: `F = ${fit.slope.toFixed(3)}·m ${fit.intercept >= 0 ? '+' : '-'} ${Math.abs(fit.intercept).toFixed(3)}，R²=${fit.r2.toFixed(4)}` } : { value: '—', detail: '至少需要 2 个有效点' };
+      }
+      if (config.kind === 'momentum') {
+        const meanDiff = avg(derived.map((row) => row.diff));
+        return Number.isFinite(meanDiff) ? { value: `${meanDiff.toFixed(2)} %`, detail: '越接近 0，说明总动量越接近守恒。' } : { value: '—', detail: '至少需要 1 组完整碰撞数据' };
+      }
+      const meanG = avg(derived.map((row) => row.g));
+      return Number.isFinite(meanG) ? { value: `${meanG.toFixed(3)} m/s²`, detail: `相对 9.8 m/s² 的平均误差 ${(((meanG - 9.8) / 9.8) * 100).toFixed(2)} %` } : { value: '—', detail: '至少需要 1 组有效数据' };
+    };
+
+    const resizeCanvas = (canvas) => {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+      canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+      return ratio;
+    };
+
+    const drawEmpty = (ctx, canvas, ratio, text) => {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#64748b';
+      ctx.font = `${14 * ratio}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    };
+
+    const drawAxes = (ctx, canvas, ratio, xLabel, yLabel, xMin, xMax, yMin, yMax, options = {}) => {
+      const showXNumbers = options.showXNumbers !== false;
+      const pad = { top: 22 * ratio, right: 22 * ratio, bottom: 48 * ratio, left: 60 * ratio };
+      const plot = { left: pad.left, top: pad.top, width: canvas.width - pad.left - pad.right, height: canvas.height - pad.top - pad.bottom };
+      plot.bottom = plot.top + plot.height;
+      plot.right = plot.left + plot.width;
+      const sx = (x) => plot.left + ((x - xMin) / Math.max(1e-9, xMax - xMin)) * plot.width;
+      const sy = (y) => plot.bottom - ((y - yMin) / Math.max(1e-9, yMax - yMin)) * plot.height;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1 * ratio;
+      ctx.font = `${11 * ratio}px system-ui, sans-serif`;
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i <= 5; i += 1) {
+        const y = plot.top + (plot.height / 5) * i;
+        ctx.beginPath();
+        ctx.moveTo(plot.left, y);
+        ctx.lineTo(plot.right, y);
+        ctx.stroke();
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'right';
+        ctx.fillText((yMax - ((yMax - yMin) / 5) * i).toFixed(2), plot.left - 8 * ratio, y);
+      }
+      for (let i = 0; i <= 5; i += 1) {
+        if (!showXNumbers) break;
+        const x = plot.left + (plot.width / 5) * i;
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'center';
+        ctx.fillText((xMin + ((xMax - xMin) / 5) * i).toFixed(2), x, plot.bottom + 16 * ratio);
+      }
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(plot.left, plot.top);
+      ctx.lineTo(plot.left, plot.bottom);
+      ctx.lineTo(plot.right, plot.bottom);
+      ctx.stroke();
+      ctx.fillStyle = '#334155';
+      ctx.font = `${12 * ratio}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.save();
+      ctx.translate(16 * ratio, plot.top + plot.height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(yLabel, 0, 0);
+      ctx.restore();
+      if (xLabel) {
+        ctx.fillText(xLabel, plot.left + plot.width / 2, canvas.height - 14 * ratio);
+      }
+      return { plot, sx, sy };
+    };
+
+    const drawScatter = (canvas, config, rows, derived) => {
+      const ratio = resizeCanvas(canvas);
+      const ctx = canvas.getContext('2d');
+      const points = chartPoints(config, rows, derived).filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
+      if (!ctx) return;
+      if (points.length < 1) {
+        drawEmpty(ctx, canvas, ratio, '填写数据后生成图像');
+        return;
+      }
+      const xs = points.map((p) => p.x);
+      const ys = points.map((p) => p.y);
+      const xMin = Math.min(0, ...xs);
+      const xMax = Math.max(...xs) || 1;
+      const yMinRaw = Math.min(0, ...ys);
+      const yMaxRaw = Math.max(...ys) || 1;
+      const yPad = (yMaxRaw - yMinRaw) * 0.12 || 0.5;
+      const { sx, sy } = drawAxes(ctx, canvas, ratio, config.xLabel || 'x', config.yLabel || 'y', xMin, xMax * 1.06, yMinRaw - yPad, yMaxRaw + yPad);
+
+      const fit = fitLine(points);
+      if (fit) {
+        ctx.strokeStyle = '#f4a51c';
+        ctx.lineWidth = 2 * ratio;
+        ctx.beginPath();
+        ctx.moveTo(sx(xMin), sy(fit.slope * xMin + fit.intercept));
+        ctx.lineTo(sx(xMax * 1.06), sy(fit.slope * (xMax * 1.06) + fit.intercept));
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#0b63c7';
+      for (const p of points) {
+        ctx.beginPath();
+        ctx.arc(sx(p.x), sy(p.y), 4 * ratio, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    };
+
+    const drawBars = (canvas, config, rows, derived) => {
+      const ratio = resizeCanvas(canvas);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const values = chartPoints(config, rows, derived).filter((p) => Number.isFinite(p.value));
+      if (!values.length) {
+        drawEmpty(ctx, canvas, ratio, '填写数据后生成柱状图');
+        return;
+      }
+      const maxAbs = Math.max(10, ...values.map((p) => Math.abs(p.value))) * 1.15;
+      const { plot, sy } = drawAxes(ctx, canvas, ratio, '', config.kind === 'momentum' ? '动量 / kg·m·s⁻¹' : 'g / (m/s²)', 0, values.length, config.kind === 'momentum' ? -maxAbs : 0, maxAbs, { showXNumbers: false });
+      const barW = Math.max(12 * ratio, plot.width / values.length * 0.56);
+      const zeroY = config.kind === 'momentum' ? sy(0) : plot.bottom;
+      values.forEach((item, index) => {
+        const x = plot.left + (index + 0.5) * (plot.width / values.length) - barW / 2;
+        const y = sy(item.value);
+        ctx.fillStyle = item.label === '碰后' ? '#22c55e' : '#0b63c7';
+        ctx.fillRect(x, Math.min(y, zeroY), barW, Math.abs(zeroY - y));
+        ctx.fillStyle = '#334155';
+        ctx.font = `${11 * ratio}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(config.kind === 'momentum' ? `${item.group}${item.label}` : item.label, x + barW / 2, plot.bottom + 32 * ratio);
+      });
+      if (config.kind !== 'momentum') {
+        const mean = avg(values.map((p) => p.value));
+        if (Number.isFinite(mean)) {
+          const y = sy(mean);
+          ctx.strokeStyle = '#f4a51c';
+          ctx.setLineDash([6 * ratio, 4 * ratio]);
+          ctx.beginPath();
+          ctx.moveTo(plot.left, y);
+          ctx.lineTo(plot.right, y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+    };
+
+    const exportCsv = (config, rows, derived) => {
+      const columns = [
+        ...config.inputs.map((input) => ({ key: input.key, label: `${input.label}${input.unit ? ` / ${input.unit}` : ''}`, source: 'input' })),
+        ...derivedColumns(config.kind).map((column) => ({ ...column, source: 'derived' }))
+      ];
+      const lines = [
+        `# ${config.title}`,
+        `# ${new Date().toLocaleString('zh-CN')}`,
+        columns.map((column) => column.label).join(',')
+      ];
+      rows.forEach((row, index) => {
+        lines.push(columns.map((column) => {
+          const value = column.source === 'input' ? row[column.key] : derived[index][column.key];
+          return Number.isFinite(Number(value)) ? String(value) : '';
+        }).join(','));
+      });
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+      triggerDownload(blob, `${config.title}.csv`);
+    };
+
+    const exportPng = (canvas, config, result) => {
+      const ratio = window.devicePixelRatio || 1;
+      const merged = document.createElement('canvas');
+      merged.width = Math.max(canvas.width, 720 * ratio);
+      merged.height = canvas.height + 100 * ratio;
+      const ctx = merged.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, merged.width, merged.height);
+      ctx.fillStyle = '#102033';
+      ctx.font = `${20 * ratio}px system-ui, sans-serif`;
+      ctx.fillText(config.title, 20 * ratio, 34 * ratio);
+      ctx.fillStyle = '#0b63c7';
+      ctx.font = `${14 * ratio}px system-ui, sans-serif`;
+      ctx.fillText(`${config.resultLabel}: ${result.value}`, 20 * ratio, 60 * ratio);
+      ctx.fillStyle = '#475569';
+      ctx.font = `${12 * ratio}px system-ui, sans-serif`;
+      ctx.fillText(result.detail, 20 * ratio, 82 * ratio);
+      ctx.drawImage(canvas, 0, 100 * ratio);
+      merged.toBlob((blob) => {
+        if (!blob) return;
+        triggerDownload(blob, `${config.title}.png`);
+      }, 'image/png');
+    };
+
+    roots.forEach((root) => {
+      root.dataset.workbenchReady = 'true';
+      const configs = JSON.parse(root.querySelector('[data-workbench-config]')?.textContent || '[]');
+      let active = 0;
+      let rows = configs[0]?.sampleRows.map((row) => ({ ...row })) || [{}];
+      let latestResult = { value: '—', detail: '' };
+
+      const titleEl = root.querySelector('[data-workbench-title]');
+      const subtitleEl = root.querySelector('[data-workbench-subtitle]');
+      const headEl = root.querySelector('[data-workbench-head]');
+      const bodyEl = root.querySelector('[data-workbench-body]');
+      const chart = root.querySelector('[data-workbench-chart]');
+      const resultLabel = root.querySelector('[data-result-label]');
+      const resultValue = root.querySelector('[data-result-value]');
+      const resultDetail = root.querySelector('[data-result-detail]');
+      const notesEl = root.querySelector('[data-workbench-notes]');
+
+      const render = () => {
+        const config = configs[active];
+        const derived = rows.map((row) => calculateRow(row, config.kind));
+        latestResult = resultText(config, rows, derived);
+        titleEl.textContent = config.title;
+        subtitleEl.textContent = config.subtitle;
+        resultLabel.textContent = config.resultLabel;
+        resultValue.textContent = latestResult.value;
+        resultDetail.textContent = latestResult.detail;
+        notesEl.innerHTML = config.notes.map((note) => `<li class="list-disc pl-1">${note}</li>`).join('');
+
+        const columns = derivedColumns(config.kind);
+        headEl.innerHTML = `<tr>${config.inputs.map((input) => `<th class="px-3 py-3">${input.label}<span class="font-normal text-slate-400"> / ${input.unit}</span></th>`).join('')}${columns.map((column) => `<th class="px-3 py-3">${column.label}</th>`).join('')}<th class="px-3 py-3">操作</th></tr>`;
+        bodyEl.innerHTML = rows.map((row, rowIndex) => {
+          const inputCells = config.inputs.map((input) => `<td class="px-3 py-2"><input class="focus-ring h-9 w-28 rounded-md border border-slate-300 px-2 font-mono text-sm" type="number" data-row="${rowIndex}" data-key="${input.key}" value="${Number.isFinite(Number(row[input.key])) ? row[input.key] : ''}" step="${input.step || '0.01'}" ${input.min ? `min="${input.min}"` : ''} /></td>`).join('');
+          const derivedCells = columns.map((column) => `<td class="px-3 py-2 font-mono text-sm text-slate-700">${fmt(derived[rowIndex][column.key], column.digits)}</td>`).join('');
+          return `<tr>${inputCells}${derivedCells}<td class="px-3 py-2"><button type="button" class="focus-ring rounded-md border border-slate-300 px-3 py-1 text-xs font-bold text-slate-600 hover:bg-slate-100" data-delete-row="${rowIndex}">删除</button></td></tr>`;
+        }).join('');
+        if (config.chart === 'scatter') drawScatter(chart, config, rows, derived);
+        else drawBars(chart, config, rows, derived);
+      };
+
+      root.querySelectorAll('[data-workbench-tab]').forEach((button) => {
+        button.addEventListener('click', () => {
+          active = Number(button.dataset.workbenchTab || 0);
+          rows = configs[active].sampleRows.map((row) => ({ ...row }));
+          root.querySelectorAll('[data-workbench-tab]').forEach((tab) => {
+            tab.dataset.active = tab === button ? 'true' : 'false';
+          });
+          render();
+        });
+      });
+
+      bodyEl.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        const rowIndex = Number(target.dataset.row);
+        const key = target.dataset.key;
+        if (!key || !rows[rowIndex]) return;
+        rows[rowIndex][key] = finite(target.value);
+        render();
+      });
+
+      bodyEl.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-delete-row]');
+        if (!button) return;
+        rows.splice(Number(button.dataset.deleteRow), 1);
+        if (!rows.length) rows.push({});
+        render();
+      });
+
+      root.querySelector('[data-load-sample]').addEventListener('click', () => {
+        rows = configs[active].sampleRows.map((row) => ({ ...row }));
+        render();
+      });
+      root.querySelector('[data-add-row]').addEventListener('click', () => {
+        rows.push({});
+        render();
+      });
+      root.querySelector('[data-clear-rows]').addEventListener('click', () => {
+        rows = [{}];
+        render();
+      });
+      root.querySelector('[data-export-csv]').addEventListener('click', () => {
+        exportCsv(configs[active], rows, rows.map((row) => calculateRow(row, configs[active].kind)));
+      });
+      root.querySelector('[data-export-png]').addEventListener('click', () => {
+        exportPng(chart, configs[active], latestResult);
+      });
+
+      render();
+      window.addEventListener('resize', render);
+    });
+  })();
+</script>

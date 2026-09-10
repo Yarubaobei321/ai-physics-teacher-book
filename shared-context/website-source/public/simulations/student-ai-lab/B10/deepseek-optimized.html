@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA 转录为 mRNA · 动画演示</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1c2733; --sub:#5b6b7a;
+    --line:#dbe4ee; --accent:#7c3aed; --accent2:#db2777;
+    --ok:#16a34a; --err:#dc2626;
+    --coding:#3b82f6; --template:#16a34a; --mrna:#f59e0b; --pol:#7c3aed;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:0.95rem; line-height:1.55;
+  }
+  header{
+    background:linear-gradient(120deg,#4c1d95,#7c3aed 55%,#db2777);
+    color:#fff; padding:16px 24px;
+  }
+  header h1{font-size:1.35rem;}
+  header p{font-size:.9rem; opacity:.92; margin-top:2px;}
+  .layout{
+    display:grid; grid-template-columns:1.3fr .8fr 1fr; gap:14px;
+    padding:14px 18px; max-width:1500px; margin:0 auto; align-items:start;
+  }
+  @media (max-width:1200px){ .layout{grid-template-columns:1fr;} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:0 1px 3px rgba(16,42,67,.06);}
+  .card h2{font-size:1.02rem; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:10px;}
+  button{
+    font-family:inherit; font-size:.9rem; border:1px solid var(--line); background:#fff;
+    color:var(--ink); border-radius:8px; padding:7px 12px; cursor:pointer; transition:all .15s;
+  }
+  button:hover:not(:disabled){border-color:var(--accent); color:var(--accent);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button.primary:hover:not(:disabled){background:#6d28d9; color:#fff;}
+  button.speed-on{background:#f3e8ff; border-color:var(--accent); color:var(--accent); font-weight:600;}
+  .row{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
+  .hint{font-size:.88rem; color:var(--sub); background:#f5f3ff; border-radius:8px; padding:8px 10px; margin:6px 0;}
+  .status{font-size:.92rem; font-weight:600; color:var(--accent); margin:4px 0;}
+  canvas{display:block; width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; max-width:720px;}
+  .tip{position:absolute; pointer-events:none; background:#0f172a; color:#fff; font-size:.85rem; padding:6px 10px; border-radius:8px; white-space:nowrap; z-index:5; box-shadow:0 3px 8px rgba(0,0,0,.25); display:none;}
+  .canvas-wrap{position:relative;}
+  .legend{display:flex; flex-wrap:wrap; gap:12px; font-size:.85rem; margin-top:6px;}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .sw{display:inline-block; width:16px; height:16px; border-radius:4px;}
+  .kcard{border:1px solid var(--line); border-radius:10px; padding:12px; background:#fbfdff; min-height:150px;}
+  .kcard h3{font-size:.95rem; color:#4c1d95; margin-bottom:8px;}
+  .kcard .tag{display:inline-block; font-size:.8rem; color:var(--accent); border:1px solid #ddd6fe; background:#f5f3ff; border-radius:6px; padding:1px 8px; margin-bottom:6px;}
+  .pager{display:flex; justify-content:space-between; margin-top:10px;}
+  .observe{border:1px solid #ddd6fe; background:#faf8ff; border-radius:10px; padding:10px 12px; margin-top:12px;}
+  .observe .ans{display:none; background:#f0fdf4; border:1px solid #bbf7d0; color:#14532d; border-radius:8px; padding:8px 10px; margin-top:8px; font-size:.9rem;}
+  .footer-note{font-size:.85rem; color:var(--sub); margin-top:10px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧬 DNA 转录为 mRNA · 动画演示</h1>
+  <p>起始 — 延伸 — 终止 · 模板链 / 编码链方向 · 碱基配对 A-U · 氢键数与磷酸二酯键</p>
+</header>
+
+<div class="layout">
+
+  <!-- ============ 动画画布区 ============ -->
+  <section class="card" aria-label="转录动画画布区">
+    <h2>🎞 转录过程动画</h2>
+    <div class="canvas-wrap">
+      <canvas id="txn" width="720" height="430" aria-label="转录动画画布：RNA 聚合酶沿模板链 3'→5' 移动，新生 mRNA 沿 5'→3' 延伸，当前阶段见下方状态文字"></canvas>
+      <div class="tip" id="tip"></div>
+    </div>
+    <div class="legend" aria-label="图例">
+      <span><span class="sw" style="background:var(--coding);"></span>编码链 5'→3'</span>
+      <span><span class="sw" style="background:var(--template);"></span>模板链 3'→5'</span>
+      <span><span class="sw" style="background:var(--pol);"></span>RNA 聚合酶</span>
+      <span><span class="sw" style="background:var(--mrna);"></span>新 mRNA 5'→3'</span>
+    </div>
+    <div class="status" id="txnStatus" aria-live="polite">初始状态：双链 DNA 尚未开始转录。</div>
+    <p class="hint">💡 把鼠标悬停在画布任一碱基上，可查看其配对碱基与氢键数（A-T/A-U=2、G-C=3）。图例始终保留不丢失。</p>
+  </section>
+
+  <!-- ============ 控制区 ============ -->
+  <section class="card" aria-label="动画控制区">
+    <h2>🎮 播放控制</h2>
+    <div class="row">
+      <button id="btnPlay" class="primary">▶ 播放</button>
+      <button id="btnPause">⏸ 暂停</button>
+      <button id="btnStep">⏭ 单步</button>
+      <button id="btnReset">↺ 重置</button>
+    </div>
+    <p style="font-size:.9rem; margin-top:6px;">调速：</p>
+    <div class="row">
+      <button id="spdSlow">慢速</button>
+      <button id="spdNormal" class="speed-on">正常</button>
+      <button id="spdFast">快速</button>
+    </div>
+    <p class="hint">演示固定模板链 3'-ATGC-5'：转录结果应为 mRNA 5'-UACG-3'（A→U、T→A、G→C、C→G）。</p>
+    <div id="txnLog" style="font-size:.88rem; color:var(--sub); min-height:70px; margin-top:8px;"></div>
+  </section>
+
+  <!-- ============ 知识卡区 ============ -->
+  <section class="card" aria-label="翻页知识卡与观察题">
+    <h2>📖 翻页知识卡</h2>
+    <div class="kcard" id="kcard">
+      <span class="tag" id="kcardTag">第 1 / 5 张</span>
+      <h3 id="kcardTitle">模板链与编码链</h3>
+      <p id="kcardBody">双链 DNA 中，转录时与 mRNA 碱基互补、被 RNA 聚合酶读作模板的那条链叫<b>模板链（3'→5'）</b>；另一条与之互补的链叫<b>编码链（5'→3'）</b>。mRNA 的碱基序列与编码链基本相同（只是 T 换成了 U）。</p>
+    </div>
+    <div class="pager">
+      <button id="prevCard">← 上一页</button>
+      <span id="pageInd">1 / 5</span>
+      <button id="nextCard">下一页 →</button>
+    </div>
+    <div class="observe">
+      <h3 style="font-size:.95rem;">🧐 观察题</h3>
+      <p style="font-size:.9rem;">通过观察动画：模板链方向与 mRNA 合成方向有什么关系？</p>
+      <button id="btnAns" class="primary" style="margin-top:8px;">查看答案</button>
+      <div class="ans" id="ansBox">答案：RNA 聚合酶沿模板链 3'→5' 方向移动，新生 mRNA 沿 5'→3' 方向延伸，二者反向平行、碱基互补（模板 A→mRNA U、T→A、C→G、G→C）。</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const T = ["A","T","G","C"];                  // 模板链 3'-ATGC-5'（自左向右 3'→5'）
+  const CODING = T.map(function(b){return b==="A"?"T":b==="T"?"A":b==="G"?"C":"G";}); // 编码链 5'-TACG-3'
+  const RNA = T.map(function(b){return b==="A"?"U":b==="T"?"A":b==="G"?"C":"G";});    // mRNA 5'-UACG-3'
+  const DNA_HB = {A:2, T:2, G:3, C:3};          // DNA 层：A-T=2、G-C=3
+  const RNA_HB = {A:2, U:2, G:3, C:3};          // RNA-DNA 杂交层：A-U=2、G-C=3
+
+  const cv = document.getElementById("txn");
+  const ctx = cv.getContext("2d");
+  const tip = document.getElementById("tip");
+  const W = cv.width, H = cv.height;
+  const BASE_W = 84, BASE_H = 44, START_X = 150, GAP = 128;
+  const CODING_Y = 92, TEMPLATE_Y = 168, MRNA_Y = 268;
+  const COLOR = {A:"#22c55e", T:"#ef4444", G:"#3b82f6", C:"#f59e0b"};
+
+  /* 状态 */
+  let phase = "init";      // init | start | ext | term | done
+  let bubble = -1;         // 当前转录位置（0..3，-1 表示无）
+  let mrnaLen = 0;         // 已合成的 mRNA 碱基数
+  let released = false;    // mRNA 是否已释放
+  let playing = false;
+  let timer = null;
+  let speed = 600;         // 毫秒/步
+
+  const statusEl = document.getElementById("txnStatus");
+  const logEl = document.getElementById("txnLog");
+
+  function log(msg){ logEl.innerHTML += "• " + msg + "<br>"; }
+
+  /* ---- 画图 ---- */
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function drawBase(b, x, y){
+    ctx.fillStyle = COLOR[b];
+    ctx.strokeStyle = "#1f2937";
+    ctx.lineWidth = 1.5;
+    roundRect(x, y, BASE_W, BASE_H, 9);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 21px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(b, x + BASE_W/2, y + BASE_H/2);
+  }
+  function label(text, x, y, color, align){
+    ctx.fillStyle = color;
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = align || "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(text, x, y);
+  }
+  function hBond(x1, y1, x2, y2, n, color){
+    ctx.strokeStyle = color || "#f59e0b";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([3,3]);
+    for(let k=0;k<n;k++){
+      const t = n === 1 ? 0.5 : (n === 2 ? [0.3,0.7][k] : [0.25,0.5,0.75][k]);
+      const px = x1 + (x2-x1)*t;
+      ctx.beginPath();
+      ctx.moveTo(px, y1);
+      ctx.lineTo(px, y2);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#fbfdff";
+    ctx.fillRect(0,0,W,H);
+
+    /* 编码链 */
+    label("编码链 5'→3'", 18, CODING_Y - 8, "#2563eb");
+    for(let i=0;i<4;i++){
+      let y = CODING_Y;
+      if((i === bubble) && !released && (phase === "start" || phase === "ext")){
+        y = CODING_Y - 16; // 泡内编码链上抬
+      }
+      drawBase(CODING[i], START_X + i*GAP, y);
+    }
+    label("5'", START_X - 40, CODING_Y + BASE_H/2 + 6, "#2563eb");
+
+    /* 模板链 */
+    label("模板链 3'→5'", 18, TEMPLATE_Y - 8, "#15803d");
+    for(let i=0;i<4;i++){
+      let y = TEMPLATE_Y;
+      if((i === bubble) && !released && (phase === "start" || phase === "ext")){
+        y = TEMPLATE_Y + 16; // 泡内模板链下移
+      }
+      drawBase(T[i], START_X + i*GAP, y);
+    }
+    label("3'", START_X - 40, TEMPLATE_Y + BASE_H/2 + 6, "#15803d");
+
+    /* DNA 层氢键（编码链-模板链）：泡外配对区域 */
+    if(!released){
+      for(let i=0;i<4;i++){
+        if(i !== bubble){
+          const cx = START_X + i*GAP + BASE_W/2;
+          hBond(cx, CODING_Y + BASE_H + 2, cx, TEMPLATE_Y - 2, DNA_HB[T[i]], "#94a3b8");
+        }
+      }
+    }else{
+      for(let i=0;i<4;i++){
+        const cx = START_X + i*GAP + BASE_W/2;
+        hBond(cx, CODING_Y + BASE_H + 2, cx, TEMPLATE_Y - 2, DNA_HB[T[i]], "#94a3b8");
+      }
+    }
+
+    /* RNA 聚合酶 */
+    if(phase === "start" || phase === "ext"){
+      const px = START_X + bubble*GAP - 14;
+      ctx.fillStyle = "rgba(124,58,237,0.9)";
+      ctx.strokeStyle = "#4c1d95";
+      ctx.lineWidth = 2;
+      roundRect(px, TEMPLATE_Y + 8, BASE_W + 28, 92, 14);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("RNA 聚合酶", px + (BASE_W+28)/2, TEMPLATE_Y + 52);
+      /* 移动方向箭头 */
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 16px sans-serif";
+      ctx.fillText("→", px + (BASE_W+28)/2, TEMPLATE_Y + 82);
+    }else if(phase === "term"){
+      /* 聚合酶脱离 */
+      ctx.fillStyle = "rgba(124,58,237,0.55)";
+      ctx.strokeStyle = "#4c1d95";
+      ctx.lineWidth = 2;
+      roundRect(W - 210, 22, 140, 60, 12);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#4c1d95";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("RNA 聚合酶（已脱离）", W - 140, 58);
+    }
+
+    /* mRNA 行：5' 标签固定，不随 mRNA 字样移动 */
+    if(mrnaLen > 0){
+      label("5'", START_X - 40, MRNA_Y + BASE_H/2 + 6, "#b45309");
+      if(released){
+        label("mRNA（已释放）5'-UACG-3'", 18, MRNA_Y - 8, "#b45309");
+      }else{
+        label("mRNA 5'→3'", 18, MRNA_Y - 8, "#b45309");
+      }
+      for(let i=0;i<mrnaLen;i++){
+        drawBase(RNA[i], START_X + i*GAP, MRNA_Y);
+      }
+      /* 杂交层氢键：仅当前转录位置的模板-mRNA */
+      if(!released && bubble >= 0 && mrnaLen > 0){
+        const i = bubble;
+        if(i < mrnaLen){
+          const cx = START_X + i*GAP + BASE_W/2;
+          hBond(cx, TEMPLATE_Y + 16 + BASE_H + 2, cx, MRNA_Y - 2, RNA_HB[T[i]], "#f59e0b");
+        }
+      }
+    }
+
+    /* 阶段提示 */
+    if(phase === "done"){
+      ctx.fillStyle = "#4c1d95";
+      ctx.font = "bold 17px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("转录完成：mRNA = 5'-UACG-3'（与模板链逐位互补）", W/2, H - 18);
+    }
+  }
+
+  /* ---- 状态推进 ---- */
+  function setPhase(p, msg){
+    phase = p;
+    statusEl.textContent = msg;
+    render();
+  }
+  function tick(){
+    if(phase === "init"){
+      bubble = 0; mrnaLen = 0;
+      setPhase("start", "阶段·起始：RNA 聚合酶结合到模板链起点，双链局部解开，准备合成。");
+      log("起始：RNA 聚合酶结合，双链解开，转录泡形成。");
+      return;
+    }
+    if(phase === "start"){
+      mrnaLen = 1;
+      log("延伸：模板位 A → 新 mRNA 碱基 U（A-U 配 2 个氢键），mRNA 沿 5'→3' 延伸。");
+      if(mrnaLen < 4){ bubble = 1; }
+      else { bubble = -1; }
+      setPhase("ext", "阶段·延伸：RNA 聚合酶沿模板链 3'→5' 移动，mRNA 逐个延伸……");
+      return;
+    }
+    if(phase === "ext"){
+      if(mrnaLen < 4){
+        const added = RNA[mrnaLen];
+        const paired = T[mrnaLen];
+        log("延伸：模板位 " + paired + " → 新 mRNA 碱基 " + added + "（" + (paired==="A"||paired==="U"?"A-U 配 2 个氢键":"G-C 配 3 个氢键") + "）。");
+        mrnaLen++;
+        if(mrnaLen < 4){ bubble = mrnaLen; }
+        else { bubble = -1; setPhase("term", "阶段·终止：RNA 聚合酶到达末端，转录终止，mRNA 从 DNA 上释放。"); log("终止：转录到达末端，RNA 聚合酶脱离。"); }
+        render();
+      }else{
+        setPhase("term", "阶段·终止：RNA 聚合酶到达末端，转录终止，mRNA 从 DNA 上释放。");
+      }
+      return;
+    }
+    if(phase === "term"){
+      released = true;
+      setPhase("done", "阶段·完成：mRNA 已释放，序列 5'-UACG-3'；模板链与编码链重新配对。");
+      log("完成：mRNA = 5'-UACG-3'（A→U、T→A、G→C、C→G）。");
+      return;
+    }
+  }
+  function startTimer(){
+    if(playing) return;
+    playing = true;
+    document.getElementById("btnPlay").textContent = "▶ 播放中…";
+    timer = setInterval(tick, speed);
+  }
+  function stopTimer(){
+    if(!playing) return;
+    playing = false;
+    if(timer){ clearInterval(timer); timer = null; }
+    document.getElementById("btnPlay").textContent = "▶ 播放";
+  }
+  function doReset(){
+    stopTimer();
+    phase = "init"; bubble = -1; mrnaLen = 0; released = false;
+    logEl.innerHTML = "";
+    setPhase("init", "已重置：双链 DNA，等待播放或单步。");
+  }
+  document.getElementById("btnPlay").addEventListener("click", startTimer);
+  document.getElementById("btnPause").addEventListener("click", stopTimer);
+  document.getElementById("btnStep").addEventListener("click", function(){ stopTimer(); tick(); });
+  document.getElementById("btnReset").addEventListener("click", doReset);
+
+  /* 调速 */
+  const spdBtns = {
+    slow: {btn: document.getElementById("spdSlow"), ms: 950},
+    normal: {btn: document.getElementById("spdNormal"), ms: 600},
+    fast: {btn: document.getElementById("spdFast"), ms: 300}
+  };
+  function setSpeed(key){
+    speed = spdBtns[key].ms;
+    Object.keys(spdBtns).forEach(function(k){
+      spdBtns[k].btn.classList.toggle("speed-on", k === key);
+    });
+    if(playing){
+      stopTimer(); startTimer();
+    }
+  }
+  spdBtns.slow.btn.addEventListener("click", function(){ setSpeed("slow"); });
+  spdBtns.normal.btn.addEventListener("click", function(){ setSpeed("normal"); });
+  spdBtns.fast.btn.addEventListener("click", function(){ setSpeed("fast"); });
+
+  /* ---- hover：显示配对碱基与氢键数 ---- */
+  const DNA_COMP = {A:"T", T:"A", G:"C", C:"G"};
+  function hit(x, y){
+    for(let i=0;i<4;i++){
+      const r = {x: START_X + i*GAP, y: CODING_Y, w: BASE_W, h: BASE_H};
+      if(x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h){
+        return {kind:"coding", i:i};
+      }
+    }
+    for(let i=0;i<4;i++){
+      const r = {x: START_X + i*GAP, y: TEMPLATE_Y, w: BASE_W, h: BASE_H};
+      if(x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h){
+        return {kind:"template", i:i};
+      }
+    }
+    if(mrnaLen > 0){
+      for(let i=0;i<mrnaLen;i++){
+        const r = {x: START_X + i*GAP, y: MRNA_Y, w: BASE_W, h: BASE_H};
+        if(x>=r.x && x<=r.x+r.w && y>=r.y && y<=r.y+r.h){
+          return {kind:"mrna", i:i};
+        }
+      }
+    }
+    return null;
+  }
+  function tooltipText(h){
+    const i = h.i;
+    if(h.kind === "coding"){
+      return "编码链 " + CODING[i] + " ↔ 模板链 " + T[i] + " · " + DNA_HB[T[i]] + " 个氢键（DNA 层）";
+    }
+    if(h.kind === "template"){
+      if(mrnaLen > i && !released && i === bubble){
+        return "模板链 " + T[i] + " ↔ mRNA " + RNA[i] + " · " + RNA_HB[T[i]] + " 个氢键（RNA-DNA 杂交层）";
+      }
+      return "模板链 " + T[i] + " ↔ 编码链 " + CODING[i] + " · " + DNA_HB[T[i]] + " 个氢键（DNA 层）";
+    }
+    /* mrna */
+    return "mRNA " + RNA[i] + " ↔ 模板链 " + T[i] + " · " + RNA_HB[T[i]] + " 个氢键（RNA-DNA 杂交层）";
+  }
+  cv.addEventListener("mousemove", function(e){
+    const b = cv.getBoundingClientRect();
+    const px = (e.clientX - b.left) * (W / b.width);
+    const py = (e.clientY - b.top) * (H / b.height);
+    const h = hit(px, py);
+    if(h){
+      tip.style.display = "block";
+      tip.style.left = (e.clientX + 12) + "px";
+      tip.style.top = (e.clientY - 8) + "px";
+      tip.textContent = tooltipText(h);
+      cv.style.cursor = "pointer";
+    }else{
+      tip.style.display = "none";
+      cv.style.cursor = "default";
+    }
+  });
+  cv.addEventListener("mouseleave", function(){ tip.style.display = "none"; });
+
+  /* ---- 翻页知识卡 ---- */
+  const CARDS = [
+    {tag:"第 1 / 5 张", title:"模板链与编码链",
+     body:"双链 DNA 中，转录时与 mRNA 碱基互补、被 RNA 聚合酶读作模板的那条链叫<b>模板链（3'→5'）</b>；另一条与之互补的链叫<b>编码链（5'→3'）</b>。mRNA 的碱基序列与编码链基本相同（只是 T 换成了 U）。"},
+    {tag:"第 2 / 5 张", title:"合成方向",
+     body:"RNA 聚合酶沿模板链 <b>3'→5'</b> 方向移动读取模板；新生 mRNA 沿 <b>5'→3'</b> 方向延伸，与模板链反向平行。DNA 层两条链同样反向平行。"},
+    {tag:"第 3 / 5 张", title:"氢键数",
+     body:"DNA 层：<b>A-T=2 个氢键、G-C=3 个氢键</b>（不可颠倒）。RNA-DNA 杂交层：<b>A-U=2 个氢键、G-C=3 个氢键</b>。"},
+    {tag:"第 4 / 5 张", title:"磷酸二酯键",
+     body:"mRNA 由核糖核苷酸通过 <b>3'-5' 磷酸二酯键</b>连接成链。连接相邻核苷酸的糖与磷酸基团之间的化学键即磷酸二酯键，形成 mRNA 主链骨架。"},
+    {tag:"第 5 / 5 张", title:"密码子",
+     body:"遗传密码以 <b>密码子</b>形式存在于 mRNA 上：每 3 个相邻碱基为一个密码子，对应一种氨基酸。翻译时核糖体以 mRNA 为模板合成蛋白质。"}
+  ];
+  let cardIdx = 0;
+  const kcard = document.getElementById("kcard");
+  function renderCard(){
+    const c = CARDS[cardIdx];
+    document.getElementById("kcardTag").textContent = c.tag;
+    document.getElementById("kcardTitle").textContent = c.title;
+    document.getElementById("kcardBody").innerHTML = c.body;
+    document.getElementById("pageInd").textContent = (cardIdx+1) + " / " + CARDS.length;
+  }
+  document.getElementById("prevCard").addEventListener("click", function(){
+    if(cardIdx > 0){ cardIdx--; renderCard(); }
+  });
+  document.getElementById("nextCard").addEventListener("click", function(){
+    if(cardIdx < CARDS.length-1){ cardIdx++; renderCard(); }
+  });
+  document.getElementById("btnAns").addEventListener("click", function(){
+    document.getElementById("ansBox").style.display = "block";
+  });
+
+  /* 初始 */
+  render();
+  renderCard();
+})();
+</script>
+</body>
+</html>

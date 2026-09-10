@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>导数与积分原理交互学习页</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;background:#eef2f7;color:#22303c;overflow:hidden}
+  header{background:linear-gradient(135deg,#9b2c2c,#dd6b20);color:#fff;padding:14px 22px}
+  header h1{font-size:22px;font-weight:700;letter-spacing:1px}
+  header p{font-size:13px;opacity:.92;margin-top:4px}
+  .tabs{display:flex;gap:8px;background:#7b2c2c;padding:8px 22px;flex-wrap:wrap}
+  .tabs button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 16px;font-size:13px;cursor:pointer;transition:.2s}
+  .tabs button:hover{background:rgba(255,255,255,.25)}
+  .tabs button.active{background:#fff;color:#7b2c2c;font-weight:700}
+  .layout{display:grid;grid-template-columns:300px 1fr 300px;gap:12px;padding:12px 16px;height:calc(100vh - 150px)}
+  .pane{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(155,44,44,.08);padding:14px;overflow-y:auto}
+  .control label{display:block;font-size:13px;font-weight:600;color:#c05621;margin:12px 0 6px}
+  .control input[type=range]{width:100%}
+  .control input[type=number]{width:90px;padding:7px;border:1px solid #cbd5e0;border-radius:6px;font-size:14px;text-align:center}
+  .control input[type=text]{width:100%;padding:8px;border:1px solid #cbd5e0;border-radius:6px;font-size:14px}
+  .control .row{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .control .hint{font-size:12px;color:#718096;margin-top:5px;line-height:1.6}
+  .btn{background:#c05621;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:14px;cursor:pointer;margin:6px 4px 0 0}
+  .btn:hover{background:#9c4221}
+  .btn.secondary{background:#e2e8f0;color:#2d3748}
+  .btn.green{background:#2f855a}
+  .data h3{font-size:14px;color:#7b2c2c;border-bottom:2px solid #fed7d7;padding-bottom:6px;margin-bottom:10px}
+  .readout{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:10px;font-size:14px}
+  .readout .k{color:#718096;font-size:12px}
+  .readout .v{font-size:18px;font-weight:700;color:#1a202c;margin-top:2px}
+  .canvas-holder{display:flex;flex-direction:column;gap:10px}
+  canvas{display:block;background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:100%}
+  .cap{font-size:12px;color:#718096;text-align:center;margin-top:4px}
+  .guide h2{font-size:18px;color:#7b2c2c;margin-bottom:10px}
+  .guide p,.guide li{font-size:14px;line-height:1.9;color:#2d3748}
+  .guide ul{margin:8px 0 8px 22px}
+  .formula{background:#fff5f5;border-left:4px solid #c05621;padding:10px 14px;margin:10px 0;border-radius:0 8px 8px 0;font-size:15px;color:#1a202c}
+  footer{position:fixed;left:0;right:0;bottom:0;background:#7b2c2c;color:#e2e8f0;font-size:12.5px;padding:10px 22px;line-height:1.7;border-top:3px solid #dd6b20}
+  footer b{color:#fbd38d}
+  .sub{font-size:.7em;vertical-align:sub}
+  .sup{font-size:.7em;vertical-align:super}
+  .mtd{display:inline-block;background:#fefcbf;color:#744210;border-radius:4px;padding:1px 8px;font-size:12px;font-weight:600}
+  .mtd.blue{background:#bee3f8;color:#2c5282}
+  .rule-box{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin:8px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>导数与积分原理交互学习页</h1>
+  <p>切线演示 · 积分面积演示 · 求导法则实例 —— 导数=切线斜率，积分=曲线下方面积</p>
+</header>
+
+<div class="tabs" role="tablist">
+  <button data-tab="guide" class="active">① 概念讲解</button>
+  <button data-tab="rules">② 求导法则实例</button>
+  <button data-tab="tangent">③ 自由函数与切线</button>
+  <button data-tab="integral">④ 积分演示</button>
+</div>
+
+<main class="layout">
+  <!-- ============ 控制区 ============ -->
+  <aside class="pane control">
+    <div class="tab-pane" id="ctl-guide">
+      <div class="hint">点击上方标签页进入「求导法则实例」「自由函数与切线」或「积分演示」。</div>
+      <div class="hint" style="margin-top:12px"><b>几何意义：</b></div>
+      <div class="formula">导数 f′(x) = 曲线在 x 处的切线斜率</div>
+      <div class="formula" style="border-left-color:#e53e3e">∫ₐᵇ f(x) dx = 曲线与 x 轴围成的面积（上方为正、下方为负）</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-rules" style="display:none">
+      <div class="hint">四种常见求导法则，各配一个实例（含解析结果）：</div>
+      <ul style="font-size:13px;color:#4a5568;margin:8px 0 0 20px;line-height:2">
+        <li><b>幂</b>：(xⁿ)′ = n·xⁿ⁻¹</li>
+        <li><b>积</b>：(u·v)′ = u′v + uv′</li>
+        <li><b>商</b>：(u/v)′ = (u′v − uv′)/v²</li>
+        <li><b>链式</b>：(f(g(x)))′ = f′(g(x))·g′(x)</li>
+      </ul>
+      <div class="hint" style="margin-top:8px">实例内容见画布区，全部为<b>解析求导</b>结果。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-tangent" style="display:none">
+      <label for="tfInput">输入函数 f(x)</label>
+      <input type="text" id="tfInput" placeholder="例如 x^2、sin(x)、x^3、cos(x) 等">
+      <button class="btn" id="tfApply">✓ 应用函数</button>
+      <label for="x0Slider">切线观测点 x₀ ∈ [-6, 6]</label>
+      <input type="range" id="x0Slider" min="-6" max="6" step="0.1" value="1">
+      <div class="row" style="justify-content:space-between"><span>-6</span><span id="x0Val">x₀ = 1</span><span>6</span></div>
+      <button class="btn secondary" id="tfReset">↺ 复位</button>
+      <div class="hint">对多项式、sin、cos、eˣ 等初等函数使用<b>解析求导</b>；对无法解析的函数自动降级为<b>数值差分</b>近似，并在读数旁显式标注方法口径。</div>
+      <div class="hint" style="margin-top:6px;color:#c05621;font-weight:600">非法表达式会被捕获并给出友好提示，不会崩溃。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-integral" style="display:none">
+      <label>使用函数（与③共用）</label>
+      <div class="row"><span id="intFnShow">f(x) = x²</span></div>
+      <label for="intA">积分下限 a ∈ [-6, 6]</label>
+      <input type="range" id="intA" min="-6" max="6" step="0.1" value="0">
+      <div class="row" style="justify-content:space-between"><span>-6</span><span id="intAVal">a = 0</span><span>6</span></div>
+      <label for="intB">积分上限 b ∈ [-6, 6]（b ≥ a）</label>
+      <input type="range" id="intB" min="-6" max="6" step="0.1" value="1">
+      <div class="row" style="justify-content:space-between"><span>-6</span><span id="intBVal">b = 1</span><span>6</span></div>
+      <button class="btn secondary" id="intSwap">⇄ 交换上下限</button>
+      <div class="hint">阴影面积随 a、b 实时更新；对常见初等函数用解析不定积分，其余用梯形法数值积分并标注。</div>
+    </div>
+  </aside>
+
+  <!-- ============ 画布区 ============ -->
+  <section class="pane canvas-holder">
+    <div class="tab-pane" id="cv-guide" style="flex:1">
+      <div class="guide">
+        <h2>一、导数的定义与几何意义</h2>
+        <p>函数 y = f(x) 在 x₀ 处的<b>导数 f′(x₀)</b> 是曲线在该点处<b>切线的斜率</b>：</p>
+        <div class="formula">f′(x₀) = lim (Δx→0) [f(x₀+Δx) − f(x₀)] / Δx</div>
+        <p>几何上，切线就是割线在 Δx→0 时的极限位置；切线的倾斜程度由斜率（导数）刻画。</p>
+
+        <h2>二、积分（定积分）的定义与几何意义</h2>
+        <div class="formula">∫ₐᵇ f(x) dx = 曲线 y=f(x)、x 轴与直线 x=a、x=b 围成区域的<b>有向面积</b></div>
+        <ul>
+          <li>x 轴<b>上方</b>面积记为正，<b>下方</b>面积记为负；</li>
+          <li>积分值 = 上方净面积 − 下方净面积。</li>
+        </ul>
+
+        <h2>三、求导法则</h2>
+        <div class="rule-box">
+          <b>幂</b>：(xⁿ)′ = n·xⁿ⁻¹　（如 (x²)′ = 2x）<br>
+          <b>积</b>：(u·v)′ = u′v + uv′　（如 (x·sinx)′ = sinx + x·cosx）<br>
+          <b>商</b>：(u/v)′ = (u′v − uv′)/v²<br>
+          <b>链式</b>：(f(g(x)))′ = f′(g(x))·g′(x)　（如 ((2x+1)³)′ = 3(2x+1)²·2）
+        </div>
+
+        <h2>四、常见函数的导数</h2>
+        <div class="formula">
+          (xⁿ)′ = n·xⁿ⁻¹　(sinx)′ = cosx　(cosx)′ = −sinx　(eˣ)′ = eˣ
+        </div>
+        <p>算例：f(x)=x²、x₀=1 时切线斜率 = f′(1) = 2x|x=1 = 2；x₀=3 时斜率 = 6；f(x)=sinx、x₀=0 时斜率 = cos0 = 1，切线方程 y=x。</p>
+        <p>积分算例：∫₀¹ x² dx = x³/3 |₀¹ = 1/3 ≈ 0.333；∫₀² x³ dx = x⁴/4 |₀² = 16/4 = 4。</p>
+        <h2>五、方法口径说明</h2>
+        <p>本页对<b>多项式、sin、cos、eˣ</b>使用解析求导/解析积分；对自定义的其它函数使用<b>数值差分 / 梯形法</b>近似，所有读数旁均标注当前方法，绝不冒充符号运算。</p>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-rules" style="display:none;flex:1">
+      <div class="guide" style="max-width:760px;margin:0 auto">
+        <h2>四种求导法则 · 解析实例</h2>
+        <div class="readout">
+          <div class="k">① 幂法则</div>
+          <div class="v" style="font-size:16px">f(x) = x³　⇒　f′(x) = 3x²</div>
+          <div class="hint" style="font-size:12.5px;color:#718096;margin-top:4px">代入 x=2：f′(2) = 3·4 = 12；<span class="mtd blue">解析求导</span></div>
+        </div>
+        <div class="readout">
+          <div class="k">② 积法则</div>
+          <div class="v" style="font-size:16px">f(x) = x·sinx　⇒　f′(x) = sinx + x·cosx</div>
+          <div class="hint" style="font-size:12.5px;color:#718096;margin-top:4px">u=x、v=sinx，u′=1、v′=cosx；代入 x=0：f′(0) = 0 + 0·1 = 0；<span class="mtd blue">解析求导</span></div>
+        </div>
+        <div class="readout">
+          <div class="k">③ 商法则</div>
+          <div class="v" style="font-size:16px">f(x) = x/(x²+1)　⇒　f′(x) = (1·(x²+1) − x·2x)/(x²+1)² = (1−x²)/(x²+1)²</div>
+          <div class="hint" style="font-size:12.5px;color:#718096;margin-top:4px">代入 x=0：f′(0) = 1/1 = 1；<span class="mtd blue">解析求导</span></div>
+        </div>
+        <div class="readout">
+          <div class="k">④ 链式法则</div>
+          <div class="v" style="font-size:16px">f(x) = (2x+1)³　⇒　f′(x) = 3(2x+1)²·2 = 6(2x+1)²</div>
+          <div class="hint" style="font-size:12.5px;color:#718096;margin-top:4px">g(x)=2x+1、g′(x)=2；代入 x=0：f′(0) = 6·1 = 6；<span class="mtd blue">解析求导</span></div>
+        </div>
+        <div class="formula" style="border-left-color:#e53e3e">以上实例均为解析求导（非数值差分），可对照第 ③ 分区在 x₀ 处用切线验证。</div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-tangent" style="display:none;flex:1">
+      <canvas id="tangentCanvas" aria-label="自由函数 f(x) 曲线、x0 处切线与切线斜率读数，切线随滑块实时移动"></canvas>
+      <div class="cap">f(x) 曲线（蓝）与 x₀ 处切线（红）；右侧数据区显示斜率读数与方法口径（解析/数值差分）</div>
+    </div>
+
+    <div class="tab-pane" id="cv-integral" style="display:none;flex:1">
+      <canvas id="integralCanvas" aria-label="定积分面积演示：曲线与 x 轴在 a 到 b 区间的阴影面积与积分读数"></canvas>
+      <div class="cap">∫ₐᵇ f(x) dx 阴影面积（上方橙色、下方红色）；右侧显示积分读数与方法口径</div>
+    </div>
+  </section>
+
+  <!-- ============ 数据区 ============ -->
+  <aside class="pane data">
+    <div class="tab-pane" id="data-guide">
+      <div class="readout"><div class="k">导数几何意义</div><div class="v" style="font-size:15px">切线斜率</div></div>
+      <div class="readout"><div class="k">积分几何意义</div><div class="v" style="font-size:15px">曲线下方面积</div></div>
+      <div class="readout"><div class="k">幂法则</div><div class="v" style="font-size:16px">(xⁿ)′ = n·xⁿ⁻¹</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-rules" style="display:none">
+      <div class="readout"><div class="k">幂法则验证</div><div class="v" style="font-size:15px">(x³)′ = 3x²，f′(2)=12</div></div>
+      <div class="readout"><div class="k">积法则验证</div><div class="v" style="font-size:15px">(x·sinx)′ = sinx+x·cosx</div></div>
+      <div class="readout"><div class="k">商法则验证</div><div class="v" style="font-size:15px">(x/(x²+1))′ = (1−x²)/(x²+1)²</div></div>
+      <div class="readout"><div class="k">链式法则验证</div><div class="v" style="font-size:15px">((2x+1)³)′ = 6(2x+1)²</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-tangent" style="display:none">
+      <div class="readout"><div class="k">当前函数 f(x)</div><div class="v" id="dtFn" style="font-size:15px">f(x) = x²</div></div>
+      <div class="readout"><div class="k">观测点 x₀</div><div class="v" id="dtX0">1</div></div>
+      <div class="readout"><div class="k">f(x₀)</div><div class="v" id="dtF" style="color:#2b6cb0">1</div></div>
+      <div class="readout"><div class="k">切线斜率 f′(x₀)</div><div class="v" id="dtSlope" style="color:#c05621">2</div></div>
+      <div class="readout"><div class="k">方法口径</div><div class="v"><span class="mtd blue" id="dtMethod">解析求导</span></div></div>
+      <div class="readout"><div class="k">切线方程</div><div class="v" id="dtLine" style="font-size:15px">y = 2x − 1</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-integral" style="display:none">
+      <div class="readout"><div class="k">被积函数</div><div class="v" id="diFn" style="font-size:15px">f(x) = x²</div></div>
+      <div class="readout"><div class="k">积分区间</div><div class="v" id="diRange" style="font-size:15px">[0, 1]</div></div>
+      <div class="readout"><div class="k">积分值 ∫ₐᵇ f(x)dx</div><div class="v" id="diVal" style="color:#dd6b20">0.3333</div></div>
+      <div class="readout"><div class="k">方法口径</div><div class="v"><span class="mtd" id="diMethod">解析积分</span></div></div>
+      <div class="readout"><div class="k">面积说明</div><div class="v" id="diNote" style="font-size:13px">x 轴上方为正、下方为负</div></div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <b>观察与结论：</b>① <b>导数 = 切线斜率</b>：把 x₀ 滑块拖到不同位置，切线绕曲线滑动，斜率读数始终等于该点导数；② <b>积分 = 面积</b>：把 a、b 滑块拉开，阴影面积与积分读数同步变化，x 轴下方的部分计为负面积；③ 对多项式/sin/cos/eˣ 页面给出的是<b>解析</b>结果，对其它函数明确标注「数值差分近似」，绝不混淆方法口径。
+</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+function fmt(v, n) { const f = Math.pow(10, n); return (Math.round(v * f) / f).toFixed(n); }
+function setupCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (w === 0 || h === 0) return null;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+
+const XMIN = -6, XMAX = 6, YMAX = 8, YMIN = -8;
+
+/* ============ 函数编译与求值 ============ */
+const ALLOWED = new Set(['Math','x','sin','cos','tan','sqrt','abs','exp','log','pow','PI','E','asin','acos','atan']);
+function compileFn(expr) {
+  let e = expr.trim();
+  if (!e) throw new Error('请输入函数表达式');
+  e = e.replace(/\^/g, '**').replace(/√/g, 'Math.sqrt').replace(/π/g, 'Math.PI').replace(/e(?![A-Za-z])/g, 'Math.E');
+  const tokens = e.match(/[A-Za-z]+/g) || [];
+  for (const t of tokens) if (!ALLOWED.has(t)) throw new Error('不支持的标识符「' + t + '」（仅允许 sin/cos/tan/sqrt/abs/exp/log/pow/x 及四则运算）');
+  if (!/^[0-9+\-*/().,x\sA-Za-z]+$/.test(e)) throw new Error('包含非法字符');
+  const fn = new Function('x', '"use strict";return (' + e + ');');
+  // 检测能否解析求导：识别已知模板
+  return { fn, source: expr.trim() };
+}
+function evalF(fn, x) {
+  try { const v = fn(x); return typeof v === 'number' && isFinite(v) ? v : NaN; }
+  catch (e) { return NaN; }
+}
+
+/* ============ 解析求导 / 解析积分判定 ============ */
+// 识别常见初等函数并返回解析导数函数与解析积分函数；否则返回 null
+function analyticTools(source) {
+  const s = source.trim().replace(/\s+/g, '');
+  const lower = s.toLowerCase();
+  // x^2
+  if (lower === 'x^2' || lower === 'x**2') return { d: x => 2 * x, i: (a, b) => (b * b * b - a * a * a) / 3, label: 'x²' };
+  // x^3
+  if (lower === 'x^3' || lower === 'x**3') return { d: x => 3 * x * x, i: (a, b) => (b * b * b * b - a * a * a * a) / 4, label: 'x³' };
+  if (lower === 'x') return { d: () => 1, i: (a, b) => (b * b - a * a) / 2, label: 'x' };
+  // sin(x)
+  if (/^sin\(x\)$/.test(lower)) return { d: x => Math.cos(x), i: (a, b) => -Math.cos(b) + Math.cos(a), label: 'sin(x)' };
+  // cos(x)
+  if (/^cos\(x\)$/.test(lower)) return { d: x => -Math.sin(x), i: (a, b) => Math.sin(b) - Math.sin(a), label: 'cos(x)' };
+  // e^x
+  if (lower === 'e^x' || lower === 'e**x' || lower === 'exp(x)') return { d: x => Math.exp(x), i: (a, b) => Math.exp(b) - Math.exp(a), label: 'eˣ' };
+  // 一般幂函数 x^n（n 为数字常量）
+  const mp = lower.match(/^x\^(\d+(?:\.\d+)?)$/);
+  if (mp) {
+    const n = parseFloat(mp[1]);
+    return { d: x => n * Math.pow(x, n - 1), i: (a, b) => n === -1 ? (Math.log(Math.abs(b)) - Math.log(Math.abs(a))) : (Math.pow(b, n + 1) - Math.pow(a, n + 1)) / (n + 1), label: 'x^' + n };
+  }
+  return null;
+}
+
+const state = {
+  tab: 'guide',
+  fn: { source: 'x^2', fn: null, ana: null, valid: true, x0: 1, a: 0, b: 1 }
+};
+
+function buildFn() {
+  try {
+    const c = compileFn(state.fn.source);
+    state.fn.fn = c.fn;
+    state.fn.ana = analyticTools(c.source);
+    state.fn.valid = true;
+    $('intFnShow').textContent = 'f(x) = ' + c.source;
+    return true;
+  } catch (err) {
+    state.fn.valid = false;
+    $('intFnShow').textContent = 'f(x) = （表达式无效）';
+    $('tfInput').style.borderColor = '#e53e3e';
+    setTimeout(() => { $('tfInput').style.borderColor = ''; }, 1500);
+    return false;
+  }
+}
+
+/* ============ 标签页 ============ */
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  ['guide','rules','tangent','integral'].forEach(t => {
+    document.getElementById('ctl-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('cv-' + t).style.display = t === tab ? 'flex' : 'none';
+    document.getElementById('data-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'tangent') { drawTangent(); updateTangentData(); }
+  if (tab === 'integral') { drawIntegral(); updateIntegralData(); }
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+/* ============ 坐标轴 ============ */
+function drawAxes(ctx, w, h, pad) {
+  const sx = (w - 2 * pad) / (XMAX - XMIN);
+  const sy = (h - 2 * pad) / (YMAX - YMIN);
+  const X = x => pad + (x - XMIN) * sx;
+  const Y = y => h - pad - (y - YMIN) * sy;
+  ctx.strokeStyle = '#edf2f7'; ctx.lineWidth = 1;
+  for (let x = XMIN; x <= XMAX; x += 1) { ctx.beginPath(); ctx.moveTo(X(x), pad); ctx.lineTo(X(x), h - pad); ctx.stroke(); }
+  for (let y = YMIN; y <= YMAX; y += 2) { ctx.beginPath(); ctx.moveTo(pad, Y(y)); ctx.lineTo(w - pad, Y(y)); ctx.stroke(); }
+  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(pad, Y(0)); ctx.lineTo(w - pad, Y(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(X(0), pad); ctx.lineTo(X(0), h - pad); ctx.stroke();
+  ctx.fillStyle = '#718096'; ctx.font = '11px sans-serif';
+  for (let x = -5; x <= 5; x++) { if (x === 0) continue; ctx.fillText(x, X(x) - 3, Y(0) + 14); }
+  for (let y = -6; y <= 6; y += 2) { if (y === 0) continue; ctx.fillText(y, X(0) + 5, Y(y) + 3); }
+  ctx.fillText('x', w - pad + 2, Y(0) + 14);
+  ctx.fillText('y', X(0) + 5, pad - 2);
+  return { X, Y };
+}
+
+/* ============ ③ 自由函数与切线 ============ */
+function drawTangent() {
+  const cv = $('tangentCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  ctx.clearRect(0, 0, w, h);
+  const pad = 30;
+  const axes = drawAxes(ctx, w, h, pad);
+  if (!state.fn.valid) {
+    ctx.fillStyle = '#a0aec0'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('表达式无效，请回到控制区重新输入（例如 x^2、sin(x)、x^3）', w / 2, h / 2);
+    ctx.textAlign = 'left';
+    return;
+  }
+  const fn = state.fn.fn, x0 = state.fn.x0;
+
+  // 曲线
+  ctx.strokeStyle = '#2b6cb0'; ctx.lineWidth = 2.6; ctx.beginPath();
+  let pen = false;
+  for (let px = 0; px <= w - pad; px++) {
+    const x = XMIN + px / (w - pad) * (XMAX - XMIN);
+    const y = evalF(fn, x);
+    if (isNaN(y) || y < YMIN || y > YMAX) { pen = false; continue; }
+    const X = axes.X(x), Y = axes.Y(y);
+    if (!pen) { ctx.beginPath(); ctx.moveTo(X, Y); pen = true; } else ctx.lineTo(X, Y);
+  }
+  ctx.stroke();
+
+  // 切线（解析或数值）
+  const f0 = evalF(fn, x0);
+  let slope, method;
+  if (state.fn.ana) {
+    slope = state.fn.ana.d(x0);
+    method = '解析求导';
+  } else {
+    const hh = 1e-5;
+    slope = (evalF(fn, x0 + hh) - evalF(fn, x0 - hh)) / (2 * hh);
+    method = '数值差分近似';
+  }
+  if (isNaN(f0)) { return; }
+  // 切点
+  const Px = axes.X(x0), Py = axes.Y(Math.max(YMIN, Math.min(YMAX, f0)));
+  // 切线（裁剪到画布范围）
+  const dxDraw = 5;
+  const x1 = x0 - dxDraw, x2 = x0 + dxDraw;
+  const y1 = f0 + slope * (x1 - x0), y2 = f0 + slope * (x2 - x0);
+  ctx.strokeStyle = '#e53e3e'; ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.moveTo(axes.X(x1), axes.Y(Math.max(YMIN, Math.min(YMAX, y1))));
+  ctx.lineTo(axes.X(x2), axes.Y(Math.max(YMIN, Math.min(YMAX, y2))));
+  ctx.stroke();
+  // 切点标记
+  ctx.fillStyle = '#e53e3e';
+  ctx.beginPath(); ctx.arc(Px, Py, 5, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(Px, Py, 5, 0, TAU); ctx.stroke();
+  ctx.setLineDash([4, 3]); ctx.strokeStyle = '#cbd5e0';
+  ctx.beginPath(); ctx.moveTo(Px, Py); ctx.lineTo(Px, axes.Y(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(Px, Py); ctx.lineTo(axes.X(0), Py); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#2d3748'; ctx.font = '12px sans-serif';
+  ctx.fillText('x₀=' + fmt(x0, 1), Px + 6, axes.Y(0) + 16);
+  ctx.fillText('f(x₀)=' + (isNaN(f0) ? '—' : fmt(f0, 3)), Px + 6, Py - 8);
+  ctx.fillStyle = '#e53e3e';
+  ctx.fillText('斜率 f′(x₀)=' + (isNaN(slope) ? '—' : fmt(slope, 3)) + '（' + method + '）', Px + 6, Py + 18);
+}
+function updateTangentData() {
+  if (!state.fn.valid) {
+    $('dtSlope').textContent = '—'; $('dtMethod').textContent = '—'; $('dtLine').textContent = '表达式无效';
+    return;
+  }
+  const fn = state.fn.fn, x0 = state.fn.x0;
+  const f0 = evalF(fn, x0);
+  let slope, method;
+  if (state.fn.ana) { slope = state.fn.ana.d(x0); method = '解析求导'; }
+  else { const hh = 1e-5; slope = (evalF(fn, x0 + hh) - evalF(fn, x0 - hh)) / (2 * hh); method = '数值差分近似'; }
+  const b = f0 - slope * x0;
+  $('dtFn').textContent = 'f(x) = ' + state.fn.source;
+  $('dtX0').textContent = fmt(x0, 2);
+  $('dtF').textContent = isNaN(f0) ? '—' : fmt(f0, 4);
+  $('dtSlope').textContent = isNaN(slope) ? '—' : fmt(slope, 4);
+  const m = $('dtMethod');
+  m.textContent = method;
+  m.className = 'mtd' + (method === '解析求导' ? ' blue' : '');
+  $('dtLine').textContent = 'y = ' + fmt(slope, 3) + 'x ' + (b >= 0 ? '+ ' : '− ') + fmt(Math.abs(b), 3);
+}
+$('tfApply').addEventListener('click', () => {
+  state.fn.source = $('tfInput').value || 'x^2';
+  if (buildFn()) {
+    drawTangent(); updateTangentData();
+    drawIntegral(); updateIntegralData();
+  }
+});
+$('tfInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('tfApply').click(); });
+$('x0Slider').addEventListener('input', e => {
+  state.fn.x0 = parseFloat(e.target.value);
+  $('x0Val').textContent = 'x₀ = ' + fmt(state.fn.x0, 1);
+  drawTangent(); updateTangentData();
+});
+$('tfReset').addEventListener('click', () => {
+  state.fn.source = 'x^2'; $('tfInput').value = 'x^2';
+  state.fn.x0 = 1; $('x0Slider').value = 1; $('x0Val').textContent = 'x₀ = 1';
+  state.fn.a = 0; state.fn.b = 1;
+  $('intA').value = 0; $('intB').value = 1;
+  $('intAVal').textContent = 'a = 0'; $('intBVal').textContent = 'b = 1';
+  buildFn();
+  drawTangent(); updateTangentData();
+  drawIntegral(); updateIntegralData();
+});
+
+/* ============ ④ 积分演示 ============ */
+function integrateNumeric(fn, a, b) {
+  const n = 2000;
+  const h = (b - a) / n;
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const x1 = a + i * h, x2 = a + (i + 1) * h;
+    sum += (evalF(fn, x1) + evalF(fn, x2)) / 2 * h;
+  }
+  return sum;
+}
+function drawIntegral() {
+  const cv = $('integralCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  ctx.clearRect(0, 0, w, h);
+  const pad = 30;
+  const axes = drawAxes(ctx, w, h, pad);
+  if (!state.fn.valid) {
+    ctx.fillStyle = '#a0aec0'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('表达式无效，无法积分', w / 2, h / 2);
+    ctx.textAlign = 'left';
+    return;
+  }
+  const fn = state.fn.fn;
+  const a = Math.min(state.fn.a, state.fn.b), b = Math.max(state.fn.a, state.fn.b);
+  // 阴影（分采样点，上正下负）
+  const stepPx = 4;
+  for (let px = 0; px <= w - pad; px += stepPx) {
+    const x = XMIN + px / (w - pad) * (XMAX - XMIN);
+    if (x < a || x > b) continue;
+    const y = evalF(fn, x);
+    if (isNaN(y)) continue;
+    const X = axes.X(x), Y = axes.Y(Math.max(YMIN, Math.min(YMAX, y)));
+    const Y0 = axes.Y(0);
+    ctx.fillStyle = y >= 0 ? 'rgba(221,107,32,.35)' : 'rgba(229,62,62,.35)';
+    ctx.fillRect(X, Math.min(Y, Y0), stepPx + 1, Math.abs(Y0 - Y));
+  }
+  // 边界线
+  ctx.strokeStyle = '#dd6b20'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(axes.X(a), pad); ctx.lineTo(axes.X(a), h - pad); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(axes.X(b), pad); ctx.lineTo(axes.X(b), h - pad); ctx.stroke();
+  ctx.fillStyle = '#dd6b20'; ctx.font = '12px sans-serif';
+  ctx.fillText('a=' + fmt(a, 1), axes.X(a) + 4, pad + 14);
+  ctx.fillText('b=' + fmt(b, 1), axes.X(b) - 26, pad + 14);
+
+  // 曲线
+  ctx.strokeStyle = '#2b6cb0'; ctx.lineWidth = 2.6; ctx.beginPath();
+  let pen = false;
+  for (let px = 0; px <= w - pad; px++) {
+    const x = XMIN + px / (w - pad) * (XMAX - XMIN);
+    const y = evalF(fn, x);
+    if (isNaN(y) || y < YMIN || y > YMAX) { pen = false; continue; }
+    const X = axes.X(x), Y = axes.Y(y);
+    if (!pen) { ctx.beginPath(); ctx.moveTo(X, Y); pen = true; } else ctx.lineTo(X, Y);
+  }
+  ctx.stroke();
+}
+function updateIntegralData() {
+  if (!state.fn.valid) { $('diVal').textContent = '—'; $('diMethod').textContent = '—'; return; }
+  const fn = state.fn.fn;
+  const a = Math.min(state.fn.a, state.fn.b), b = Math.max(state.fn.a, state.fn.b);
+  let val, method;
+  if (state.fn.ana) {
+    val = state.fn.ana.i(a, b);
+    method = '解析积分';
+  } else {
+    val = integrateNumeric(fn, a, b);
+    method = '数值积分（梯形法）';
+  }
+  $('diFn').textContent = 'f(x) = ' + state.fn.source;
+  $('diRange').textContent = '[' + fmt(a, 1) + ', ' + fmt(b, 1) + ']';
+  $('diVal').textContent = fmt(val, 4);
+  const m = $('diMethod');
+  m.textContent = method;
+  m.className = 'mtd' + (method === '解析积分' ? ' blue' : '');
+  // 面积说明：检测正负区域
+  $('diNote').textContent = '阴影：' + (state.fn.a <= state.fn.b ? '上方橙色为正、下方红色为负' : '积分值与方向有关，交换上下限变号');
+}
+$('intA').addEventListener('input', e => {
+  state.fn.a = parseFloat(e.target.value);
+  $('intAVal').textContent = 'a = ' + fmt(state.fn.a, 1);
+  if (state.fn.b < state.fn.a) { state.fn.b = state.fn.a; $('intB').value = state.fn.a; $('intBVal').textContent = 'b = ' + fmt(state.fn.a, 1); }
+  drawIntegral(); updateIntegralData();
+});
+$('intB').addEventListener('input', e => {
+  state.fn.b = parseFloat(e.target.value);
+  $('intBVal').textContent = 'b = ' + fmt(state.fn.b, 1);
+  drawIntegral(); updateIntegralData();
+});
+$('intSwap').addEventListener('click', () => {
+  const t = state.fn.a; state.fn.a = state.fn.b; state.fn.b = t;
+  $('intA').value = state.fn.a; $('intB').value = state.fn.b;
+  $('intAVal').textContent = 'a = ' + fmt(state.fn.a, 1);
+  $('intBVal').textContent = 'b = ' + fmt(state.fn.b, 1);
+  drawIntegral(); updateIntegralData();
+});
+
+/* ============ 初始化 ============ */
+function resizeAll() {
+  if (state.tab === 'tangent') { drawTangent(); updateTangentData(); }
+  else if (state.tab === 'integral') { drawIntegral(); updateIntegralData(); }
+}
+window.addEventListener('resize', resizeAll);
+function fitCanvas() {
+  ['tangentCanvas', 'integralCanvas'].forEach(id => {
+    const el = $(id);
+    el.style.height = Math.max(360, el.clientWidth * 0.62) + 'px';
+  });
+}
+fitCanvas();
+window.addEventListener('resize', fitCanvas);
+
+$('tfInput').value = 'x^2';
+buildFn();
+drawTangent(); updateTangentData();
+drawIntegral(); updateIntegralData();
+</script>
+</body>
+</html>

@@ -1,0 +1,684 @@
+---
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
+import BaseLayout from '../../../components/BaseLayout.astro';
+import ArtifactPreview from '../../../components/student-ai/ArtifactPreview.astro';
+import rawLab from '../../../data/student-ai-lab.json';
+
+type ConversationRole = 'student' | 'assistant';
+
+type ConversationTurn = {
+  id?: string;
+  session: number;
+  sessionOrder?: number;
+  sequence: number;
+  role: ConversationRole;
+  text: string;
+  hasCode?: boolean;
+  hasCompleteHtml?: boolean;
+  selectionReasons?: string[];
+  excerpted?: boolean;
+};
+
+type ConversationPayload = {
+  schemaVersion?: number;
+  kind?: 'key' | 'full';
+  selectionRule?: string;
+  sessionCount?: number;
+  turnCount?: number;
+  studentTurnCount?: number;
+  assistantTurnCount?: number;
+  turns?: ConversationTurn[];
+};
+
+type DimensionEvidence = {
+  type?: string;
+  note?: string;
+};
+
+type ReviewDimension = {
+  id: string;
+  name: string;
+  score: number;
+  maxScore: number;
+  evidence?: DimensionEvidence[];
+};
+
+type ReviewTrack = {
+  score: number;
+  maxScore: number;
+};
+
+type GapRow = {
+  segment?: string;
+  studentRound?: string;
+  note?: string;
+};
+
+type ReviewFeedback = {
+  teachingPoint?: string;
+  gapTable?: GapRow[];
+};
+
+type SensitivityReview = {
+  rubricVersion?: string;
+  originalB1?: number;
+  reviewedB1?: number;
+  delta?: number;
+  evidenceSummary?: string[];
+  disclaimer?: string;
+};
+
+type ItemReview = {
+  rubricVersion?: string;
+  totalScore?: number | null;
+  trackA?: ReviewTrack | number | null;
+  trackB?: ReviewTrack | number | null;
+  dimensions?: ReviewDimension[];
+  dimScores?: Record<string, string>;
+  acceptanceLevel?: string | { label?: string; level?: string } | null;
+  feedback?: ReviewFeedback;
+  teachingPoint?: string;
+  gapTable?: GapRow[];
+  disclaimer?: string;
+  sensitivityReview?: SensitivityReview;
+};
+
+type EvidenceStatus = {
+  singleStage?: boolean;
+  completeStageCount?: number;
+  firstVersionMatchesSubmission?: boolean;
+  conversationLastVersionMatchesSubmission?: boolean;
+  submittedRelationship?:
+    | 'matches-first-version'
+    | 'matches-conversation-last'
+    | 'differs-from-conversation-last';
+};
+
+type LabAssets = {
+  conversationKey?: string | null;
+  conversationFull?: string | null;
+  deepseekFirst?: string | null;
+  studentFinal?: string | null;
+  optimalPrompt?: string | null;
+  deepseekOptimized?: string | null;
+  // 旧数据兼容只用于本地过渡；新导出统一使用上述 schemaVersion 2 字段。
+  conversation?: string | null;
+  stages?: string[];
+  original?: string | null;
+  prompt?: string | null;
+  crossModel?: Array<{ slug?: string; path?: string | null }>;
+};
+
+type LabItem = {
+  alias: string;
+  subject: string;
+  subjectLabel: string;
+  topic: string;
+  assets: LabAssets;
+  evidenceStatus?: EvidenceStatus;
+  review?: ItemReview | null;
+};
+
+type LabCatalog = {
+  schemaVersion?: number;
+  title?: string;
+  disclaimer?: string;
+  items: LabItem[];
+};
+
+export function getStaticPaths() {
+  const catalog = rawLab as unknown as LabCatalog;
+  return catalog.items.map((item) => ({
+    params: { alias: item.alias },
+    props: { item }
+  }));
+}
+
+const { item } = Astro.props as { item: LabItem };
+const assetBase = `/simulations/student-ai-lab/${item.alias}`;
+const publicRoot = resolve(process.cwd(), 'public/simulations/student-ai-lab', item.alias);
+
+function assetUrl(rel: string | null | undefined) {
+  if (!rel) return null;
+  return `${assetBase}/${rel.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+function publicAssetPath(rel: string | null | undefined) {
+  if (!rel) return null;
+  const path = resolve(publicRoot, rel);
+  if (path !== publicRoot && !path.startsWith(`${publicRoot}${sep}`)) return null;
+  return path;
+}
+
+function readJsonAsset<T>(rel: string | null | undefined): T | null {
+  const path = publicAssetPath(rel);
+  if (!path || !existsSync(path)) return null;
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as T;
+  } catch {
+    return null;
+  }
+}
+
+function readTextAsset(rel: string | null | undefined) {
+  const path = publicAssetPath(rel);
+  if (!path || !existsSync(path)) return '';
+  return readFileSync(path, 'utf8');
+}
+
+const assets = item.assets || {};
+const conversationKeyPath = assets.conversationKey ?? assets.conversation;
+const conversationFullPath = assets.conversationFull ?? assets.conversation;
+const deepseekFirstPath = assets.deepseekFirst ?? assets.stages?.[0] ?? null;
+const studentFinalPath = assets.studentFinal ?? assets.original ?? null;
+const optimalPromptPath = assets.optimalPrompt ?? assets.prompt ?? null;
+const deepseekOptimizedPath =
+  assets.deepseekOptimized ??
+  assets.crossModel?.find((model) => model.slug === 'deepseek')?.path ??
+  null;
+
+const keyConversation = readJsonAsset<ConversationPayload>(conversationKeyPath);
+const fullConversation = readJsonAsset<ConversationPayload>(conversationFullPath);
+const keyTurns = keyConversation?.turns ?? [];
+const fullTurns = fullConversation?.turns ?? [];
+const optimalPromptText = readTextAsset(optimalPromptPath);
+
+const fullSessions = fullTurns.reduce<Record<string, ConversationTurn[]>>((groups, turn) => {
+  const key = String(turn.sessionOrder ?? turn.session);
+  if (!groups[key]) groups[key] = [];
+  groups[key].push(turn);
+  return groups;
+}, {});
+
+const review = item.review;
+const trackA: ReviewTrack | null =
+  typeof review?.trackA === 'number'
+    ? { score: review.trackA, maxScore: 60 }
+    : review?.trackA ?? null;
+const trackB: ReviewTrack | null =
+  typeof review?.trackB === 'number'
+    ? { score: review.trackB, maxScore: 40 }
+    : review?.trackB ?? null;
+
+function dimensionsFromLegacy(dimScores: Record<string, string> | undefined): ReviewDimension[] {
+  if (!dimScores) return [];
+  return Object.entries(dimScores).map(([name, value], index) => {
+    const [rawScore, rawMax] = String(value).split('/');
+    return {
+      id: `legacy-${index + 1}`,
+      name,
+      score: Number(rawScore) || 0,
+      maxScore: Number(rawMax) || 0,
+      evidence: []
+    };
+  });
+}
+
+const dimensions = review?.dimensions ?? dimensionsFromLegacy(review?.dimScores);
+const feedback = review?.feedback ?? {
+  teachingPoint: review?.teachingPoint,
+  gapTable: review?.gapTable
+};
+const sensitivityReview = review?.sensitivityReview;
+const evidenceStatus = item.evidenceStatus ?? {};
+
+function stageLabel(value: boolean | undefined) {
+  if (value === true) return '单阶段';
+  if (value === false) return '多阶段';
+  return '未记录';
+}
+
+function matchLabel(value: boolean | undefined) {
+  if (value === true) return '一致';
+  if (value === false) return '不同';
+  return '未记录';
+}
+
+function relationshipLabel(value: EvidenceStatus['submittedRelationship']) {
+  if (value === 'matches-first-version') return '提交最终版与 DeepSeek 首版一致';
+  if (value === 'matches-conversation-last') return '提交最终版与对话最后版一致';
+  if (value === 'differs-from-conversation-last') return '提交最终版与对话最后版不同';
+  return '提交版本关系未记录';
+}
+
+function acceptanceLabel(value: ItemReview['acceptanceLevel']) {
+  const raw = typeof value === 'string' ? value : value?.label ?? value?.level ?? '';
+  const labels: Record<string, string> = {
+    numeric: '数值校验',
+    'numeric-validation': '数值校验',
+    functional: '功能自查',
+    'functional-check': '功能自查',
+    passive: '被动修正',
+    none: '无验收行为'
+  };
+  return labels[raw] || raw || '未记录';
+}
+
+function scorePercent(score: number, maxScore: number) {
+  if (!Number.isFinite(score) || !Number.isFinite(maxScore) || maxScore <= 0) return 0;
+  return Math.max(0, Math.min(100, (score / maxScore) * 100));
+}
+
+const totalScore = review?.totalScore;
+---
+
+<BaseLayout
+  title={`${item.alias} · ${item.topic} | 学生 AI 素养评价`}
+  description={`${item.subjectLabel}代号 ${item.alias}：${item.topic}。按证据链展示关键与完整对话、版本对比、v4 AI 研究性评分、最优提示词与 DeepSeek 优化对照。`}
+>
+  <section class="section-band bg-lab">
+    <div class="page-shell">
+      <p class="text-sm font-bold text-slate-500">
+        <a href="/simulations/student-ai-lab/" class="focus-ring rounded-sm text-yucai-700 hover:underline">
+          学生 AI 素养评价
+        </a>
+        <span class="mx-2">/</span>
+        {item.subjectLabel}
+      </p>
+      <div class="mt-5 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-end">
+        <div>
+          <p class="eyebrow">{item.alias} · {item.subjectLabel}</p>
+          <h1 class="mt-2 max-w-4xl text-3xl font-black leading-tight text-ink sm:text-5xl">
+            {item.topic}
+          </h1>
+          <p class="mt-5 max-w-3xl leading-8 text-slate-700">
+            本页只用学科代号展示可追溯证据。评分为 v4 AI 研究性评分，用于教学反思与论文研究，不是学校正式成绩。
+          </p>
+        </div>
+        <div class="rounded-lg border border-yucai-200 bg-white px-5 py-4 text-sm font-bold text-yucai-800">
+          已脱敏 · 证据链
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="dialogue" class="section-band scroll-mt-24 bg-white">
+    <div class="page-shell max-w-5xl">
+      <p class="eyebrow">01 · DIALOGUE</p>
+      <h2 class="mt-2 text-2xl font-black text-ink sm:text-3xl">关键对话</h2>
+      <p class="mt-4 max-w-3xl leading-8 text-slate-700">
+        优先呈现 v4 九个维度所引用的学生决策证据。代码正文不在对话里重复展开，对应网页统一放在后续版本预览中。
+      </p>
+
+      {
+        keyConversation?.selectionRule && (
+          <p class="mt-5 rounded-md border-l-4 border-yucai-600 bg-yucai-50 px-4 py-3 text-sm leading-7 text-yucai-900">
+            <strong>选取规则：</strong>{keyConversation.selectionRule}
+          </p>
+        )
+      }
+
+      {
+        keyTurns.length > 0 ? (
+          <div class="mt-7 space-y-4">
+            {keyTurns.map((turn) => (
+              <article
+                class:list={[
+                  'rounded-lg border p-5',
+                  turn.role === 'student'
+                    ? 'border-yucai-200 bg-yucai-50/60'
+                    : 'border-slate-200 bg-slate-50'
+                ]}
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-500">
+                    {turn.role === 'student' ? '学生' : 'DeepSeek'} · 会话 {turn.sessionOrder ?? turn.session} · #{turn.sequence}
+                  </p>
+                  <div class="flex flex-wrap gap-2 text-xs font-bold text-slate-600">
+                    {turn.excerpted && <span class="rounded-full bg-white px-2 py-1">关键摘录</span>}
+                    {turn.hasCompleteHtml && (
+                      <span class="rounded-full bg-white px-2 py-1">含完整 HTML 版本</span>
+                    )}
+                    {!turn.hasCompleteHtml && turn.hasCode && (
+                      <span class="rounded-full bg-white px-2 py-1">含代码片段</span>
+                    )}
+                  </div>
+                </div>
+                <p class="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-800">{turn.text}</p>
+                {(turn.selectionReasons ?? []).length > 0 && (
+                  <ul class="mt-4 flex flex-wrap gap-2" aria-label="该轮入选关键对话的原因">
+                    {(turn.selectionReasons ?? []).map((reason) => (
+                      <li class="rounded-md border border-yucai-100 bg-white px-2.5 py-1 text-xs font-bold text-yucai-800">
+                        {reason}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p class="mt-7 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">
+            关键对话暂缺或未通过脱敏门禁。
+          </p>
+        )
+      }
+
+      <details class="mt-8 overflow-hidden rounded-lg border border-slate-200 bg-lab">
+        <summary class="focus-ring cursor-pointer list-none px-5 py-4 marker:hidden sm:px-6">
+          <span class="flex flex-wrap items-center justify-between gap-3">
+            <span class="font-black text-ink">完整可见对话（代码正文单独展示）</span>
+            <span class="text-sm font-bold text-slate-500">
+              {fullConversation?.sessionCount ?? Object.keys(fullSessions).length} 个会话 · {fullConversation?.turnCount ?? fullTurns.length} 轮
+            </span>
+          </span>
+        </summary>
+        <div class="border-t border-slate-200 bg-white p-4 sm:p-6">
+          {
+            fullTurns.length > 0 ? (
+              <div class="space-y-8">
+                {Object.entries(fullSessions).map(([session, turns]) => (
+                  <section aria-labelledby={`session-${item.alias}-${session}`}>
+                    <h3 id={`session-${item.alias}-${session}`} class="text-sm font-black text-yucai-800">
+                      会话 {session}
+                    </h3>
+                    <div class="mt-3 space-y-3">
+                      {turns.map((turn) => (
+                        <article
+                          class:list={[
+                            'rounded-md border p-4',
+                            turn.role === 'student'
+                              ? 'border-yucai-100 bg-yucai-50/50'
+                              : 'border-slate-200 bg-slate-50'
+                          ]}
+                        >
+                          <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-xs font-black uppercase tracking-[0.1em] text-slate-500">
+                              {turn.role === 'student' ? '学生' : 'DeepSeek'} · #{turn.sequence}
+                            </p>
+                            {(turn.hasCode || turn.hasCompleteHtml) && (
+                              <span class="rounded-full bg-white px-2 py-1 text-xs font-bold text-slate-600">
+                                {turn.hasCompleteHtml ? '完整 HTML 已单独展示' : '代码正文已省略'}
+                              </span>
+                            )}
+                          </div>
+                          <p class="mt-2 whitespace-pre-wrap text-sm leading-7 text-slate-800">{turn.text}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <p class="text-sm leading-7 text-slate-600">完整可见对话暂缺或未通过脱敏门禁。</p>
+            )
+          }
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <section id="comparison" class="section-band scroll-mt-24 bg-lab">
+    <div class="page-shell">
+      <p class="eyebrow">02 · VERSION COMPARISON</p>
+      <h2 class="mt-2 text-2xl font-black text-ink sm:text-3xl">DeepSeek 首版与学生提交最终版</h2>
+      <p class="mt-4 max-w-3xl leading-8 text-slate-700">
+        左侧是对话证据中第一个完整的 DeepSeek HTML，右侧是原始提交材料中识别的最终版。两者依据不同，不用“最后一段代码”代替学生提交事实。
+      </p>
+
+      <div class="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-md border border-slate-200 bg-white p-4" data-evidence-key="singleStage">
+          <p class="text-xs font-black text-slate-500">迭代阶段</p>
+          <p class="mt-2 text-lg font-black text-ink">{stageLabel(evidenceStatus.singleStage)}</p>
+          <p class="mt-1 text-xs leading-6 text-slate-600">
+            完整阶段数：{evidenceStatus.completeStageCount ?? '未记录'}
+          </p>
+        </div>
+        <div class="rounded-md border border-slate-200 bg-white p-4" data-evidence-key="firstVersionMatchesSubmission">
+          <p class="text-xs font-black text-slate-500">首版与提交版</p>
+          <p class="mt-2 text-lg font-black text-ink">{matchLabel(evidenceStatus.firstVersionMatchesSubmission)}</p>
+          <p class="mt-1 text-xs leading-6 text-slate-600">首版是否与提交最终版一致</p>
+        </div>
+        <div class="rounded-md border border-slate-200 bg-white p-4" data-evidence-key="conversationLastVersionMatchesSubmission">
+          <p class="text-xs font-black text-slate-500">对话末版与提交版</p>
+          <p class="mt-2 text-lg font-black text-ink">
+            {matchLabel(evidenceStatus.conversationLastVersionMatchesSubmission)}
+          </p>
+          <p class="mt-1 text-xs leading-6 text-slate-600">对话最后版是否与提交最终版一致</p>
+        </div>
+        <div class="rounded-md border border-yucai-200 bg-yucai-50 p-4">
+          <p class="text-xs font-black text-yucai-700">提交关系</p>
+          <p class="mt-2 text-sm font-black leading-6 text-yucai-900">
+            {relationshipLabel(evidenceStatus.submittedRelationship)}
+          </p>
+        </div>
+      </div>
+
+      <div class="mt-8 grid items-start gap-6 lg:grid-cols-2">
+        <ArtifactPreview
+          id={`${item.alias}-deepseek-first`}
+          eyebrow="FIRST GENERATED VERSION"
+          title="DeepSeek 首次生成版"
+          description="来自已确认 DeepSeek 回复中的首个完整 HTML 阶段。"
+          src={assetUrl(deepseekFirstPath)}
+        />
+        <ArtifactPreview
+          id={`${item.alias}-student-final`}
+          eyebrow="SUBMITTED FINAL VERSION"
+          title="学生提交最终版"
+          description="来自原始提交材料；这是 B 轨成品评价的唯一对象。"
+          src={assetUrl(studentFinalPath)}
+        />
+      </div>
+    </div>
+  </section>
+
+  <section id="score" class="section-band scroll-mt-24 bg-white">
+    <div class="page-shell max-w-5xl">
+      <p class="eyebrow">03 · STUDENT AI LITERACY</p>
+      <h2 class="mt-2 text-2xl font-black text-ink sm:text-3xl">学生 AI 素养评价 · v4 AI 研究性评分</h2>
+      <p class="mt-4 max-w-3xl leading-8 text-slate-700">
+        A 轨只看可证明出自学生的过程证据，B 轨只评学生提交最终版。页面精美不能反推 A 轨，提示词表现也不能补成品硬伤。
+      </p>
+
+      {
+        typeof totalScore === 'number' && trackA && trackB ? (
+          <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-lg border border-yucai-200 bg-yucai-50 p-5">
+              <p class="text-sm font-bold text-yucai-700">AI 研究性总分</p>
+              <p class="mt-2 tabular-nums text-4xl font-black text-yucai-900">
+                {totalScore}<span class="text-lg">/100</span>
+              </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-lab p-5">
+              <p class="text-sm font-bold text-slate-500">A 轨 · 过程证据</p>
+              <p class="mt-2 tabular-nums text-3xl font-black text-ink">
+                {trackA.score}<span class="text-base">/{trackA.maxScore}</span>
+              </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-lab p-5">
+              <p class="text-sm font-bold text-slate-500">B 轨 · 成品质量</p>
+              <p class="mt-2 tabular-nums text-3xl font-black text-ink">
+                {trackB.score}<span class="text-base">/{trackB.maxScore}</span>
+              </p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-5">
+              <p class="text-sm font-bold text-slate-500">A4 验收档位</p>
+              <p class="mt-2 text-xl font-black text-ink">{acceptanceLabel(review?.acceptanceLevel)}</p>
+            </div>
+          </div>
+        ) : (
+          <p class="mt-8 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">
+            该代号的 v4 评分未通过完整性或脱敏门禁，暂不展示数字。
+          </p>
+        )
+      }
+
+      <div class="mt-9">
+        <h3 class="text-xl font-black text-ink">九维分数与证据</h3>
+        {
+          dimensions.length > 0 ? (
+            <div class="mt-5 grid gap-4 lg:grid-cols-2">
+              {dimensions.map((dimension) => (
+                <article class="rounded-lg border border-slate-200 bg-lab p-5">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <p class="text-xs font-black uppercase tracking-[0.1em] text-yucai-700">{dimension.id}</p>
+                      <h4 class="mt-1 font-black text-ink">{dimension.name}</h4>
+                    </div>
+                    <p class="shrink-0 tabular-nums text-lg font-black text-yucai-800">
+                      {dimension.score}/{dimension.maxScore}
+                    </p>
+                  </div>
+                  <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+                    <div
+                      class="h-full rounded-full bg-yucai-600"
+                      style={`width:${scorePercent(dimension.score, dimension.maxScore)}%`}
+                    />
+                  </div>
+                  {(dimension.evidence ?? []).length > 0 && (
+                    <ul class="mt-4 space-y-2">
+                      {(dimension.evidence ?? []).map((evidence) => (
+                        <li class="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
+                          <span>{evidence.note || '证据已记录'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p class="mt-5 rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-slate-600">
+              九维分数暂缺。
+            </p>
+          )
+        }
+      </div>
+
+      {
+        (feedback?.teachingPoint || (feedback?.gapTable ?? []).length > 0) && (
+          <div class="mt-9 grid gap-5 lg:grid-cols-[0.78fr_1.22fr]">
+            {feedback?.teachingPoint && (
+              <article class="rounded-lg border border-yucai-200 bg-yucai-50 p-5">
+                <p class="text-sm font-black text-yucai-700">核心教学点</p>
+                <p class="mt-3 leading-8 text-yucai-900">{feedback.teachingPoint}</p>
+              </article>
+            )}
+            {(feedback?.gapTable ?? []).length > 0 && (
+              <div class="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                <table class="min-w-full text-left text-sm">
+                  <caption class="px-4 py-3 text-left font-black text-ink">提示词差距证据</caption>
+                  <thead class="border-t border-slate-200 bg-slate-50 text-slate-600">
+                    <tr>
+                      <th class="px-4 py-3 font-black">要素</th>
+                      <th class="px-4 py-3 font-black">学生提出轮次</th>
+                      <th class="px-4 py-3 font-black">说明</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(feedback?.gapTable ?? []).map((row) => (
+                      <tr class="border-t border-slate-100">
+                        <td class="px-4 py-3 font-bold text-ink">{row.segment || '—'}</td>
+                        <td class="px-4 py-3 text-slate-700">{row.studentRound || '—'}</td>
+                        <td class="px-4 py-3 text-slate-700">{row.note || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      <p class="mt-7 rounded-md border-l-4 border-signal bg-amber-50 px-4 py-3 text-sm leading-7 text-slate-700">
+        {review?.disclaimer || '本页展示的是 AI 按 v4 双轨量规给出的研究性评分，不是学校正式成绩。'}
+      </p>
+    </div>
+  </section>
+
+  <section id="optimal-prompt" class="section-band scroll-mt-24 bg-lab">
+    <div class="page-shell max-w-5xl">
+      <p class="eyebrow">04 · RECONSTRUCTED PROMPT</p>
+      <h2 class="mt-2 text-2xl font-black text-ink sm:text-3xl">评审重构的最优提示词</h2>
+      <p class="mt-4 max-w-3xl leading-8 text-slate-700">
+        这是评审根据原作亮点、缺口、学科规则与可实测验收条件重构的教学用提示词，不是学生原始对话的一部分。
+      </p>
+      {
+        optimalPromptText ? (
+          <pre class="mt-7 max-h-[42rem] overflow-auto whitespace-pre-wrap break-words rounded-lg border border-slate-200 bg-white p-5 text-sm leading-7 text-slate-800 shadow-soft sm:p-6">{optimalPromptText}</pre>
+        ) : (
+          <p class="mt-7 rounded-lg border border-dashed border-slate-300 bg-white p-5 text-slate-600">
+            最优提示词暂缺或未通过脱敏门禁。
+          </p>
+        )
+      }
+    </div>
+  </section>
+
+  <section id="deepseek-result" class="section-band scroll-mt-24 bg-white">
+    <div class="page-shell">
+      <p class="eyebrow">05 · DEEPSEEK COMPARISON</p>
+      <h2 class="mt-2 text-2xl font-black text-ink sm:text-3xl">基于最优提示词的 DeepSeek 优化对照</h2>
+      <div class="mt-5 grid gap-4 lg:grid-cols-2">
+        <div class="rounded-lg border border-yucai-200 bg-yucai-50 p-5">
+          <p class="text-sm font-black text-yucai-700">生成条件</p>
+          <p class="mt-2 leading-8 text-yucai-900">
+            模型：<strong>deepseek-v4-flash-0731</strong>；使用评审重构的最优提示词；<strong>无现场时限</strong>。
+          </p>
+        </div>
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-5">
+          <p class="text-sm font-black text-amber-800">解释边界</p>
+          <p class="mt-2 leading-8 text-slate-700">
+            对照差异同时受模型版本、生成条件和规范化提示词影响，不能作单一提示词因果归因。
+          </p>
+        </div>
+      </div>
+      <div class="mt-8">
+        <ArtifactPreview
+          id={`${item.alias}-deepseek-optimized`}
+          eyebrow="OPTIMAL-PROMPT OUTPUT"
+          title="DeepSeek 优化对照作品"
+          description="用同一份评审重构提示词单轮生成，作为教学与论文的研究对照，不是学生修改版。"
+          src={assetUrl(deepseekOptimizedPath)}
+        />
+      </div>
+    </div>
+  </section>
+
+  {
+    sensitivityReview && (
+      <section class="section-band bg-lab">
+        <div class="page-shell max-w-5xl">
+          <p class="eyebrow">06 · PHYSICS SENSITIVITY APPENDIX</p>
+          <h2 class="mt-2 text-2xl font-black text-ink sm:text-3xl">物理敏感性分析附录</h2>
+          <p class="mt-4 max-w-3xl leading-8 text-slate-700">
+            该复核独立检查 B1 学科正确性对评价结果的敏感程度，不回写本页 v4 总分。
+          </p>
+          <div class="mt-7 grid gap-4 sm:grid-cols-3">
+            <div class="rounded-lg border border-slate-200 bg-white p-5">
+              <p class="text-sm font-bold text-slate-500">原 B1</p>
+              <p class="mt-2 tabular-nums text-3xl font-black text-ink">{sensitivityReview.originalB1 ?? '—'}</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 bg-white p-5">
+              <p class="text-sm font-bold text-slate-500">深度复核 B1</p>
+              <p class="mt-2 tabular-nums text-3xl font-black text-ink">{sensitivityReview.reviewedB1 ?? '—'}</p>
+            </div>
+            <div class="rounded-lg border border-yucai-200 bg-yucai-50 p-5">
+              <p class="text-sm font-bold text-yucai-700">变化量</p>
+              <p class="mt-2 tabular-nums text-3xl font-black text-yucai-900">
+                {typeof sensitivityReview.delta === 'number' && sensitivityReview.delta > 0 ? '+' : ''}{sensitivityReview.delta ?? '—'}
+              </p>
+            </div>
+          </div>
+          {(sensitivityReview.evidenceSummary ?? []).length > 0 && (
+            <ul class="mt-6 space-y-3">
+              {(sensitivityReview.evidenceSummary ?? []).map((evidence) => (
+                <li class="rounded-md border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-700">
+                  {evidence}
+                </li>
+              ))}
+            </ul>
+          )}
+          {sensitivityReview.disclaimer && (
+            <p class="mt-6 rounded-md border-l-4 border-signal bg-amber-50 px-4 py-3 text-sm leading-7 text-slate-700">
+              {sensitivityReview.disclaimer}
+            </p>
+          )}
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>

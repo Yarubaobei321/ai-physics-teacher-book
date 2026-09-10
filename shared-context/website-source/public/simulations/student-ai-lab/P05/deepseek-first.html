@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>微积分三大基本定理 | 3Blue1Brown 风格交互演示</title>
+    <!-- MathJax 用于优美数学公式 -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动时选中文字干扰，但不影响输入框 */
+        }
+
+        body {
+            background: #0a0c10;
+            font-family: 'Segoe UI', 'SF Pro Text', 'Latin Modern Math', 'Georgia', -apple-system, BlinkMacSystemFont, 'Roboto', monospace;
+            color: #eef4ff;
+            padding: 2rem 1.5rem;
+            line-height: 1.4;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* 页眉 3B1B 风格 */
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff, #8ba5ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .hero p {
+            font-size: 1.2rem;
+            color: #9aaec9;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        .hero .accent {
+            color: #5d9eff;
+            border-bottom: 1px dashed #3a6ea5;
+        }
+
+        /* 三列卡片网格 */
+        .theorems-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        /* 卡片样式 深色玻璃质感 */
+        .card {
+            background: rgba(18, 22, 32, 0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            border: 1px solid rgba(72, 97, 130, 0.4);
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.5);
+            padding: 1.4rem 1.2rem 1.8rem 1.2rem;
+            transition: transform 0.2s ease, border-color 0.2s;
+        }
+        .card:hover {
+            border-color: rgba(93, 158, 255, 0.6);
+            transform: translateY(-3px);
+        }
+
+        .card h2 {
+            font-size: 1.6rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            display: inline-block;
+            background: linear-gradient(120deg, #c0e0ff, #ffffff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .card .sub {
+            font-size: 0.85rem;
+            color: #7e8cae;
+            margin-bottom: 1rem;
+            border-left: 3px solid #5d9eff;
+            padding-left: 0.6rem;
+        }
+        .formula {
+            background: #0f1119;
+            padding: 0.6rem 0.8rem;
+            border-radius: 1rem;
+            margin: 0.8rem 0;
+            text-align: center;
+            font-size: 1rem;
+            font-family: monospace;
+            border: 1px solid #2a3448;
+            overflow-x: auto;
+        }
+
+        canvas {
+            display: block;
+            margin: 0.8rem auto;
+            background: #0c0f16;
+            border-radius: 1.2rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+
+        /* 滑块与控件区 */
+        .controls {
+            margin-top: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .slider-container {
+            flex: 2;
+            min-width: 120px;
+        }
+        .slider-container label {
+            font-size: 0.75rem;
+            color: #a5bbdf;
+            display: block;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+        input[type="range"] {
+            width: 100%;
+            background: #1e2538;
+            height: 3px;
+            border-radius: 10px;
+            -webkit-appearance: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #5d9eff;
+            cursor: pointer;
+            box-shadow: 0 0 6px #5d9eff;
+            border: none;
+        }
+        .value-display {
+            background: #0b0e16;
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #bbd4ff;
+            border: 1px solid #2e3b4e;
+        }
+        .stats {
+            background: #0a0d14;
+            border-radius: 1rem;
+            padding: 0.6rem;
+            margin-top: 0.8rem;
+            font-size: 0.8rem;
+            text-align: center;
+            font-family: monospace;
+            border: 1px solid #20273d;
+        }
+        .stats span {
+            color: #ffd966;
+            font-weight: bold;
+        }
+        .footnote {
+            text-align: center;
+            margin-top: 2.5rem;
+            font-size: 0.75rem;
+            color: #5d6f91;
+            border-top: 1px solid #1e2a3a;
+            padding-top: 1.5rem;
+        }
+        button, .info-btn {
+            background: none;
+            border: none;
+            color: #8ba5ff;
+        }
+        @media (max-width: 800px) {
+            body { padding: 1rem; }
+            .hero h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="hero">
+        <h1>📐 微积分 · 三大基本定理</h1>
+        <p>直观理解 <span class="accent">变化率与累积量</span> 的深刻联系 — 风格致敬 <strong>3Blue1Brown</strong></p>
+    </div>
+
+    <div class="theorems-grid">
+        <!-- 定理1：微积分第一基本定理 (FTC1) -->
+        <div class="card">
+            <h2>📈 第一基本定理</h2>
+            <div class="sub">原函数存在性 · 微分与积分互逆</div>
+            <div class="formula">
+                \[ F(x) = \int_{a}^{x} f(t)\,dt \quad \Rightarrow \quad F'(x) = f(x) \]
+            </div>
+            <canvas id="ftc1Canvas" width="500" height="320" style="width:100%; height:auto; max-width:500px; aspect-ratio:500/320"></canvas>
+            <div class="controls">
+                <div class="slider-container">
+                    <label>🔵 观测点 \( x_0 \)</label>
+                    <input type="range" id="x0Slider" min="0.5" max="7.5" step="0.01" value="3.5">
+                </div>
+                <div class="value-display" id="x0Value">x₀ = 3.50</div>
+            </div>
+            <div class="stats" id="ftc1Stats">
+                📊 面积变化率 \( \frac{dA}{dx} \approx \) —— &nbsp;&nbsp;|&nbsp;&nbsp; \( f(x_0) = \) ——
+            </div>
+            <div class="stats" style="margin-top: 5px; background:#0e1220;">
+                💡 阴影面积从固定起点 \(a=0\) 累积到 \(x_0\)，其瞬时增长率 = 曲线高度 \(f(x_0)\)<br>
+                <span style="color:#7aaaff;">数值微分 ≈ 函数值 → 完美印证定理</span>
+            </div>
+        </div>
+
+        <!-- 定理2：牛顿-莱布尼茨公式 (FTC2) -->
+        <div class="card">
+            <h2>📐 第二基本定理</h2>
+            <div class="sub">牛顿-莱布尼茨公式 · 积分计算桥梁</div>
+            <div class="formula">
+                \[ \int_{a}^{b} f(x)\,dx = F(b) - F(a) \]
+            </div>
+            <canvas id="ftc2Canvas" width="500" height="320" style="width:100%; height:auto; max-width:500px; aspect-ratio:500/320"></canvas>
+            <div class="controls">
+                <div class="slider-container">
+                    <label>📌 下限 \(a\)</label>
+                    <input type="range" id="aSlider" min="0.2" max="4.5" step="0.02" value="1.0">
+                </div>
+                <div class="slider-container">
+                    <label>📍 上限 \(b\)</label>
+                    <input type="range" id="bSlider" min="1.5" max="6.5" step="0.02" value="5.0">
+                </div>
+            </div>
+            <div class="stats" id="ftc2Stats">
+                🟢 数值积分 ≈ <span id="intVal">0.00</span> &nbsp;&nbsp;|&nbsp;&nbsp; \(F(b)-F(a)\) = <span id="diffF">0.00</span>
+            </div>
+            <div class="stats" style="margin-top: 5px;">
+                ✨ 曲线下面积 \(= \int_a^b f(x)dx\) &nbsp;≡&nbsp; 原函数增量
+            </div>
+        </div>
+
+        <!-- 定理3：积分中值定理 (Mean Value Theorem for Integrals) -->
+        <div class="card">
+            <h2>🎯 积分中值定理</h2>
+            <div class="sub">平均值定理 · 存在性几何解释</div>
+            <div class="formula">
+                \[ \exists\, c \in [a,b],\; f(c) = \frac{1}{b-a}\int_{a}^{b} f(x)\,dx \]
+            </div>
+            <canvas id="ftc3Canvas" width="500" height="320" style="width:100%; height:auto; max-width:500px; aspect-ratio:500/320"></canvas>
+            <div class="controls">
+                <div class="slider-container">
+                    <label>🔻 左端点 \(a\)</label>
+                    <input type="range" id="cA" min="0.2" max="4.0" step="0.02" value="1.0">
+                </div>
+                <div class="slider-container">
+                    <label>🔺 右端点 \(b\)</label>
+                    <input type="range" id="cB" min="2.5" max="6.8" step="0.02" value="5.5">
+                </div>
+            </div>
+            <div class="stats" id="ftc3Stats">
+                📐 平均高度 \( f(c^*) = \) —— &nbsp;&nbsp; 矩形面积 ≡ 积分面积 &nbsp; ✅
+            </div>
+            <div class="stats" style="margin-top: 5px;">
+                🟨 黄色矩形 (宽 \(b-a\)，高 \(f(c)\)) 面积 ≡ 曲线下真实面积
+            </div>
+        </div>
+    </div>
+    <div class="footnote">
+        🧠 交互说明：拖动滑块实时观察几何意义 — 所有曲线均基于解析函数，数值积分精度高。3B1B风格深色系+亮色轨迹。
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- 全局辅助函数：坐标系转换 ----------
+        function setupCanvas(canvas, xMin, xMax, yMin, yMax) {
+            const rect = canvas.getBoundingClientRect();
+            const width = canvas.width, height = canvas.height;
+            return {
+                toPixelX: (x) => ((x - xMin) / (xMax - xMin)) * width,
+                toPixelY: (y) => height - ((y - yMin) / (yMax - yMin)) * height,
+                xMin, xMax, yMin, yMax, width, height
+            };
+        }
+
+        // 绘制网格和轴线 (优雅3B1B风格)
+        function drawGridAndAxes(ctx, transform, xMin, xMax, yMin, yMax) {
+            const { toPixelX, toPixelY, width, height } = transform;
+            ctx.save();
+            ctx.strokeStyle = "#2e3c4e";
+            ctx.lineWidth = 0.6;
+            ctx.fillStyle = "#8ea3c7";
+            ctx.font = "12px 'JetBrains Mono', monospace";
+            // 纵向网格 (x 轴刻度)
+            const xStep = (xMax - xMin) / 8;
+            for(let x = Math.ceil(xMin/xStep)*xStep; x <= xMax; x += xStep) {
+                let px = toPixelX(x);
+                ctx.beginPath();
+                ctx.moveTo(px, 0);
+                ctx.lineTo(px, height);
+                ctx.strokeStyle = "#232a3c";
+                ctx.stroke();
+                ctx.fillStyle = "#7d8ab0";
+                ctx.fillText(x.toFixed(1), px-8, toPixelY(0)-6);
+            }
+            // 横向网格
+            const yStep = (yMax - yMin) / 6;
+            for(let y = Math.ceil(yMin/yStep)*yStep; y <= yMax; y += yStep) {
+                let py = toPixelY(y);
+                ctx.beginPath();
+                ctx.moveTo(0, py);
+                ctx.lineTo(width, py);
+                ctx.strokeStyle = "#232a3c";
+                ctx.stroke();
+                ctx.fillStyle = "#7d8ab0";
+                ctx.fillText(y.toFixed(1), 5, py-3);
+            }
+            // 坐标轴 (亮色)
+            ctx.beginPath();
+            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = "#cbddf5";
+            // X轴
+            const yZero = toPixelY(0);
+            ctx.moveTo(0, yZero);
+            ctx.lineTo(width, yZero);
+            // Y轴
+            const xZero = toPixelX(0);
+            ctx.moveTo(xZero, 0);
+            ctx.lineTo(xZero, height);
+            ctx.stroke();
+
+            // 箭头装饰
+            ctx.fillStyle = "#cbddf5";
+            ctx.beginPath();
+            ctx.moveTo(width-6, yZero-3);
+            ctx.lineTo(width, yZero);
+            ctx.lineTo(width-6, yZero+3);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(xZero-3, 6);
+            ctx.lineTo(xZero, 0);
+            ctx.lineTo(xZero+3, 6);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 绘制函数曲线
+        function drawFunction(ctx, transform, func, color = "#5d9eff", lineWidth = 2.5) {
+            const { toPixelX, toPixelY, xMin, xMax, width } = transform;
+            ctx.save();
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            let step = (xMax - xMin) / width;
+            let first = true;
+            for(let x = xMin; x <= xMax; x += step) {
+                let y = func(x);
+                if(!isFinite(y)) continue;
+                let px = toPixelX(x);
+                let py = toPixelY(y);
+                if(first) {
+                    ctx.moveTo(px, py);
+                    first = false;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 填充曲线下区域 (从xStart到xEnd)
+        function fillArea(ctx, transform, func, xStart, xEnd, color = "rgba(93, 158, 255, 0.25)") {
+            const { toPixelX, toPixelY, xMin, xMax, width, height } = transform;
+            if(xStart >= xEnd) return;
+            ctx.save();
+            ctx.beginPath();
+            let step = (xMax - xMin) / width;
+            let started = false;
+            for(let x = xStart; x <= xEnd; x += step) {
+                let y = func(x);
+                if(!isFinite(y)) continue;
+                let px = toPixelX(x);
+                let py = toPixelY(y);
+                if(!started){
+                    ctx.moveTo(px, py);
+                    started = true;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            let lastX = toPixelX(xEnd);
+            let lastY = toPixelY(func(xEnd));
+            ctx.lineTo(lastX, lastY);
+            ctx.lineTo(lastX, toPixelY(0));
+            ctx.lineTo(toPixelX(xStart), toPixelY(0));
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 数值积分 (梯形法)
+        function integrate(func, a, b, steps = 200) {
+            if(a >= b) return 0;
+            let h = (b - a) / steps;
+            let sum = 0.5 * (func(a) + func(b));
+            for(let i = 1; i < steps; i++) {
+                let x = a + i * h;
+                sum += func(x);
+            }
+            return sum * h;
+        }
+
+        // ========== 定理1: f(x) = 2 + sin(x) + 0.2*x  (美丽波浪，正值) ==========
+        const f1 = (x) => 2 + Math.sin(x) + 0.2 * x;    // 在 [0,7.5] 范围正值，平滑
+        const A_FIXED = 0.0;   // 固定积分下限
+        
+        // 面积函数 F(x) = ∫_0^x f1(t) dt  (数值积分)
+        function F1(x) {
+            if(x <= A_FIXED) return 0;
+            return integrate(f1, A_FIXED, x, 300);
+        }
+
+        // 数值微分 dA/dx at x0
+        function numericalDerivativeF1(x0, eps = 1e-4) {
+            let x1 = Math.min(x0+eps, 7.8);
+            let x2 = Math.max(x0-eps, A_FIXED);
+            if(x1 <= A_FIXED) return f1(x0);
+            return (F1(x1) - F1(x2)) / (x1 - x2);
+        }
+
+        // 定理1 绘图
+        let canvas1 = document.getElementById('ftc1Canvas');
+        let ctx1 = canvas1.getContext('2d');
+        let x0Slider = document.getElementById('x0Slider');
+        let x0Val = document.getElementById('x0Value');
+        let ftc1Stats = document.getElementById('ftc1Stats');
+        
+        function drawTheorem1() {
+            let x0 = parseFloat(x0Slider.value);
+            x0Val.innerText = `x₀ = ${x0.toFixed(2)}`;
+            const xMin = -0.5, xMax = 8.2, yMin = 0.5, yMax = 4.8;
+            let transform = setupCanvas(canvas1, xMin, xMax, yMin, yMax);
+            ctx1.clearRect(0, 0, canvas1.width, canvas1.height);
+            drawGridAndAxes(ctx1, transform, xMin, xMax, yMin, yMax);
+            // 填充从 0 到 x0 的面积
+            fillArea(ctx1, transform, f1, A_FIXED, x0, "rgba(93, 158, 255, 0.35)");
+            drawFunction(ctx1, transform, f1, "#5d9eff", 2.8);
+            // 标记x0竖线
+            let px0 = transform.toPixelX(x0);
+            let pyTop = transform.toPixelY(yMax);
+            let pyBottom = transform.toPixelY(yMin);
+            ctx1.beginPath();
+            ctx1.moveTo(px0, pyTop);
+            ctx1.lineTo(px0, pyBottom);
+            ctx1.strokeStyle = "#ffaa66";
+            ctx1.lineWidth = 1.8;
+            ctx1.setLineDash([6, 8]);
+            ctx1.stroke();
+            ctx1.setLineDash([]);
+            // 标记曲线上的点 (x0, f(x0))
+            let fx0 = f1(x0);
+            let pxPt = transform.toPixelX(x0);
+            let pyPt = transform.toPixelY(fx0);
+            ctx1.beginPath();
+            ctx1.arc(pxPt, pyPt, 5, 0, 2*Math.PI);
+            ctx1.fillStyle = "#ffaa66";
+            ctx1.fill();
+            ctx1.shadowBlur = 0;
+            // 显示数值微分和f(x0)
+            let dA = numericalDerivativeF1(x0);
+            let fVal = f1(x0);
+            ftc1Stats.innerHTML = `📊 面积变化率 \( \\frac{dA}{dx} \\approx ${dA.toFixed(4)} \) &nbsp;&nbsp;|&nbsp;&nbsp; \( f(x_0) = ${fVal.toFixed(4)} \)<br>
+                                    <span style="color:#ffaa77;">✨ 相对误差: ${Math.abs(dA-fVal).toFixed(6)} , 完美吻合 FTC1 ✨</span>`;
+            // 加一段说明小标记
+            ctx1.font = "11px monospace";
+            ctx1.fillStyle = "#cbe5ff";
+            ctx1.shadowBlur = 0;
+            ctx1.fillText(`斜率 ≈ ${dA.toFixed(3)}`, px0+8, transform.toPixelY(fx0)-8);
+            ctx1.fillText(`f(x₀)=${fVal.toFixed(3)}`, px0+8, transform.toPixelY(fx0)+2);
+            // 重新加载MathJax渲染stats内的LaTeX
+            if(window.MathJax) MathJax.typesetPromise?.( [ftc1Stats] ).catch(()=>{});
+        }
+
+        // ========== 定理2: f2(x) = (x-3)^2 + 0.8  原函数 F2 = (1/3)(x-3)^3 + 0.8x ==========
+        const f2 = (x) => (x-3)*(x-3) + 0.8;
+        function F2_exact(x) {
+            return (1/3)*Math.pow(x-3, 3) + 0.8*x;
+        }
+        let canvas2 = document.getElementById('ftc2Canvas');
+        let ctx2 = canvas2.getContext('2d');
+        let aSlider = document.getElementById('aSlider');
+        let bSlider = document.getElementById('bSlider');
+        let intValSpan = document.getElementById('intVal');
+        let diffFSpan = document.getElementById('diffF');
+        
+        function drawTheorem2() {
+            let a = parseFloat(aSlider.value);
+            let b = parseFloat(bSlider.value);
+            if(a >= b) { let tmp = b; b = a+0.2; aSlider.value = a; bSlider.value = b; a = a; b = b; }
+            const xMin = -0.8, xMax = 7.5, yMin = -0.5, yMax = 7.5;
+            let transform = setupCanvas(canvas2, xMin, xMax, yMin, yMax);
+            ctx2.clearRect(0, 0, canvas2.width, canvas2.height);
+            drawGridAndAxes(ctx2, transform, xMin, xMax, yMin, yMax);
+            // 填充积分区域
+            fillArea(ctx2, transform, f2, a, b, "rgba(80, 210, 140, 0.35)");
+            drawFunction(ctx2, transform, f2, "#5ae0a5", 2.8);
+            // 画a,b竖线
+            let pa = transform.toPixelX(a);
+            let pb = transform.toPixelX(b);
+            ctx2.beginPath();
+            ctx2.moveTo(pa, transform.toPixelY(yMin));
+            ctx2.lineTo(pa, transform.toPixelY(yMax));
+            ctx2.moveTo(pb, transform.toPixelY(yMin));
+            ctx2.lineTo(pb, transform.toPixelY(yMax));
+            ctx2.strokeStyle = "#f5bc70";
+            ctx2.lineWidth = 1.5;
+            ctx2.setLineDash([4,6]);
+            ctx2.stroke();
+            ctx2.setLineDash([]);
+            // 数值积分与解析原函数差值对比
+            let numericalInt = integrate(f2, a, b, 400);
+            let exactDiff = F2_exact(b) - F2_exact(a);
+            intValSpan.innerText = numericalInt.toFixed(5);
+            diffFSpan.innerText = exactDiff.toFixed(5);
+            let error = Math.abs(numericalInt - exactDiff);
+            document.getElementById('ftc2Stats').innerHTML = `🟢 数值积分 ≈ <span id="intVal">${numericalInt.toFixed(5)}</span> &nbsp;&nbsp;|&nbsp;&nbsp; \(F(b)-F(a)\) = <span id="diffF">${exactDiff.toFixed(5)}</span><br>
+            <span style="font-size:0.75rem;">✅ 绝对误差: ${error.toExponential(5)}  |  牛顿-莱布尼茨完美成立 ✅</span>`;
+            if(window.MathJax) MathJax.typesetPromise?.([document.getElementById('ftc2Stats')]);
+        }
+
+        // ========== 定理3: f3(x) = -0.2*(x-3)^2 + 3.8  (单峰对称，正值) ==========
+        const f3 = (x) => -0.22 * Math.pow(x-3, 2) + 3.9;
+        // 寻找c点使得 f(c) = 平均值 = (∫ f dx)/(b-a)
+        function findMeanValuePoint(a, b, targetAvg) {
+            // 二分查找连续函数 f3(c) - targetAvg = 0
+            let left = a, right = b;
+            let iter = 0;
+            while(right - left > 1e-7 && iter < 60) {
+                let mid = (left+right)/2;
+                let val = f3(mid) - targetAvg;
+                if(val > 0) right = mid;   // 由于函数开口向下，严格递减后看区间符号；实际f3在[0,6]上先增后减, 但平均值在中部必有唯一解
+                else left = mid;
+                iter++;
+            }
+            return (left+right)/2;
+        }
+
+        let canvas3 = document.getElementById('ftc3Canvas');
+        let ctx3 = canvas3.getContext('2d');
+        let cASlider = document.getElementById('cA');
+        let cBSlider = document.getElementById('cB');
+        let ftc3StatsDiv = document.getElementById('ftc3Stats');
+        
+        function drawTheorem3() {
+            let a = parseFloat(cASlider.value);
+            let b = parseFloat(cBSlider.value);
+            if(a >= b) { b = a+0.5; cBSlider.value = b; }
+            const xMin = -0.5, xMax = 7.2, yMin = -0.2, yMax = 4.5;
+            let transform = setupCanvas(canvas3, xMin, xMax, yMin, yMax);
+            ctx3.clearRect(0, 0, canvas3.width, canvas3.height);
+            drawGridAndAxes(ctx3, transform, xMin, xMax, yMin, yMax);
+            // 绘制曲线及填充面积
+            drawFunction(ctx3, transform, f3, "#ff8c6b", 2.8);
+            fillArea(ctx3, transform, f3, a, b, "rgba(255, 140, 107, 0.28)");
+            
+            let integral = integrate(f3, a, b, 400);
+            let avgHeight = integral / (b - a);
+            // 寻找 c 使得 f(c) ≈ avgHeight
+            let c = findMeanValuePoint(a, b, avgHeight);
+            let fc = f3(c);
+            // 绘制矩形 (a,0) 到 (b, avgHeight)
+            let rectTopY = avgHeight;
+            let pxLeft = transform.toPixelX(a);
+            let pxRight = transform.toPixelX(b);
+            let pyBase = transform.toPixelY(0);
+            let pyTopRect = transform.toPixelY(avgHeight);
+            ctx3.fillStyle = "rgba(255, 210, 90, 0.35)";
+            ctx3.fillRect(pxLeft, pyTopRect, pxRight-pxLeft, pyBase-pyTopRect);
+            ctx3.strokeStyle = "#ffcd7e";
+            ctx3.lineWidth = 2;
+            ctx3.setLineDash([]);
+            ctx3.strokeRect(pxLeft, pyTopRect, pxRight-pxLeft, pyBase-pyTopRect);
+            // 标记c点位置
+            let pc = transform.toPixelX(c);
+            let pcy = transform.toPixelY(fc);
+            ctx3.beginPath();
+            ctx3.arc(pc, pcy, 6, 0, 2*Math.PI);
+            ctx3.fillStyle = "#ffc46b";
+            ctx3.fill();
+            ctx3.beginPath();
+            ctx3.moveTo(pc, transform.toPixelY(yMin));
+            ctx3.lineTo(pc, transform.toPixelY(yMax));
+            ctx3.strokeStyle = "#ffb347";
+            ctx3.setLineDash([5,7]);
+            ctx3.stroke();
+            ctx3.setLineDash([]);
+            // 显示数值
+            ftc3StatsDiv.innerHTML = `📐 平均高度 \( f(c) = ${fc.toFixed(4)} \) &nbsp; 等于积分平均值 \( \\bar{f} = ${avgHeight.toFixed(4)} \)<br>
+            🟨 矩形面积 = ${(avgHeight*(b-a)).toFixed(4)} &nbsp; ≡ &nbsp; 积分面积 = ${integral.toFixed(4)} &nbsp; ✅<br>
+            🟡 中值点 \( c \approx ${c.toFixed(4)} \)`;
+            if(window.MathJax) MathJax.typesetPromise?.([ftc3StatsDiv]);
+            // 额外文字
+            ctx3.font = "11px monospace";
+            ctx3.fillStyle = "#ffbe6e";
+            ctx3.fillText(`c = ${c.toFixed(3)}`, pc+6, pcy-6);
+        }
+        
+        // 绑定监听与初始化
+        x0Slider.addEventListener('input', () => { drawTheorem1(); });
+        aSlider.addEventListener('input', () => { drawTheorem2(); });
+        bSlider.addEventListener('input', () => { drawTheorem2(); });
+        cASlider.addEventListener('input', () => { drawTheorem3(); });
+        cBSlider.addEventListener('input', () => { drawTheorem3(); });
+        
+        // 页面自适应resize时重绘(因canvas物理像素不变但CSS可能缩放，坐标基于canvas.width固定)
+        window.addEventListener('resize', () => {
+            drawTheorem1();
+            drawTheorem2();
+            drawTheorem3();
+        });
+        
+        // 初次加载渲染
+        drawTheorem1();
+        drawTheorem2();
+        drawTheorem3();
+        
+        // 加入初始MathJax渲染已存在的公式
+        if(window.MathJax) {
+            MathJax.typesetPromise().catch(()=>{});
+        }
+    })();
+</script>
+</body>
+</html>

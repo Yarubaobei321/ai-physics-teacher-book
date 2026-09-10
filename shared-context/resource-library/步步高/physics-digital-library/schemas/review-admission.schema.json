@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/review-admission.schema.json",
+  "title": "步步高来源转入人工复核审计",
+  "type": "object",
+  "required": [
+    "id",
+    "relative_path",
+    "created_at",
+    "source_id",
+    "source_sha256",
+    "source_relative_path",
+    "previous_status",
+    "status",
+    "operator",
+    "summary",
+    "manifest_sha256",
+    "target_records"
+  ],
+  "properties": {
+    "id": {"type": "string", "pattern": "^admission\\.bbg\\.[a-z0-9][a-z0-9._-]*$"},
+    "relative_path": {
+      "allOf": [
+        {"$ref": "#/$defs/relativePath"},
+        {"pattern": "^reports/review-admissions/admission\\.bbg\\..+\\.json$"}
+      ]
+    },
+    "created_at": {"type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"},
+    "source_id": {"type": "string", "pattern": "^src\\.bbg\\.[0-9a-f]{64}$"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "source_relative_path": {
+      "allOf": [
+        {"$ref": "#/$defs/relativePath"},
+        {"pattern": "^raw/"}
+      ]
+    },
+    "previous_status": {"const": "ai_structured"},
+    "status": {"const": "pending_manual_review"},
+    "operator": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "target_records": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["target_id", "target_type", "target_relative_path", "previous_status", "status"],
+        "properties": {
+          "target_id": {"type": "string", "minLength": 1},
+          "target_type": {"enum": ["document", "question"]},
+          "target_relative_path": {
+            "allOf": [
+              {"$ref": "#/$defs/relativePath"},
+              {"pattern": "^(?:records/documents|questions)/.+\\.json$"}
+            ]
+          },
+          "previous_status": {"const": "ai_structured"},
+          "status": {"const": "pending_manual_review"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    }
+  }
+}

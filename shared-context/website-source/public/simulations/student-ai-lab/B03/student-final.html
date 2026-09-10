@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>自由组合定律：九种亲本随机组合 | F2重组基因型 & 测交验证</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(145deg, #cbe5c0 0%, #aecf9a 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .master-card {
+            max-width: 1450px;
+            width: 100%;
+            background: #fffef5;
+            border-radius: 2.5rem;
+            box-shadow: 0 30px 45px rgba(20, 45, 5, 0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(115deg, #1d6232, #2f8544);
+            padding: 1.2rem 2rem;
+            color: white;
+            text-align: center;
+        }
+        .header h1 { margin: 0; font-size: 1.8rem; }
+        .header p { margin: 0.4rem 0 0; opacity: 0.9; font-style: italic; }
+
+        .content { padding: 1.5rem 2rem 2rem; }
+
+        /* 亲本区 */
+        .exp-section {
+            background: #fef9ec;
+            border-radius: 2rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #efe2bd;
+        }
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            border-left: 8px solid #f7b05e;
+            padding-left: 16px;
+            margin: 0 0 1rem 0;
+            color: #2c5520;
+        }
+        .parents-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        .parent-card {
+            background: #fffff0;
+            border-radius: 2rem;
+            padding: 1rem 1.2rem;
+            width: 260px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+            border: 1px solid #eeddae;
+        }
+        .parent-name {
+            font-weight: bold;
+            background: #dde8cf;
+            display: inline-block;
+            padding: 2px 18px;
+            border-radius: 40px;
+        }
+        .genotype-input {
+            font-size: 1.8rem;
+            font-weight: bold;
+            font-family: monospace;
+            background: #faf2df;
+            margin: 12px 0;
+            padding: 6px;
+            border-radius: 48px;
+        }
+        .phenotype-text { font-size: 0.95rem; color: #b25d1a; }
+        .random-btn {
+            background: #e0b35f;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 60px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            margin-top: 5px;
+        }
+        .cross-icon { font-size: 2rem; align-self: center; color: #c8822e; }
+        .f1-card { background: #fff0c8; border: 2px solid #f3bc6e; }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0 10px;
+        }
+        .btn {
+            border: none;
+            padding: 8px 22px;
+            border-radius: 60px;
+            font-weight: bold;
+            cursor: pointer;
+            background: #e7eace;
+            transition: 0.2s;
+        }
+        .btn-primary { background: #468a55; color: white; }
+        .btn-primary:hover { background: #2f6b41; transform: translateY(-2px); }
+        .btn-warning { background: #dba34b; color: white; }
+        .testcross-btn { background: #b87c3a; color: white; }
+
+        /* F2 比例 + 重组基因型详细展示区 */
+        .ratio-area {
+            background: #f3f0df;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .ratio-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 12px;
+            background: #e6dbbd;
+            display: inline-block;
+            width: auto;
+            padding: 4px 20px;
+            border-radius: 40px;
+        }
+        .ratio-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        .ratio-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 8px 12px;
+            min-width: 130px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-left: 6px solid;
+        }
+        .ratio-pheno { font-weight: bold; font-size: 1rem; }
+        .ratio-number { font-size: 1.3rem; font-weight: bold; font-family: monospace; }
+        .recombinant-badge {
+            background: #fea82f20;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            display: inline-block;
+            margin-top: 4px;
+            color: #bd6b1e;
+        }
+        .genotype-detail {
+            font-size: 0.7rem;
+            font-family: monospace;
+            background: #f7f2e0;
+            margin-top: 6px;
+            padding: 3px;
+            border-radius: 20px;
+        }
+        .legend {
+            font-size: 0.75rem;
+            background: #fff3cf;
+            border-radius: 1rem;
+            padding: 6px 12px;
+            margin-top: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        /* 测交模块 */
+        .testcross-area {
+            background: #f1efdc;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .testcross-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+        .testcross-card {
+            background: #fff5e6;
+            border-radius: 1.5rem;
+            padding: 12px;
+            text-align: center;
+            min-width: 180px;
+        }
+
+        /* 配子结合区 */
+        .gamete-panel {
+            background: #fef7e6;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            margin: 15px 0;
+        }
+        .gamete-pools { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; }
+        .pool-box {
+            flex: 1;
+            background: #fffef7;
+            border-radius: 1.5rem;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #e9dcab;
+        }
+        .gamete-chips {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 12px 0;
+        }
+        .gamete-chip {
+            background: #f7efcf;
+            border-radius: 60px;
+            padding: 8px 12px;
+            min-width: 85px;
+            font-weight: bold;
+            font-family: monospace;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+        .gamete-chip.selected { background: #ffe0a3; border-color: #dc942a; transform: scale(1.02); }
+        .combine-visual {
+            background: #f7edd9;
+            border-radius: 2rem;
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 12px 0;
+        }
+        .zygote-result { background: #ffe6bf; border-radius: 1.5rem; padding: 10px; text-align: center; }
+        .log-area {
+            background: #eef2e2;
+            border-radius: 1.5rem;
+            padding: 8px 16px;
+            max-height: 130px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            margin-top: 15px;
+        }
+        footer {
+            background: #e3efd4;
+            padding: 0.8rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #3b6427;
+        }
+        @media (max-width: 780px) {
+            .content { padding: 1rem; }
+            .parent-card { width: 210px; }
+            .genotype-input { font-size: 1.3rem; }
+            .ratio-card { min-width: 110px; }
+        }
+    </style>
+</head>
+<body>
+<div class="master-card">
+    <div class="header">
+        <h1>🧬 自由组合定律 · 九种亲本随机组合 + 测交验证 + 重组基因型</h1>
+        <p>亲本P (9种基因型) → F1 → F1自交(F2比例+重组型) | 测交: F1 × 隐性纯合(yyrr) 验证配子类型</p>
+    </div>
+    <div class="content">
+
+        <!-- 模块1: 亲本九种基因型随机组合 -->
+        <div class="exp-section">
+            <div class="section-title">🌱 1. 亲本 (P) 基因型随机组合 (九种)</div>
+            <div class="parents-area">
+                <div class="parent-card">
+                    <div class="parent-name">🌸 母本 (♀)</div>
+                    <div class="genotype-input" id="femaleGenoDisplay">YYRR</div>
+                    <div class="phenotype-text" id="femalePhenoDisplay">黄色圆粒</div>
+                    <button class="random-btn" id="randomFemaleBtn">🎲 随机母本</button>
+                </div>
+                <div class="cross-icon">✖</div>
+                <div class="parent-card">
+                    <div class="parent-name">🌿 父本 (♂)</div>
+                    <div class="genotype-input" id="maleGenoDisplay">yyrr</div>
+                    <div class="phenotype-text" id="malePhenoDisplay">绿色皱粒</div>
+                    <button class="random-btn" id="randomMaleBtn">🎲 随机父本</button>
+                </div>
+                <div class="cross-icon">➡️</div>
+                <div class="parent-card f1-card">
+                    <div class="parent-name">🌟 子一代 (F1)</div>
+                    <div class="genotype-input" id="f1GenoDisplay">----</div>
+                    <div class="phenotype-text" id="f1PhenoDisplay">----</div>
+                    <div style="font-size:0.65rem;">由亲本随机配子结合</div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn btn-primary" id="randomBothBtn">🎲 随机组合双亲 (九种基因型)</button>
+                <button class="btn btn-warning" id="resetClassicBtn">📖 重置经典 (YYRR × yyrr)</button>
+            </div>
+            <div style="background:#eef0e0; border-radius: 1rem; padding: 5px 12px; font-size:0.75rem;">
+                💡 亲本库: YYRR, YYRr, YYrr, YyRR, YyRr, Yyrr, yyRR, yyRr, yyrr。F1由亲本随机配子受精产生。
+            </div>
+        </div>
+
+        <!-- 模块2: F2 性状分离比 + 重组基因型详细列表 -->
+        <div class="exp-section">
+            <div class="section-title">📊 2. F2 性状比例 & 重组基因型详解</div>
+            <div id="f1Status" style="background:#f0efdb; border-radius: 2rem; padding: 6px 12px; margin-bottom: 12px; text-align:center;">
+                🔬 当前F1基因型: <strong id="currentF1Label">YyRr</strong> &nbsp;|  F1自交产生四种配子 (YR, Yr, yR, yr) 等比例随机结合
+            </div>
+            <div class="ratio-area">
+                <div style="text-align:center;"><span class="ratio-title">📐 F2 理论性状比例 & 重组基因型清单</span></div>
+                <div class="ratio-grid" id="ratioGrid"></div>
+                <div id="recombinantGenotypesPanel" style="background:#fff1dd; border-radius: 1.2rem; padding: 8px 12px; margin-top: 12px;">
+                    <strong>🧬 重组基因型 (不同于亲本组合) :</strong> <span id="recombinantGenesList">加载中...</span>
+                    <div style="font-size:0.7rem; margin-top:4px;">※ 重组基因型指F2中与原始亲本(P)基因型不同的类型，通常包括 YYrr, Yyrr, yyRR, yyRr 等（取决于原始亲本）</div>
+                </div>
+                <div class="legend">
+                    <span>🟡 <strong>黄色圆粒</strong> (亲本型)</span>
+                    <span>🟢 <strong>绿色皱粒</strong> (亲本型)</span>
+                    <span style="background:#ffe0b0; padding:0 6px; border-radius:20px;">🟡⚪ <strong>黄色皱粒</strong> (重组性状)</span>
+                    <span style="background:#ffe0b0; padding:0 6px; border-radius:20px;">🟢⚪ <strong>绿色圆粒</strong> (重组性状)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模块3: 测交实验 (F1 × 隐性纯合 yyrr) -->
+        <div class="exp-section">
+            <div class="section-title">🧪 3. 测交实验 (Testcross) — 验证F1配子类型</div>
+            <div class="testcross-area">
+                <div style="text-align:center; margin-bottom:10px;">
+                    <span style="background:#deb887; padding:4px 16px; border-radius:40px;">测交: F1 (当前个体) × 隐性纯合亲本 (yyrr 绿色皱粒)</span>
+                </div>
+                <div class="testcross-grid" id="testcrossContainer">
+                    <!-- 动态生成测交结果 -->
+                </div>
+                <div class="controls" style="margin-top:12px;">
+                    <button class="btn testcross-btn" id="performTestcrossBtn">🔬 执行测交 (随机受精模拟)</button>
+                    <button class="btn" id="resetTestcrossBtn">🔄 重置测交结果</button>
+                </div>
+                <div id="testcrossLog" style="font-size:0.75rem; margin-top:8px; background:#fcf3df; border-radius:1rem; padding:5px;"></div>
+            </div>
+        </div>
+
+        <!-- 模块4: F1 配子随机结合演示 -->
+        <div class="exp-section">
+            <div class="section-title">🎲 4. F1 配子随机结合演示 (自由组合)</div>
+            <div class="gamete-panel">
+                <div class="gamete-pools">
+                    <div class="pool-box"><h4>🌸 雌配子池</h4><div class="gamete-chips" id="femaleGameteList"></div></div>
+                    <div class="pool-box"><h4>🌿 雄配子池</h4><div class="gamete-chips" id="maleGameteList"></div></div>
+                </div>
+                <div class="combine-visual">
+                    <div class="gamete-chip" id="visualFemale">—</div><span style="font-size:1.6rem;">+</span>
+                    <div class="gamete-chip" id="visualMale">—</div><span style="font-size:1.6rem;">➡️</span>
+                    <div class="gamete-chip" id="visualZygote">??</div>
+                </div>
+                <div class="zygote-result">
+                    <div>🧬 合子基因型: <strong id="zygoteGeno">----</strong></div>
+                    <div>🌾 表现型: <strong id="zygotePheno">----</strong> <span id="recombinantHint" style="font-size:0.7rem; background:#efcd91; padding:2px 8px; border-radius:20px;"></span></div>
+                    <div id="zygoteRecombinantType" style="font-size:0.7rem; color:#9a5516;"></div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="randomCombineBtn">🎲 随机结合 (模拟受精)</button>
+                    <button class="btn" id="randomFemaleGameteBtn">🌸 随机雌配子</button>
+                    <button class="btn" id="randomMaleGameteBtn">🌿 随机雄配子</button>
+                    <button class="btn" id="resetGameteBtn">🔄 重置</button>
+                </div>
+            </div>
+            <div class="log-area" id="logArea"></div>
+        </div>
+        <footer>📖 依据自由组合定律: F1产生四种配子 (1:1:1:1) 随机结合，测交后代应出现1:1:1:1比例；重组基因型包括黄皱（Yyrr, YYrr）和绿圆（yyRr, yyRR）。</footer>
+    </div>
+</div>
+
+<script>
+    // ---------- 九种亲本基因型库 ----------
+    const ALL_GENOTYPES = ["YYRR","YYRr","YYrr","YyRR","YyRr","Yyrr","yyRR","yyRr","yyrr"];
+    const HIDDEN_RECESSIVE = "yyrr";   // 测交用隐性纯合
+    
+    // 辅助: 根据基因型获取表现型
+    function getPhenotype(genotype) {
+        if (!genotype || genotype.length !== 4) return "?";
+        const y = genotype[0], r = genotype[2];
+        const color = (y === 'Y') ? '黄色' : '绿色';
+        const shape = (r === 'R') ? '圆粒' : '皱粒';
+        return `${color} · ${shape}`;
+    }
+    
+    // 根据基因型获得该个体产生的配子数组 (分离定律+自由组合)
+    function getGametes(genotype) {
+        if (!genotype || genotype.length !== 4) return [];
+        const firstPair = [genotype[0], genotype[1]];
+        const secondPair = [genotype[2], genotype[3]];
+        const unique1 = [...new Set(firstPair)];
+        const unique2 = [...new Set(secondPair)];
+        let firstOpts = (unique1.length === 1) ? [unique1[0]] : [unique1[0], unique1[1]];
+        let secondOpts = (unique2.length === 1) ? [unique2[0]] : [unique2[0], unique2[1]];
+        let gam = [];
+        for (let a of firstOpts) for (let b of secondOpts) gam.push(a+b);
+        return [...new Set(gam)].sort();
+    }
+    
+    // 根据两个亲本随机配子生成F1
+    function generateF1(femaleGen, maleGen) {
+        const femaleGametes = getGametes(femaleGen);
+        const maleGametes = getGametes(maleGen);
+        if (!femaleGametes.length || !maleGametes.length) return "YyRr";
+        const fGam = femaleGametes[Math.floor(Math.random() * femaleGametes.length)];
+        const mGam = maleGametes[Math.floor(Math.random() * maleGametes.length)];
+        const yAlleles = [fGam[0], mGam[0]].sort((a,b) => (b==='Y'?1:(a==='Y'?-1:0)));
+        const rAlleles = [fGam[1], mGam[1]].sort((a,b) => (b==='R'?1:(a==='R'?-1:0)));
+        return `${yAlleles.join('')}${rAlleles.join('')}`;
+    }
+    
+    // 重组基因型列表 (传统自由组合重组型)
+    function getRecombinantGenotypeList() {
+        return ["YYrr", "Yyrr", "yyRR", "yyRr"];
+    }
+    
+    // 根据F1基因型计算F2比例及详细
+    function getF2DetailedFromF1(f1Genotype) {
+        const gametes = getGametes(f1Genotype);
+        // 标准棋盘计算
+        const countMap = new Map();
+        const genotypeMapDetailed = new Map();
+        for (let fem of gametes) {
+            for (let male of gametes) {
+                const yAl = [fem[0], male[0]].sort((a,b) => (b==='Y'?1:(a==='Y'?-1:0)));
+                const rAl = [fem[1], male[1]].sort((a,b) => (b==='R'?1:(a==='R'?-1:0)));
+                const hasY = yAl.includes('Y'), hasR = rAl.includes('R');
+                const pheno = `${hasY ? '黄色' : '绿色'} · ${hasR ? '圆粒' : '皱粒'}`;
+                const genotypeStr = `${yAl.join('')} ${rAl.join('')}`;
+                countMap.set(pheno, (countMap.get(pheno) || 0) + 1);
+                if (!genotypeMapDetailed.has(pheno)) genotypeMapDetailed.set(pheno, []);
+                genotypeMapDetailed.get(pheno).push(genotypeStr);
+            }
+        }
+        const total = gametes.length * gametes.length;
+        const order = ["黄色 · 圆粒", "黄色 · 皱粒", "绿色 · 圆粒", "绿色 · 皱粒"];
+        const ratios = [];
+        for (let phen of order) {
+            let cnt = countMap.get(phen) || 0;
+            let percent = (cnt / total * 100).toFixed(1);
+            let uniqueGenotypes = [...new Set(genotypeMapDetailed.get(phen) || [])];
+            ratios.push({ phen, count: cnt, percent, genotypes: uniqueGenotypes, isRecombinant: (phen === "黄色 · 皱粒" || phen === "绿色 · 圆粒") });
+        }
+        return { ratios, total };
+    }
+    
+    // 刷新F2展示区
+    function updateRatioDisplay(f1Geno) {
+        const { ratios, total } = getF2DetailedFromF1(f1Geno);
+        const container = document.getElementById('ratioGrid');
+        if (!container) return;
+        container.innerHTML = '';
+        ratios.forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'ratio-card';
+            card.style.borderLeftColor = r.isRecombinant ? '#f0a34b' : '#6f9e4a';
+            let phenoShort = r.phen.replace(' · ', '');
+            let genotypeHtml = r.genotypes.slice(0, 3).join(', ') + (r.genotypes.length > 3 ? '...' : '');
+            card.innerHTML = `
+                <div class="ratio-pheno">${phenoShort}</div>
+                <div class="ratio-number">${r.count} / ${total}</div>
+                <div>${r.percent}%</div>
+                ${r.isRecombinant ? '<div class="recombinant-badge">🧬 重组性状</div>' : '<div class="recombinant-badge" style="background:#e2e2c0;">亲本型</div>'}
+                <div class="genotype-detail" title="${r.genotypes.join(', ')}">📄 ${genotypeHtml}</div>
+            `;
+            container.appendChild(card);
+        });
+        document.getElementById('recombinantGenesList').innerHTML = `<strong>${getRecombinantGenotypeList().join(', ')}</strong> (黄皱: YYrr, Yyrr；绿圆: yyRR, yyRr)`;
+    }
+    
+    // ---------- 测交逻辑 ----------
+    let testcrossHistory = [];  // 存储测交后代记录 { 配子来自F1, 合子基因型, 表现型 }
+    
+    function performTestcross() {
+        const f1Gametes = getGametes(currentF1);
+        if (f1Gametes.length === 0) return;
+        // 随机抽取一个F1配子 (模拟大量后代中的一次受精)
+        const randomF1Gamete = f1Gametes[Math.floor(Math.random() * f1Gametes.length)];
+        // 隐性亲本只产生 yr 配子
+        const testerGamete = "yr";
+        const yAl = [randomF1Gamete[0], testerGamete[0]].sort((a,b) => (b==='Y'?1:(a==='Y'?-1:0)));
+        const rAl = [randomF1Gamete[1], testerGamete[1]].sort((a,b) => (b==='R'?1:(a==='R'?-1:0)));
+        const zygoteGeno = `${yAl.join('')} ${rAl.join('')}`;
+        const hasY = yAl.includes('Y'), hasR = rAl.includes('R');
+        const pheno = `${hasY ? '黄色' : '绿色'} · ${hasR ? '圆粒' : '皱粒'}`;
+        const isRecombinant = (pheno === "黄色 · 皱粒" || pheno === "绿色 · 圆粒");
+        testcrossHistory.unshift({ f1Gamete: randomF1Gamete, zygote: zygoteGeno, pheno, isRecombinant });
+        if (testcrossHistory.length > 12) testcrossHistory.pop();
+        updateTestcrossUI();
+        addLog(`🔬 测交: F1提供配子 ${randomF1Gamete} × 隐性配子 yr → 后代 ${zygoteGeno} (${pheno})`, true);
+    }
+    
+    function resetTestcross() {
+        testcrossHistory = [];
+        updateTestcrossUI();
+        addLog(`🔄 测交结果已清空`);
+    }
+    
+    function updateTestcrossUI() {
+        const container = document.getElementById('testcrossContainer');
+        const logDiv = document.getElementById('testcrossLog');
+        if (!container) return;
+        if (testcrossHistory.length === 0) {
+            container.innerHTML = `<div style="padding:20px; text-align:center; color:#a07a42;">⚡ 点击「执行测交」模拟F1与隐性纯合个体杂交，验证配子种类及比例</div>`;
+            logDiv.innerHTML = `测交后代记录为空，理论测交比例应为 1:1:1:1 (四种表现型均等)。`;
+            return;
+        }
+        // 统计各类表现型数量
+        let stats = { "黄色 · 圆粒":0, "黄色 · 皱粒":0, "绿色 · 圆粒":0, "绿色 · 皱粒":0 };
+        testcrossHistory.forEach(r => { stats[r.pheno] = (stats[r.pheno] || 0) + 1; });
+        const total = testcrossHistory.length;
+        container.innerHTML = `
+            <div class="testcross-card" style="background:#f7e9cf;">
+                <strong>📋 测交后代统计 (共${total}次)</strong><br>
+                🟡黄圆: ${stats["黄色 · 圆粒"]} (${((stats["黄色 · 圆粒"]/total)*100).toFixed(1)}%)<br>
+                🟡皱: ${stats["黄色 · 皱粒"]} (${((stats["黄色 · 皱粒"]/total)*100).toFixed(1)}%) [重组]<br>
+                🟢圆: ${stats["绿色 · 圆粒"]} (${((stats["绿色 · 圆粒"]/total)*100).toFixed(1)}%) [重组]<br>
+                🟢皱: ${stats["绿色 · 皱粒"]} (${((stats["绿色 · 皱粒"]/total)*100).toFixed(1)}%)
+            </div>
+            <div class="testcross-card" style="min-width:260px;">
+                <strong>🧬 最近测交后代记录</strong><br>
+                ${testcrossHistory.slice(0,6).map(r => `🎯 ${r.f1Gamete} × yr → ${r.zygote} (${r.pheno}) ${r.isRecombinant ? '✨重组' : ''}`).join('<br>')}
+                ${testcrossHistory.length > 6 ? '<span style="font-size:0.7rem;">......</span>' : ''}
+            </div>
+        `;
+        logDiv.innerHTML = `💡 测交比例应反映F1产生的配子比例: 理想情况四种配子均等 (1:1:1:1)，后代重组型与亲本型并存。`;
+    }
+    
+    // ---------- 全局状态 ----------
+    let currentFemale = "YYRR";
+    let currentMale = "yyrr";
+    let currentF1 = "YyRr";
+    let selectedFemaleGamete = null;
+    let selectedMaleGamete = null;
+    
+    // DOM 元素
+    const femaleGenoDisplay = document.getElementById('femaleGenoDisplay');
+    const maleGenoDisplay = document.getElementById('maleGenoDisplay');
+    const femalePhenoDisplay = document.getElementById('femalePhenoDisplay');
+    const malePhenoDisplay = document.getElementById('malePhenoDisplay');
+    const f1GenoDisplay = document.getElementById('f1GenoDisplay');
+    const f1PhenoDisplay = document.getElementById('f1PhenoDisplay');
+    const currentF1Label = document.getElementById('currentF1Label');
+    const femaleGameteListDiv = document.getElementById('femaleGameteList');
+    const maleGameteListDiv = document.getElementById('maleGameteList');
+    const visualFemale = document.getElementById('visualFemale');
+    const visualMale = document.getElementById('visualMale');
+    const visualZygote = document.getElementById('visualZygote');
+    const zygoteGeno = document.getElementById('zygoteGeno');
+    const zygotePheno = document.getElementById('zygotePheno');
+    const recombinantHint = document.getElementById('recombinantHint');
+    const zygoteRecombinantType = document.getElementById('zygoteRecombinantType');
+    const logArea = document.getElementById('logArea');
+    
+    function addLog(msg, important = false) {
+        const div = document.createElement('div');
+        div.innerHTML = `🕒 ${new Date().toLocaleTimeString().slice(0,8)}  ${msg}`;
+        if (important) div.style.fontWeight = 'bold';
+        logArea.appendChild(div);
+        logArea.scrollTop = logArea.scrollHeight;
+        while(logArea.children.length > 20) logArea.removeChild(logArea.firstChild);
+    }
+    
+    function refreshGametePools() {
+        const gametes = getGametes(currentF1);
+        femaleGameteListDiv.innerHTML = '';
+        maleGameteListDiv.innerHTML = '';
+        gametes.forEach(g => {
+            const colorHint = g[0]==='Y'?'黄':'绿', shapeHint = g[1]==='R'?'圆':'皱';
+            const femChip = document.createElement('div');
+            femChip.className = 'gamete-chip female-chip';
+            femChip.setAttribute('data-gamete', g);
+            femChip.innerHTML = `${g}<br><span style="font-size:0.6rem;">${colorHint}${shapeHint}</span>`;
+            femChip.addEventListener('click', () => { selectedFemaleGamete = g; refreshGameteUI(); addLog(`🌸 选择雌配子 ${g}`); });
+            femaleGameteListDiv.appendChild(femChip);
+            
+            const maleChip = document.createElement('div');
+            maleChip.className = 'gamete-chip male-chip';
+            maleChip.setAttribute('data-gamete', g);
+            maleChip.innerHTML = `${g}<br><span style="font-size:0.6rem;">${colorHint}${shapeHint}</span>`;
+            maleChip.addEventListener('click', () => { selectedMaleGamete = g; refreshGameteUI(); addLog(`🌿 选择雄配子 ${g}`); });
+            maleGameteListDiv.appendChild(maleChip);
+        });
+        selectedFemaleGamete = null;
+        selectedMaleGamete = null;
+        refreshGameteUI();
+    }
+    
+    function isRecombinantGenotype(genotypeSpaced) {
+        const clean = genotypeSpaced.replace(' ', '');
+        return (clean === "YYrr" || clean === "Yyrr" || clean === "yyRR" || clean === "yyRr");
+    }
+    
+    function refreshGameteUI() {
+        document.querySelectorAll('.female-chip').forEach(ch => {
+            if(ch.getAttribute('data-gamete') === selectedFemaleGamete) ch.classList.add('selected');
+            else ch.classList.remove('selected');
+        });
+        document.querySelectorAll('.male-chip').forEach(ch => {
+            if(ch.getAttribute('data-gamete') === selectedMaleGamete) ch.classList.add('selected');
+            else ch.classList.remove('selected');
+        });
+        visualFemale.innerText = selectedFemaleGamete || '—';
+        visualMale.innerText = selectedMaleGamete || '—';
+        if (selectedFemaleGamete && selectedMaleGamete) {
+            const yAl = [selectedFemaleGamete[0], selectedMaleGamete[0]].sort((a,b) => (b==='Y'?1:(a==='Y'?-1:0)));
+            const rAl = [selectedFemaleGamete[1], selectedMaleGamete[1]].sort((a,b) => (b==='R'?1:(a==='R'?-1:0)));
+            const genotype = `${yAl.join('')} ${rAl.join('')}`;
+            const hasY = yAl.includes('Y'), hasR = rAl.includes('R');
+            const pheno = `${hasY ? '黄色' : '绿色'} · ${hasR ? '圆粒' : '皱粒'}`;
+            zygoteGeno.innerText = genotype;
+            zygotePheno.innerText = pheno;
+            visualZygote.innerText = genotype;
+            const isRecom = isRecombinantGenotype(genotype);
+            recombinantHint.innerText = isRecom ? "✨ 重组基因型 (重组性状)" : "📌 亲本型基因型";
+            zygoteRecombinantType.innerText = isRecom ? "该合子属于重组类型 (黄皱或绿圆)" : "该合子与亲本表型相同或非重组型";
+        } else {
+            zygoteGeno.innerText = '----'; zygotePheno.innerText = '待结合'; visualZygote.innerText = '??';
+            recombinantHint.innerText = ''; zygoteRecombinantType.innerText = '';
+        }
+    }
+    
+    function fullRefresh() {
+        femaleGenoDisplay.innerText = currentFemale;
+        maleGenoDisplay.innerText = currentMale;
+        femalePhenoDisplay.innerText = getPhenotype(currentFemale);
+        malePhenoDisplay.innerText = getPhenotype(currentMale);
+        currentF1 = generateF1(currentFemale, currentMale);
+        f1GenoDisplay.innerText = currentF1;
+        f1PhenoDisplay.innerText = getPhenotype(currentF1);
+        currentF1Label.innerText = currentF1;
+        updateRatioDisplay(currentF1);
+        refreshGametePools();
+        resetTestcross();      // 亲本改变时测交数据重置
+        addLog(`🧬 亲本组合更新: ${currentFemale} × ${currentMale} → F1 = ${currentF1}`, true);
+    }
+    
+    function randomFemale() { currentFemale = ALL_GENOTYPES[Math.floor(Math.random() * ALL_GENOTYPES.length)]; fullRefresh(); }
+    function randomMale() { currentMale = ALL_GENOTYPES[Math.floor(Math.random() * ALL_GENOTYPES.length)]; fullRefresh(); }
+    function randomBoth() { currentFemale = ALL_GENOTYPES[Math.floor(Math.random() * ALL_GENOTYPES.length)]; currentMale = ALL_GENOTYPES[Math.floor(Math.random() * ALL_GENOTYPES.length)]; fullRefresh(); }
+    function resetClassic() { currentFemale = "YYRR"; currentMale = "yyrr"; fullRefresh(); addLog("📖 重置为孟德尔经典组合: YYRR × yyrr → F1 = YyRr", true); }
+    
+    function randomCombine() {
+        const gametes = getGametes(currentF1);
+        if(gametes.length) {
+            selectedFemaleGamete = gametes[Math.floor(Math.random() * gametes.length)];
+            selectedMaleGamete = gametes[Math.floor(Math.random() * gametes.length)];
+            refreshGameteUI();
+            addLog(`🎲 随机结合: 雌配子 ${selectedFemaleGamete} + 雄配子 ${selectedMaleGamete}`);
+        }
+    }
+    function randomFemaleGam() { const g = getGametes(currentF1); if(g.length) { selectedFemaleGamete = g[Math.floor(Math.random() * g.length)]; refreshGameteUI(); addLog(`🌸 随机雌配子 ${selectedFemaleGamete}`); } }
+    function randomMaleGam() { const g = getGametes(currentF1); if(g.length) { selectedMaleGamete = g[Math.floor(Math.random() * g.length)]; refreshGameteUI(); addLog(`🌿 随机雄配子 ${selectedMaleGamete}`); } }
+    function resetGametes() { selectedFemaleGamete = null; selectedMaleGamete = null; refreshGameteUI(); addLog(`🔄 重置配子选择`); }
+    
+    // 绑定事件
+    document.getElementById('randomFemaleBtn').addEventListener('click', randomFemale);
+    document.getElementById('randomMaleBtn').addEventListener('click', randomMale);
+    document.getElementById('randomBothBtn').addEventListener('click', randomBoth);
+    document.getElementById('resetClassicBtn').addEventListener('click', resetClassic);
+    document.getElementById('randomCombineBtn').addEventListener('click', randomCombine);
+    document.getElementById('randomFemaleGameteBtn').addEventListener('click', randomFemaleGam);
+    document.getElementById('randomMaleGameteBtn').addEventListener('click', randomMaleGam);
+    document.getElementById('resetGameteBtn').addEventListener('click', resetGametes);
+    document.getElementById('performTestcrossBtn').addEventListener('click', performTestcross);
+    document.getElementById('resetTestcrossBtn').addEventListener('click', resetTestcross);
+    
+    fullRefresh();
+    addLog("✨ 系统加载完成 | 展示F2完整比例 + 测交模块(验证F1配子类型)，重组基因型：YYrr, Yyrr, yyRR, yyRr", true);
+</script>
+</body>
+</html>

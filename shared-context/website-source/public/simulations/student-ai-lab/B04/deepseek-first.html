@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高中生物：DNA半保留复制交互演示 | 双螺旋的拷贝之谜</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动文字影响点击，但不影响学习文本 */
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef5f0 0%, #d9e4dc 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 24px 16px;
+        }
+
+        /* 主卡片容器 */
+        .science-card {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(1px);
+            border-radius: 56px;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.6);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* 头部知识栏 */
+        .hero {
+            background: #1a3b2f;
+            padding: 1.2rem 2rem;
+            color: white;
+            text-align: center;
+        }
+        .hero h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.9rem;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .hero h1 small {
+            font-size: 0.9rem;
+            background: #2c5a44;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-weight: normal;
+            letter-spacing: 0;
+        }
+        .sub {
+            margin-top: 8px;
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+
+        /* 双栏布局: 左侧画布区 + 右侧讲解区 */
+        .main-demo {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 28px 24px 24px 24px;
+        }
+        .canvas-area {
+            flex: 2;
+            min-width: 550px;
+            background: #fefef7;
+            border-radius: 40px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+            padding: 16px;
+            transition: all 0.2s;
+        }
+        .knowledge-panel {
+            flex: 1.2;
+            min-width: 260px;
+            background: #f9faf6;
+            border-radius: 36px;
+            padding: 20px 18px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border: 1px solid #e2eadf;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 8px 20px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        /* 交互控件 */
+        .button-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 14px;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+        .btn {
+            border: none;
+            background: #2c5a44;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 10px 22px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn i { font-style: normal; font-weight: bold; font-size: 1.2rem; }
+        .btn:hover {
+            background: #1e4535;
+            transform: scale(0.97);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .btn-reset {
+            background: #9b7b5c;
+        }
+        .btn-reset:hover {
+            background: #7e6248;
+        }
+        .btn-step {
+            background: #2b6d8f;
+        }
+        .btn-step:hover {
+            background: #1f556f;
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .status-badge {
+            background: #eaf4e8;
+            padding: 8px 16px;
+            border-radius: 60px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1d3e2f;
+            text-align: center;
+            display: inline-block;
+            margin-top: 12px;
+            width: auto;
+            backdrop-filter: blur(2px);
+        }
+        .step-desc {
+            margin-top: 18px;
+            background: #ffffffcc;
+            border-radius: 28px;
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            border-left: 5px solid #3a9b6e;
+        }
+
+        /* 右侧知识卡片风格 */
+        .highlight {
+            background: #e9f3e6;
+            border-radius: 24px;
+            padding: 12px 16px;
+            margin: 18px 0;
+            border-left: 6px solid #3a9b6e;
+        }
+        .key-enzyme {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+        .enzyme {
+            background: white;
+            border-radius: 28px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #1e5a3c;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .rule {
+            font-family: monospace;
+            font-size: 1rem;
+            background: #1e2a24;
+            color: #c3e8cf;
+            padding: 8px 12px;
+            border-radius: 28px;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+        footer {
+            font-size: 0.75rem;
+            text-align: center;
+            padding: 14px;
+            border-top: 1px solid #d0dec8;
+            color: #4f6b5c;
+            background: #f4f9f0;
+        }
+        @media (max-width: 860px) {
+            .main-demo { flex-direction: column; }
+            .canvas-area { min-width: auto; }
+            .hero h1 { font-size: 1.5rem; }
+        }
+        .tip-text {
+            font-size: 0.8rem;
+            color: #436b56;
+            margin-top: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="science-card">
+    <div class="hero">
+        <h1>
+            🧬 DNA 半保留复制 
+            <small>Meselson-Stahl 实验精髓</small>
+        </h1>
+        <div class="sub">解旋 → 模板结合 → 子链延伸 → 形成两个相同DNA分子</div>
+    </div>
+    <div class="main-demo">
+        <!-- canvas交互区 -->
+        <div class="canvas-area">
+            <canvas id="dnaCanvas" width="750" height="460" style="width:100%; height:auto; max-width:750px; aspect-ratio:750/460"></canvas>
+            <div class="button-bar">
+                <button class="btn btn-reset" id="resetBtn">⟳ 重置 · 起始双链</button>
+                <button class="btn btn-step" id="unwindBtn">🔓 ① 解旋 (解旋酶)</button>
+                <button class="btn btn-step" id="synthesizeBtn">🧬 ② 聚合 · 合成子链</button>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                <div class="status-badge" id="phaseLabel">🔬 阶段：原始DNA双链</div>
+                <div class="tip-text">💡 点击按钮观察每一步的碱基配对 & 半保留特性</div>
+            </div>
+            <div class="step-desc" id="dynamicDesc">
+                <strong>📖 当前讲解</strong><br>
+                起始状态：展示一段DNA双链，两条链通过氢键(A-T/G-C)互补配对。半保留复制即将开始。
+            </div>
+        </div>
+
+        <!-- 知识讲解区 富有层次亮点 -->
+        <div class="knowledge-panel">
+            <h3 style="margin-top:0; color:#1e422f;">🧬 半保留复制 · 关键机制</h3>
+            <div class="highlight">
+                ✨ <strong>核心亮点</strong>：复制后每个子代DNA分子都保留一条<strong style="color:#2c6e4f;">母链（旧链）</strong>，并合成一条<strong style="color:#d97706;">新链</strong>。完美解释遗传稳定性。
+            </div>
+            <div class="key-enzyme">
+                <span class="enzyme">⚡ 解旋酶 (Helicase)</span>
+                <span class="enzyme">✂️ DNA聚合酶 (DNA Pol)</span>
+                <span class="enzyme">🔗 引物酶 (Primase)</span>
+                <span class="enzyme">🧩 连接酶 (Ligase)</span>
+            </div>
+            <p style="font-size:0.9rem; margin:8px 0"><strong>📌 碱基互补配对规则</strong><br>
+            <span class="rule">A ⇄ T &nbsp;&nbsp; G ⇄ C</span>
+            </p>
+            <p style="line-height:1.45; font-size:0.92rem;">
+                <strong>1️⃣ 解旋</strong>：解旋酶破坏氢键，两条链分开作为模板。<br>
+                <strong>2️⃣ 引物结合</strong>：RNA引物提供3'-OH末端。<br>
+                <strong>3️⃣ 延伸</strong>：DNA聚合酶沿5'→3'方向添加互补dNTP。<br>
+                <strong>4️⃣ 形成子代</strong>：最终产生两个完全相同的DNA双螺旋，每条双链含一条母链和一条全新子链。
+            </p>
+            <div style="background: #f0f3ea; border-radius: 24px; padding: 12px; margin-top: 12px;">
+                <span style="font-weight:bold;">🎓 趣味记忆</span><br>
+                “半保留，母子链；碱基互补是关键，解旋聚合环环扣，遗传信息准传递。”
+            </div>
+        </div>
+    </div>
+    <footer>⚛️ 基于半保留复制模型 | 母链（深色） · 新链（橙金色） | 单击步骤深度理解DNA复制</footer>
+</div>
+
+<script>
+    (function(){
+        // -------- 准确的知识序列 ----------
+        // 定义一段模板链 (Top链 5'->3' 示意) 6个碱基
+        const TOP_TEMPLATE = ["A", "G", "C", "T", "A", "C"];     // 原始上链
+        // 原始下链（互补链）与TOP完全互补
+        const BOTTOM_COMPLEMENT = ["T", "C", "G", "A", "T", "G"]; // 原始下链
+        
+        // 辅助函数：获取互补碱基
+        function getComplement(base) {
+            if(base === "A") return "T";
+            if(base === "T") return "A";
+            if(base === "G") return "C";
+            if(base === "C") return "G";
+            return "?";
+        }
+        
+        // 根据母链生成互补新链序列 (用于子链合成)
+        function synthesizeNewChain(templateChain) {
+            return templateChain.map(base => getComplement(base));
+        }
+        
+        // 预计算两条新链
+        // 模板链1（原始TOP链）合成的新链序列: 互补TOP -> ["T","C","G","A","T","G"]
+        const NEW_FROM_TOP = synthesizeNewChain(TOP_TEMPLATE);  // ["T","C","G","A","T","G"]
+        // 模板链2（原始BOTTOM链）合成的新链序列: 互补BOTTOM -> 得到原始TOP链的序列
+        const NEW_FROM_BOTTOM = synthesizeNewChain(BOTTOM_COMPLEMENT); // ["A","G","C","T","A","C"]
+        
+        // 状态定义:
+        // STATE_ORIGIN = 0 : 原始双链（显示完整双螺旋，碱基对配对）
+        // STATE_UNWIND = 1 : 解旋后两条单链分开（展示母链分离，作为模板）
+        // STATE_REPLICATED = 2 : 复制完成，形成两个DNA分子（每个都是半保留: 母链+新链）
+        let currentState = 0; // 0,1,2
+        
+        const canvas = document.getElementById('dnaCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 固定画布尺寸 (宽750 高460)
+        canvas.width = 750;
+        canvas.height = 460;
+        
+        // 全局坐标参数 (为了绘图整洁，基于绝对坐标)
+        // 原始双链区域参数 (6个碱基对，起始x=110，间距52，y范围)
+        const PAIR_START_X = 110;
+        const PAIR_STEP = 52;   // 相邻碱基对间距
+        const PAIR_COUNT = 6;
+        
+        // 原始双链上下链Y坐标 (配对时)
+        const ORIGIN_TOP_Y = 170;
+        const ORIGIN_BOTTOM_Y = 230;
+        
+        // 解旋状态: 两条单链位置
+        const UNWIND_TOP_Y = 125;      // 上单链
+        const UNWIND_BOTTOM_Y = 295;   // 下单链
+        
+        // 复制完成后两个DNA分子的位置
+        // DNA 分子A (基于原始上链 + 新链) 区域范围 Y=110~180
+        const DUPLEX_A_TOP_Y = 135;     // 母链(原上链) 
+        const DUPLEX_A_BOTTOM_Y = 175;   // 新链(橙色)
+        // DNA 分子B (基于原始下链 + 新链) 区域范围 Y=270~340
+        const DUPLEX_B_TOP_Y = 290;     // 母链(原下链)
+        const DUPLEX_B_BOTTOM_Y = 330;   // 新链(橙色)
+        
+        // 文本说明dom
+        const phaseLabel = document.getElementById('phaseLabel');
+        const dynamicDesc = document.getElementById('dynamicDesc');
+        
+        // ----- 绘图函数群 (确保知识点准确) -----
+        function drawOriginState() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackgroundGrid();
+            // 绘制配对双链 (碱基对横线 + 字母)
+            for(let i = 0; i < PAIR_COUNT; i++) {
+                let x = PAIR_START_X + i * PAIR_STEP;
+                let topBase = TOP_TEMPLATE[i];
+                let bottomBase = BOTTOM_COMPLEMENT[i];
+                // 画磷酸二酯键骨架示意曲线 (简单优雅)
+                ctx.beginPath();
+                ctx.moveTo(x-8, ORIGIN_TOP_Y);
+                ctx.lineTo(x+8, ORIGIN_TOP_Y);
+                ctx.moveTo(x-8, ORIGIN_BOTTOM_Y);
+                ctx.lineTo(x+8, ORIGIN_BOTTOM_Y);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#4e7a68";
+                ctx.stroke();
+                // 氢键连线 (虚线)
+                ctx.beginPath();
+                ctx.setLineDash([4, 4]);
+                ctx.moveTo(x, ORIGIN_TOP_Y+8);
+                ctx.lineTo(x, ORIGIN_BOTTOM_Y-8);
+                ctx.stroke();
+                ctx.setLineDash([]); // 恢复实线
+                // 碱基文字
+                ctx.font = "bold 18px 'Segoe UI', 'Courier New'";
+                ctx.fillStyle = "#1f3d32";
+                ctx.fillText(topBase, x-9, ORIGIN_TOP_Y-5);
+                ctx.fillStyle = "#2c5e44";
+                ctx.fillText(bottomBase, x-9, ORIGIN_BOTTOM_Y+18);
+                // 画配对圆点装饰
+                ctx.beginPath();
+                ctx.arc(x, ORIGIN_TOP_Y+2, 3, 0, 2*Math.PI);
+                ctx.fillStyle = "#a3c9b1";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x, ORIGIN_BOTTOM_Y-2, 3, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            // 标注两条链方向
+            ctx.font = "italic 12px 'Segoe UI'";
+            ctx.fillStyle = "#6c8b7a";
+            ctx.fillText("5'", PAIR_START_X-15, ORIGIN_TOP_Y-4);
+            ctx.fillText("3'", PAIR_START_X + (PAIR_COUNT-1)*PAIR_STEP+12, ORIGIN_TOP_Y-4);
+            ctx.fillText("3'", PAIR_START_X-15, ORIGIN_BOTTOM_Y+15);
+            ctx.fillText("5'", PAIR_START_X + (PAIR_COUNT-1)*PAIR_STEP+12, ORIGIN_BOTTOM_Y+15);
+            ctx.fillStyle = "#235b40";
+            ctx.font = "bold 14px sans-serif";
+            ctx.fillText("母链 (原始)", 40, ORIGIN_TOP_Y-10);
+            ctx.fillText("母链 (原始)", 40, ORIGIN_BOTTOM_Y+25);
+            ctx.fillText("碱基互补配对 A-T / G-C", 530, 70);
+        }
+        
+        function drawUnwindState() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackgroundGrid();
+            // 绘制两条分开的单链 (展示碱基序列，无配对横线)
+            for(let i = 0; i < PAIR_COUNT; i++) {
+                let x = PAIR_START_X + i * PAIR_STEP;
+                let topBase = TOP_TEMPLATE[i];
+                let bottomBase = BOTTOM_COMPLEMENT[i];
+                // 上链骨架
+                ctx.beginPath();
+                ctx.moveTo(x-8, UNWIND_TOP_Y);
+                ctx.lineTo(x+8, UNWIND_TOP_Y);
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "#2b6e51";
+                ctx.stroke();
+                ctx.fillStyle = "#1a4634";
+                ctx.font = "bold 18px monospace";
+                ctx.fillText(topBase, x-9, UNWIND_TOP_Y-6);
+                
+                // 下链骨架
+                ctx.beginPath();
+                ctx.moveTo(x-8, UNWIND_BOTTOM_Y);
+                ctx.lineTo(x+8, UNWIND_BOTTOM_Y);
+                ctx.stroke();
+                ctx.fillStyle = "#1a4634";
+                ctx.fillText(bottomBase, x-9, UNWIND_BOTTOM_Y+18);
+                // 小圆点代表碱基暴露
+                ctx.beginPath();
+                ctx.arc(x, UNWIND_TOP_Y+2, 3, 0, 2*Math.PI);
+                ctx.fillStyle = "#d4e2d2";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x, UNWIND_BOTTOM_Y-2, 3, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            // 添加解旋酶示意图标
+            ctx.font = "bold 16px sans-serif";
+            ctx.fillStyle = "#bb7e4b";
+            ctx.fillText("🔓 解旋酶", PAIR_START_X+180, UNWIND_TOP_Y-25);
+            ctx.fillStyle = "#387e5c";
+            ctx.font = "italic 13px";
+            ctx.fillText("双链解开，暴露出碱基作为模板", PAIR_START_X+120, UNWIND_BOTTOM_Y+40);
+            ctx.fillStyle = "#166b44";
+            ctx.font = "bold 13px";
+            ctx.fillText("模板链 (母链)", PAIR_START_X-20, UNWIND_TOP_Y-8);
+            ctx.fillText("模板链 (母链)", PAIR_START_X-20, UNWIND_BOTTOM_Y+25);
+        }
+        
+        function drawReplicatedState() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackgroundGrid();
+            // 绘制两个子代DNA分子，每个都是母链+新链的完美双链
+            // DNA分子1 (上链母链TOP + 新链来自NEW_FROM_TOP)
+            for(let i = 0; i < PAIR_COUNT; i++) {
+                let x = PAIR_START_X + i * PAIR_STEP;
+                let motherBase = TOP_TEMPLATE[i];
+                let newBase = NEW_FROM_TOP[i];
+                // 绘制母链骨架 (深色)
+                ctx.beginPath();
+                ctx.moveTo(x-8, DUPLEX_A_TOP_Y);
+                ctx.lineTo(x+8, DUPLEX_A_TOP_Y);
+                ctx.lineWidth = 2.2;
+                ctx.strokeStyle = "#2d674b";
+                ctx.stroke();
+                ctx.fillStyle = "#184b36";
+                ctx.font = "bold 17px monospace";
+                ctx.fillText(motherBase, x-9, DUPLEX_A_TOP_Y-6);
+                // 绘制新链骨架 (金色/橙色)
+                ctx.beginPath();
+                ctx.moveTo(x-8, DUPLEX_A_BOTTOM_Y);
+                ctx.lineTo(x+8, DUPLEX_A_BOTTOM_Y);
+                ctx.strokeStyle = "#cd7b2e";
+                ctx.stroke();
+                ctx.fillStyle = "#b45f1b";
+                ctx.fillText(newBase, x-9, DUPLEX_A_BOTTOM_Y+18);
+                // 碱基对连线(氢键虚线)
+                ctx.beginPath();
+                ctx.setLineDash([4, 4]);
+                ctx.moveTo(x, DUPLEX_A_TOP_Y+6);
+                ctx.lineTo(x, DUPLEX_A_BOTTOM_Y-6);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // 小圆装饰
+                ctx.beginPath();
+                ctx.arc(x, DUPLEX_A_TOP_Y+2, 2.5, 0, 2*Math.PI);
+                ctx.fillStyle = "#adcfbc";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x, DUPLEX_A_BOTTOM_Y-2, 2.5, 0, 2*Math.PI);
+                ctx.fillStyle = "#f7bc6d";
+                ctx.fill();
+            }
+            
+            // DNA分子2 (下链母链BOTTOM + 新链NEW_FROM_BOTTOM)
+            for(let i = 0; i < PAIR_COUNT; i++) {
+                let x = PAIR_START_X + i * PAIR_STEP;
+                let motherBase = BOTTOM_COMPLEMENT[i];
+                let newBase = NEW_FROM_BOTTOM[i];
+                // 母链 (原始下链)
+                ctx.beginPath();
+                ctx.moveTo(x-8, DUPLEX_B_TOP_Y);
+                ctx.lineTo(x+8, DUPLEX_B_TOP_Y);
+                ctx.strokeStyle = "#2d674b";
+                ctx.stroke();
+                ctx.fillStyle = "#184b36";
+                ctx.font = "bold 17px monospace";
+                ctx.fillText(motherBase, x-9, DUPLEX_B_TOP_Y-6);
+                // 新链 (金色)
+                ctx.beginPath();
+                ctx.moveTo(x-8, DUPLEX_B_BOTTOM_Y);
+                ctx.lineTo(x+8, DUPLEX_B_BOTTOM_Y);
+                ctx.strokeStyle = "#cd7b2e";
+                ctx.stroke();
+                ctx.fillStyle = "#b45f1b";
+                ctx.fillText(newBase, x-9, DUPLEX_B_BOTTOM_Y+18);
+                // 虚线氢键
+                ctx.beginPath();
+                ctx.setLineDash([4, 4]);
+                ctx.moveTo(x, DUPLEX_B_TOP_Y+6);
+                ctx.lineTo(x, DUPLEX_B_BOTTOM_Y-6);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.arc(x, DUPLEX_B_TOP_Y+2, 2.5, 0, 2*Math.PI);
+                ctx.fillStyle = "#adcfbc";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x, DUPLEX_B_BOTTOM_Y-2, 2.5, 0, 2*Math.PI);
+                ctx.fillStyle = "#f7bc6d";
+                ctx.fill();
+            }
+            
+            // 添加标注 显示半保留复制精髓
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#1f543e";
+            ctx.fillText("🧬 子代DNA ①", PAIR_START_X+10, DUPLEX_A_TOP_Y-15);
+            ctx.fillText("旧链(母)  新链", PAIR_START_X+180, DUPLEX_A_BOTTOM_Y+5);
+            ctx.fillStyle = "#1f543e";
+            ctx.fillText("🧬 子代DNA ②", PAIR_START_X+10, DUPLEX_B_TOP_Y-15);
+            ctx.fillStyle = "#d97706";
+            ctx.font = "italic 12px";
+            ctx.fillText("每条子代双链都保留一条原始母链", PAIR_START_X+340, DUPLEX_A_TOP_Y+28);
+            // 添加聚合酶示意
+            ctx.font = "bold 15px sans-serif";
+            ctx.fillStyle = "#b6682c";
+            ctx.fillText("⚡ DNA聚合酶", PAIR_START_X+460, DUPLEX_B_BOTTOM_Y-12);
+            ctx.fillStyle = "#437c60";
+            ctx.fillText("✨ 半保留复制完成 ✨", PAIR_START_X+250, 395);
+        }
+        
+        function drawBackgroundGrid() {
+            ctx.save();
+            ctx.globalAlpha = 0.2;
+            ctx.beginPath();
+            for(let y=50; y<450; y+=40) {
+                ctx.moveTo(20, y);
+                ctx.lineTo(730, y);
+                ctx.strokeStyle = "#bcd0c2";
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+        
+        // 统一刷新画布 + 更新文字
+        function refreshDisplay() {
+            if(currentState === 0) {
+                drawOriginState();
+                phaseLabel.innerHTML = "🔬 阶段 0：原始DNA双链 (碱基互补配对)";
+                dynamicDesc.innerHTML = "<strong>📖 起始双链</strong><br>展示6个碱基对：A-T / G-C 严格配对。两条链反向平行。准备开始半保留复制。";
+            } else if(currentState === 1) {
+                drawUnwindState();
+                phaseLabel.innerHTML = "🧬 阶段 1：解旋完成 · 单链模板暴露";
+                dynamicDesc.innerHTML = "<strong>🔓 解旋酶作用</strong><br>氢键断裂，双链解开，每条链成为合成新链的模板。碱基序列完全暴露，等待DNA聚合酶结合。";
+            } else if(currentState === 2) {
+                drawReplicatedState();
+                phaseLabel.innerHTML = "✅ 阶段 2：复制完成 · 两个子代DNA分子 (半保留)";
+                dynamicDesc.innerHTML = "<strong>🧬 半保留复制本质</strong><br>每个子代DNA均由一条原始母链(深色)和一条全新合成的子链(金色)组成。遗传信息精确传递，符合高中生物学核心结论。";
+            } else {
+                drawOriginState();
+            }
+        }
+        
+        // ---- 交互控制逻辑 (准确、防误触) ----
+        function resetToOrigin() {
+            currentState = 0;
+            refreshDisplay();
+        }
+        
+        function unwindStep() {
+            if(currentState === 0) {
+                currentState = 1;
+                refreshDisplay();
+            } else if(currentState === 1) {
+                // 已经是解旋状态，不做变化，但给予友好提示(不报错)
+                dynamicDesc.innerHTML = "<strong>⚠️ 已处于解旋状态</strong><br>请点击「② 聚合 · 合成子链」完成复制过程。";
+                setTimeout(()=>{
+                    if(currentState===1) refreshDisplay();
+                },50);
+            } else if(currentState === 2) {
+                dynamicDesc.innerHTML = "<strong>⚠️ 复制已完成</strong><br>如需重新演示请按「重置」按钮，再次观察完整复制过程。";
+                setTimeout(()=>{
+                    if(currentState===2) refreshDisplay();
+                },100);
+            } else {
+                refreshDisplay();
+            }
+        }
+        
+        function synthesizeStep() {
+            if(currentState === 1) {
+                currentState = 2;
+                refreshDisplay();
+            } else if(currentState === 0) {
+                dynamicDesc.innerHTML = "<strong>❓ 还未解旋</strong><br>请先点击「解旋」打开DNA双链，再进行新链合成。";
+                setTimeout(()=>{
+                    if(currentState===0) refreshDisplay();
+                },400);
+            } else if(currentState === 2) {
+                dynamicDesc.innerHTML = "<strong>✅ DNA复制已完成</strong><br>两个全新DNA分子已形成，可重置后再次观察不同阶段。";
+                setTimeout(()=>{
+                    if(currentState===2) refreshDisplay();
+                },600);
+            } else {
+                refreshDisplay();
+            }
+        }
+        
+        // 绑定按钮
+        const resetBtn = document.getElementById('resetBtn');
+        const unwindBtn = document.getElementById('unwindBtn');
+        const synthesizeBtn = document.getElementById('synthesizeBtn');
+        
+        resetBtn.addEventListener('click', resetToOrigin);
+        unwindBtn.addEventListener('click', unwindStep);
+        synthesizeBtn.addEventListener('click', synthesizeStep);
+        
+        // 初始绘制
+        refreshDisplay();
+        
+        // 增加自适应重新校正 (resize无影响因为canvas尺寸固定)
+        window.addEventListener('resize', () => refreshDisplay());
+    })();
+</script>
+</body>
+</html>

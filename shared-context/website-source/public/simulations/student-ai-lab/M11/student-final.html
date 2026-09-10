@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>导数启航站 · 高中数学求导全交互工坊</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #e9f0fc 0%, #d9e2ef 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 起始页 ( Splash Screen ) */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 20% 30%, #0b1120, #0a0f1c);
+            z-index: 2000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.9s cubic-bezier(0.2, 0.9, 0.4, 1.1), visibility 0.9s;
+            font-family: 'Segoe UI', system-ui;
+        }
+        .splash-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(16px);
+            border-radius: 3rem;
+            padding: 2.5rem 2rem;
+            max-width: 550px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.2);
+            animation: floatIn 0.7s ease-out;
+        }
+        @keyframes floatIn {
+            0% { opacity: 0; transform: scale(0.94) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .splash-card h1 {
+            font-size: 2.6rem;
+            background: linear-gradient(135deg, #FFE6B0, #FFB347, #FF7E5F);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.8rem;
+        }
+        .splash-card p {
+            color: #e2e8f0;
+            margin: 1rem 0;
+            font-size: 1rem;
+        }
+        .enter-btn {
+            background: linear-gradient(95deg, #f97316, #f59e0b);
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: bold;
+            padding: 0.8rem 2rem;
+            border-radius: 3rem;
+            margin-top: 1.5rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.2);
+        }
+        .enter-btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+            background: linear-gradient(95deg, #fb923c, #fbbf24);
+        }
+        .feature-badge {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin: 20px 0 10px;
+            flex-wrap: wrap;
+        }
+        .badge-icon {
+            background: rgba(255,255,255,0.15);
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            color: #ffedd5;
+        }
+        /* 主应用默认隐藏 */
+        .main-app {
+            display: none;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+            animation: contentFade 0.5s ease;
+        }
+        @keyframes contentFade {
+            from { opacity: 0; transform: translateY(12px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* 四栏网格 */
+        .four-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.2rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.96);
+            border-radius: 1.6rem;
+            box-shadow: 0 12px 28px -8px rgba(0,0,0,0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(0px);
+            transition: transform 0.1s;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .card-header {
+            background: #0f172a;
+            color: white;
+            padding: 0.8rem 1.2rem;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        .card-body {
+            padding: 1rem;
+            flex: 1;
+        }
+        .param-slider-group {
+            margin-bottom: 1rem;
+        }
+        .param-slider-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 6px 0;
+        }
+        .func-selector {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 1rem;
+            border: 1px solid #cbd5e1;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .derivative-preview {
+            background: #f1f5f9;
+            border-radius: 1.2rem;
+            padding: 0.8rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        .slope-big {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #f97316;
+        }
+        .btn-secondary {
+            background: #3b82f6;
+            border: none;
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 2rem;
+            color: white;
+            font-weight: bold;
+            margin-top: 0.5rem;
+            cursor: pointer;
+        }
+        .canvas-container {
+            width: 100%;
+            aspect-ratio: 1 / 0.85;
+            background: #fefefe;
+            border-radius: 1rem;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 1rem;
+            display: block;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .quiz-question {
+            background: #f8fafc;
+            padding: 12px;
+            border-radius: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .quiz-btn {
+            background: #eef2ff;
+            border: none;
+            padding: 8px;
+            border-radius: 2rem;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .feedback {
+            background: #f1f5f9;
+            border-radius: 1rem;
+            padding: 10px;
+            font-size: 0.85rem;
+            margin: 12px 0;
+        }
+        .score-badge {
+            background: #0f172a;
+            color: #facc15;
+            padding: 4px;
+            border-radius: 2rem;
+            text-align: center;
+            font-weight: bold;
+        }
+        .next-quiz {
+            background: #8b5cf6;
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 2rem;
+            font-weight: bold;
+            width: 100%;
+            cursor: pointer;
+        }
+        .problems-list {
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .problem-item {
+            background: #f9f9ff;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border-left: 4px solid #3b82f6;
+            cursor: pointer;
+        }
+        .problem-question {
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .problem-answer {
+            display: none;
+            margin-top: 8px;
+            background: #e6f0ff;
+            padding: 8px;
+            border-radius: 0.8rem;
+            font-size: 0.8rem;
+        }
+        .problem-answer.show {
+            display: block;
+        }
+        .tiny-text {
+            font-size: 0.7rem;
+            color: #475569;
+            text-align: center;
+            margin-top: 8px;
+        }
+        @media (max-width: 1100px) {
+            .four-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+        }
+        @media (max-width: 700px) {
+            .four-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .encourage-animation {
+            transition: 0.1s;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 起始页面 (splash) -->
+<div class="splash-screen" id="splashScreen">
+    <div class="splash-card">
+        <h1>📐 导数启航站</h1>
+        <p>高中数学 · 求导过程完全演示</p>
+        <div class="feature-badge">
+            <span class="badge-icon">📈 参数可调</span>
+            <span class="badge-icon">✏️ 互动问答</span>
+            <span class="badge-icon">📚 题库详解</span>
+            <span class="badge-icon">🧠 动态切线</span>
+        </div>
+        <p style="font-size: 0.9rem;">拖动系数、观察切线、挑战求导问答、查看完整解题步骤。<br>从入门到精通，直观感受导数本质。</p>
+        <button class="enter-btn" id="enterBtn">🚀 进入数学工坊</button>
+        <div style="margin-top: 18px; font-size: 0.7rem; opacity: 0.6;">✨ 幂函数 · 指数 · 三角 · 反比例 | 实时导数值</div>
+    </div>
+</div>
+
+<!-- 主应用四栏布局 -->
+<div class="main-app" id="mainApp">
+    <div class="four-grid">
+        <!-- 第一栏：参数调节 -->
+        <div class="card">
+            <div class="card-header">🎛️ 参数调节 & 导数核心</div>
+            <div class="card-body">
+                <select id="funcTypeSelect" class="func-selector">
+                    <option value="poly2">幂函数: f(x)=ax²+b</option>
+                    <option value="poly3">三次函数: f(x)=ax³+cx</option>
+                    <option value="sine">正弦: f(x)=A·sin(kx)</option>
+                    <option value="exp">指数: f(x)=a·e^(kx)</option>
+                    <option value="rational">反比例: f(x)=m/x</option>
+                </select>
+                <div id="dynamicParamsPanel"></div>
+                <div class="derivative-preview">
+                    <div style="font-size:0.8rem;">📐 当前函数</div>
+                    <div id="funcFormulaShow" style="font-weight:bold;font-family:monospace;">f(x)=x²</div>
+                    <div>📖 导函数 f'(x) =</div>
+                    <div id="derivFormulaShow" style="background:#e2e8f0;border-radius:12px;padding:4px;">2x</div>
+                    <div style="margin-top:6px;">📍 当前 x₀ = <span id="x0Val">1.00</span></div>
+                    <div>📈 切线斜率 = </div>
+                    <div class="slope-big" id="slopeDisplay">2.00</div>
+                    <div id="tangentLineEq" style="font-size:12px;">切线: y = 2x -1</div>
+                </div>
+                <label>🔘 拖动观察点 x₀</label>
+                <input type="range" id="xSlider" min="-2.8" max="2.8" step="0.02" value="1.2">
+                <button id="resetViewBtn" class="btn-secondary">⟳ 重置视图范围</button>
+                <div class="tiny-text">💡 调节系数 a, b, k 等，导数公式同步变化</div>
+            </div>
+        </div>
+
+        <!-- 第二栏：图形区 -->
+        <div class="card">
+            <div class="card-header">📈 函数图像 & 切线动态</div>
+            <div class="card-body">
+                <div class="canvas-container">
+                    <canvas id="derivativeCanvas" width="600" height="450" style="width:100%; height:auto; aspect-ratio:600/450"></canvas>
+                </div>
+                <div class="tiny-text">🔵 曲线 f(x) &nbsp;|&nbsp; 🟠 虚线: 切线 &nbsp;|&nbsp; 🔴 切点 | 斜率 = 导数值</div>
+            </div>
+        </div>
+
+        <!-- 第三栏：问答+鼓励 -->
+        <div class="card">
+            <div class="card-header">🧠 导数闯关 · 问答挑战</div>
+            <div class="card-body">
+                <div id="quizQuestion" class="quiz-question">🌟 欢迎！点击下方按钮开始挑战求导规则</div>
+                <div id="quizOptions" class="quiz-options"></div>
+                <div id="quizFeedback" class="feedback">✨ 答对获得积分 + 鼓励语音✨</div>
+                <div class="score-badge" id="scoreArea">🏆 积分: 0</div>
+                <button id="nextQuizBtn" class="next-quiz" style="margin-top: 12px;">🎲 随机新问题</button>
+                <div class="tiny-text">💪 幂函数·三角·指数·对数，强化导数记忆</div>
+            </div>
+        </div>
+
+        <!-- 第四栏：题库与详细过程 -->
+        <div class="card">
+            <div class="card-header">📚 导数题库 · 完整求导过程</div>
+            <div class="card-body">
+                <div class="problems-list" id="problemsList"></div>
+                <div class="tiny-text">📖 点击任意题目 → 展开详细求导步骤（四步法/链式法则）</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- 起始页面控制 -----
+        const splash = document.getElementById('splashScreen');
+        const mainApp = document.getElementById('mainApp');
+        const enterBtn = document.getElementById('enterBtn');
+        
+        function showMainApp() {
+            splash.style.opacity = '0';
+            splash.style.visibility = 'hidden';
+            setTimeout(() => {
+                splash.style.display = 'none';
+                mainApp.style.display = 'block';
+                // 确保画布初始化后重绘一次
+                if (typeof resizeCanvas === 'function') resizeCanvas();
+                if (typeof drawGraph === 'function') drawGraph();
+            }, 800);
+        }
+        enterBtn.addEventListener('click', showMainApp);
+        
+        // ----- 核心图形与参数逻辑 (原四栏完整代码) -----
+        const canvas = document.getElementById('derivativeCanvas');
+        const ctx = canvas.getContext('2d');
+        const funcTypeSelect = document.getElementById('funcTypeSelect');
+        const dynamicPanel = document.getElementById('dynamicParamsPanel');
+        const funcFormulaShow = document.getElementById('funcFormulaShow');
+        const derivFormulaShow = document.getElementById('derivFormulaShow');
+        const slopeDisplaySpan = document.getElementById('slopeDisplay');
+        const xSlider = document.getElementById('xSlider');
+        const x0ValSpan = document.getElementById('x0Val');
+        const tangentLineEqSpan = document.getElementById('tangentLineEq');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+
+        let currentFuncType = "poly2";
+        let params = { a: 1.0, b: 0.0, c: 1.0, k: 1.0, m: 1.5 };
+        
+        let xMin = -3.2, xMax = 3.2, yMin = -3.0, yMax = 5.0;
+        const defaultRanges = {
+            poly2: { xMin: -3.2, xMax: 3.2, yMin: -2.5, yMax: 5.5 },
+            poly3: { xMin: -3.2, xMax: 3.2, yMin: -6, yMax: 6 },
+            sine: { xMin: -3.8, xMax: 3.8, yMin: -2.2, yMax: 2.2 },
+            exp: { xMin: -2.5, xMax: 3.2, yMin: -0.8, yMax: 7.5 },
+            rational: { xMin: -3.5, xMax: 3.5, yMin: -5, yMax: 5 }
+        };
+
+        function getCurrentFunction() {
+            const type = currentFuncType;
+            if(type === "poly2") {
+                const a = params.a, b = params.b;
+                return {
+                    f: (x) => a * x * x + b,
+                    derivative: (x) => 2 * a * x,
+                    formula: `f(x) = ${a.toFixed(2)}·x² + ${b.toFixed(2)}`,
+                    derivText: `f'(x) = ${(2*a).toFixed(2)}·x`
+                };
+            } else if(type === "poly3") {
+                const a = params.a, c = params.c;
+                return {
+                    f: (x) => a * x * x * x + c * x,
+                    derivative: (x) => 3 * a * x * x + c,
+                    formula: `f(x) = ${a.toFixed(2)}·x³ + ${c.toFixed(2)}·x`,
+                    derivText: `f'(x) = ${(3*a).toFixed(2)}·x² + ${c.toFixed(2)}`
+                };
+            } else if(type === "sine") {
+                const A = params.a, k = params.k;
+                return {
+                    f: (x) => A * Math.sin(k * x),
+                    derivative: (x) => A * k * Math.cos(k * x),
+                    formula: `f(x) = ${A.toFixed(2)}·sin(${k.toFixed(2)}x)`,
+                    derivText: `f'(x) = ${(A*k).toFixed(2)}·cos(${k.toFixed(2)}x)`
+                };
+            } else if(type === "exp") {
+                const a = params.a, k = params.k;
+                return {
+                    f: (x) => a * Math.exp(k * x),
+                    derivative: (x) => a * k * Math.exp(k * x),
+                    formula: `f(x) = ${a.toFixed(2)}·e^{${k.toFixed(2)}x}`,
+                    derivText: `f'(x) = ${(a*k).toFixed(2)}·e^{${k.toFixed(2)}x}`
+                };
+            } else {
+                const m = params.m;
+                return {
+                    f: (x) => (x !== 0) ? m / x : NaN,
+                    derivative: (x) => (x !== 0) ? -m / (x*x) : NaN,
+                    formula: `f(x) = ${m.toFixed(2)} / x`,
+                    derivText: `f'(x) = -${m.toFixed(2)} / x²`
+                };
+            }
+        }
+        let currentFuncObj = getCurrentFunction();
+
+        function rebuildParamSliders() {
+            let html = '';
+            if(currentFuncType === "poly2") {
+                html = `<div class="param-slider-group"><label>系数 a (二次) <span id="aVal">${params.a.toFixed(2)}</span></label><input type="range" id="param_a" min="-2" max="2.5" step="0.05" value="${params.a}"></div>
+                        <div class="param-slider-group"><label>常数项 b <span id="bVal">${params.b.toFixed(2)}</span></label><input type="range" id="param_b" min="-2" max="2.5" step="0.1" value="${params.b}"></div>`;
+            } else if(currentFuncType === "poly3") {
+                html = `<div class="param-slider-group"><label>系数 a (x³) <span id="aVal">${params.a.toFixed(2)}</span></label><input type="range" id="param_a" min="-1.5" max="1.5" step="0.05" value="${params.a}"></div>
+                        <div class="param-slider-group"><label>系数 c (x) <span id="cVal">${params.c.toFixed(2)}</span></label><input type="range" id="param_c" min="-3" max="3" step="0.1" value="${params.c}"></div>`;
+            } else if(currentFuncType === "sine") {
+                html = `<div class="param-slider-group"><label>振幅 A <span id="aVal">${params.a.toFixed(2)}</span></label><input type="range" id="param_a" min="0.3" max="2" step="0.05" value="${params.a}"></div>
+                        <div class="param-slider-group"><label>频率 k <span id="kVal">${params.k.toFixed(2)}</span></label><input type="range" id="param_k" min="0.5" max="2.5" step="0.05" value="${params.k}"></div>`;
+            } else if(currentFuncType === "exp") {
+                html = `<div class="param-slider-group"><label>振幅 a <span id="aVal">${params.a.toFixed(2)}</span></label><input type="range" id="param_a" min="0.2" max="2" step="0.05" value="${params.a}"></div>
+                        <div class="param-slider-group"><label>增长率 k <span id="kVal">${params.k.toFixed(2)}</span></label><input type="range" id="param_k" min="0.2" max="1.8" step="0.05" value="${params.k}"></div>`;
+            } else if(currentFuncType === "rational") {
+                html = `<div class="param-slider-group"><label>系数 m <span id="mVal">${params.m.toFixed(2)}</span></label><input type="range" id="param_m" min="-3" max="3" step="0.1" value="${params.m}"></div>`;
+            }
+            dynamicPanel.innerHTML = html;
+            attachParamEvents();
+        }
+        
+        function attachParamEvents() {
+            if(currentFuncType === "poly2") {
+                const aS = document.getElementById('param_a'), bS = document.getElementById('param_b');
+                if(aS) aS.oninput = (e) => { params.a = parseFloat(e.target.value); document.getElementById('aVal').innerText = params.a.toFixed(2); updateAll(); };
+                if(bS) bS.oninput = (e) => { params.b = parseFloat(e.target.value); document.getElementById('bVal').innerText = params.b.toFixed(2); updateAll(); };
+            } else if(currentFuncType === "poly3") {
+                const aS = document.getElementById('param_a'), cS = document.getElementById('param_c');
+                if(aS) aS.oninput = (e) => { params.a = parseFloat(e.target.value); document.getElementById('aVal').innerText = params.a.toFixed(2); updateAll(); };
+                if(cS) cS.oninput = (e) => { params.c = parseFloat(e.target.value); document.getElementById('cVal').innerText = params.c.toFixed(2); updateAll(); };
+            } else if(currentFuncType === "sine" || currentFuncType === "exp") {
+                const aS = document.getElementById('param_a'), kS = document.getElementById('param_k');
+                if(aS) aS.oninput = (e) => { params.a = parseFloat(e.target.value); document.getElementById('aVal').innerText = params.a.toFixed(2); updateAll(); };
+                if(kS) kS.oninput = (e) => { params.k = parseFloat(e.target.value); document.getElementById('kVal').innerText = params.k.toFixed(2); updateAll(); };
+            } else if(currentFuncType === "rational") {
+                const mS = document.getElementById('param_m');
+                if(mS) mS.oninput = (e) => { params.m = parseFloat(e.target.value); document.getElementById('mVal').innerText = params.m.toFixed(2); updateAll(); };
+            }
+        }
+        
+        function updateAll() {
+            currentFuncObj = getCurrentFunction();
+            funcFormulaShow.innerText = currentFuncObj.formula;
+            derivFormulaShow.innerText = currentFuncObj.derivText;
+            updateDerivativeAndTangent();
+            drawGraph();
+        }
+        
+        function updateDerivativeAndTangent() {
+            let x0 = parseFloat(xSlider.value);
+            if(currentFuncType === "rational" && Math.abs(x0) < 0.05) x0 = x0 >=0 ? 0.2 : -0.2;
+            x0ValSpan.innerText = x0.toFixed(3);
+            let slope = currentFuncObj.derivative(x0);
+            let y0 = currentFuncObj.f(x0);
+            if(!isFinite(slope) || isNaN(slope)) slope = 0;
+            if(isNaN(y0)) y0 = 0;
+            slopeDisplaySpan.innerText = slope.toFixed(4);
+            let intercept = y0 - slope * x0;
+            let eq = (Math.abs(intercept) < 1e-4) ? `y = ${slope.toFixed(3)}·x` : (intercept>0 ? `y = ${slope.toFixed(3)}·x + ${intercept.toFixed(3)}` : `y = ${slope.toFixed(3)}·x - ${Math.abs(intercept).toFixed(3)}`);
+            tangentLineEqSpan.innerText = `切线: ${eq}`;
+        }
+        
+        function drawGraph() {
+            if(!ctx) return;
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0,0,w,h);
+            function toCanvasX(x) { return ((x - xMin) / (xMax - xMin)) * w; }
+            function toCanvasY(y) { return h - ((y - yMin) / (yMax - yMin)) * h; }
+            ctx.save();
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 0.6;
+            let xStep = (xMax - xMin)/8, yStep = (yMax - yMin)/8;
+            for(let x=Math.ceil(xMin/xStep)*xStep; x<=xMax; x+=xStep){
+                let cx = toCanvasX(x);
+                ctx.beginPath(); ctx.moveTo(cx,0); ctx.lineTo(cx,h); ctx.stroke();
+                ctx.fillStyle="#334155"; ctx.fillText(x.toFixed(1), cx, toCanvasY(0)+12);
+            }
+            for(let y=Math.ceil(yMin/yStep)*yStep; y<=yMax; y+=yStep){
+                let cy = toCanvasY(y);
+                ctx.beginPath(); ctx.moveTo(0,cy); ctx.lineTo(w,cy); ctx.stroke();
+                ctx.fillText(y.toFixed(1), toCanvasX(0)+8, cy);
+            }
+            ctx.beginPath(); ctx.lineWidth=1.8; ctx.strokeStyle="#1e293b";
+            let axisY0=toCanvasY(0); ctx.moveTo(0,axisY0); ctx.lineTo(w,axisY0); ctx.stroke();
+            let axisX0=toCanvasX(0); ctx.moveTo(axisX0,0); ctx.lineTo(axisX0,h); ctx.stroke();
+            ctx.beginPath(); ctx.lineWidth=2.5; ctx.strokeStyle="#3b82f6";
+            let first=true;
+            for(let px=0; px<=w; px++){
+                let x = xMin + (px/w)*(xMax-xMin);
+                let y = currentFuncObj.f(x);
+                let safe = true;
+                if(currentFuncType==="rational" && Math.abs(x)<1e-4) safe=false;
+                if(isNaN(y) || !isFinite(y)) safe=false;
+                if(safe){
+                    let cy = toCanvasY(y);
+                    if(cy<-100 || cy>h+100){ first=true; continue; }
+                    if(first){ ctx.moveTo(px,cy); first=false; }
+                    else ctx.lineTo(px,cy);
+                } else first=true;
+            }
+            ctx.stroke();
+            let x0 = parseFloat(xSlider.value);
+            if(currentFuncType==="rational" && Math.abs(x0)<0.1) x0 = x0>=0?0.2:-0.2;
+            let slope = currentFuncObj.derivative(x0);
+            let y0 = currentFuncObj.f(x0);
+            if(isNaN(y0)) y0=0;
+            let cpX = toCanvasX(x0), cpY = toCanvasY(y0);
+            ctx.beginPath(); ctx.fillStyle="#ef4444"; ctx.arc(cpX, cpY, 6, 0, 2*Math.PI); ctx.fill();
+            ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(cpX, cpY, 2.5, 0, 2*Math.PI); ctx.fill();
+            if(isFinite(slope)){
+                let tx1 = xMin, tx2 = xMax, ty1 = slope*(tx1-x0)+y0, ty2 = slope*(tx2-x0)+y0;
+                ctx.beginPath(); ctx.moveTo(toCanvasX(tx1), toCanvasY(ty1)); ctx.lineTo(toCanvasX(tx2), toCanvasY(ty2));
+                ctx.strokeStyle="#f97316"; ctx.lineWidth=2; ctx.setLineDash([6,6]); ctx.stroke(); ctx.setLineDash([]);
+            }
+            ctx.fillStyle="#1e293b"; ctx.font="bold 11px monospace"; ctx.fillText(`斜率=${slope.toFixed(3)}`, cpX+8, cpY-8);
+            ctx.restore();
+        }
+        
+        function resetView() {
+            const def = defaultRanges[currentFuncType] || defaultRanges.poly2;
+            xMin = def.xMin; xMax = def.xMax; yMin = def.yMin; yMax = def.yMax;
+            drawGraph();
+        }
+        
+        function onFuncTypeChange() {
+            currentFuncType = funcTypeSelect.value;
+            if(currentFuncType === "poly2") params = { a:1, b:0, c:1, k:1, m:1 };
+            else if(currentFuncType === "poly3") params = { a:0.8, b:0, c:1.2, k:1, m:1 };
+            else if(currentFuncType === "sine") params = { a:1.2, b:0, c:1, k:1.2, m:1 };
+            else if(currentFuncType === "exp") params = { a:0.8, b:0, c:1, k:0.8, m:1 };
+            else if(currentFuncType === "rational") params = { a:1, b:0, c:1, k:1, m:1.5 };
+            rebuildParamSliders();
+            resetView();
+            updateAll();
+            if(currentFuncType === "rational") xSlider.min=-2.8, xSlider.max=2.8;
+            else if(currentFuncType === "exp") xSlider.min=-2.0, xSlider.max=3.0;
+            else xSlider.min=-2.8, xSlider.max=2.8;
+            updateDerivativeAndTangent();
+            drawGraph();
+        }
+        
+        // ----- 问答系统 -----
+        let currentQuestion = null;
+        let quizScore = 0;
+        const questionBank = [
+            { q: "函数 f(x)=x² 的导数是？", opts: ["2x", "x²", "2", "x"], correct: "2x", exp: "幂函数求导：指数2 → 2x¹ = 2x" },
+            { q: "f(x)=sin(x) 的导数是？", opts: ["cos(x)", "-cos(x)", "sin(x)", "-sin(x)"], correct: "cos(x)", exp: "正弦导数 = 余弦" },
+            { q: "f(x)=eˣ 的导数是？", opts: ["eˣ", "x·eˣ", "1", "ln(x)"], correct: "eˣ", exp: "指数函数导数是其本身" },
+            { q: "f(x)=3x²+2x 的导数是？", opts: ["6x+2", "3x+2", "6x", "6x+2x"], correct: "6x+2", exp: "分别求导：3x²→6x, 2x→2" },
+            { q: "f(x)=1/x 的导数是？", opts: ["-1/x²", "1/x²", "-1/x", "ln|x|"], correct: "-1/x²", exp: "x⁻¹ 求导得 -x⁻² = -1/x²" },
+            { q: "f(x)=cos(x) 的导数是？", opts: ["-sin(x)", "sin(x)", "-cos(x)", "tan(x)"], correct: "-sin(x)", exp: "余弦导数 = -正弦" },
+            { q: "f(x)=ln(x) 的导数是？", opts: ["1/x", "x", "eˣ", "1"], correct: "1/x", exp: "自然对数导数为1/x" }
+        ];
+        function getRandomQ() { return {...questionBank[Math.floor(Math.random()*questionBank.length)]}; }
+        function renderQuiz() {
+            currentQuestion = getRandomQ();
+            document.getElementById('quizQuestion').innerHTML = "❓ " + currentQuestion.q;
+            let btnsHtml = "";
+            currentQuestion.opts.forEach(opt => {
+                btnsHtml += `<button class="quiz-btn" data-opt="${opt}">${opt}</button>`;
+            });
+            document.getElementById('quizOptions').innerHTML = btnsHtml;
+            document.querySelectorAll('.quiz-btn').forEach(btn => {
+                btn.onclick = () => checkAnswer(btn.getAttribute('data-opt'));
+            });
+            document.getElementById('quizFeedback').innerHTML = "💡 选择一个答案，巩固求导法则";
+        }
+        function checkAnswer(selected) {
+            if(!currentQuestion) return;
+            if(selected === currentQuestion.correct){
+                quizScore++;
+                document.getElementById('scoreArea').innerHTML = `🏆 积分: ${quizScore}`;
+                document.getElementById('quizFeedback').innerHTML = `✅ 完全正确！ ✨ ${currentQuestion.exp} <span style="color:green;">🎉 太棒了！ +1分</span>`;
+            } else {
+                document.getElementById('quizFeedback').innerHTML = `❌ 再想想… 正确答案是 ${currentQuestion.correct}。 ${currentQuestion.exp} 继续加油 🌟`;
+            }
+        }
+        
+        // 题库详细
+        const problemsData = [
+            { q: "求导：f(x) = x³", answer: "f'(x) = 3x²", steps: "1️⃣ 幂函数求导法则: d/dx (xⁿ) = n·xⁿ⁻¹\n2️⃣ n=3 → 3·x³⁻¹ = 3x²\n✅ 最终结果: 3x²" },
+            { q: "求导：f(x) = 5x⁴ - 2x² + 7", answer: "f'(x) = 20x³ - 4x", steps: "1️⃣ 分别对每一项求导:\n   · 5x⁴ → 20x³\n   · -2x² → -4x\n   · 常数7 → 0\n2️⃣ 合并: 20x³ - 4x" },
+            { q: "求导：f(x) = sin(2x)", answer: "f'(x) = 2cos(2x)", steps: "1️⃣ 链式法则: 令 u=2x, f=sin(u)\n2️⃣ df/dx = cos(u)·du/dx = cos(2x)·2 = 2cos(2x)" },
+            { q: "求导：f(x) = e^{3x}", answer: "f'(x) = 3e^{3x}", steps: "1️⃣ 指数链式: d/dx e^{u}= e^{u}·u'\n2️⃣ u=3x, u'=3 → 3e^{3x}" },
+            { q: "求导：f(x) = ln(5x)", answer: "f'(x) = 1/x", steps: "1️⃣ 对数性质: ln(5x)=ln5+lnx\n2️⃣ 常数导数为0, lnx导数为1/x" },
+            { q: "求导：f(x) = 1/x²", answer: "f'(x) = -2/x³", steps: "1️⃣ 写成幂函数: x⁻²\n2️⃣ 求导: -2·x⁻³ = -2/x³" },
+            { q: "求导：f(x) = cos(3x)", answer: "f'(x) = -3sin(3x)", steps: "1️⃣ 链式法则: u=3x, cos(u)导数=-sin(u)·3 = -3sin(3x)" }
+        ];
+        function buildProblemList() {
+            const container = document.getElementById('problemsList');
+            container.innerHTML = "";
+            problemsData.forEach((prob, idx) => {
+                const div = document.createElement('div');
+                div.className = 'problem-item';
+                div.innerHTML = `<div class="problem-question">📌 ${prob.q}</div>
+                                 <div class="problem-answer" id="ans-${idx}">
+                                    <strong>解：</strong> ${prob.answer}<br>
+                                    <div class="derivation-step">📝 求导过程：<br>${prob.steps.replace(/\n/g,'<br>')}</div>
+                                 </div>`;
+                div.onclick = () => {
+                    const ansDiv = document.getElementById(`ans-${idx}`);
+                    ansDiv.classList.toggle('show');
+                };
+                container.appendChild(div);
+            });
+        }
+        
+        // 全局 resize
+        window.resizeCanvas = function() {
+            const container = canvas.parentElement;
+            const w = Math.min(550, container.clientWidth - 20);
+            canvas.width = w;
+            canvas.height = w * 0.75;
+            canvas.style.width = `${w}px`;
+            canvas.style.height = `${w * 0.75}px`;
+            drawGraph();
+        };
+        
+        funcTypeSelect.addEventListener('change', onFuncTypeChange);
+        xSlider.addEventListener('input', () => { updateDerivativeAndTangent(); drawGraph(); });
+        resetViewBtn.addEventListener('click', () => { resetView(); drawGraph(); });
+        document.getElementById('nextQuizBtn').addEventListener('click', () => renderQuiz());
+        
+        function initMain() {
+            rebuildParamSliders();
+            updateAll();
+            resetView();
+            renderQuiz();
+            buildProblemList();
+            window.resizeCanvas();
+            window.addEventListener('resize', () => window.resizeCanvas());
+        }
+        
+        // 等待主应用显示时再初始化完整逻辑 (在点击进入后)
+        // 但因为 splash 会延迟显示，此时直接调用初始确保参数
+        // 不过因为主应用display none, 稍后调用没问题
+        initMain();
+        // 确保初始绘图正确
+        setTimeout(() => { if(mainApp.style.display !== 'none') window.resizeCanvas(); }, 200);
+    })();
+</script>
+</body>
+</html>

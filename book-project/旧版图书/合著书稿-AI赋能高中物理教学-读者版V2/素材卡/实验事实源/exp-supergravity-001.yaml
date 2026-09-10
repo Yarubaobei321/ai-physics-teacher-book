@@ -1,0 +1,235 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "exp-supergravity-001",
+  "title": "严力耕超失重演示仪现有文稿、控制代码与网页的证据边界",
+  "status": "inferred",
+  "facts": [
+    {
+      "fact_id": "fact-supergravity-source-claim-001",
+      "statement": "源文稿把作品命名为‘基于ESP32的智能超失重现象演示仪’，并陈述铝型材框架、闭环42步进电机、同步带滑车、ESP32、应变梁、HX711及网页曲线等设计。该记录只证明文稿存在这些主张，不证明全部功能已运行通过。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-docx"]
+    },
+    {
+      "fact_id": "fact-supergravity-photo-001",
+      "statement": "源文稿内嵌整机照片可见三角支撑底架、竖直铝型材轨道和滑台结构；照片本身不能证明运动参数、传感器标定或课堂效果。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-image1"]
+    },
+    {
+      "fact_id": "fact-supergravity-firmware-bridge-001",
+      "statement": "现有main.py实现一个BLE到UART的命令桥：设备名ESP32-TTL-Controller，服务UUID为0x1234，写特征UUID为0x5678，网页写入0至3的单字节索引后，固件选择四条内置TTL字节串并写入UART。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-mainpy", "src-supergravity-controller-html"]
+    },
+    {
+      "fact_id": "fact-supergravity-uart-config-001",
+      "statement": "main.py实际把UART1初始化为115200 bit/s，TX为GPIO17，RX为GPIO16。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-mainpy"]
+    },
+    {
+      "fact_id": "fact-supergravity-no-sensing-code-001",
+      "statement": "当前main.py没有HX711驱动、压力采样、标定、时间戳、滤波、加速度测量或数据上传逻辑；当前TTL网页也没有BLE通知订阅、传感数据接收或曲线绘制逻辑。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-mainpy", "src-supergravity-controller-html"]
+    },
+    {
+      "fact_id": "fact-supergravity-html-syntax-001",
+      "statement": "当前TTL网页脚本在发送成功日志处缺少模板字符串闭合符号和右括号；Node语法检查返回‘SyntaxError: missing ) after argument list’，因此该文件按现状不能完成脚本初始化。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-controller-html"]
+    },
+    {
+      "fact_id": "fact-supergravity-write-ack-001",
+      "statement": "固件把uart.write返回的写入字节数等于命令长度视为‘成功发送’，但没有读取电机驱动器应答，也没有编码器、位置或平台运动回传；因此该日志不能证明电机执行了命令。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-mainpy"]
+    },
+    {
+      "fact_id": "fact-supergravity-rich-ui-001",
+      "statement": "源文稿内嵌一张包含双设备连接、实时力值、曲线和巴特沃斯滤波控件的网页截图，但同一资源目录没有该页面源码、原始数据文件或运行记录，现阶段不能据此复现实测曲线。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-image2", "src-supergravity-folder-inventory"]
+    },
+    {
+      "fact_id": "fact-supergravity-filter-image-001",
+      "statement": "源文稿中的滤波前后曲线图右下角带有‘元宝AI生成’水印，应视为AI生成示意图，不能作为本装置的原始实验数据或滤波验收证据。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-image4"]
+    },
+    {
+      "fact_id": "fact-supergravity-runtime-001",
+      "statement": "现有材料尚不能确认网页连接、四条TTL指令的设备语义、电机响应、平台加速度、压力采集、传感器标定、数据同步和课堂实施的当前运行状态。",
+      "status": "pending",
+      "canonical": false,
+      "source_ids": ["src-supergravity-docx", "src-supergravity-mainpy", "src-supergravity-controller-html"]
+    }
+  ],
+  "formulas": [
+    {
+      "formula_id": "formula-supergravity-support-001",
+      "expression": "N(t) = m[g + a(t)]",
+      "variables": {
+        "N(t)": "竖直平台对物体的支持力，单位N",
+        "m": "物体质量，单位kg",
+        "g": "当地重力加速度，单位m/s^2",
+        "a(t)": "物体相对地面的竖直加速度，向上为正，单位m/s^2"
+      },
+      "scope": "物体始终与水平平台接触，并可把物体视为质点或用质心平动描述；若计算得到N<0，实际接触已经失效，应转入脱离模型。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-supergravity-docx"]
+    }
+  ],
+  "apparatus": [
+    {
+      "apparatus_id": "apparatus-supergravity-frame-001",
+      "name": "铝型材竖直滑台与三角支撑框架",
+      "model": "源文稿称2040铝型材、龙门滑车和2GT同步带；具体尺寸、行程与限位待测",
+      "status": "inferred",
+      "source_ids": ["src-supergravity-docx", "src-supergravity-image1"]
+    },
+    {
+      "apparatus_id": "apparatus-supergravity-motor-001",
+      "name": "闭环42步进电机及驱动器",
+      "model": "源文稿称0.4 N·m、1.8°；型号、串口协议与闭环参数待核验",
+      "status": "inferred",
+      "source_ids": ["src-supergravity-docx"]
+    },
+    {
+      "apparatus_id": "apparatus-supergravity-force-001",
+      "name": "应变梁压力传感器与HX711",
+      "model": "源文稿列入器材与流程，现有代码未包含驱动与标定实现",
+      "status": "pending",
+      "source_ids": ["src-supergravity-docx", "src-supergravity-mainpy"]
+    }
+  ],
+  "wiring": [
+    {
+      "wiring_id": "wiring-supergravity-uart-001",
+      "connection": "ESP32 UART1：TX=GPIO17、RX=GPIO16，代码配置115200 bit/s；电机驱动器端子、电平与共地关系待核验。",
+      "status": "verified",
+      "source_ids": ["src-supergravity-mainpy"]
+    },
+    {
+      "wiring_id": "wiring-supergravity-led-001",
+      "connection": "GPIO2被代码用作BLE连接与指令发送的状态LED。",
+      "status": "verified",
+      "source_ids": ["src-supergravity-mainpy"]
+    },
+    {
+      "wiring_id": "wiring-supergravity-hx711-001",
+      "connection": "HX711的数据、时钟、供电、共地和量程接线未在现有源码中给出。",
+      "status": "pending",
+      "source_ids": ["src-supergravity-docx", "src-supergravity-mainpy"]
+    }
+  ],
+  "protocols": [
+    {
+      "protocol_id": "protocol-supergravity-ble-index-001",
+      "description": "Web Bluetooth连接设备名ESP32-TTL-Controller，使用服务0x1234和写特征0x5678；网页发送一个0至3的索引字节。",
+      "status": "verified",
+      "source_ids": ["src-supergravity-mainpy", "src-supergravity-controller-html"]
+    },
+    {
+      "protocol_id": "protocol-supergravity-ttl-commands-001",
+      "description": "固件内置四条TTL字节串；其对应上升、下降、失能、使能的语义只由网页按钮标签给出，缺少驱动器协议手册和设备应答验证。",
+      "status": "inferred",
+      "source_ids": ["src-supergravity-mainpy", "src-supergravity-controller-html"]
+    },
+    {
+      "protocol_id": "protocol-supergravity-sensing-001",
+      "description": "压力数据帧、采样率、单位、时间戳、标定系数、原始/滤波数据并存规则尚未形成可复现协议。",
+      "status": "pending",
+      "source_ids": ["src-supergravity-docx", "src-supergravity-mainpy", "src-supergravity-controller-html"]
+    }
+  ],
+  "teaching_notes": [
+    {
+      "note_id": "note-supergravity-naming-001",
+      "statement": "在网页脚本、运动回传、压力采集和标定未通过验收前，正文应把现有可核验部分称为‘BLE—串口运动控制原型’，不能写成‘定量超失重实验已经完成’。",
+      "status": "inferred",
+      "source_ids": ["src-supergravity-docx", "src-supergravity-mainpy", "src-supergravity-controller-html"]
+    },
+    {
+      "note_id": "note-supergravity-minimum-test-001",
+      "statement": "最小验收顺序应为：修复网页语法错误；统一波特率单一来源；回环或逻辑分析仪核对字节；取得驱动器应答或独立运动证据；测量平台a(t)；接入HX711并完成多点标定；最后同步比较N(t)与m[g+a(t)]。",
+      "status": "inferred",
+      "source_ids": ["src-supergravity-mainpy", "src-supergravity-controller-html"]
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-supergravity-docx",
+      "path": "项目资源库/9 其他老师资源库/严力耕/超失重仪/附件2：2025年优秀自制教具作品文稿.docx",
+      "locator": "作品名称、作品原理、制作材料、制作方法、使用方法与改进要点；SHA-256 013a70d0e18156cb5a90b0ad083dc3f106497c38461afd9b23ff1f0abc96a72f"
+    },
+    {
+      "source_id": "src-supergravity-mainpy",
+      "path": "项目资源库/9 其他老师资源库/严力耕/超失重仪/蓝牙串口ttl/main.py",
+      "locator": "行7-16、20-43、45-63、85-130、134-176；SHA-256 07597b03a2fa60db979f21576b711af8f9a67f210b15fb6fbab30dcce7517e82"
+    },
+    {
+      "source_id": "src-supergravity-controller-html",
+      "path": "项目资源库/9 其他老师资源库/严力耕/超失重仪/蓝牙串口ttl/TTL指令网页控制器.html",
+      "locator": "行357-371、409-423、500-543、586-624；SHA-256 425df5ceb17dc4294029049b1cbc657f3c9a5198eb6c00712d3e21b3a953f59f"
+    },
+    {
+      "source_id": "src-supergravity-image1",
+      "path": "图书出版/合著书稿-AI赋能高中物理教学-读者版V2/素材卡/原始材料转写/超失重仪/images/image1.png",
+      "locator": "从源docx原样提取的整机照片"
+    },
+    {
+      "source_id": "src-supergravity-image2",
+      "path": "图书出版/合著书稿-AI赋能高中物理教学-读者版V2/素材卡/原始材料转写/超失重仪/images/image2.png",
+      "locator": "从源docx原样提取的控制与力传感器监测系统截图"
+    },
+    {
+      "source_id": "src-supergravity-image4",
+      "path": "图书出版/合著书稿-AI赋能高中物理教学-读者版V2/素材卡/原始材料转写/超失重仪/images/image4.png",
+      "locator": "从源docx原样提取的滤波前后曲线示意图，右下角可见元宝AI生成水印"
+    },
+    {
+      "source_id": "src-supergravity-folder-inventory",
+      "path": "项目资源库/9 其他老师资源库/严力耕/超失重仪/",
+      "locator": "2026-07-13目录核验：1份docx、1份登记PDF、1个main.py、1个TTL网页；未见截图对应的双设备数据页面源码或原始数据文件"
+    }
+  ],
+  "conflicts": [
+    {
+      "conflict_id": "conflict-supergravity-baud-001",
+      "statement": "同一main.py在UART初始化中使用115200 bit/s，却在初始化日志和主函数状态日志中两次显示9600 bit/s。",
+      "record_ids": ["fact-supergravity-uart-config-001", "wiring-supergravity-uart-001"],
+      "status": "verified",
+      "resolution": "把波特率改为单一常量，同时供UART初始化和日志引用；在驱动器手册或实机回环核验后确定最终值。当前正文只陈述冲突，不猜测设备所需波特率。",
+      "source_ids": ["src-supergravity-mainpy"]
+    },
+    {
+      "conflict_id": "conflict-supergravity-implementation-001",
+      "statement": "作品文稿把压力采集、实时绘图和AI滤波写入制作与使用流程，但现有main.py和TTL网页没有相应实现；嵌入截图对应的页面源码及数据也不在资源目录中。",
+      "record_ids": ["fact-supergravity-source-claim-001", "fact-supergravity-no-sensing-code-001", "fact-supergravity-rich-ui-001"],
+      "status": "verified",
+      "resolution": "将文稿陈述标为设计目标或源文稿主张；取得对应源码、原始数据与运行复验后，才升级为已实现功能。",
+      "source_ids": ["src-supergravity-docx", "src-supergravity-mainpy", "src-supergravity-controller-html", "src-supergravity-image2", "src-supergravity-folder-inventory"]
+    },
+    {
+      "conflict_id": "conflict-supergravity-command-display-001",
+      "statement": "网页脚本准备显示的前3条十六进制命令与main.py实际内置的前3条字节串不一致；第4条一致。",
+      "record_ids": ["fact-supergravity-firmware-bridge-001", "protocol-supergravity-ttl-commands-001"],
+      "status": "verified",
+      "resolution": "网页不应另存一份易漂移的命令表；发送成功日志应显示设备固件版本、命令索引与由同一协议源生成的字节串。",
+      "source_ids": ["src-supergravity-mainpy", "src-supergravity-controller-html"]
+    }
+  ],
+  "supersedes": []
+}

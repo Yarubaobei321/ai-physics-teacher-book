@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>历史画卷：两次工业革命 | 交互式教学演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #f5f2e9 0%, #e8e0d3 100%);
+            color: #2c241a;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* 复古装饰头 */
+        .hero {
+            background: #1e2a2e;
+            background-image: radial-gradient(circle at 10% 20%, rgba(200,180,140,0.08) 2%, transparent 2.5%);
+            background-size: 28px 28px;
+            color: #f3ede2;
+            padding: 2rem 1.5rem 2rem 1.5rem;
+            text-align: center;
+            border-bottom: 6px solid #c49a6c;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            letter-spacing: 2px;
+            font-weight: 600;
+            text-shadow: 2px 2px 0 #0f191c;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-top: 0.75rem;
+            opacity: 0.85;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 时间轴导航条 */
+        .timeline-nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            background: #fef7ed;
+            padding: 1rem;
+            border-bottom: 1px solid #d6c8b5;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            background-color: rgba(254, 247, 237, 0.92);
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 2px solid #b48c5c;
+            padding: 0.5rem 1.2rem;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: #4a3724;
+            font-family: inherit;
+        }
+
+        .nav-btn:hover {
+            background: #c49a6c;
+            color: white;
+            border-color: #c49a6c;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            background: #5a3e2b;
+            border-color: #5a3e2b;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        /* 主内容区 */
+        .container {
+            max-width: 1300px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* 历史背景介绍板块 */
+        .background-card {
+            background: #fffbf0;
+            border-left: 12px solid #b48c5c;
+            padding: 1.6rem 2rem;
+            border-radius: 32px;
+            box-shadow: 0 20px 30px -12px rgba(0,0,0,0.15);
+            margin-bottom: 3rem;
+            transition: all 0.3s;
+        }
+
+        .background-card h2 {
+            font-size: 1.9rem;
+            margin-bottom: 1rem;
+            color: #3b2a1f;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .background-card p {
+            font-size: 1.1rem;
+            color: #2e271f;
+            margin-bottom: 0.75rem;
+            text-align: justify;
+        }
+
+        /* 革命双栏区块 (原因+影响) */
+        .revolution-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin: 2rem 0 3rem;
+        }
+
+        .reason-box, .impact-box {
+            flex: 1;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 28px;
+            box-shadow: 0 12px 20px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+
+        .reason-box {
+            background: #fef9e6;
+            border-top: 5px solid #8b5a2b;
+        }
+
+        .impact-box {
+            background: #f3efe2;
+            border-top: 5px solid #2c6e5c;
+        }
+
+        .reason-box h3, .impact-box h3 {
+            font-size: 1.6rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reason-box ul, .impact-box ul {
+            padding-left: 1.6rem;
+        }
+
+        .reason-box li, .impact-box li {
+            margin: 0.8rem 0;
+            font-size: 1rem;
+            line-height: 1.45;
+        }
+
+        /* 人物及代表作品网格 */
+        .figures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.8rem;
+            margin: 2rem 0 2rem;
+        }
+
+        .figure-card {
+            background: white;
+            border-radius: 2rem;
+            overflow: hidden;
+            box-shadow: 0 12px 18px -8px rgba(0,0,0,0.1);
+            transition: all 0.25s;
+            cursor: pointer;
+            border: 1px solid #e7dbc8;
+        }
+
+        .figure-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 24px 32px -12px rgba(0,0,0,0.2);
+            border-color: #c49a6c;
+        }
+
+        .card-header {
+            background: #2c3e2f;
+            color: white;
+            padding: 1rem 1.2rem;
+        }
+
+        .card-header h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .card-header .era-tag {
+            font-size: 0.8rem;
+            display: inline-block;
+            background: #c49a6c;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+        }
+
+        .card-body {
+            padding: 1.2rem;
+        }
+
+        .invention {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #8b5a2b;
+            margin: 0.5rem 0;
+            border-left: 4px solid #c49a6c;
+            padding-left: 0.75rem;
+        }
+
+        .desc {
+            font-size: 0.95rem;
+            color: #3f3529;
+        }
+
+        /* 时间轴大板块 */
+        .timeline-visual {
+            margin: 3rem 0;
+            background: #e5dccc;
+            padding: 1.8rem;
+            border-radius: 48px;
+        }
+
+        .timeline-visual h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.8rem;
+        }
+
+        .timeline-strip {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.2rem;
+        }
+
+        .timeline-node {
+            background: #fff9ef;
+            border-radius: 60px;
+            padding: 0.6rem 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            transition: 0.1s;
+            border: 1px solid #b48c5c;
+            cursor: pointer;
+        }
+
+        .timeline-node.active-node {
+            background: #5a3e2b;
+            color: white;
+            border-color: #5a3e2b;
+            transform: scale(1.02);
+        }
+
+        /* 底部 */
+        footer {
+            background: #1e2a2e;
+            color: #c9baa0;
+            text-align: center;
+            padding: 1.8rem;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 780px) {
+            .hero h1 { font-size: 1.8rem; }
+            .background-card h2 { font-size: 1.5rem; }
+            .reason-box h3, .impact-box h3 { font-size: 1.3rem; }
+            .container { padding: 0 1rem; }
+        }
+
+        button {
+            background: none;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="hero">
+    <h1>⚙️ 工业浪潮 · 世界重塑 ⚡</h1>
+    <p>从蒸汽到电气 | 两次工业革命全景演绎 · 原因 · 影响 · 巨匠与杰作</p>
+</div>
+
+<div class="timeline-nav">
+    <button class="nav-btn" data-era="pre">🌾 革命前夜</button>
+    <button class="nav-btn" data-era="first">🚂 第一次工业革命<br>(1760s-1840s)</button>
+    <button class="nav-btn" data-era="second">💡 第二次工业革命<br>(1870s-1914)</button>
+</div>
+
+<div class="container">
+    <!-- 动态历史背景区域 -->
+    <div class="background-card" id="historicalContext">
+        <h2><span id="contextIcon">🏭</span> <span id="contextTitle">变革序幕</span></h2>
+        <p id="contextText">18世纪60年代，英国率先爆发工业革命，从手工劳动向机器生产转变，世界历史进入空前变革时代……</p>
+    </div>
+
+    <!-- 原因 + 影响 (动态刷新) -->
+    <div class="revolution-wrapper" id="causeImpactArea">
+        <div class="reason-box">
+            <h3>📌 发生原因</h3>
+            <ul id="reasonList">
+                <li>待加载...</li>
+            </ul>
+        </div>
+        <div class="impact-box">
+            <h3>🌍 深远影响</h3>
+            <ul id="impactList">
+                <li>待加载...</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 典型人物及代表作品 -->
+    <h2 style="margin: 2rem 0 0.5rem 0; font-size: 1.8rem; border-left: 8px solid #b48c5c; padding-left: 1rem;">✨ 时代巨人 · 不朽之作 ✨</h2>
+    <div id="figuresContainer" class="figures-grid">
+        <!-- 动态生成人物卡片 -->
+    </div>
+
+    <!-- 额外时间轴可视化组件辅助理解 -->
+    <div class="timeline-visual">
+        <h2>📅 关键时间轴 · 连贯情节</h2>
+        <div class="timeline-strip" id="miniTimeline">
+            <!-- 动态填充时间节点 -->
+        </div>
+        <p style="text-align: center; margin-top: 1rem; font-style: italic;">点击时间节点快速跳转对应的工业革命阶段</p>
+    </div>
+</div>
+
+<footer>
+    🌟 历史课堂 | 两次工业革命是如何改变世界？ 从珍妮机到内燃机，从瓦特到爱迪生 —— 人类文明飞跃的篇章。
+</footer>
+
+<script>
+    // 数据定义：两次工业革命 + 革命前夜背景 
+    const erasData = {
+        pre: {
+            name: "革命前夜 (18世纪中期之前)",
+            icon: "🌾",
+            context: "18世纪中叶，欧洲尤其是英国，资本主义手工工场已经相当发达。圈地运动为工业提供了大量自由劳动力，海外殖民扩张积累了巨额资本。但生产技术依然落后，人们依靠手工作坊和畜力、水力、风力进行生产。市场需求扩大与手工生产的矛盾日益尖锐，一场技术革命蓄势待发。",
+            reasons: [
+                "🔹 英国资产阶级革命确立制度优势，专利保护激励发明。",
+                "🔹 海外殖民与三角贸易带来原始资本及广阔市场。",
+                "🔹 圈地运动提供丰富劳动力且促进农业资本主义化。",
+                "🔹 手工生产技术无法满足纺织等行业暴增的需求。"
+            ],
+            impacts: [
+                "✨ 促使人们寻求更高效动力，为工业革命埋下技术伏笔。",
+                "✨ 农业与手工业旧结构濒临解体，城市化开始酝酿。"
+            ],
+            figures: [
+                { name: "约翰·凯伊", era: "pre", invention: "飞梭 (1733年)", desc: "大幅提高织布效率，造成‘棉荒’，刺激纺纱技术革新，是工业革命前奏的重要发明。" },
+                { name: "詹姆斯·哈格里夫斯", era: "pre", invention: "珍妮纺纱机 (1764)", desc: "多轴纺纱机，标志工业革命开始前的重要突破，使一人可纺多根纱线。" }
+            ]
+        },
+        first: {
+            name: "第一次工业革命 (1760s-1840s)",
+            icon: "🚂",
+            context: "第一次工业革命首先发生于英国，以棉纺织业的技术革新为起点，瓦特改良蒸汽机成为核心动力，人类进入‘蒸汽时代’。工厂制度兴起，大机器生产取代手工劳动，英国成为‘世界工厂’。交通运输革新（火车、汽船）极大促进商品流通。",
+            reasons: [
+                "🔹 资金、劳动力、市场、原料条件在英国率先成熟。",
+                "🔹 手工业无法满足国内外激增的棉纺织品需求。",
+                "🔹 科学知识逐渐与技术结合，工匠传统浓厚。",
+                "🔹 稳定的政府及专利法鼓励发明创造。"
+            ],
+            impacts: [
+                "⚙️ 生产力飞跃：蒸汽机普及，工厂制取代手工工场。",
+                "🌆 社会结构剧变：工业资产阶级和无产阶级出现。",
+                "🏙️ 城市化进程加速，曼彻斯特等工业城市崛起。",
+                "🚆 世界联系加强：火车、轮船压缩时空距离，殖民扩张加剧。",
+                "⚠️ 环境问题初显，工人运动兴起。"
+            ],
+            figures: [
+                { name: "詹姆斯·瓦特", era: "first", invention: "改良蒸汽机 (1769/1785)", desc: "万能原动机，真正将人类带入蒸汽时代，广泛应用于纺织、采矿、交通运输。" },
+                { name: "理查德·阿克莱特", era: "first", invention: "水力纺纱机 & 工厂体系", desc: "创建近代工厂制度，被称为‘近代工厂之父’。" },
+                { name: "乔治·斯蒂芬森", era: "first", invention: "‘火箭号’蒸汽机车", desc: "1829年，开创铁路时代，陆地运输革命。" },
+                { name: "亚当·斯密", era: "first", invention: "《国富论》(1776)", desc: "古典经济学巨著，为工业资本主义奠定理论基石。" }
+            ]
+        },
+        second: {
+            name: "第二次工业革命 (1870s-1914)",
+            icon: "💡",
+            context: "19世纪中后期，随着自然科学成果（电磁学、化学）大量应用，第二次工业革命在欧美多个国家同时展开，人类进入‘电气时代’。内燃机、电力、化学工业、钢铁冶炼技术革新，催生了汽车、石油、电力等新兴工业部门。垄断组织出现，世界市场最终形成。",
+            reasons: [
+                "🔹 自然科学突破: 法拉第电磁感应、门捷列夫元素周期表等理论指导实践。",
+                "🔹 第一次工业革命奠定的工业和交通基础。",
+                "🔹 资本主义世界市场进一步扩大，竞争加剧。",
+                "🔹 德国、美国等后起国家注重科技与工业结合。"
+            ],
+            impacts: [
+                "⚡ 电力广泛应用: 照明、动力根本性变革，夜晚被点亮。",
+                "🏭 重工业成为主导，钢铁、石油、化工崛起。",
+                "🚗 内燃机发明带动汽车、飞机，速度革命。",
+                "📈 垄断组织 (卡特尔、托拉斯) 出现，资本主义进入帝国主义阶段。",
+                "🌏 世界殖民体系最终形成，全球联系空前紧密。",
+                "🎨 文化及生活巨变: 电影、电话等丰富人类生活。"
+            ],
+            figures: [
+                { name: "托马斯·爱迪生", era: "second", invention: "白炽灯、电力系统", desc: "通用电气创始人，使电灯走进千家万户，建设首个电力照明系统。" },
+                { name: "尼古拉·特斯拉", era: "second", invention: "交流电动机 / 特斯拉线圈", desc: "交流电体系奠基人，推动了全球电力传输革命。" },
+                { name: "卡尔·本茨", era: "second", invention: "第一辆实用汽车 (1886)", desc: "发明内燃机汽车，奔驰汽车开创现代汽车工业。" },
+                { name: "阿尔弗雷德·诺贝尔", era: "second", invention: "安全炸药 (1867)", desc: "不仅发明炸药推动工程采矿，还设立诺贝尔奖。" },
+                { name: "亨利·福特", era: "second", invention: "流水线生产法 (1913)", desc: "T型车普及，大规模生产方式彻底改变制造业。" }
+            ]
+        }
+    };
+
+    // 补充第一次工业革命典型人物（确保已经完整，且避免遗漏重要人物）
+    // 确保人物卡片涵盖各阶段重要代表，并在两次工业革命前后都有典型性。
+    // 已完善数据: 第一次增加几位更典型人物 (如克隆普顿，但保留主要特色即可，直接用已有足够)
+    // 再额外增加一位第二次工业革命代表: 莱特兄弟或贝尔，让人物更丰满
+    if(!erasData.second.figures.some(f => f.name === "亚历山大·格拉汉姆·贝尔")) {
+        erasData.second.figures.push({
+            name: "亚历山大·格拉汉姆·贝尔",
+            era: "second",
+            invention: "电话 (1876)",
+            desc: "改变人类通讯方式，开启即时语音交流新时代。"
+        });
+    }
+    if(!erasData.first.figures.some(f => f.name === "伊莱·惠特尼")) {
+        erasData.first.figures.push({
+            name: "伊莱·惠特尼",
+            era: "first",
+            invention: "轧棉机 (1793)",
+            desc: "极大提高棉花加工效率，巩固美国南方奴隶制经济但加速工业原料供应。"
+        });
+    }
+
+    // DOM 元素
+    const contextIconSpan = document.getElementById('contextIcon');
+    const contextTitleSpan = document.getElementById('contextTitle');
+    const contextTextP = document.getElementById('contextText');
+    const reasonList = document.getElementById('reasonList');
+    const impactList = document.getElementById('impactList');
+    const figuresContainer = document.getElementById('figuresContainer');
+    const miniTimelineDiv = document.getElementById('miniTimeline');
+
+    let currentEra = 'first'; // 默认展示第一次工业革命
+
+    // 渲染当前时代的历史背景、原因影响、人物卡片
+    function renderEra(eraKey) {
+        const era = erasData[eraKey];
+        if (!era) return;
+
+        // 更新背景区域
+        contextIconSpan.innerText = era.icon;
+        contextTitleSpan.innerText = era.name;
+        contextTextP.innerText = era.context;
+
+        // 渲染原因列表
+        reasonList.innerHTML = '';
+        era.reasons.forEach(r => {
+            const li = document.createElement('li');
+            li.innerHTML = r;
+            reasonList.appendChild(li);
+        });
+
+        // 渲染影响列表
+        impactList.innerHTML = '';
+        era.impacts.forEach(i => {
+            const li = document.createElement('li');
+            li.innerHTML = i;
+            impactList.appendChild(li);
+        });
+
+        // 渲染人物卡片 (根据 eraKey 筛选对应人物 + 同时保留革命前夜的代表人物？仅显示本时代关联人物，但为了让情节连贯且人物更全面，在革命前夜显示pre的人物；第一次工业革命显示first；第二次显示second)
+        let figuresToShow = [];
+        if (eraKey === 'pre') {
+            figuresToShow = erasData.pre.figures;
+        } else if (eraKey === 'first') {
+            figuresToShow = erasData.first.figures;
+        } else if (eraKey === 'second') {
+            figuresToShow = erasData.second.figures;
+        }
+        // 如果某些时代觉得人物数量过少可合并展示一部分过渡人物，但保证精准性（例如第一次革命前的人物不做干扰）
+        figuresContainer.innerHTML = '';
+        if (figuresToShow.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'figure-card';
+            placeholder.innerHTML = `<div class="card-header"><h3>待补全</h3></div><div class="card-body"><p>更多时代巨匠即将解锁</p></div>`;
+            figuresContainer.appendChild(placeholder);
+        } else {
+            figuresToShow.forEach(person => {
+                const card = document.createElement('div');
+                card.className = 'figure-card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <h3>${person.name}</h3>
+                        <span class="era-tag">${person.era === 'pre' ? '⚙️ 前奏' : (person.era === 'first' ? '🚂 第一次工业革命' : '💡 第二次工业革命')}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="invention">📜 ${person.invention}</div>
+                        <div class="desc">${person.desc}</div>
+                    </div>
+                `;
+                figuresContainer.appendChild(card);
+            });
+        }
+        // 高亮导航按钮
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            if(btn.getAttribute('data-era') === eraKey) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+
+        // 同时更新微型时间轴的高亮
+        updateTimelineHighlight(eraKey);
+    }
+
+    // 构建连贯时间轴节点（包括三个大的时代节点以及中间标志事件，增加情节连贯性）
+    function buildMiniTimeline() {
+        const timelinePoints = [
+            { label: "1764 珍妮机", era: "pre", desc: "哈格里夫斯发明珍妮纺纱机，揭开工业革命序幕" },
+            { label: "1785 瓦特联动式蒸汽机", era: "first", desc: "万能蒸汽机推广，工厂脱离河流限制" },
+            { label: "1825 蒸汽机车", era: "first", desc: "斯托克顿-达灵顿铁路开通，铁路时代" },
+            { label: "1870s 电力应用", era: "second", desc: "发电机、电动机实用化，照明革命" },
+            { label: "1886 汽车诞生", era: "second", desc: "本茨制造第一辆内燃机汽车" },
+            { label: "1903 飞机试飞", era: "second", desc: "莱特兄弟开启航空时代" }
+        ];
+        miniTimelineDiv.innerHTML = '';
+        timelinePoints.forEach(point => {
+            const node = document.createElement('div');
+            node.className = 'timeline-node';
+            node.innerText = point.label;
+            node.title = point.desc;
+            // 点击跳转到对应的时代（根据点的 era 属性来切换展示内容）
+            node.addEventListener('click', (e) => {
+                e.stopPropagation();
+                let targetEra = point.era;
+                // 如果点击的是first或者second或pre就对应切换；其余逻辑保持映射
+                if(targetEra === 'pre' || targetEra === 'first' || targetEra === 'second'){
+                    currentEra = targetEra;
+                    renderEra(currentEra);
+                    // 平滑滚动到顶部
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    // 安全fallback
+                    currentEra = 'first';
+                    renderEra(currentEra);
+                }
+            });
+            miniTimelineDiv.appendChild(node);
+        });
+    }
+
+    function updateTimelineHighlight(eraKey) {
+        // 简单的高亮逻辑: 找到所有节点，根据其标题或所属时代背景高亮时代匹配的节点？较为复杂，但不影响主要体验
+        // 更好方式：我们根据 eraKey 设定每个节点的背景，不严格精确高亮但为用户提供指向感：将相近时代的节点稍微标亮一下。
+        const allNodes = document.querySelectorAll('.timeline-node');
+        // 定义时代分组关键词
+        let activeLabels = [];
+        if(eraKey === 'pre') activeLabels = ['1764 珍妮机'];
+        else if(eraKey === 'first') activeLabels = ['1785 瓦特联动式蒸汽机', '1825 蒸汽机车'];
+        else if(eraKey === 'second') activeLabels = ['1870s 电力应用', '1886 汽车诞生', '1903 飞机试飞'];
+        
+        allNodes.forEach(node => {
+            const txt = node.innerText;
+            if(activeLabels.some(label => txt.includes(label) || label.includes(txt))) {
+                node.classList.add('active-node');
+            } else {
+                node.classList.remove('active-node');
+            }
+        });
+    }
+
+    // 添加导航栏事件
+    function bindNavEvents() {
+        const btns = document.querySelectorAll('.nav-btn');
+        btns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const era = btn.getAttribute('data-era');
+                if(era && erasData[era]) {
+                    currentEra = era;
+                    renderEra(currentEra);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+    }
+
+    // 初始加载还有额外连贯性增强：使得页面默认体现第一次工业革命，但革命前夜背景历史有单独按钮可查看，保证情节衔接
+    function init() {
+        buildMiniTimeline();      // 建造可视化时间轴
+        bindNavEvents();          // 绑定顶部导航
+        currentEra = 'first';     // 默认先展示第一次工业革命（情节主体）
+        renderEra(currentEra);
+        // 增加一些额外的tips交代整体背景
+        const style = document.createElement('style');
+        style.innerText = `.timeline-node { transition: all 0.2s; } .timeline-node:hover { background: #c49a6c; color:white; }`;
+        document.head.appendChild(style);
+    }
+    init();
+</script>
+</body>
+</html>

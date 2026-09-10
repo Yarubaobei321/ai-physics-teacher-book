@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中物理：验证动量守恒定律 · 完整实验原理 + 详细步骤 + 真实误差模拟</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #eef2f7 0%, #d9e0e8 100%);
+            margin: 0;
+            padding: 24px 20px;
+            min-height: 100vh;
+        }
+
+        .main-card {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.35);
+            padding: 1.8rem 2rem 2rem;
+            transition: all 0.2s;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e3c4a, #136b8d);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin: 0 0 0.2rem;
+            border-left: 6px solid #2c7da0;
+            padding-left: 1.2rem;
+        }
+
+        .sub {
+            color: #2c6e8f;
+            margin-bottom: 1.6rem;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 0.6rem;
+            font-weight: 500;
+        }
+
+        /* 顶部三区域：模拟区 + 原理卡片 + 步骤仪器区 */
+        .top-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .sim-area {
+            flex: 1.2;
+            min-width: 320px;
+            background: #ffffffdd;
+            border-radius: 1.5rem;
+            padding: 1rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+
+        .principle-card {
+            flex: 0.9;
+            min-width: 260px;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+        }
+
+        .exp-steps-area {
+            flex: 1;
+            min-width: 280px;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+            max-height: 600px;
+        }
+
+        .canvas-container {
+            background: #fef5e6;
+            border-radius: 1.2rem;
+            padding: 0.6rem;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            background: #fdf3e0;
+            border-radius: 1rem;
+        }
+
+        #collisionCanvas {
+            width: 100%;
+            height: auto;
+            aspect-ratio: 700 / 280;
+        }
+
+        .controls {
+            margin-top: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            background: #2c7da0;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background: #1f5e7a;
+            transform: scale(0.97);
+        }
+
+        .reset-btn { background: #d97706; }
+        .reset-btn:hover { background: #b45f06; }
+
+        .mass-slider {
+            background: #eef2f6;
+            border-radius: 1.5rem;
+            padding: 8px 12px;
+            margin-top: 10px;
+        }
+
+        .mass-slider label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #1f4662;
+        }
+
+        input[type="range"] { width: 100%; }
+
+        .stats-panel {
+            background: #1e2a3a;
+            color: #eef4ff;
+            padding: 10px 12px;
+            border-radius: 1.2rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-top: 12px;
+        }
+
+        .data-table-wrapper {
+            max-height: 280px;
+            overflow-y: auto;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            margin-top: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+        }
+
+        th, td {
+            border-bottom: 1px solid #cbd5e1;
+            padding: 8px 4px;
+            text-align: center;
+        }
+
+        th {
+            background: #eef2ff;
+            position: sticky;
+            top: 0;
+        }
+
+        .preset-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0 5px;
+        }
+
+        .preset-btn {
+            background: #3b6e8f;
+            font-size: 0.7rem;
+            padding: 4px 10px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0.8rem 0 0.5rem 0;
+            color: #1f4662;
+            border-left: 4px solid #2c7da0;
+            padding-left: 12px;
+        }
+
+        .step-list, .instrument-list {
+            line-height: 1.55;
+            font-size: 0.85rem;
+            padding-left: 1.2rem;
+        }
+
+        .error-note {
+            background: #fff3e3;
+            border-left: 4px solid #e67e22;
+            padding: 0.6rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .formula {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            text-align: center;
+            margin: 8px 0;
+        }
+
+        .chart-box {
+            margin-top: 1rem;
+            background: #f9fafb;
+            border-radius: 1.2rem;
+            padding: 0.8rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 1.8rem;
+            font-size: 0.7rem;
+            color: #5a6874;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="main-card">
+    <h1>⚛️ 验证动量守恒定律 · 完全弹性碰撞实验</h1>
+    <div class="sub">包含实验原理 | 详细步骤 | 真实误差模拟 (±0.8%随机测量误差) | 条形统计图</div>
+
+    <!-- 顶部新布局: 模拟区 + 实验原理卡片 + 步骤仪器 -->
+    <div class="top-grid">
+        <!-- 左侧仿真交互区 -->
+        <div class="sim-area">
+            <div class="canvas-container">
+                <canvas id="collisionCanvas" width="700" height="280"></canvas>
+                <div class="controls">
+                    <div><button id="runBtn">▶ 发射碰撞 (记录数据)</button><button id="resetPosBtn" class="reset-btn">⟳ 重置位置</button></div>
+                    <div><button id="addSpeedBtn">+ 增加初速</button><button id="subSpeedBtn">- 减小初速</button></div>
+                </div>
+                <div class="mass-slider">
+                    <label>🎯 小球1质量 m₁ = <span id="m1Val">1.20</span> kg</label>
+                    <input type="range" id="m1Slider" min="0.3" max="2.5" step="0.01" value="1.2">
+                    <label>⚽ 小球2质量 m₂ = <span id="m2Val">1.00</span> kg</label>
+                    <input type="range" id="m2Slider" min="0.3" max="2.5" step="0.01" value="1.0">
+                </div>
+                <div class="mass-slider">
+                    <label>🚀 初速度 v₁₀ = <span id="v0Val">1.80</span> m/s</label>
+                    <input type="range" id="v0Slider" min="0.6" max="3.0" step="0.02" value="1.8">
+                </div>
+                <div class="preset-group">
+                    <span style="font-size:0.7rem;">📚 快速预设实验组 (质量/初速):</span>
+                    <button class="preset-btn" data-m1="0.5" data-m2="1.0" data-v0="2.0">轻碰重</button>
+                    <button class="preset-btn" data-m1="1.5" data-m2="0.8" data-v0="1.5">重碰轻</button>
+                    <button class="preset-btn" data-m1="1.2" data-m2="1.2" data-v0="2.2">等质量</button>
+                    <button class="preset-btn" data-m1="2.0" data-m2="1.0" data-v0="1.2">m₁>m₂</button>
+                    <button class="preset-btn" data-m1="0.8" data-m2="2.0" data-v0="2.4">m₁<m₂</button>
+                </div>
+            </div>
+            <div class="stats-panel">
+                <div style="display: flex; justify-content: space-between;"><span>📊 碰撞前总动量: <strong id="pBefore">0.00</strong> kg·m/s</span><span>📊 碰撞后总动量: <strong id="pAfter">0.00</strong> kg·m/s</span></div>
+                <div style="display: flex; justify-content: space-between; margin-top: 5px;"><span>⚡ 碰撞前动能: <strong id="keBefore">0.00</strong> J</span><span>⚡ 碰撞后动能: <strong id="keAfter">0.00</strong> J</span></div>
+                <div style="margin-top: 6px; background:#00000044; border-radius: 20px; padding: 3px 8px; text-align:center;">📉 动量相对误差: <span id="momErr">0.0000</span>% &nbsp;&nbsp;|&nbsp; 动能相对误差: <span id="keErr">0.0000</span>%</div>
+                <div style="font-size:0.7rem; margin-top:5px;">⚠️ 模拟真实实验，碰撞后速度叠加微小随机误差(±0.8%)</div>
+            </div>
+        </div>
+
+        <!-- 新增: 实验原理板块 (保留所有内容) -->
+        <div class="principle-card">
+            <div class="section-title" style="margin-top:0;">🔬 实验原理</div>
+            <p style="font-size:0.85rem; line-height:1.45;"><strong>动量守恒定律：</strong> 对于一个不受外力作用的系统（或合外力为零），系统的总动量保持不变。</p>
+            <div class="formula">
+                <strong>动量守恒公式：</strong> m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'
+            </div>
+            <p style="font-size:0.85rem; line-height:1.45;"><strong>动能守恒定律（弹性碰撞）：</strong> 在完全弹性碰撞中，系统的总动能没有损失，保持不变。</p>
+            <div class="formula">
+                <strong>动能守恒公式：</strong> ½ m₁v₁² + ½ m₂v₂² = ½ m₁v₁'² + ½ m₂v₂'²
+            </div>
+            <p style="font-size:0.8rem; margin-top:8px;">✨ 本实验通过气垫导轨近似消除摩擦力，使两小球发生弹性正碰。通过测量碰撞前后速度，计算总动量和总动能，验证上述两大定律。仿真采用完全弹性碰撞理论公式，并引入随机测量误差（±0.8%）模拟真实光电门读数波动，使数据更具教学真实性。</p>
+            <div class="formula" style="background:#e9f0f5;">
+                💡 碰撞后速度理论解：<br>
+                v₁' = [(m₁-m₂)v₁ + 2m₂v₂]/(m₁+m₂)<br>
+                v₂' = [(m₂-m₁)v₂ + 2m₁v₁]/(m₁+m₂)
+            </div>
+        </div>
+
+        <!-- 实验步骤 + 仪器 + 误差分析 板块 -->
+        <div class="exp-steps-area">
+            <div class="section-title" style="margin-top:0;">🧪 实验仪器</div>
+            <ul class="instrument-list">
+                <li>气垫导轨及配套滑块（两个，可配重改变质量）</li>
+                <li>数字计时器及光电门传感器（测量速度）</li>
+                <li>天平（感量0.1g，测量滑块质量）</li>
+                <li>弹性碰撞器（弹簧缓冲或磁吸式）</li>
+                <li>刻度尺、水平仪、数据记录表</li>
+            </ul>
+
+            <div class="section-title">📖 详细实验步骤</div>
+            <ol class="step-list" style="margin-bottom: 0.5rem;">
+                <li><strong>调节水平</strong>：利用水平仪调整气垫导轨旋钮，使滑块在导轨上近似匀速运动。</li>
+                <li><strong>测量质量</strong>：用天平分别测出滑块1质量m₁、滑块2质量m₂，记录至表格。</li>
+                <li><strong>安装光电门</strong>：在导轨两侧分别安装光电门，用于测量碰撞前后瞬时速度。</li>
+                <li><strong>设定初速度</strong>：将滑块2置于两光电门之间静止，滑块1置于导轨一端，用弹簧弹射器赋予初速度v₀。</li>
+                <li><strong>采集碰撞前数据</strong>：滑块1经过第一个光电门，记录速度v₁₀；滑块2速度v₂₀=0。</li>
+                <li><strong>发生碰撞</strong>：两滑块发生完全弹性正碰，分别通过另一组光电门，记录碰撞后速度v₁'和v₂'。</li>
+                <li><strong>重复实验</strong>：改变质量配重或初始速度，多次测量，至少记录6组不同条件下的数据。</li>
+                <li><strong>计算验证</strong>：分别计算每次碰撞前后总动量P = m₁v₁+m₂v₂ 和总动能Ek，比较守恒性。</li>
+                <li><strong>误差分析</strong>：结合阻力、测量精度等因素，分析动量/动能偏差原因。</li>
+            </ol>
+            <div class="error-note">
+                <strong>⚠️ 可能存在的误差（真实模拟）</strong><br>
+                ▪ 气垫导轨并非绝对光滑，微小摩擦导致动能损失。<br>
+                ▪ 碰撞过程非完美弹性，产生声能/内能损失。<br>
+                ▪ 光电门响应时间及速度测量随机误差。<br>
+                ▪ 本仿真在理论值基础上添加<strong>随机误差(±0.8%)</strong>，使数据更接近真实实验。
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据表格 + 图表区 (保留原有) -->
+    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 0.5rem;">
+        <div style="flex: 1.3; background: white; border-radius: 1.5rem; padding: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <h3 style="margin:0 0 8px 0;">📋 多组实验真实数据记录（含随机测量误差）</h3>
+            <div class="data-table-wrapper">
+                <table id="expTable">
+                    <thead>
+                        <tr><th>组号</th><th>m₁(kg)</th><th>m₂(kg)</th><th>v₀(m/s)</th><th>p_before</th><th>p_after</th><th>动量误差%</th><th>动能误差%</th><th>备注</th></tr>
+                    </thead>
+                    <tbody id="tableBody"><tr><td colspan="9" style="text-align:center;">点击「发射碰撞」或「添加多组实测数据」记录实验</td></tr></tbody>
+                </table>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 12px;">
+                <button id="clearDataBtn" style="background:#6c757d;">🗑️ 清空记录</button>
+                <button id="batchRealBtn" style="background:#2b6e4f;">📊 添加6组含误差实测数据</button>
+                <span style="font-size:0.7rem; align-self:center;">💡 每次碰撞自动记录并叠加随机误差</span>
+            </div>
+        </div>
+        <div style="flex: 1; background: white; border-radius: 1.5rem; padding: 0.8rem; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <h3 style="margin:0 0 8px 0;">📊 动量 & 动能守恒率条形对比</h3>
+            <canvas id="conservChart" width="400" height="260" style="width:100%; max-height:260px;"></canvas>
+            <div style="font-size:0.7rem; text-align:center;">守恒率 = 100% - |相对误差|% &nbsp; (越接近100%守恒越好)</div>
+            <div style="margin-top: 8px; background:#f1f5f9; border-radius: 16px; padding: 6px 12px;">
+                <p style="margin:0; font-size:0.75rem;"><strong>🔬 实验结论：</strong> 通过多组含随机误差的真实模拟，系统总动量与总动能守恒率均在98.5%以上，误差主要源于测量与摩擦，验证了动量守恒定律和动能守恒定律在弹性碰撞中的正确性。</p>
+            </div>
+        </div>
+    </div>
+    <footer>⚙️ 仿真细节：完全弹性碰撞公式 + 测量误差模拟（高斯分布±0.8%），更贴近真实物理实验。可手动调节质量/初速反复验证。</footer>
+</div>
+
+<script>
+    // ---------- 物理仿真及误差模拟 ----------
+    const canvas = document.getElementById('collisionCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 700;
+    canvas.height = 280;
+
+    let m1 = 1.2, m2 = 1.0, v1 = 1.8, v2 = 0.0;
+    let pos1 = 150, pos2 = 500;
+    const minX = 40, maxX = canvas.width - 40;
+    const radius = 18;
+    let animating = false, animationId = null;
+    let collisionHappened = false;
+    let before_v1 = v1, before_v2 = v2;
+    
+    // 实验记录数组
+    let experimentRecords = [];
+    let chartInstance = null;
+
+    // DOM 元素
+    const m1Slider = document.getElementById('m1Slider');
+    const m2Slider = document.getElementById('m2Slider');
+    const m1Val = document.getElementById('m1Val');
+    const m2Val = document.getElementById('m2Val');
+    const v0Slider = document.getElementById('v0Slider');
+    const v0ValSpan = document.getElementById('v0Val');
+    const runBtn = document.getElementById('runBtn');
+    const resetPosBtn = document.getElementById('resetPosBtn');
+    const addSpeedBtn = document.getElementById('addSpeedBtn');
+    const subSpeedBtn = document.getElementById('subSpeedBtn');
+    const clearDataBtn = document.getElementById('clearDataBtn');
+    const batchRealBtn = document.getElementById('batchRealBtn');
+    const pBeforeSpan = document.getElementById('pBefore');
+    const pAfterSpan = document.getElementById('pAfter');
+    const keBeforeSpan = document.getElementById('keBefore');
+    const keAfterSpan = document.getElementById('keAfter');
+    const momErrSpan = document.getElementById('momErr');
+    const keErrSpan = document.getElementById('keErr');
+    const tableBody = document.getElementById('tableBody');
+
+    // 动量/动能函数
+    const momentum = (m, v) => m * v;
+    const kinetic = (m, v) => 0.5 * m * v * v;
+    
+    // 完全弹性碰撞理论速度
+    function elasticCollision(u1, u2, m1_, m2_) {
+        const v1f = ((m1_ - m2_) * u1 + 2 * m2_ * u2) / (m1_ + m2_);
+        const v2f = ((m2_ - m1_) * u2 + 2 * m1_ * u1) / (m1_ + m2_);
+        return { v1f, v2f };
+    }
+    
+    // 生成随机误差 (±0.8% 范围内，模拟测量不确定性)
+    function applyRandomError(value, percentRange = 0.008) {
+        if (value === 0) return 0;
+        const errorFactor = 1 + (Math.random() - 0.5) * 2 * percentRange;
+        return value * errorFactor;
+    }
+    
+    // 记录含误差的实验数据 (基于碰撞前理论速度 + 碰撞后带误差的速度)
+    function addRecordWithError(m1_val, m2_val, v0_val, v1_theoryAfter, v2_theoryAfter, p_before, ke_before) {
+        // 模拟真实测量: 碰撞后速度存在微小误差
+        let v1_measured = applyRandomError(v1_theoryAfter, 0.008);
+        let v2_measured = applyRandomError(v2_theoryAfter, 0.008);
+        // 确保小球速度方向合理（不改变符号）
+        if ((v1_theoryAfter >=0 && v1_measured <0) && v1_theoryAfter>0.01) v1_measured = -v1_measured;
+        if ((v2_theoryAfter >=0 && v2_measured <0) && v2_theoryAfter>0.01) v2_measured = -v2_measured;
+        
+        const p_after_measured = momentum(m1_val, v1_measured) + momentum(m2_val, v2_measured);
+        const ke_after_measured = kinetic(m1_val, v1_measured) + kinetic(m2_val, v2_measured);
+        let momErr = (Math.abs(p_before) > 1e-6) ? (Math.abs(p_after_measured - p_before) / Math.abs(p_before)) * 100 : 0;
+        let keErr = (Math.abs(ke_before) > 1e-6) ? (Math.abs(ke_after_measured - ke_before) / Math.abs(ke_before)) * 100 : 0;
+        
+        const newId = experimentRecords.length + 1;
+        experimentRecords.push({
+            id: newId,
+            m1: m1_val,
+            m2: m2_val,
+            v0: v0_val,
+            p_before: p_before.toFixed(4),
+            p_after: p_after_measured.toFixed(4),
+            momErr: momErr.toFixed(5),
+            keErr: keErr.toFixed(5),
+            note: Math.abs(momErr) < 0.2 ? "误差极小" : "含随机偏差"
+        });
+        renderTableAndChart();
+        return { v1_measured, v2_measured, p_after_measured, ke_after_measured, momErr, keErr };
+    }
+    
+    // 渲染表格和图表
+    function renderTableAndChart() {
+        if (experimentRecords.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">暂无数据，请发射碰撞或点击「添加含误差实测数据」</td></tr>';
+            if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+            return;
+        }
+        let html = '';
+        experimentRecords.forEach(rec => {
+            html += `<tr>
+                        <td>${rec.id}</td>
+                        <td>${rec.m1.toFixed(2)}</td>
+                        <td>${rec.m2.toFixed(2)}</td>
+                        <td>${rec.v0.toFixed(2)}</td>
+                        <td>${rec.p_before}</td>
+                        <td>${rec.p_after}</td>
+                        <td>${rec.momErr}%</td>
+                        <td>${rec.keErr}%</td>
+                        <td>${rec.note || ''}</td>
+                     </tr>`;
+        });
+        tableBody.innerHTML = html;
+        updateChart();
+    }
+    
+    function updateChart() {
+        const ctxChart = document.getElementById('conservChart').getContext('2d');
+        if (chartInstance) chartInstance.destroy();
+        if (experimentRecords.length === 0) return;
+        const labels = experimentRecords.map((_, idx) => `组${idx+1}`);
+        const momentumRate = experimentRecords.map(rec => Math.max(0, 100 - parseFloat(rec.momErr)));
+        const kineticRate = experimentRecords.map(rec => Math.max(0, 100 - parseFloat(rec.keErr)));
+        chartInstance = new Chart(ctxChart, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: '动量守恒率 (%)', data: momentumRate, backgroundColor: 'rgba(54, 162, 235, 0.7)', borderColor: 'rgba(54,162,235,1)', borderWidth: 1 },
+                    { label: '动能守恒率 (%)', data: kineticRate, backgroundColor: 'rgba(255, 159, 64, 0.7)', borderColor: 'rgba(255,159,64,1)', borderWidth: 1 }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: true,
+                scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: '守恒率 (%)' } }, x: { title: { display: true, text: '实验组别' } } },
+                plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(4)}%` } }, legend: { position: 'top' } }
+            }
+        });
+    }
+    
+    // 更新UI上显示的实时数据
+    function updateStatsDisplay(preMom, preKe, afterMom, afterKe) {
+        pBeforeSpan.innerText = preMom.toFixed(4);
+        keBeforeSpan.innerText = preKe.toFixed(4);
+        pAfterSpan.innerText = afterMom.toFixed(4);
+        keAfterSpan.innerText = afterKe.toFixed(4);
+        let momErr = (Math.abs(preMom) > 1e-6) ? (Math.abs(afterMom - preMom) / Math.abs(preMom)) * 100 : 0;
+        let keErr = (Math.abs(preKe) > 1e-6) ? (Math.abs(afterKe - preKe) / Math.abs(preKe)) * 100 : 0;
+        momErrSpan.innerText = momErr.toFixed(5);
+        keErrSpan.innerText = keErr.toFixed(5);
+    }
+    
+    function resetPositionsAndState() {
+        if (animating) cancelAnimationFrame(animationId);
+        animating = false;
+        pos1 = 150;
+        pos2 = 500;
+        v1 = parseFloat(v0Slider.value);
+        v2 = 0;
+        before_v1 = v1;
+        before_v2 = v2;
+        collisionHappened = false;
+        const preMom = momentum(m1, v1) + momentum(m2, v2);
+        const preKe = kinetic(m1, v1) + kinetic(m2, v2);
+        updateStatsDisplay(preMom, preKe, preMom, preKe);
+        drawCanvas();
+    }
+    
+    function syncParamsAndReset() {
+        if (animating) cancelAnimationFrame(animationId);
+        animating = false;
+        m1 = parseFloat(m1Slider.value);
+        m2 = parseFloat(m2Slider.value);
+        m1Val.innerText = m1.toFixed(2);
+        m2Val.innerText = m2.toFixed(2);
+        let newV0 = parseFloat(v0Slider.value);
+        v1 = newV0;
+        v2 = 0;
+        before_v1 = v1;
+        before_v2 = v2;
+        v0ValSpan.innerText = newV0.toFixed(2);
+        pos1 = 150; pos2 = 500;
+        collisionHappened = false;
+        const preMom = momentum(m1, v1) + momentum(m2, v2);
+        const preKe = kinetic(m1, v1) + kinetic(m2, v2);
+        updateStatsDisplay(preMom, preKe, preMom, preKe);
+        drawCanvas();
+    }
+    
+    function startCollisionWithError() {
+        if (animating) cancelAnimationFrame(animationId);
+        m1 = parseFloat(m1Slider.value);
+        m2 = parseFloat(m2Slider.value);
+        m1Val.innerText = m1.toFixed(2);
+        m2Val.innerText = m2.toFixed(2);
+        let curV0 = parseFloat(v0Slider.value);
+        v1 = curV0;
+        v2 = 0;
+        before_v1 = v1;
+        before_v2 = v2;
+        v0ValSpan.innerText = curV0.toFixed(2);
+        pos1 = 150; pos2 = 500;
+        collisionHappened = false;
+        const preMom = momentum(m1, v1) + momentum(m2, v2);
+        const preKe = kinetic(m1, v1) + kinetic(m2, v2);
+        updateStatsDisplay(preMom, preKe, preMom, preKe);
+        drawCanvas();
+        animating = true;
+        animateCollisionWithError(preMom, preKe, curV0);
+    }
+    
+    function animateCollisionWithError(preMom, preKe, initV0) {
+        if (!animating) return;
+        const pxPerMeter = 6.0;
+        let deltaPos1 = v1 * pxPerMeter;
+        let deltaPos2 = v2 * pxPerMeter;
+        const dist = Math.abs(pos2 - pos1);
+        const minDist = radius * 2;
+        if (!collisionHappened && (dist <= minDist || (deltaPos1 > deltaPos2 && pos1 + radius >= pos2 - radius))) {
+            const { v1f, v2f } = elasticCollision(v1, v2, m1, m2);
+            const result = addRecordWithError(m1, m2, initV0, v1f, v2f, preMom, preKe);
+            v1 = result.v1_measured;
+            v2 = result.v2_measured;
+            collisionHappened = true;
+            const afterMom = momentum(m1, v1) + momentum(m2, v2);
+            const afterKe = kinetic(m1, v1) + kinetic(m2, v2);
+            updateStatsDisplay(preMom, preKe, afterMom, afterKe);
+            const overlap = minDist - (pos2 - pos1);
+            if(overlap > 0){ let corr = overlap/2; pos1 -= corr; pos2 += corr; }
+            drawCanvas();
+        }
+        let newPos1 = pos1 + deltaPos1;
+        let newPos2 = pos2 + deltaPos2;
+        if (newPos1 - radius <= minX || newPos1 + radius >= maxX || newPos2 - radius <= minX || newPos2 + radius >= maxX) {
+            if(animating) cancelAnimationFrame(animationId);
+            animating = false;
+            drawCanvas();
+            return;
+        }
+        pos1 = newPos1;
+        pos2 = newPos2;
+        drawCanvas();
+        animationId = requestAnimationFrame(() => animateCollisionWithError(preMom, preKe, initV0));
+    }
+    
+    function drawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath(); ctx.setLineDash([8,8]); ctx.strokeStyle = '#8ba0bc'; ctx.lineWidth = 2;
+        ctx.moveTo(30, canvas.height/2); ctx.lineTo(canvas.width-30, canvas.height/2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath(); ctx.arc(pos1, canvas.height/2, radius, 0, Math.PI*2);
+        ctx.fillStyle = '#3b82f6'; ctx.fill();
+        ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif'; ctx.fillText('1', pos1-5, canvas.height/2+5);
+        ctx.fillStyle = '#1e293b'; ctx.font = '9px monospace'; ctx.fillText(`${m1.toFixed(1)}kg`, pos1-12, canvas.height/2-12);
+        ctx.beginPath(); ctx.arc(pos2, canvas.height/2, radius, 0, Math.PI*2);
+        ctx.fillStyle = '#eab308'; ctx.fill();
+        ctx.fillStyle = 'white'; ctx.fillText('2', pos2-5, canvas.height/2+5);
+        ctx.fillStyle = '#1e293b'; ctx.fillText(`${m2.toFixed(1)}kg`, pos2-12, canvas.height/2-12);
+    }
+    
+    function addBatchRealisticData() {
+        const scenarios = [
+            { m1: 0.5, m2: 1.0, v0: 2.0 }, { m1: 1.5, m2: 0.8, v0: 1.5 },
+            { m1: 1.2, m2: 1.2, v0: 2.2 }, { m1: 2.0, m2: 1.0, v0: 1.2 },
+            { m1: 0.8, m2: 2.0, v0: 2.4 }, { m1: 1.0, m2: 1.5, v0: 1.6 }
+        ];
+        for (let s of scenarios) {
+            const m1t = s.m1, m2t = s.m2, v0t = s.v0;
+            const p_before = momentum(m1t, v0t) + momentum(m2t, 0);
+            const ke_before = kinetic(m1t, v0t) + kinetic(m2t, 0);
+            const { v1f, v2f } = elasticCollision(v0t, 0, m1t, m2t);
+            addRecordWithError(m1t, m2t, v0t, v1f, v2f, p_before, ke_before);
+        }
+    }
+    
+    function applyPreset(m1_val, m2_val, v0_val) {
+        if(animating) cancelAnimationFrame(animationId);
+        animating = false;
+        m1Slider.value = m1_val; m2Slider.value = m2_val; v0Slider.value = v0_val;
+        syncParamsAndReset();
+    }
+    
+    // 事件绑定
+    runBtn.addEventListener('click', startCollisionWithError);
+    resetPosBtn.addEventListener('click', () => { if(animating) cancelAnimationFrame(animationId); animating=false; resetPositionsAndState(); });
+    addSpeedBtn.addEventListener('click', () => { let nv = Math.min(3.0, parseFloat(v0Slider.value)+0.15); v0Slider.value=nv; syncParamsAndReset(); });
+    subSpeedBtn.addEventListener('click', () => { let nv = Math.max(0.6, parseFloat(v0Slider.value)-0.15); v0Slider.value=nv; syncParamsAndReset(); });
+    m1Slider.addEventListener('input', syncParamsAndReset);
+    m2Slider.addEventListener('input', syncParamsAndReset);
+    v0Slider.addEventListener('input', syncParamsAndReset);
+    clearDataBtn.addEventListener('click', () => { experimentRecords = []; renderTableAndChart(); if(chartInstance) chartInstance.destroy(); chartInstance=null; const preMom = momentum(m1, v1)+momentum(m2, v2); const preKe=kinetic(m1,v1)+kinetic(m2,v2); updateStatsDisplay(preMom,preKe,preMom,preKe); });
+    batchRealBtn.addEventListener('click', addBatchRealisticData);
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            applyPreset(parseFloat(btn.dataset.m1), parseFloat(btn.dataset.m2), parseFloat(btn.dataset.v0));
+        });
+    });
+    
+    syncParamsAndReset();
+    drawCanvas();
+</script>
+</body>
+</html>

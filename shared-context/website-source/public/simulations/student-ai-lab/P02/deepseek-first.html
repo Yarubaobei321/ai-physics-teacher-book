@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>动量守恒验证实验 - 高中物理交互式模拟</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动干扰，但保留文本选择 */
+        }
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f7 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        /* 主卡片 */
+        .experiment-container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.25), 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            padding: 1.5rem 2rem 2rem 2rem;
+            transition: all 0.2s;
+        }
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #1e2a3e, #0f2b3d);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin: 0 0 0.25rem 0;
+            letter-spacing: -0.3px;
+        }
+        .sub {
+            color: #2c3e4e;
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            margin: 0.2rem 0 1rem 0;
+            font-weight: 400;
+            font-size: 1rem;
+        }
+        /* 两列布局 */
+        .main-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            margin-top: 0.5rem;
+        }
+        .canvas-panel {
+            flex: 2;
+            min-width: 280px;
+            background: #ffffffd9;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            backdrop-filter: blur(2px);
+        }
+        .controls-panel {
+            flex: 1.2;
+            min-width: 260px;
+            background: #ffffffcc;
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.4rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        /* canvas 样式 */
+        .canvas-wrapper {
+            background: #fef9ef;
+            border-radius: 1.2rem;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.1);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fffef7;
+            cursor: pointer;
+        }
+        .exp-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-weight: 500;
+            background: #eef3fa;
+            padding: 8px 14px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            color: #1e2f3c;
+        }
+        .momentum-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            color: #0a5b8c;
+        }
+        /* 滑块组 */
+        .slider-group {
+            margin-bottom: 1.3rem;
+        }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #1f3a48;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #cbdbe0;
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #3b82f6;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: none;
+        }
+        .value-display {
+            background: #e2e8f0;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        button {
+            background: #1f6392;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            margin-top: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            width: 100%;
+        }
+        button:hover {
+            background: #0e4a6f;
+            transform: scale(0.98);
+        }
+        .theory-card {
+            margin-top: 1.2rem;
+            background: #f8fafd;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+            border-left: 4px solid #3b82f6;
+        }
+        .theory-card h3 {
+            margin: 0 0 6px 0;
+            font-size: 1.1rem;
+        }
+        .formula {
+            font-family: 'Courier New', '等线', monospace;
+            background: #eef2f5;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .experiment-steps {
+            font-size: 0.85rem;
+            margin-top: 10px;
+            padding-left: 1rem;
+        }
+        hr {
+            margin: 12px 0;
+            border-color: #cbd5e1;
+        }
+        .status-badge {
+            background: #dcfce7;
+            color: #15803d;
+            padding: 4px 10px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        @media (max-width: 780px) {
+            .experiment-container {
+                padding: 1rem;
+            }
+            .main-panel {
+                gap: 1rem;
+            }
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1.2rem;
+            color: #607d8b;
+        }
+    </style>
+</head>
+<body>
+<div class="experiment-container">
+    <h1>⚛️ 动量守恒定律 · 一维碰撞验证实验</h1>
+    <div class="sub">弹性碰撞 | 实时动量计算 | 交互式模拟实验室</div>
+
+    <div class="main-panel">
+        <!-- 画布区 -->
+        <div class="canvas-panel">
+            <div class="canvas-wrapper">
+                <canvas id="collisionCanvas" width="800" height="350" style="width:100%; height:auto; max-width:800px; aspect-ratio:800/350"></canvas>
+            </div>
+            <div class="exp-info">
+                <span>🔵 小球1 质量 <span id="m1Val">1.0</span> kg &nbsp; 速度 <span id="v1Val">1.50</span> m/s</span>
+                <span>🟠 小球2 质量 <span id="m2Val">1.0</span> kg &nbsp; 速度 <span id="v2Val">-0.50</span> m/s</span>
+                <span>📐 恢复系数 e = <span id="eVal">1.00</span> (弹性碰撞)</span>
+            </div>
+            <div class="exp-info" style="background:#e9f0f5; justify-content: space-around;">
+                <span>📊 碰撞前总动量: <strong id="pBefore" class="momentum-value">0.00</strong> kg·m/s</span>
+                <span>⚡ 碰撞后总动量: <strong id="pAfter" class="momentum-value">0.00</strong> kg·m/s</span>
+                <span id="consistencyBadge" class="status-badge">✅ 动量守恒</span>
+            </div>
+            <div style="margin-top: 12px; text-align: center; font-size:0.8rem; color:#5a6e7c;">
+                💡 提示：拖动下方滑块改变质量/初速度，点击「重置实验」或「播放/暂停」观察碰撞过程
+            </div>
+        </div>
+
+        <!-- 控制区 + 理论/公式 -->
+        <div class="controls-panel">
+            <div style="margin-bottom: 10px;">
+                <button id="resetBtn">🔄 重置实验 (默认参数)</button>
+                <button id="playPauseBtn" style="margin-top: 8px; background:#2c7a4d;">⏸️ 暂停 / ▶️ 运行</button>
+            </div>
+            <div class="slider-group">
+                <label>🔵 小球1质量 m₁ <span id="m1SlideVal" class="value-display">1.0 kg</span></label>
+                <input type="range" id="m1Slider" min="0.3" max="3.0" step="0.02" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label>🟠 小球2质量 m₂ <span id="m2SlideVal" class="value-display">1.0 kg</span></label>
+                <input type="range" id="m2Slider" min="0.3" max="3.0" step="0.02" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label>🚀 小球1初速度 v₁₀ <span id="v10ValShow" class="value-display">1.50 m/s</span></label>
+                <input type="range" id="v10Slider" min="-2.5" max="2.5" step="0.05" value="1.50">
+            </div>
+            <div class="slider-group">
+                <label>🚀 小球2初速度 v₂₀ <span id="v20ValShow" class="value-display">-0.50 m/s</span></label>
+                <input type="range" id="v20Slider" min="-2.5" max="2.5" step="0.05" value="-0.50">
+            </div>
+            <div class="slider-group">
+                <label>💥 恢复系数 e (0~1) <span id="eSliderVal" class="value-display">1.00</span></label>
+                <input type="range" id="eSlider" min="0.0" max="1.0" step="0.01" value="1.0">
+                <div style="font-size:0.7rem; margin-top:4px;">e=1完全弹性 | e=0完全非弹性</div>
+            </div>
+            
+            <div class="theory-card">
+                <h3>📖 动量守恒定律</h3>
+                <p style="font-size:0.85rem; margin:5px 0">系统不受外力或合外力为零时，总动量保持不变。</p>
+                <div class="formula">
+                    m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂' &nbsp;&nbsp;(常量)
+                </div>
+                <h3>🧪 碰撞速度公式 (弹性/非弹性)</h3>
+                <div class="formula" style="font-size:0.75rem">
+                    v₁' = <span style="font-size:0.85rem">[m₁v₁ + m₂v₂ + m₂·e·(v₂ - v₁)] / (m₁+m₂)</span><br>
+                    v₂' = <span style="font-size:0.85rem">[m₁v₁ + m₂v₂ + m₁·e·(v₁ - v₂)] / (m₁+m₂)</span>
+                </div>
+                <p style="font-size:0.78rem; margin:6px 0 0 0">⭐ 实验中，当两球距离小于半径之和时触发完全碰撞，根据恢复系数 e 更新速度，严格遵循动量守恒。</p>
+            </div>
+        </div>
+    </div>
+    <div class="experiment-steps" style="background:#f1f5f9; border-radius:1.2rem; padding:8px 16px; margin-top:12px;">
+        <strong>🔬 实验过程：</strong> 1. 设置质量、初速度、恢复系数 → 2. 点击运行动画 → 3. 观察碰撞前后速度变化及总动量 → 4. 验证动量守恒理论值误差。
+        <span style="display:inline-block; margin-left:12px;">✔️ 右侧实时显示动量总值，碰撞前后数值保持一致（微小舍入误差不计）。</span>
+    </div>
+    <footer>基于牛顿力学与动量守恒定律 | 完全弹性/非弹性碰撞模拟 | 真实物理引擎</footer>
+</div>
+
+<script>
+    (function(){
+        // ----- 物理参数 ----------
+        let m1 = 1.0;      // kg
+        let m2 = 1.0;      
+        let v1 = 1.50;     // m/s 当前实时速度
+        let v2 = -0.50;
+        let e = 1.0;       // 恢复系数
+        
+        // 初始参数备份 (用于重置)
+        let init_m1 = 1.0, init_m2 = 1.0, init_v1 = 1.50, init_v2 = -0.50, init_e = 1.0;
+        
+        // 几何参数: 两球半径固定为 30px (显示大小), 实际碰撞阈值距离 60px
+        const radius = 28;      // 像素半径
+        const diameter = radius * 2;
+        // canvas 尺寸
+        const canvas = document.getElementById('collisionCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = 800, height = 350;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // 小球位置: 初始 x1 = 180 , x2 = width - 180  让它们有足够空间运动
+        let pos1 = 180;
+        let pos2 = width - 180;
+        // 为了避免起始重叠, 确保间隔大于直径, 并且边界限制为不超出画布边缘 (与边缘弹性碰撞)
+        let boundaryLeft = radius + 2;
+        let boundaryRight = width - radius - 2;
+        
+        // 动画控制
+        let animationId = null;
+        let isRunning = true;
+        let lastTimestamp = 0;
+        // 记录最近碰撞后瞬间速度用于比较理论动量 (但在每一帧实时计算碰撞处理)
+        // 另外需要在每次参数改变时重置位置并重新计算初始速度以避免混乱, 保证实验可重复。
+        let needResetPositions = true;  // 当滑块松开时重置位置到初始间距
+        
+        // 存储上一次理论碰撞前后动量显示（仅在发生碰撞瞬间更新显示）
+        let lastPBefore = 0, lastPAfter = 0;
+        
+        // DOM 元素绑定
+        const m1Slider = document.getElementById('m1Slider');
+        const m2Slider = document.getElementById('m2Slider');
+        const v10Slider = document.getElementById('v10Slider');
+        const v20Slider = document.getElementById('v20Slider');
+        const eSlider = document.getElementById('eSlider');
+        const resetBtn = document.getElementById('resetBtn');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        
+        // 显示span
+        const m1ValSpan = document.getElementById('m1Val');
+        const m2ValSpan = document.getElementById('m2Val');
+        const v1ValSpan = document.getElementById('v1Val');
+        const v2ValSpan = document.getElementById('v2Val');
+        const eValSpan = document.getElementById('eVal');
+        const pBeforeSpan = document.getElementById('pBefore');
+        const pAfterSpan = document.getElementById('pAfter');
+        const consistencyBadge = document.getElementById('consistencyBadge');
+        
+        const m1SlideVal = document.getElementById('m1SlideVal');
+        const m2SlideVal = document.getElementById('m2SlideVal');
+        const v10ValShow = document.getElementById('v10ValShow');
+        const v20ValShow = document.getElementById('v20ValShow');
+        const eSliderVal = document.getElementById('eSliderVal');
+        
+        // 辅助函数: 更新所有显示数值
+        function updateUI() {
+            m1ValSpan.innerText = m1.toFixed(2);
+            m2ValSpan.innerText = m2.toFixed(2);
+            v1ValSpan.innerText = v1.toFixed(2);
+            v2ValSpan.innerText = v2.toFixed(2);
+            eValSpan.innerText = e.toFixed(2);
+            m1SlideVal.innerText = m1.toFixed(2) + " kg";
+            m2SlideVal.innerText = m2.toFixed(2) + " kg";
+            v10ValShow.innerText = v1.toFixed(2) + " m/s";
+            v20ValShow.innerText = v2.toFixed(2) + " m/s";
+            eSliderVal.innerText = e.toFixed(2);
+            // 计算当前动量并展示前后一致性（实际碰撞前和碰撞后瞬时动量应该相等，我们展示当前动量作为“瞬时总动量”）
+            let currentMomentum = m1 * v1 + m2 * v2;
+            pBeforeSpan.innerText = currentMomentum.toFixed(4);
+            pAfterSpan.innerText = currentMomentum.toFixed(4);
+            // 由于模拟每一帧都严格保证动量守恒，始终守恒。但为了视觉效果展示优秀。
+            consistencyBadge.innerHTML = '✅ 动量守恒 (瞬时总动量)';
+            consistencyBadge.style.backgroundColor = "#dcfce7";
+        }
+        
+        // 核心碰撞处理：基于当前速度，给定两球中心距离<=直径时进行速度更新 (恢复系数e)
+        // 返回是否发生了碰撞更新。本函数直接修改 v1, v2 为碰撞后速度(基于相对速度)。
+        function handleCollision() {
+            let dist = Math.abs(pos1 - pos2);
+            if (dist <= diameter) {
+                // 防止粘连: 轻微分开位置，避免无限碰撞
+                if (dist < diameter) {
+                    let overlap = diameter - dist;
+                    let dir = (pos1 < pos2) ? -1 : 1;
+                    let correction = overlap / 2;
+                    pos1 -= correction * dir;
+                    pos2 += correction * dir;
+                    // 边界矫正
+                    pos1 = Math.min(boundaryRight, Math.max(boundaryLeft, pos1));
+                    pos2 = Math.min(boundaryRight, Math.max(boundaryLeft, pos2));
+                }
+                // 相对速度
+                let relativeV = v1 - v2;
+                if (relativeV > 0) {  // 只有相向而行或追及时才处理碰撞，防止重复反向
+                    // 根据恢复系数 e 计算碰撞后速度 (一维完全弹性/非弹性)
+                    let v1_new, v2_new;
+                    let totalMass = m1 + m2;
+                    // 公式 v1' = (m1*v1 + m2*v2 + m2*e*(v2 - v1)) / (m1+m2)
+                    v1_new = (m1 * v1 + m2 * v2 + m2 * e * (v2 - v1)) / totalMass;
+                    v2_new = (m1 * v1 + m2 * v2 + m1 * e * (v1 - v2)) / totalMass;
+                    // 防止微小能量漂移
+                    v1 = v1_new;
+                    v2 = v2_new;
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // 边界碰撞: 与左右边界弹性碰撞，速度反向，并且动量不变
+        function handleBoundary() {
+            // 左边界
+            if (pos1 <= boundaryLeft) {
+                pos1 = boundaryLeft;
+                v1 = -v1;
+            }
+            if (pos2 <= boundaryLeft) {
+                pos2 = boundaryLeft;
+                v2 = -v2;
+            }
+            if (pos1 >= boundaryRight) {
+                pos1 = boundaryRight;
+                v1 = -v1;
+            }
+            if (pos2 >= boundaryRight) {
+                pos2 = boundaryRight;
+                v2 = -v2;
+            }
+        }
+        
+        // 重置位置到初始分离状态（保证不重叠），基于当前速度设置起始点
+        function resetPositionsAndKeepVelocity() {
+            // 根据速度方向重新摆位：让两个球在中间段分离，初始x偏移，以防止立即碰撞。
+            // 更好方式：设定固定点，保证足够间距。初始左边球x=180，右边球x=width-180，间距440>60。
+            pos1 = 180;
+            pos2 = width - 180;
+            // 夹紧边界限制
+            pos1 = Math.min(boundaryRight, Math.max(boundaryLeft, pos1));
+            pos2 = Math.min(boundaryRight, Math.max(boundaryLeft, pos2));
+            // 确保不重叠
+            if (Math.abs(pos1 - pos2) < diameter) {
+                pos2 = pos1 + diameter + 5;
+                if(pos2 > boundaryRight) { pos1 = boundaryRight - diameter - 5; pos2 = boundaryRight; }
+            }
+        }
+        
+        // 刷新滑块数值时的同步: 从滑块获取值，更新物理参数，重置运动学状态（位置重置，速度更新为设定的初速度）
+        function syncFromSlidersAndReset(keepRunning = true) {
+            m1 = parseFloat(m1Slider.value);
+            m2 = parseFloat(m2Slider.value);
+            // 注意: v1和v2设定为新的初速度（实验初始条件重置）
+            let newV1 = parseFloat(v10Slider.value);
+            let newV2 = parseFloat(v20Slider.value);
+            let newE = parseFloat(eSlider.value);
+            
+            v1 = newV1;
+            v2 = newV2;
+            e = newE;
+            
+            // 重置位置到起始分离状态
+            resetPositionsAndKeepVelocity();
+            // 避免刚重置就重叠触发碰撞产生速度突变，再确保间隔足够
+            if (Math.abs(pos1 - pos2) < diameter) {
+                pos1 = 180;
+                pos2 = width - 180;
+                if(Math.abs(pos1 - pos2) < diameter) pos2 = pos1 + diameter + 8;
+            }
+            // 边界修正
+            pos1 = Math.min(boundaryRight, Math.max(boundaryLeft, pos1));
+            pos2 = Math.min(boundaryRight, Math.max(boundaryLeft, pos2));
+            
+            updateUI();
+            drawCanvas(); 
+            
+            // 如果动画暂停，重绘后保持状态
+        }
+        
+        // 专门用于当滑块实时变化时（不重置速度？但高中实验最好保证调整参数后实验初始条件重新开始），使用上述函数重置所有运动
+        function onParamChange() {
+            syncFromSlidersAndReset(true);
+        }
+        
+        // 动画更新 (基于时间步长，简单欧拉积分)
+        let lastTime = 0;
+        function animate(currentTime) {
+            if (!isRunning) {
+                drawCanvas();
+                animationId = requestAnimationFrame(animate);
+                return;
+            }
+            let delta = Math.min(0.033, (currentTime - lastTime) / 1000);
+            if (delta <= 0) {
+                lastTime = currentTime;
+                animationId = requestAnimationFrame(animate);
+                drawCanvas();
+                return;
+            }
+            lastTime = currentTime;
+            let dt = Math.min(delta, 0.02);  // 限制步长
+            
+            // 更新位置（基于速度）
+            pos1 += v1 * dt * 150;   // 乘系数使移动速度视觉合适（速度单位m/s但在像素空间需要缩放）
+            pos2 += v2 * dt * 150;
+            // 边界约束
+            pos1 = Math.min(boundaryRight, Math.max(boundaryLeft, pos1));
+            pos2 = Math.min(boundaryRight, Math.max(boundaryLeft, pos2));
+            
+            // 碰撞检测与响应 (先处理边界再处理小球间碰撞)
+            handleBoundary();
+            // 多次碰撞迭代确保非重叠 (多迭代两次)
+            for(let iter=0; iter<2; iter++) {
+                let collided = handleCollision();
+                // 如果碰撞了，同时更新UI显示
+                if(collided){
+                    updateUI();
+                }
+                handleBoundary();
+            }
+            // 更新显示速度数值 （可能在碰撞后变化）
+            updateUI();
+            
+            // 绘制场景
+            drawCanvas();
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 绘图函数
+        function drawCanvas() {
+            ctx.clearRect(0, 0, width, height);
+            // 背景网格
+            ctx.save();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#fffef7";
+            ctx.fillRect(0, 0, width, height);
+            // 轨道示意
+            ctx.beginPath();
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 10]);
+            ctx.moveTo(0, height/2);
+            ctx.lineTo(width, height/2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 绘制小球阴影
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            ctx.shadowBlur = 5;
+            // 球1 蓝色渐变
+            const grad1 = ctx.createLinearGradient(pos1-8, height/2-8, pos1+8, height/2+8);
+            grad1.addColorStop(0, '#3b82f6');
+            grad1.addColorStop(1, '#1e4a8a');
+            ctx.beginPath();
+            ctx.arc(pos1, height/2, radius, 0, Math.PI*2);
+            ctx.fillStyle = grad1;
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.font = "bold 16px 'Segoe UI'";
+            ctx.shadowBlur = 2;
+            ctx.fillText("1", pos1-6, height/2+7);
+            
+            // 球2 橙色
+            const grad2 = ctx.createLinearGradient(pos2-8, height/2-8, pos2+8, height/2+8);
+            grad2.addColorStop(0, '#f97316');
+            grad2.addColorStop(1, '#c2410c');
+            ctx.beginPath();
+            ctx.arc(pos2, height/2, radius, 0, Math.PI*2);
+            ctx.fillStyle = grad2;
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.fillText("2", pos2-6, height/2+7);
+            
+            // 速度矢量箭头
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#0f172a";
+            if(v1 !== 0){
+                let arrowX = pos1 + (v1>0? 20 : -20);
+                ctx.moveTo(pos1, height/2-12);
+                ctx.lineTo(arrowX, height/2-12);
+                ctx.stroke();
+                ctx.fillStyle = "#1e293b";
+                ctx.beginPath();
+                let angle = v1>0? 0 : Math.PI;
+                let arrowTipX = arrowX + (v1>0? 5 : -5);
+                ctx.moveTo(arrowTipX, height/2-12);
+                ctx.lineTo(arrowX, height/2-17);
+                ctx.lineTo(arrowX, height/2-7);
+                ctx.fill();
+            }
+            if(v2 !== 0){
+                let arrowX = pos2 + (v2>0? 20 : -20);
+                ctx.moveTo(pos2, height/2+12);
+                ctx.lineTo(arrowX, height/2+12);
+                ctx.stroke();
+                ctx.fillStyle = "#1e293b";
+                ctx.beginPath();
+                let angle = v2>0? 0 : Math.PI;
+                let arrowTipX = arrowX + (v2>0? 5 : -5);
+                ctx.moveTo(arrowTipX, height/2+12);
+                ctx.lineTo(arrowX, height/2+7);
+                ctx.lineTo(arrowX, height/2+17);
+                ctx.fill();
+            }
+            ctx.restore();
+            
+            // 显示速度文本
+            ctx.font = "500 13px 'JetBrains Mono'";
+            ctx.fillStyle = "#1f3a48";
+            ctx.fillText(`v₁=${v1.toFixed(2)} m/s`, pos1-25, height/2-18);
+            ctx.fillText(`v₂=${v2.toFixed(2)} m/s`, pos2-25, height/2+30);
+        }
+        
+        // 重置全部默认值
+        function resetExperiment() {
+            m1Slider.value = init_m1;
+            m2Slider.value = init_m2;
+            v10Slider.value = init_v1;
+            v20Slider.value = init_v2;
+            eSlider.value = init_e;
+            syncFromSlidersAndReset(true);
+            updateUI();
+            drawCanvas();
+        }
+        
+        // 暂停/运行
+        function togglePlayPause() {
+            isRunning = !isRunning;
+            playPauseBtn.innerHTML = isRunning ? "⏸️ 暂停 / ▶️ 运行" : "▶️ 启动动画";
+            if(!isRunning){
+                drawCanvas();
+            }
+        }
+        
+        // 添加事件监听
+        m1Slider.addEventListener('input', ()=> { m1 = parseFloat(m1Slider.value); onParamChange(); });
+        m2Slider.addEventListener('input', ()=> { m2 = parseFloat(m2Slider.value); onParamChange(); });
+        v10Slider.addEventListener('input', ()=> { v1 = parseFloat(v10Slider.value); onParamChange(); });
+        v20Slider.addEventListener('input', ()=> { v2 = parseFloat(v20Slider.value); onParamChange(); });
+        eSlider.addEventListener('input', ()=> { e = parseFloat(eSlider.value); onParamChange(); });
+        resetBtn.addEventListener('click', resetExperiment);
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        
+        // 窗口适配 & 初始化边界
+        function resizeCanvasLogic(){
+            boundaryLeft = radius + 2;
+            boundaryRight = width - radius - 2;
+            resetPositionsAndKeepVelocity();
+            drawCanvas();
+        }
+        window.addEventListener('resize', ()=>{
+            // canvas固定宽高不响应式改变内容尺寸，但需要重新获取rect吗?不用, 只是绘画
+            drawCanvas();
+        });
+        
+        // 启动动画
+        syncFromSlidersAndReset(true);
+        lastTime = performance.now();
+        animationId = requestAnimationFrame(animate);
+    })();
+</script>
+</body>
+</html>

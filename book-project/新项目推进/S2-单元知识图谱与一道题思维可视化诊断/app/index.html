@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>S2 · 机械能推理证据图</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">S2 · 独立研发候选</p>
+      <h1>机械能推理证据图</h1>
+    </div>
+    <div class="status-strip" aria-label="系统边界">
+      <span>离线运行</span>
+      <span>不评分</span>
+      <span>教师复核</span>
+    </div>
+  </header>
+
+  <div class="boundary-notice" role="note">
+    <strong>教学提示，不是自动诊断结论。</strong>
+    系统只检查文字里明确出现的关系；没写出某个词，不等于学生不会。
+  </div>
+
+  <main>
+    <section class="workspace" aria-label="一道题的推理映射">
+      <div class="problem-pane">
+        <div class="section-heading">
+          <p class="step-label">01 · 题目</p>
+          <h2>先让推理留下可见证据</h2>
+        </div>
+
+        <svg class="track-diagram" viewBox="0 0 720 250" role="img" aria-label="左侧光滑下滑轨道、中央粗糙水平面和右侧光滑上滑轨道示意图">
+          <defs>
+            <linearGradient id="trackGlow" x1="0" x2="1">
+              <stop offset="0" stop-color="#58b5e8"/>
+              <stop offset="0.55" stop-color="#f0a44b"/>
+              <stop offset="1" stop-color="#58b5e8"/>
+            </linearGradient>
+          </defs>
+          <path d="M52 46 Q86 202 224 202 L484 202 Q625 202 669 82" fill="none" stroke="url(#trackGlow)" stroke-width="7" stroke-linecap="round"/>
+          <path d="M224 202 L484 202" fill="none" stroke="#f0a44b" stroke-width="13" stroke-dasharray="5 10" stroke-linecap="round"/>
+          <line x1="44" y1="202" x2="680" y2="202" stroke="#29445f" stroke-width="1" stroke-dasharray="4 6"/>
+          <line x1="72" y1="47" x2="72" y2="202" stroke="#6f8da8" stroke-width="1.5" stroke-dasharray="5 5"/>
+          <text x="82" y="128" class="diagram-note">h = 1.80 m</text>
+          <line x1="224" y1="226" x2="484" y2="226" stroke="#6f8da8" stroke-width="1.5"/>
+          <path d="M224 226 l10 -5 v10 z M484 226 l-10 -5 v10 z" fill="#6f8da8"/>
+          <text x="310" y="246" class="diagram-note">L = 2.0 m · μ = 0.20</text>
+          <circle cx="72" cy="47" r="10" fill="#d9effd" stroke="#58b5e8" stroke-width="3"/>
+          <circle cx="665" cy="88" r="10" fill="none" stroke="#a9c7dc" stroke-width="2" stroke-dasharray="3 3"/>
+          <g class="point-labels">
+            <text x="50" y="28">A</text><text x="210" y="188">B</text><text x="486" y="188">C</text><text x="678" y="79">D</text>
+          </g>
+          <text x="268" y="183" class="rough-label">粗糙段</text>
+        </svg>
+
+        <p id="questionStem" class="question-stem"></p>
+        <div id="givens" class="givens" aria-label="已知量"></div>
+
+        <div class="input-heading">
+          <label for="studentText">学生的解题说明</label>
+          <span id="charCount">0 字</span>
+        </div>
+        <textarea id="studentText" rows="11" spellcheck="false" placeholder="请说明你怎样分段、选择什么系统、为什么使用某条规律，并写出关键计算。不要输入姓名、学号或其他个人信息。"></textarea>
+
+        <div class="sample-row" aria-label="匿名自构样例">
+          <span>载入样例：</span>
+          <div id="sampleButtons"></div>
+        </div>
+
+        <div class="action-row">
+          <button id="analyzeButton" class="primary-action" type="button">映射可见推理证据</button>
+          <button id="clearButton" class="quiet-action" type="button">清空</button>
+        </div>
+        <p class="privacy-line">输入只在当前页面内存中处理，不保存、不上传；刷新页面即清空。</p>
+      </div>
+
+      <div class="analysis-pane" aria-live="polite">
+        <div class="section-heading analysis-title">
+          <div>
+            <p class="step-label">02 · 教学提示</p>
+            <h2>区分“看见了什么”与“还要追问什么”</h2>
+          </div>
+          <div id="coverageBadge" class="coverage-badge">等待输入</div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <div class="empty-line"></div>
+          <p>载入一个匿名样例，或输入自己的解题说明。分析后，相关图谱节点会同步高亮。</p>
+        </div>
+        <div id="contradictions" class="contradictions" hidden></div>
+        <div id="checkpointResults" class="checkpoint-results"></div>
+
+        <aside class="interpretation-limit">
+          <h3>教师复核时保留三种可能</h3>
+          <ol>
+            <li>学生确实没有建立这条关系；</li>
+            <li>学生理解了，但本次没有说出来；</li>
+            <li>规则没有识别到同义表达或隐含推理。</li>
+          </ol>
+        </aside>
+      </div>
+    </section>
+
+    <section class="graph-section" aria-labelledby="graphTitle">
+      <div class="graph-header">
+        <div class="section-heading">
+          <p class="step-label">03 · 单元关系图</p>
+          <h2 id="graphTitle">从条件到证据，而不是知识点清单</h2>
+        </div>
+        <div class="graph-actions">
+          <button id="resetGraphButton" class="quiet-action" type="button">显示全图</button>
+        </div>
+      </div>
+      <div id="categoryFilters" class="category-filters" aria-label="图谱类别筛选"></div>
+
+      <div class="graph-layout">
+        <div class="graph-canvas-wrap">
+          <svg id="knowledgeGraph" class="knowledge-graph" viewBox="0 0 1600 980" role="img" aria-label="机械能单元知识关系图"></svg>
+          <div class="graph-legend">
+            <span><i class="legend-dot observed"></i>文字中可见</span>
+            <span><i class="legend-dot gap"></i>未见显式证据</span>
+            <span><i class="legend-dot conflict"></i>需优先核对</span>
+          </div>
+        </div>
+        <aside id="nodeInspector" class="node-inspector">
+          <p class="step-label">节点说明</p>
+          <h3>点击一个节点</h3>
+          <p>查看它的物理含义、来源与相邻关系。</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="source-section" aria-labelledby="sourceTitle">
+      <div class="section-heading">
+        <p class="step-label">04 · 来源与边界</p>
+        <h2 id="sourceTitle">教材支撑物理关系，培训材料只启发问题</h2>
+      </div>
+      <div id="sourceList" class="source-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>S2 v0.1 · 机械能及其守恒 · 候选教师工具</p>
+    <a href="../docs/04_文字映射与隐私边界.md">阅读诊断边界</a>
+  </footer>
+
+  <script src="../data/knowledge-graph.js"></script>
+  <script src="../data/diagnostic-rules.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

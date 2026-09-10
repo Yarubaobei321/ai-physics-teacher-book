@@ -1,0 +1,135 @@
+---
+type Feature = 'bluetooth' | 'serial';
+
+interface Props {
+  feature: Feature;
+}
+
+const { feature } = Astro.props;
+
+const titleMap: Record<Feature, string> = {
+  bluetooth: '当前浏览器不支持 Web Bluetooth',
+  serial: '当前浏览器不支持 Web Serial'
+};
+
+const descMap: Record<Feature, string> = {
+  bluetooth:
+    '本页需要浏览器具备 Web Bluetooth 能力，才能与 ESP32 建立 BLE 连接、接收实时数据。请改用以下浏览器后再访问。',
+  serial:
+    '本页需要浏览器具备 Web Serial 能力，才能与 ESP32 建立串口连接，上传 MicroPython 程序与库文件。请改用以下浏览器后再访问。'
+};
+
+const recommendMap: Record<Feature, string[]> = {
+  bluetooth: [
+    '桌面版 Chrome / Edge / Opera（推荐 ≥ 89）',
+    'Android 系统的 Chrome（≥ 56）',
+    'Mac 桌面 Edge / Chrome（开启系统蓝牙权限）'
+  ],
+  serial: [
+    '桌面版 Chrome / Edge / Opera（推荐 ≥ 89）',
+    '不支持移动端浏览器与 Safari，请改用电脑访问'
+  ]
+};
+
+const note = '提示：iOS（含 iPhone / iPad 上的 Safari、Chrome、Edge）受系统限制，目前都无法使用以上 Web API。';
+
+const docUrl =
+  feature === 'bluetooth'
+    ? 'https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Bluetooth_API'
+    : 'https://developer.mozilla.org/zh-CN/docs/Web/API/Web_Serial_API';
+---
+
+<aside
+  class="browser-support-notice page-shell hidden mt-6"
+  data-browser-support-notice
+  data-feature={feature}
+  role="status"
+  aria-live="polite"
+  hidden
+>
+  <div class="rounded-md border border-amber-200 bg-amber-50/90 p-5 shadow-soft sm:p-6">
+    <div class="flex items-start gap-4">
+      <span
+        class="mt-0.5 inline-flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-amber-200 text-amber-900"
+        aria-hidden="true"
+      >
+        <svg viewBox="0 0 24 24" class="h-5 w-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 9v4" />
+          <path d="M12 17h.01" />
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+        </svg>
+      </span>
+      <div class="min-w-0 flex-1">
+        <h2 class="text-base font-black text-amber-900 sm:text-lg" data-notice-title>{titleMap[feature]}</h2>
+        <p class="mt-2 text-sm leading-7 text-amber-900/90 sm:text-[15px]" data-notice-desc>{descMap[feature]}</p>
+        <ul class="mt-3 list-disc space-y-1 pl-5 text-sm leading-7 text-amber-900/90">
+          {recommendMap[feature].map((item) => <li>{item}</li>)}
+        </ul>
+        <p class="mt-3 text-xs leading-6 text-amber-900/80 sm:text-sm">{note}</p>
+        <p class="mt-3 text-xs sm:text-sm">
+          <a
+            href={docUrl}
+            target="_blank"
+            rel="noopener"
+            class="font-bold text-amber-900 underline decoration-amber-400 underline-offset-2 hover:text-amber-700"
+          >
+            查看 MDN 兼容性说明 ↗
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<style>
+  .browser-support-notice[hidden] {
+    display: none;
+  }
+</style>
+
+<script>
+  type Feature = 'bluetooth' | 'serial';
+
+  const detect = (feature: Feature): { ok: boolean; reason?: 'insecure' | 'unsupported' } => {
+    if (typeof window === 'undefined') return { ok: true };
+    const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (!isSecure) return { ok: false, reason: 'insecure' };
+
+    const nav = navigator as unknown as { bluetooth?: unknown; serial?: unknown };
+    if (feature === 'bluetooth') {
+      return { ok: typeof nav.bluetooth === 'object' && nav.bluetooth !== null, reason: 'unsupported' };
+    }
+    if (feature === 'serial') {
+      return { ok: typeof nav.serial === 'object' && nav.serial !== null, reason: 'unsupported' };
+    }
+    return { ok: true };
+  };
+
+  const init = () => {
+    const notices = document.querySelectorAll<HTMLElement>('[data-browser-support-notice]');
+    notices.forEach((notice) => {
+      const feature = (notice.dataset.feature as Feature) ?? 'bluetooth';
+      const { ok, reason } = detect(feature);
+      if (ok) return;
+
+      if (reason === 'insecure') {
+        const titleEl = notice.querySelector<HTMLElement>('[data-notice-title]');
+        const descEl = notice.querySelector<HTMLElement>('[data-notice-desc]');
+        if (titleEl) titleEl.textContent = '当前页面未使用安全连接（HTTPS）';
+        if (descEl) {
+          descEl.textContent =
+            'Web Bluetooth 与 Web Serial 仅在 HTTPS 或本地开发环境下可用。请通过 https:// 域名访问本页。';
+        }
+      }
+
+      notice.hidden = false;
+      notice.classList.remove('hidden');
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

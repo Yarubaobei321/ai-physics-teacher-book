@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/measurement-dataset.schema.json",
+  "title": "测量链数据集R0",
+  "description": "同时容纳实测、合成和模型输出身份；身份不可静默转换。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "dataset_id",
+    "title",
+    "data_identity",
+    "description",
+    "claim_ceiling",
+    "device",
+    "calibration",
+    "raw_file",
+    "channels",
+    "transformations",
+    "manual_handling",
+    "anomalies",
+    "derived_summary",
+    "conclusion_limit",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "dataset_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,}$" },
+    "title": { "$ref": "#/$defs/nonEmptyString" },
+    "data_identity": { "enum": ["measured", "synthetic", "model_output"] },
+    "description": { "$ref": "#/$defs/nonEmptyString" },
+    "claim_ceiling": { "$ref": "#/$defs/nonEmptyString" },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "device_id", "name", "model", "version", "settings"],
+      "properties": {
+        "kind": { "enum": ["physical_device", "software_generator", "software_model", "manual_record"] },
+        "device_id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "model": { "$ref": "#/$defs/nonEmptyString" },
+        "version": { "$ref": "#/$defs/nonEmptyString" },
+        "settings": { "type": "object" }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "method", "references"],
+      "properties": {
+        "status": { "enum": ["performed", "not_performed", "not_applicable"] },
+        "method": { "$ref": "#/$defs/nonEmptyString" },
+        "references": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
+    "raw_file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "media_type", "sha256", "rows", "immutable", "identity_label"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "media_type": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "rows": { "type": "integer", "minimum": 1 },
+        "immutable": { "const": true },
+        "identity_label": { "enum": ["measured", "synthetic", "model_output"] }
+      }
+    },
+    "channels": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/channel" }
+    },
+    "transformations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/transformation" }
+    },
+    "manual_handling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["original_preserved", "actions"],
+      "properties": {
+        "original_preserved": { "const": true },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/manualAction" } }
+      }
+    },
+    "anomalies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/anomaly" }
+    },
+    "derived_summary": { "type": "object" },
+    "conclusion_limit": { "$ref": "#/$defs/nonEmptyString" },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "role", "path_or_description"],
+        "properties": {
+          "source_id": { "$ref": "#/$defs/nonEmptyString" },
+          "role": { "$ref": "#/$defs/nonEmptyString" },
+          "path_or_description": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "data_identity": { "const": "measured" } } },
+      "then": {
+        "properties": {
+          "device": { "properties": { "kind": { "const": "physical_device" } } },
+          "calibration": { "properties": { "status": { "const": "performed" } } },
+          "raw_file": { "properties": { "identity_label": { "const": "measured" } } },
+          "channels": { "items": { "properties": { "data_identity": { "const": "measured" } } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "data_identity": { "const": "synthetic" } } },
+      "then": {
+        "properties": {
+          "device": { "properties": { "kind": { "const": "software_generator" } } },
+          "calibration": { "properties": { "status": { "const": "not_applicable" } } },
+          "raw_file": { "properties": { "identity_label": { "const": "synthetic" } } },
+          "channels": { "items": { "properties": { "data_identity": { "const": "synthetic" } } } }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "data_identity": { "const": "model_output" } } },
+      "then": {
+        "properties": {
+          "device": { "properties": { "kind": { "const": "software_model" } } },
+          "calibration": { "properties": { "status": { "const": "not_applicable" } } },
+          "raw_file": { "properties": { "identity_label": { "const": "model_output" } } },
+          "channels": { "items": { "properties": { "data_identity": { "const": "model_output" } } } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "channel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["channel_id", "label", "quantity", "unit", "data_identity", "quantity_role", "source_field_or_transformation"],
+      "properties": {
+        "channel_id": { "$ref": "#/$defs/nonEmptyString" },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "quantity": { "$ref": "#/$defs/nonEmptyString" },
+        "unit": { "$ref": "#/$defs/nonEmptyString" },
+        "data_identity": { "enum": ["measured", "synthetic", "model_output"] },
+        "quantity_role": { "enum": ["direct", "proxy", "derived"] },
+        "source_field_or_transformation": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "transformation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transformation_id", "input_channels", "output_channel", "method", "expression_or_procedure", "software_identity"],
+      "properties": {
+        "transformation_id": { "$ref": "#/$defs/nonEmptyString" },
+        "input_channels": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "output_channel": { "$ref": "#/$defs/nonEmptyString" },
+        "method": { "$ref": "#/$defs/nonEmptyString" },
+        "expression_or_procedure": { "$ref": "#/$defs/nonEmptyString" },
+        "software_identity": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "manualAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_id", "action", "sample_ids", "reason", "actor_role", "raw_data_retained"],
+      "properties": {
+        "action_id": { "$ref": "#/$defs/nonEmptyString" },
+        "action": { "enum": ["kept", "excluded_from_derivation", "corrected", "annotated"] },
+        "sample_ids": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "reason": { "$ref": "#/$defs/nonEmptyString" },
+        "actor_role": { "$ref": "#/$defs/nonEmptyString" },
+        "raw_data_retained": { "const": true }
+      }
+    },
+    "anomaly": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anomaly_id", "sample_ids", "description", "detection_identity", "status"],
+      "properties": {
+        "anomaly_id": { "$ref": "#/$defs/nonEmptyString" },
+        "sample_ids": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "detection_identity": { "enum": ["human", "rule", "ai_candidate", "known_injection"] },
+        "status": { "enum": ["retained", "excluded_from_derivation", "corrected_with_original_retained", "pending_review"] }
+      }
+    }
+  }
+}

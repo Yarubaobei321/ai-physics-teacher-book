@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高一数学·三角函数 | 图像 + 恒等变换可视化课堂</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动滑块时误选文字，但不影响主要阅读 */
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #f4f9ff 0%, #e6f0fa 100%);
+            font-family: 'Segoe UI', Roboto, 'Microsoft YaHei', 'PingFang SC', 'Noto Sans', system-ui, sans-serif;
+            color: #1a2c3e;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.75);
+            border-radius: 2.5rem;
+            backdrop-filter: blur(2px);
+            box-shadow: 0 20px 35px -12px rgba(0,20,40,0.2);
+            overflow: hidden;
+            padding: 1.8rem 2rem 2rem;
+        }
+
+        /* 头部 */
+        .hero {
+            text-align: center;
+            border-bottom: 2px solid #cbdde9;
+            padding-bottom: 0.6rem;
+            margin-bottom: 1.8rem;
+        }
+        h1 {
+            font-size: 2.2rem;
+            margin: 0;
+            background: linear-gradient(135deg, #1f6392, #2c9b6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .sub {
+            color: #2c6979;
+            font-weight: 500;
+            margin-top: 6px;
+        }
+
+        /* 两栏布局 */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        .canvas-area {
+            flex: 2;
+            min-width: 300px;
+            background: #ffffffcc;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+        }
+        .side-panel {
+            flex: 1.2;
+            min-width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* 图形包装 */
+        .graph-wrapper {
+            background: #fff;
+            border-radius: 1.5rem;
+            padding: 0.5rem;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 6px 12px -8px rgba(0,0,0,0.1);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: pointer;
+        }
+
+        /* 控制区 */
+        .control-bar {
+            margin-top: 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+        }
+        .angle-group {
+            flex: 2;
+        }
+        .angle-group label {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #cbdde9;
+            border-radius: 5px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #1f6392;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        .angle-readout {
+            background: #eef3fc;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-weight: 600;
+            font-family: monospace;
+        }
+        .func-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .func-btn {
+            background: #f0f4f9;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .func-btn.active {
+            background: #1f6392;
+            color: white;
+            box-shadow: 0 2px 8px rgba(31,99,146,0.3);
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(6px);
+            border-radius: 1.5rem;
+            padding: 1.2rem 1.4rem;
+            box-shadow: 0 10px 20px -10px rgba(0,0,0,0.1);
+            transition: 0.2s;
+        }
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            border-left: 5px solid #1f6392;
+            padding-left: 12px;
+            color: #0f3b4f;
+        }
+        .formula-block {
+            background: #eef2f7;
+            border-radius: 20px;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            margin: 12px 0;
+            font-size: 1rem;
+        }
+        .derive-step {
+            font-size: 0.85rem;
+            color: #2c5e7a;
+            margin: 8px 0;
+            line-height: 1.4;
+        }
+        .trig-value {
+            font-family: monospace;
+            font-weight: bold;
+            background: #e9f0f5;
+            padding: 4px 10px;
+            border-radius: 30px;
+            display: inline-block;
+        }
+        .interact-slider {
+            margin: 12px 0;
+        }
+        .badge-note {
+            font-size: 0.7rem;
+            color: #5a7794;
+            margin-top: 8px;
+            border-top: 1px dashed #cbdde9;
+            padding-top: 8px;
+        }
+        @media (max-width: 800px) {
+            .container { padding: 1rem; }
+            .func-btn { padding: 4px 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="hero">
+        <h1>📐 三角函数 · 恒等变换与几何直观</h1>
+        <div class="sub">正弦 | 余弦 | 和差角公式 | 数形结合推导</div>
+    </div>
+
+    <div class="dashboard">
+        <!-- 左侧画布区：展示三角函数图像 & 单位圆 -->
+        <div class="canvas-area">
+            <div class="graph-wrapper">
+                <canvas id="mainCanvas" width="900" height="480" style="width:100%; height:auto; aspect-ratio:900/480"></canvas>
+            </div>
+            <div class="control-bar">
+                <div class="angle-group">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>🔁 角度 α / β 调节 (交互推导)</span>
+                        <span class="angle-readout" id="angleReadout">α = 30°, β = 20°</span>
+                    </div>
+                    <div style="display: flex; gap: 16px; margin-top: 6px;">
+                        <div style="flex:1"><label>α 角: </label><input type="range" id="alphaSlider" min="0" max="360" value="30" step="1"></div>
+                        <div style="flex:1"><label>β 角: </label><input type="range" id="betaSlider" min="0" max="360" value="20" step="1"></div>
+                    </div>
+                </div>
+                <div class="func-buttons">
+                    <button id="btnSin" class="func-btn active">sin(θ)</button>
+                    <button id="btnCos" class="func-btn">cos(θ)</button>
+                    <button id="btnBoth" class="func-btn">和差角公式</button>
+                </div>
+            </div>
+            <div class="badge-note" style="text-align:center; margin-top:8px;">
+                🧠 左侧单位圆动态演示角度关系 | 右侧曲线为当前函数图像，红点为当前主角度(α+β)
+            </div>
+        </div>
+
+        <!-- 右侧恒等变换知识点区 -->
+        <div class="side-panel">
+            <!-- 和差角公式推导卡片 -->
+            <div class="card">
+                <h3>✨ 和差角公式 (核心恒等变换)</h3>
+                <div class="formula-block">
+                    sin(α±β) = sinα·cosβ ± cosα·sinβ<br>
+                    cos(α±β) = cosα·cosβ ∓ sinα·sinβ
+                </div>
+                <div class="derive-step" id="deriveText">
+                    <strong>📐 当前演示: sin(α+β) 几何推导思路</strong><br>
+                    在单位圆中，角α+β的终边与圆交于点P。利用两点间距离公式或坐标旋转可得：<br>
+                    sin(α+β)=sinα cosβ + cosα sinβ<br>
+                    👇 下方滑块改变 α,β，验证等式左右两边数值恒等。
+                </div>
+                <div id="identityCheck" style="background:#eef3fa; border-radius: 20px; padding: 10px; margin-top: 8px; font-size: 0.85rem;">
+                    <!-- 动态验证内容 -->
+                </div>
+            </div>
+
+            <!-- 数值验证与二倍角提示 -->
+            <div class="card">
+                <h3>🧪 动态数值验证</h3>
+                <div id="dynamicFormulaValues" style="font-size:0.9rem;">
+                    计算中...
+                </div>
+                <div class="formula-block" style="margin-top:12px; background:#e0f0e8;">
+                    💡 二倍角公式 (推导自和差角):<br>
+                    sin2α = 2 sinα cosα &nbsp;&nbsp; cos2α = cos²α - sin²α
+                </div>
+                <div class="badge-note">
+                    🖱️ 点击“和差角公式”按钮，查看 sin(α+β) 与 cos(α+β) 的几何验证。
+                </div>
+            </div>
+
+            <!-- 辅助角公式简介 -->
+            <div class="card">
+                <h3>📐 辅助角公式</h3>
+                <div class="formula-block">
+                    a·sinθ + b·cosθ = √(a²+b²)·sin(θ+φ)
+                </div>
+                <div class="derive-step">
+                    其中 tanφ = b/a ，将同名三角函数合并，简化波形。
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // 画布元素
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = 900, height = 480;
+        canvas.width = width;
+        canvas.height = height;
+
+        // 状态变量
+        let currentView = 'sin';   // 'sin', 'cos', 'both' (both表示同时展示和差角几何示意)
+        let alphaDeg = 30;          // α 角度
+        let betaDeg = 20;           // β 角度
+        let alphaRad = alphaDeg * Math.PI / 180;
+        let betaRad = betaDeg * Math.PI / 180;
+        
+        // DOM 元素
+        const alphaSlider = document.getElementById('alphaSlider');
+        const betaSlider = document.getElementById('betaSlider');
+        const angleReadout = document.getElementById('angleReadout');
+        const btnSin = document.getElementById('btnSin');
+        const btnCos = document.getElementById('btnCos');
+        const btnBoth = document.getElementById('btnBoth');
+        const identityCheckDiv = document.getElementById('identityCheck');
+        const dynamicFormulaValues = document.getElementById('dynamicFormulaValues');
+        const deriveTextSpan = document.getElementById('deriveText');
+
+        // 坐标系参数 (左侧单位圆区域，右侧函数曲线区域)
+        // 左侧圆: 圆心(160, 240), 半径110
+        const circleCenter = {x: 160, y: 240};
+        const radius = 100;
+        // 右侧曲线区域: x范围角度0~360映射到 [380, 860] ，y范围值 [-1.5,1.5] 映射到 [420, 60]
+        const graphLeft = 380, graphRight = 860;
+        const graphTop = 60, graphBottom = 420;
+        
+        // 辅助函数值转换
+        function getFuncValue(deg, funcType) {
+            const rad = deg * Math.PI / 180;
+            if(funcType === 'sin') return Math.sin(rad);
+            if(funcType === 'cos') return Math.cos(rad);
+            return 0;
+        }
+        
+        function mapValueToY(value, funcForRange = currentView) {
+            let minVal = -1.2, maxVal = 1.2;
+            if(funcForRange === 'both') { minVal = -1.2; maxVal = 1.2; }
+            let clamped = Math.min(maxVal, Math.max(minVal, value));
+            let t = (clamped - minVal) / (maxVal - minVal);
+            return graphTop + t * (graphBottom - graphTop);
+        }
+        
+        // 绘制右侧网格轴
+        function drawRightGrid() {
+            ctx.save();
+            ctx.strokeStyle = "#ccdbe7";
+            ctx.lineWidth = 0.6;
+            ctx.font = "11px 'Segoe UI'";
+            // 垂直网格线 (每30度)
+            for(let deg=0; deg<=360; deg+=30){
+                let x = graphLeft + (deg/360)*(graphRight-graphLeft);
+                ctx.beginPath();
+                ctx.moveTo(x, graphTop);
+                ctx.lineTo(x, graphBottom);
+                ctx.strokeStyle = "#e2e9f0";
+                ctx.stroke();
+                if(deg%90===0) ctx.fillStyle = "#1f6392";
+                else ctx.fillStyle = "#8aa0b0";
+                ctx.fillText(deg+"°", x-8, graphBottom+14);
+            }
+            // 水平线
+            for(let val of [-1, -0.5, 0, 0.5, 1]){
+                let y = mapValueToY(val, 'sin');
+                ctx.beginPath();
+                ctx.moveTo(graphLeft, y);
+                ctx.lineTo(graphRight, y);
+                ctx.strokeStyle = "#e0e8f0";
+                ctx.stroke();
+                ctx.fillStyle = "#6b8aa8";
+                ctx.fillText(val.toFixed(1), graphLeft-25, y+3);
+            }
+            // 轴线
+            ctx.beginPath();
+            ctx.moveTo(graphLeft, mapValueToY(0));
+            ctx.lineTo(graphRight, mapValueToY(0));
+            ctx.strokeStyle = "#a0b7cc";
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = "#2c5a74";
+            ctx.fillText("θ →", graphRight-20, mapValueToY(0)-4);
+            ctx.fillText("f(θ)", graphLeft-28, graphTop+12);
+            ctx.restore();
+        }
+        
+        // 绘制函数曲线 (sin或cos)
+        function drawFunctionCurve(func) {
+            ctx.save();
+            ctx.beginPath();
+            let step = 2;
+            let first = true;
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = (func === 'sin') ? "#e34234" : "#2c8f6e";
+            for(let deg=0; deg<=360; deg+=step){
+                let val = getFuncValue(deg, func);
+                let x = graphLeft + (deg/360)*(graphRight-graphLeft);
+                let y = mapValueToY(val);
+                if(first){
+                    ctx.moveTo(x, y);
+                    first = false;
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            // 绘制当前主角度 α+β 的红点 (和差角演示)
+            let mainAngle = (alphaDeg + betaDeg) % 360;
+            let mainVal = getFuncValue(mainAngle, func);
+            let pointX = graphLeft + (mainAngle/360)*(graphRight-graphLeft);
+            let pointY = mapValueToY(mainVal);
+            ctx.beginPath();
+            ctx.fillStyle = "#e63946";
+            ctx.arc(pointX, pointY, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.arc(pointX, pointY, 2.5, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        // 绘制左侧单位圆，同时根据当前模式展示和差角几何 (如果both模式展示α+β的关系)
+        function drawLeftUnitCircle() {
+            ctx.save();
+            // 圆
+            ctx.beginPath();
+            ctx.arc(circleCenter.x, circleCenter.y, radius, 0, 2*Math.PI);
+            ctx.strokeStyle = "#728aa5";
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+            ctx.fillStyle = "#f5f9ff80";
+            ctx.fill();
+            // 轴线
+            ctx.beginPath();
+            ctx.moveTo(circleCenter.x-radius-8, circleCenter.y);
+            ctx.lineTo(circleCenter.x+radius+8, circleCenter.y);
+            ctx.moveTo(circleCenter.x, circleCenter.y-radius-8);
+            ctx.lineTo(circleCenter.x, circleCenter.y+radius+8);
+            ctx.strokeStyle = "#8fabca";
+            ctx.stroke();
+            
+            // 绘制 α 角的终边 (红色)
+            let endX_alpha = circleCenter.x + radius * Math.cos(alphaRad);
+            let endY_alpha = circleCenter.y + radius * Math.sin(alphaRad);
+            ctx.beginPath();
+            ctx.moveTo(circleCenter.x, circleCenter.y);
+            ctx.lineTo(endX_alpha, endY_alpha);
+            ctx.strokeStyle = "#e63946";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // 绘制 β 角的终边 (从α边叠加) —— 为了演示和角，绘制 α+β 的终边 (蓝色)
+            let sumAngleRad = (alphaDeg + betaDeg) * Math.PI / 180;
+            let endX_sum = circleCenter.x + radius * Math.cos(sumAngleRad);
+            let endY_sum = circleCenter.y + radius * Math.sin(sumAngleRad);
+            ctx.beginPath();
+            ctx.moveTo(circleCenter.x, circleCenter.y);
+            ctx.lineTo(endX_sum, endY_sum);
+            ctx.strokeStyle = "#2c8f6e";
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            // 绘制从α终边到β的弧示意 (β角)
+            let arcRadiusSmall = radius * 0.65;
+            ctx.beginPath();
+            ctx.arc(circleCenter.x, circleCenter.y, arcRadiusSmall, alphaRad, alphaRad+betaRad, false);
+            ctx.strokeStyle = "#f4a261";
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+            ctx.fillStyle = "#d97c2b";
+            ctx.font = "bold 12px 'Segoe UI'";
+            let midBetaAngle = alphaRad + betaRad/2;
+            let labelX = circleCenter.x + (arcRadiusSmall+8) * Math.cos(midBetaAngle);
+            let labelY = circleCenter.y + (arcRadiusSmall+8) * Math.sin(midBetaAngle);
+            ctx.fillText(`β=${betaDeg}°`, labelX-8, labelY-6);
+            // 标注α
+            ctx.fillStyle = "#e63946";
+            let midAlpha = alphaRad/2;
+            let aX = circleCenter.x + (arcRadiusSmall+5)*Math.cos(midAlpha);
+            let aY = circleCenter.y + (arcRadiusSmall+5)*Math.sin(midAlpha);
+            ctx.fillText(`α=${alphaDeg}°`, aX-8, aY-4);
+            // 标注P(α+β)
+            ctx.fillStyle = "#1f6392";
+            ctx.fillText(`P(α+β)`, endX_sum+6, endY_sum-6);
+            // 投影演示 sin/cos
+            let sinSum = Math.sin(sumAngleRad);
+            let cosSum = Math.cos(sumAngleRad);
+            ctx.fillStyle = "#2f6b47";
+            ctx.font = "10px monospace";
+            ctx.fillText(`sin(α+β)=${sinSum.toFixed(3)}`, endX_sum+5, endY_sum+12);
+            ctx.fillText(`cos(α+β)=${cosSum.toFixed(3)}`, endX_sum-40, endY_sum-10);
+            ctx.restore();
+        }
+        
+        // 和差角公式数值验证 & 动态推导内容更新
+        function updateIdentityVerification() {
+            let a = alphaDeg, b = betaDeg;
+            let aRad = alphaRad, bRad = betaRad;
+            let sinSum = Math.sin(aRad + bRad);
+            let cosSum = Math.cos(aRad + bRad);
+            let sinLeft = sinSum;
+            let sinRight = Math.sin(aRad)*Math.cos(bRad) + Math.cos(aRad)*Math.sin(bRad);
+            let cosLeft = cosSum;
+            let cosRight = Math.cos(aRad)*Math.cos(bRad) - Math.sin(aRad)*Math.sin(bRad);
+            let epsilon = 1e-9;
+            let sinMatch = Math.abs(sinLeft - sinRight) < 1e-8;
+            let cosMatch = Math.abs(cosLeft - cosRight) < 1e-8;
+            identityCheckDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between;">
+                    <span>🔍 sin(α+β) = </span>
+                    <span><strong>${sinLeft.toFixed(5)}</strong>  vs  <strong>${sinRight.toFixed(5)}</strong> ${sinMatch ? '✅ 恒等' : '⚠️ 数值误差极小'}</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; margin-top:6px;">
+                    <span>🔍 cos(α+β) = </span>
+                    <span><strong>${cosLeft.toFixed(5)}</strong>  vs  <strong>${cosRight.toFixed(5)}</strong> ${cosMatch ? '✅ 恒等' : '⚠️'}</span>
+                </div>
+                <div class="derive-step" style="margin-top: 8px;">✨ 几何意义: 单位圆中 (α+β) 的坐标旋转与向量点积等价于上述公式。</div>
+            `;
+            // 数值详情卡
+            dynamicFormulaValues.innerHTML = `
+                <div>📐 sinα = ${Math.sin(aRad).toFixed(4)} &nbsp; cosα = ${Math.cos(aRad).toFixed(4)}</div>
+                <div>📐 sinβ = ${Math.sin(bRad).toFixed(4)} &nbsp; cosβ = ${Math.cos(bRad).toFixed(4)}</div>
+                <div style="margin-top: 8px; background:#eef3fc; border-radius:16px; padding:6px;">
+                🧮 sin(α+β) = ${sinLeft.toFixed(5)}<br>
+                🧮 cos(α+β) = ${cosLeft.toFixed(5)}
+                </div>
+            `;
+            if(currentView === 'both') {
+                deriveTextSpan.innerHTML = `<strong>✨ 和差角公式几何验证模式</strong><br>
+                左侧单位圆中: 红色边为角α，绿色虚线边为角α+β，中间橙色弧为β。<br>
+                在单位圆上，点P坐标(cos(α+β), sin(α+β))通过旋转矩阵获得，与公式展开一致。<br>
+                下方验证显示 sin(α+β) 与展开式数值完全匹配 ➕ 几何直观。`;
+            } else {
+                deriveTextSpan.innerHTML = `<strong>📐 和差角公式动态验证</strong><br>
+                sin(α±β) = sinα cosβ ± cosα sinβ &nbsp;&nbsp; 改变 α, β 观察数值恒等。<br>
+                右侧曲线为主函数图像，红点为当前角度 α+β 的函数值。`;
+            }
+        }
+        
+        // 主渲染统一调度
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = "#fefefd";
+            ctx.fillRect(0, 0, width, height);
+            
+            // 绘制左侧单位圆 (始终)
+            drawLeftUnitCircle();
+            // 绘制右侧网格背景
+            drawRightGrid();
+            
+            // 根据当前模式绘制右侧曲线
+            if(currentView === 'sin') {
+                drawFunctionCurve('sin');
+                ctx.fillStyle = "#2a6f8f";
+                ctx.font = "bold 16px 'Segoe UI'";
+                ctx.fillText("📈 正弦函数 y = sinθ", graphLeft+20, 45);
+            } else if(currentView === 'cos') {
+                drawFunctionCurve('cos');
+                ctx.fillStyle = "#2a6f8f";
+                ctx.font = "bold 16px 'Segoe UI'";
+                ctx.fillText("📈 余弦函数 y = cosθ", graphLeft+20, 45);
+            } else if(currentView === 'both') {
+                // 同时绘制正弦和余弦曲线轻量展示，并强调恒等变换
+                drawFunctionCurve('sin');
+                drawFunctionCurve('cos');
+                ctx.fillStyle = "#2a6f8f";
+                ctx.font = "bold 15px 'Segoe UI'";
+                ctx.fillText("📈 正弦(红) & 余弦(绿)曲线 | 红点: θ = α+β", graphLeft+20, 45);
+                // 额外标注
+                ctx.font = "italic 12px 'Segoe UI'";
+                ctx.fillStyle = "#5a7794";
+                ctx.fillText("和差角公式对应的坐标关系体现在单位圆旋转", graphLeft+20, 70);
+            }
+            
+            // 在右侧曲线上额外标出 α+β 位置已经由drawFunctionCurve内部标红点
+            // 用额外文字强调
+            let sumAngle = (alphaDeg + betaDeg) % 360;
+            ctx.fillStyle = "#2c5e7a";
+            ctx.font = "bold 11px monospace";
+            let xPos = graphLeft + (sumAngle/360)*(graphRight-graphLeft);
+            ctx.fillText(`α+β = ${sumAngle}°`, xPos-20, mapValueToY(getFuncValue(sumAngle, currentView==='sin'?'sin':'cos'))-10);
+        }
+        
+        // 更新所有数据并重绘
+        function updateAll() {
+            alphaDeg = parseInt(alphaSlider.value);
+            betaDeg = parseInt(betaSlider.value);
+            alphaRad = alphaDeg * Math.PI / 180;
+            betaRad = betaDeg * Math.PI / 180;
+            angleReadout.innerText = `α = ${alphaDeg}°, β = ${betaDeg}°`;
+            updateIdentityVerification();
+            render();
+        }
+        
+        // 监听事件
+        alphaSlider.addEventListener('input', () => { updateAll(); });
+        betaSlider.addEventListener('input', () => { updateAll(); });
+        btnSin.addEventListener('click', () => {
+            currentView = 'sin';
+            btnSin.classList.add('active');
+            btnCos.classList.remove('active');
+            btnBoth.classList.remove('active');
+            updateAll();
+        });
+        btnCos.addEventListener('click', () => {
+            currentView = 'cos';
+            btnCos.classList.add('active');
+            btnSin.classList.remove('active');
+            btnBoth.classList.remove('active');
+            updateAll();
+        });
+        btnBoth.addEventListener('click', () => {
+            currentView = 'both';
+            btnBoth.classList.add('active');
+            btnSin.classList.remove('active');
+            btnCos.classList.remove('active');
+            updateAll();
+        });
+        
+        // 初始化
+        updateAll();
+    })();
+</script>
+</body>
+</html>

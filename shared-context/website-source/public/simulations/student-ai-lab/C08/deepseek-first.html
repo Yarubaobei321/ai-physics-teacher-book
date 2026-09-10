@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>简单有机物 · 球棍模型 | 化学必修二</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      font-size: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      letter-spacing: 1px;
+    }
+    #panel {
+      position: absolute;
+      left: 25px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(30, 30, 40, 0.8);
+      backdrop-filter: blur(20px);
+      padding: 20px 15px;
+      border-radius: 45px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.25);
+      z-index: 10;
+    }
+    .atom-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      position: relative;
+      backdrop-filter: blur(5px);
+      border: 2px solid rgba(255,255,255,0.5);
+      letter-spacing: 1px;
+      line-height: 1.2;
+    }
+    .atom-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.6);
+      border-color: white;
+    }
+    .atom-btn:active {
+      transform: scale(0.95);
+    }
+    .atom-size {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 2px;
+      background: rgba(0,0,0,0.5);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    #carbon-btn {
+      background: radial-gradient(circle at 30% 30%, #6b6b6b, #2d2d2d);
+      border-color: #aaaaaa;
+    }
+    #hydrogen-btn {
+      background: radial-gradient(circle at 30% 30%, #f5f5f5, #b0b0b0);
+      color: #222;
+      border-color: #ffffff;
+    }
+    #oxygen-btn {
+      background: radial-gradient(circle at 30% 30%, #ff6b6b, #b32b2b);
+      border-color: #ffaaaa;
+    }
+    .instruction {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      color: #ddd;
+      padding: 10px 25px;
+      border-radius: 40px;
+      font-size: 15px;
+      white-space: nowrap;
+      z-index: 10;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .instruction i {
+      font-style: normal;
+      margin-right: 5px;
+    }
+    .clear-btn {
+      position: absolute;
+      right: 30px;
+      top: 30px;
+      background: rgba(200, 50, 50, 0.8);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.5);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 10;
+      transition: 0.2s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      letter-spacing: 1px;
+    }
+    .clear-btn:hover {
+      background: rgba(220, 60, 60, 0.9);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+    @media (max-width: 700px) {
+      #panel {
+        gap: 12px;
+        padding: 15px 12px;
+        left: 15px;
+      }
+      .atom-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 16px;
+      }
+      .instruction {
+        font-size: 13px;
+        padding: 8px 18px;
+        white-space: normal;
+        text-align: center;
+        width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="info">🧪 有机物球棍模型 · 碳(C) 氢(H) 氧(O)</div>
+  <div id="panel">
+    <button id="carbon-btn" class="atom-btn">
+      C<div class="atom-size">碳</div>
+    </button>
+    <button id="hydrogen-btn" class="atom-btn">
+      H<div class="atom-size">氢</div>
+    </button>
+    <button id="oxygen-btn" class="atom-btn">
+      O<div class="atom-size">氧</div>
+    </button>
+  </div>
+  <button id="clear-btn" class="clear-btn">🗑️ 清除全部</button>
+  <div class="instruction">
+    <span>🖱️ 点击原子按钮添加原子 | ✨ 拖动原子靠近彼此自动成键 | 🔄 拖拽原子移动</span>
+  </div>
+
+  <!-- 引入 Three.js 核心库以及扩展 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+    import { DragControls } from 'three/addons/controls/DragControls.js';
+
+    // --- 初始化场景、相机、渲染器 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    
+    // 添加一些星星效果或网格地面，让空间感更强
+    const gridHelper = new THREE.GridHelper(12, 20, 0x335577, 0x224466);
+    gridHelper.position.y = -2.5;
+    scene.add(gridHelper);
+    
+    // 环境光与点光源，让颜色更鲜明
+    const ambientLight = new THREE.AmbientLight(0x404066);
+    scene.add(ambientLight);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight1.position.set(1, 2, 1);
+    scene.add(dirLight1);
+    const dirLight2 = new THREE.DirectionalLight(0xffccaa, 0.6);
+    dirLight2.position.set(-1, 0.5, -0.8);
+    scene.add(dirLight2);
+    
+    // 相机
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 50);
+    camera.position.set(6, 4, 8);
+    camera.lookAt(0, 0.5, 0);
+    
+    // WebGL渲染器
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+    
+    // CSS2渲染器用于文字标签
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none'; // 让点击穿透到按钮
+    document.body.appendChild(labelRenderer.domElement);
+    
+    // 控制器 (用于旋转视角)
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 0.5, 0);
+    controls.update();
+    
+    // --- 数据结构 ---
+    // 存储所有原子对象 (用于拖拽和成键检测)
+    const atoms = [];
+    // 存储所有键 (圆柱体) 对象，每个键记录连接的两个原子
+    const bonds = [];
+    
+    // 原子半径映射 (视觉大小)
+    const atomRadii = {
+      C: 0.55,
+      H: 0.35,
+      O: 0.5
+    };
+    
+    // 原子颜色映射
+    const atomColors = {
+      C: 0x404040, // 深灰/黑
+      H: 0xffffff, // 白色
+      O: 0xff3333  // 红色
+    };
+    
+    // 最大成键数 (用于简单限制，避免过度连接)
+    const maxBonds = {
+      C: 4,
+      H: 1,
+      O: 2
+    };
+    
+    // 当前已选中的原子类型 (默认碳)
+    let currentType = 'C';
+    
+    // 拖拽控制器
+    let dragControls;
+    
+    // --- 工具函数：创建原子球体 ---
+    function createAtom(type, position) {
+      const radius = atomRadii[type];
+      const color = atomColors[type];
+      
+      // 球体几何
+      const geometry = new THREE.SphereGeometry(radius, 32, 16);
+      const material = new THREE.MeshStandardMaterial({ 
+        color: color,
+        roughness: 0.3,
+        metalness: 0.1,
+        emissive: new THREE.Color(0x000000)
+      });
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.castShadow = true;
+      sphere.receiveShadow = true;
+      sphere.position.copy(position);
+      
+      // 存储原子数据
+      sphere.userData = {
+        type: type,
+        atomType: type,
+        bonds: [],      // 与该原子连接的键对象
+        radius: radius
+      };
+      
+      // 添加CSS标签 (元素符号)
+      const div = document.createElement('div');
+      div.textContent = type;
+      div.style.color = (type === 'H') ? '#222' : 'white';
+      div.style.fontWeight = 'bold';
+      div.style.fontSize = '16px';
+      div.style.textShadow = '1px 1px 2px black';
+      div.style.background = 'rgba(0,0,0,0.5)';
+      div.style.borderRadius = '20px';
+      div.style.padding = '2px 8px';
+      const label = new CSS2DObject(div);
+      label.position.set(0, radius + 0.35, 0);
+      sphere.add(label);
+      
+      return sphere;
+    }
+    
+    // --- 创建键 (圆柱体) ---
+    function createBond(atomA, atomB) {
+      // 检查是否已经存在连接
+      const existing = bonds.find(b => 
+        (b.userData.atomA === atomA && b.userData.atomB === atomB) ||
+        (b.userData.atomA === atomB && b.userData.atomB === atomA)
+      );
+      if (existing) return null;
+      
+      // 检查成键限制
+      const typeA = atomA.userData.type;
+      const typeB = atomB.userData.type;
+      const currentBondsA = atomA.userData.bonds.length;
+      const currentBondsB = atomB.userData.bonds.length;
+      
+      if (currentBondsA >= maxBonds[typeA] || currentBondsB >= maxBonds[typeB]) {
+        console.warn(`成键限制: ${typeA}最多${maxBonds[typeA]}键, ${typeB}最多${maxBonds[typeB]}键`);
+        return null;
+      }
+      
+      // 创建圆柱体几何 (长度后续根据位置更新)
+      const midPoint = new THREE.Vector3().addVectors(atomA.position, atomB.position).multiplyScalar(0.5);
+      const direction = new THREE.Vector3().subVectors(atomB.position, atomA.position);
+      const length = direction.length();
+      
+      const geometry = new THREE.CylinderGeometry(0.12, 0.12, length, 6);
+      const material = new THREE.MeshStandardMaterial({ 
+        color: 0xcccccc, 
+        roughness: 0.4,
+        metalness: 0.3,
+        emissive: new THREE.Color(0x111111)
+      });
+      const cylinder = new THREE.Mesh(geometry, material);
+      cylinder.castShadow = true;
+      cylinder.receiveShadow = true;
+      
+      // 放置圆柱体到中点并旋转方向
+      cylinder.position.copy(midPoint);
+      
+      // 旋转使圆柱体指向方向向量
+      cylinder.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction.clone().normalize()
+      );
+      
+      // 存储键数据
+      cylinder.userData = {
+        atomA: atomA,
+        atomB: atomB,
+        isBond: true
+      };
+      
+      // 更新原子记录
+      atomA.userData.bonds.push(cylinder);
+      atomB.userData.bonds.push(cylinder);
+      
+      scene.add(cylinder);
+      bonds.push(cylinder);
+      
+      return cylinder;
+    }
+    
+    // --- 更新键的位置和方向 (在拖拽或动画循环中调用) ---
+    function updateBondGeometry(bond) {
+      const atomA = bond.userData.atomA;
+      const atomB = bond.userData.atomB;
+      if (!atomA || !atomB) return;
+      
+      const posA = atomA.position;
+      const posB = atomB.position;
+      
+      const midPoint = new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
+      const direction = new THREE.Vector3().subVectors(posB, posA);
+      const length = direction.length();
+      
+      bond.position.copy(midPoint);
+      
+      // 更新圆柱体高度
+      bond.geometry.dispose();
+      bond.geometry = new THREE.CylinderGeometry(0.12, 0.12, length, 6);
+      
+      bond.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction.clone().normalize()
+      );
+    }
+    
+    // --- 删除原子及其所有键 ---
+    function removeAtom(atom) {
+      // 移除所有关联的键
+      const bondsToRemove = [...atom.userData.bonds];
+      bondsToRemove.forEach(bond => {
+        removeBond(bond);
+      });
+      
+      // 从场景移除原子
+      scene.remove(atom);
+      const index = atoms.indexOf(atom);
+      if (index > -1) atoms.splice(index, 1);
+      
+      // 清理拖拽对象列表 (需要重建拖拽)
+      rebuildDragControls();
+    }
+    
+    function removeBond(bond) {
+      const atomA = bond.userData.atomA;
+      const atomB = bond.userData.atomB;
+      
+      if (atomA) {
+        const idx = atomA.userData.bonds.indexOf(bond);
+        if (idx > -1) atomA.userData.bonds.splice(idx, 1);
+      }
+      if (atomB) {
+        const idx = atomB.userData.bonds.indexOf(bond);
+        if (idx > -1) atomB.userData.bonds.splice(idx, 1);
+      }
+      
+      scene.remove(bond);
+      const bondIndex = bonds.indexOf(bond);
+      if (bondIndex > -1) bonds.splice(bondIndex, 1);
+    }
+    
+    // --- 清除所有原子和键 ---
+    function clearAll() {
+      // 移除所有键
+      while(bonds.length > 0) {
+        const bond = bonds[0];
+        removeBond(bond);
+      }
+      // 移除所有原子
+      while(atoms.length > 0) {
+        const atom = atoms[0];
+        scene.remove(atom);
+        atoms.splice(0, 1);
+      }
+      rebuildDragControls();
+    }
+    
+    // --- 重建拖拽控制器 (因为原子列表变化) ---
+    function rebuildDragControls() {
+      if (dragControls) {
+        dragControls.dispose();
+      }
+      if (atoms.length === 0) {
+        dragControls = null;
+        return;
+      }
+      
+      dragControls = new DragControls(atoms, camera, renderer.domElement);
+      
+      dragControls.addEventListener('dragstart', function (event) {
+        controls.enabled = false;
+        event.object.material.emissive?.setHex(0x333333);
+      });
+      
+      dragControls.addEventListener('drag', function () {
+        // 拖拽过程中实时更新所有相关键
+        bonds.forEach(bond => {
+          updateBondGeometry(bond);
+        });
+      });
+      
+      dragControls.addEventListener('dragend', function (event) {
+        controls.enabled = true;
+        event.object.material.emissive?.setHex(0x000000);
+        
+        // 拖拽结束后检测与其他原子的距离，尝试自动成键
+        checkAndCreateBonds(event.object);
+        // 再次更新键
+        bonds.forEach(bond => updateBondGeometry(bond));
+      });
+    }
+    
+    // --- 检测原子与其他原子的距离并尝试成键 ---
+    function checkAndCreateBonds(movedAtom) {
+      const threshold = 1.15; // 距离阈值，原子中心距离小于此值尝试成键
+      const typeMoved = movedAtom.userData.type;
+      const maxMoved = maxBonds[typeMoved];
+      
+      atoms.forEach(otherAtom => {
+        if (otherAtom === movedAtom) return;
+        
+        const dist = movedAtom.position.distanceTo(otherAtom.position);
+        if (dist < threshold) {
+          // 检查双方是否还能成键
+          const otherType = otherAtom.userData.type;
+          if (movedAtom.userData.bonds.length >= maxMoved || otherAtom.userData.bonds.length >= maxBonds[otherType]) {
+            return;
+          }
+          // 尝试创建键
+          createBond(movedAtom, otherAtom);
+        }
+      });
+      
+      // 更新所有键显示
+      bonds.forEach(bond => updateBondGeometry(bond));
+    }
+    
+    // --- 添加新原子到场景 ---
+    function addAtom(type) {
+      // 在相机前方稍远位置生成，或随机位置
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 2.2 + Math.random() * 1.8;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius;
+      const y = 0.8 + Math.random() * 1.5;
+      
+      const position = new THREE.Vector3(x, y, z);
+      const atom = createAtom(type, position);
+      
+      scene.add(atom);
+      atoms.push(atom);
+      
+      // 重建拖拽控制器以包含新原子
+      rebuildDragControls();
+      
+      // 新原子添加后，检测是否与周围原子距离近而成键
+      setTimeout(() => {
+        checkAndCreateBonds(atom);
+      }, 50);
+    }
+    
+    // --- 事件监听 ---
+    document.getElementById('carbon-btn').addEventListener('click', () => {
+      currentType = 'C';
+      addAtom('C');
+    });
+    document.getElementById('hydrogen-btn').addEventListener('click', () => {
+      currentType = 'H';
+      addAtom('H');
+    });
+    document.getElementById('oxygen-btn').addEventListener('click', () => {
+      currentType = 'O';
+      addAtom('O');
+    });
+    
+    document.getElementById('clear-btn').addEventListener('click', () => {
+      clearAll();
+    });
+    
+    // 窗口大小调整
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    // --- 初始示例：放置一个碳原子和几个氢原子，展示甲烷结构 ---
+    function createDemoMolecule() {
+      // 中心碳原子
+      const carbon = createAtom('C', new THREE.Vector3(0, 0.7, 0));
+      scene.add(carbon);
+      atoms.push(carbon);
+      
+      // 四个氢原子位置 (四面体方向近似)
+      const hPositions = [
+        new THREE.Vector3(0.9, 1.3, 0.0),
+        new THREE.Vector3(-0.45, 1.3, 0.78),
+        new THREE.Vector3(-0.45, 0.1, -0.78),
+        new THREE.Vector3(0.0, 0.1, 0.9)
+      ];
+      
+      hPositions.forEach(pos => {
+        const hydrogen = createAtom('H', pos);
+        scene.add(hydrogen);
+        atoms.push(hydrogen);
+        // 创建键
+        createBond(carbon, hydrogen);
+      });
+      
+      // 额外添加一个氧原子和氢，展示羟基 (乙醇部分结构)
+      const oxygen = createAtom('O', new THREE.Vector3(1.9, 0.9, 0.6));
+      scene.add(oxygen);
+      atoms.push(oxygen);
+      createBond(carbon, oxygen);
+      
+      const hydroxylH = createAtom('H', new THREE.Vector3(2.6, 1.3, 0.9));
+      scene.add(hydroxylH);
+      atoms.push(hydroxylH);
+      createBond(oxygen, hydroxylH);
+      
+      rebuildDragControls();
+    }
+    
+    // 启动演示
+    createDemoMolecule();
+    
+    // --- 动画循环 ---
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 更新所有键的位置 (持续更新，保证拖动时平滑)
+      bonds.forEach(bond => {
+        updateBondGeometry(bond);
+      });
+      
+      // 更新控制器
+      controls.update();
+      
+      // 渲染主场景
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+    
+    animate();
+    
+    console.log('🌟 球棍模型已启动！拖动原子靠近即可成键。碳(灰)4键，氢(白)1键，氧(红)2键。');
+  </script>
+</body>
+</html>

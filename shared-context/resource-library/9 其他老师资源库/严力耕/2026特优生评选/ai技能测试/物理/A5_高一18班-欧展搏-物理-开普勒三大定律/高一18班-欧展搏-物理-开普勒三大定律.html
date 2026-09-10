@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>开普勒三大定律 · 天体运动演示 (完整版)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0b0f1c 0%, #1a1f2f 100%);
+      font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1450px;
+      width: 100%;
+      background: rgba(18, 22, 35, 0.8);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 2.5rem;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e0e5f0;
+    }
+
+    h1 {
+      text-align: center;
+      font-weight: 500;
+      font-size: 2.2rem;
+      letter-spacing: 2px;
+      margin-bottom: 0.25rem;
+      background: linear-gradient(180deg, #ffffff 0%, #b0c6ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 1rem;
+      color: #8892b0;
+      margin-bottom: 2rem;
+      font-weight: 300;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 1.2rem;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .data-panel {
+      flex: 1.1;
+      min-width: 260px;
+      background: rgba(22, 27, 42, 0.7);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 1.8rem;
+      padding: 1.5rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.8rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+    }
+
+    .data-card {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 1.2rem;
+      padding: 1.2rem 1rem;
+      border-left: 4px solid #6a8cff;
+    }
+
+    .data-card h3 {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 1rem;
+      color: #cfdbff;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .data-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .data-label {
+      color: #9aa9c9;
+    }
+
+    .data-value {
+      background: #1e2537;
+      padding: 0.25rem 0.9rem;
+      border-radius: 20px;
+      font-weight: 500;
+      color: #e0e8ff;
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      letter-spacing: 0.3px;
+    }
+
+    .mini-canvas-container {
+      background: #0f1322;
+      border-radius: 1rem;
+      padding: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    canvas.mini-chart {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #0a0e1a;
+      border-radius: 0.7rem;
+    }
+
+    .canvas-panel {
+      flex: 2;
+      min-width: 500px;
+      background: rgba(10, 14, 23, 0.6);
+      border-radius: 1.8rem;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    canvas#orbitCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 1.2rem;
+      background: radial-gradient(circle at 20% 30%, #1a2332, #03050a);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #b9c6da;
+    }
+
+    .legend span::before {
+      content: "●";
+      margin-right: 0.4rem;
+      font-size: 1.2rem;
+      vertical-align: middle;
+    }
+
+    .legend .star::before {
+      content: "★";
+      color: #ffd966;
+      font-size: 1.2rem;
+    }
+
+    .legend .planet::before {
+      content: "●";
+      color: #6ab0f5;
+    }
+
+    .control-panel {
+      flex: 1.3;
+      min-width: 280px;
+      background: rgba(22, 27, 42, 0.7);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 1.8rem;
+      padding: 1.8rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+    }
+
+    .law-card {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 1.2rem;
+      padding: 1.2rem 1rem;
+      transition: all 0.2s ease;
+      border-left: 4px solid #5f7bbf;
+    }
+
+    .law-card h3 {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 0.8rem;
+      color: #cfdbff;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .law-card p {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #b0bedd;
+      margin-bottom: 0.8rem;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #a0adcc;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+      background: #2a3147;
+      height: 5px;
+      border-radius: 5px;
+      accent-color: #6a8cff;
+    }
+
+    .value-display {
+      background: #1e2537;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #cbd5ff;
+    }
+
+    button {
+      background: rgba(74, 108, 200, 0.2);
+      border: 1px solid rgba(106, 140, 255, 0.5);
+      color: #d4e0ff;
+      padding: 0.7rem 1.2rem;
+      border-radius: 2rem;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: 0.25s;
+      letter-spacing: 0.5px;
+      margin-top: 0.3rem;
+    }
+
+    button:hover {
+      background: rgba(74, 108, 200, 0.4);
+      border-color: #8aa4ff;
+      box-shadow: 0 0 15px rgba(90, 130, 255, 0.5);
+      color: white;
+    }
+
+    .pause-btn {
+      background: rgba(220, 180, 80, 0.15);
+      border-color: rgba(255, 200, 80, 0.5);
+      color: #ffe5aa;
+    }
+
+    .pause-btn:hover {
+      background: rgba(220, 180, 80, 0.35);
+      border-color: #ffc854;
+    }
+
+    .reset-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #ccc;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .button-row button {
+      flex: 1;
+    }
+
+    .footer-note {
+      margin-top: auto;
+      font-size: 0.75rem;
+      color: #6b7a99;
+      text-align: center;
+    }
+
+    @media (max-width: 1100px) {
+      .main-layout {
+        flex-direction: column;
+      }
+      .data-panel {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .canvas-panel {
+        min-width: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>开普勒三大定律</h1>
+  <div class="subtitle">椭圆轨道 · 面积速度 · 周期和谐</div>
+
+  <div class="main-layout">
+    <div class="data-panel">
+      <div class="data-card">
+        <h3>📊 实时运动数据</h3>
+        <div class="data-item">
+          <span class="data-label">📏 距离 (r)</span>
+          <span class="data-value" id="distanceValue">--</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">⚡ 线速度 (v)</span>
+          <span class="data-value" id="velocityValue">--</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">🔄 角速度 (ω)</span>
+          <span class="data-value" id="angularValue">--</span>
+        </div>
+        <div class="data-item">
+          <span class="data-label">📐 a³ / T²</span>
+          <span class="data-value" id="keplerRatioValue">--</span>
+        </div>
+        <div style="font-size:0.7rem; color:#6b7a99; margin-top:0.3rem;">* 数值为相对单位 · a³/T² ∝ M</div>
+      </div>
+
+      <div class="data-card" style="border-left-color:#d4a853;">
+        <h3>📈 面积速率 (dA/dt)</h3>
+        <p style="font-size:0.75rem; color:#8896b5; margin-bottom:0.4rem;">恒定值 (第二定律)</p>
+        <div class="mini-canvas-container">
+          <canvas id="areaChartCanvas" class="mini-chart" width="260" height="110"></canvas>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:0.7rem; color:#7b8ab0; margin-top:0.3rem;">
+          <span>时间 →</span>
+          <span id="areaRateValue">0.000</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-panel">
+      <canvas id="orbitCanvas" width="700" height="500" aria-label="开普勒轨道动画演示"></canvas>
+      <div class="legend">
+        <span class="star">恒星 (焦点)</span>
+        <span class="planet">行星</span>
+        <span style="color:#8899cc;">—— 轨道</span>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="law-card">
+        <h3>📐 第一定律 (椭圆轨道)</h3>
+        <p>行星沿椭圆轨道运行，太阳位于椭圆的一个<strong style="color:#ffd966;">焦点</strong>上。</p>
+        <div class="slider-group">
+          <label>离心率 <span id="eccValue" class="value-display">0.60</span></label>
+          <input type="range" id="eccentricitySlider" min="0.05" max="0.9" step="0.01" value="0.60">
+        </div>
+      </div>
+
+      <div class="law-card">
+        <h3>⏱️ 第二定律 (面积速度恒定)</h3>
+        <p>行星与太阳连线在相等时间内扫过<strong style="color:#ffd966;">相等面积</strong>。</p>
+        <div class="slider-group">
+          <label>动画速度 <span id="speedValue" class="value-display">1.0x</span></label>
+          <input type="range" id="speedSlider" min="0.3" max="2.5" step="0.1" value="1.0">
+        </div>
+      </div>
+
+      <div class="law-card">
+        <h3>🔷 第三定律 (周期定律)</h3>
+        <p>半长轴 <em>a</em> 越大，周期 <em>T</em> 越长：<strong>T² ∝ a³</strong></p>
+        <div class="slider-group">
+          <label>半长轴 (相对) <span id="semiValue" class="value-display">1.00</span></label>
+          <input type="range" id="semiMajorSlider" min="0.6" max="1.8" step="0.01" value="1.0">
+        </div>
+        <p style="font-size:0.8rem;">当前周期 ≈ <span id="periodDisplay">1.00</span> 时间单位</p>
+      </div>
+
+      <div class="law-card" style="border-left-color:#d4a853;">
+        <h3>⚖️ 质量比 (中心/行星)</h3>
+        <p>调整中心天体与行星质量比值，影响引力强度。</p>
+        <div class="slider-group">
+          <label>质量比 <span id="massSliderValue" class="value-display">1000</span></label>
+          <input type="range" id="massRatioSlider" min="100" max="5000" step="10" value="1000">
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button id="pauseButton" class="pause-btn">⏯️ 暂停</button>
+        <button id="resetButton" class="reset-btn">⟳ 重置</button>
+      </div>
+      <div class="footer-note">
+        开普勒定律 · 交互演示<br>高中生AI技能测试
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- DOM元素 -----
+    const canvas = document.getElementById('orbitCanvas');
+    const ctx = canvas.getContext('2d');
+    const areaCanvas = document.getElementById('areaChartCanvas');
+    const areaCtx = areaCanvas.getContext('2d');
+
+    const eccSlider = document.getElementById('eccentricitySlider');
+    const speedSlider = document.getElementById('speedSlider');
+    const semiSlider = document.getElementById('semiMajorSlider');
+    const massRatioSlider = document.getElementById('massRatioSlider');
+
+    const eccValue = document.getElementById('eccValue');
+    const speedValue = document.getElementById('speedValue');
+    const semiValue = document.getElementById('semiValue');
+    const periodDisplay = document.getElementById('periodDisplay');
+    const massSliderValue = document.getElementById('massSliderValue');
+    const keplerRatioValue = document.getElementById('keplerRatioValue');
+    const areaRateValue = document.getElementById('areaRateValue');
+
+    const distanceValue = document.getElementById('distanceValue');
+    const velocityValue = document.getElementById('velocityValue');
+    const angularValue = document.getElementById('angularValue');
+
+    const pauseButton = document.getElementById('pauseButton');
+    const resetBtn = document.getElementById('resetButton');
+
+    // ----- 参数 -----
+    const BASE_SEMI_MAJOR_PX = 180;
+    let eccentricity = 0.6;
+    let semiMajorFactor = 1.0;
+    let animationSpeed = 1.0;
+    let massRatio = 1000;
+
+    let angle = 0;
+    let lastTimestamp = 0;
+    let animationId = null;
+    let isPaused = false;
+
+    const cx = 350, cy = 250;
+
+    // 面积速率历史记录 (使用更大的缓冲区和平滑插值)
+    const areaHistory = [];
+    const MAX_HISTORY = 150; // 增加数据点使曲线更连续
+    
+    // 用于平滑插值的辅助变量
+    let lastAreaRate = null;
+    let smoothedAreaRate = null;
+
+    // ----- 轨道计算 -----
+    function getOrbitParams() {
+      const a = BASE_SEMI_MAJOR_PX * semiMajorFactor;
+      const e = eccentricity;
+      const c = a * e;
+      const b = a * Math.sqrt(1 - e * e);
+      const sunX = cx + c;
+      const sunY = cy;
+      return { a, b, c, sunX, sunY, e };
+    }
+
+    function getPlanetPosition(theta, params) {
+      const { a, e, sunX, sunY } = params;
+      const p = a * (1 - e * e);
+      const r = p / (1 + e * Math.cos(theta));
+      return {
+        x: sunX + r * Math.cos(theta),
+        y: sunY + r * Math.sin(theta),
+        r: r
+      };
+    }
+
+    function getAngularVelocity(r, params) {
+      const { a } = params;
+      const baseOmega = 0.025;
+      const massFactor = Math.sqrt(massRatio / 1000);
+      const aFactor = Math.pow(a / BASE_SEMI_MAJOR_PX, -1.5);
+      const rClamp = Math.max(r, 2.0);
+      return baseOmega * massFactor * aFactor * (a * a) / (rClamp * rClamp);
+    }
+
+    function computePeriod(a) {
+      const baseA = BASE_SEMI_MAJOR_PX;
+      const ratio = a / baseA;
+      const massPeriodFactor = 1.0 / Math.sqrt(massRatio / 1000);
+      return Math.pow(ratio, 1.5) * massPeriodFactor;
+    }
+
+    function computeAreaRate(r, omega) {
+      return 0.5 * r * r * omega;
+    }
+
+    // ----- 平滑面积速率数据 -----
+    function smoothAreaRate(currentRate) {
+      if (smoothedAreaRate === null) {
+        smoothedAreaRate = currentRate;
+        lastAreaRate = currentRate;
+        return currentRate;
+      }
+      
+      // 使用指数移动平均进行平滑 (EMA)
+      const smoothingFactor = 0.3; // 较低的因子使曲线更平滑
+      smoothedAreaRate = smoothingFactor * currentRate + (1 - smoothingFactor) * smoothedAreaRate;
+      
+      lastAreaRate = currentRate;
+      return smoothedAreaRate;
+    }
+
+    // ----- 绘制面积速率图表 (增强平滑渲染) -----
+    function drawAreaChart(currentAreaRate) {
+      if (!areaCtx) return;
+      const w = areaCanvas.width;
+      const h = areaCanvas.height;
+      
+      // 使用更高的分辨率进行渲染
+      areaCtx.clearRect(0, 0, w, h);
+
+      // 绘制精细背景网格
+      areaCtx.strokeStyle = "#1e2740";
+      areaCtx.lineWidth = 0.5;
+      for (let i = 0; i <= 5; i++) {
+        let y = (h / 5) * i;
+        areaCtx.beginPath();
+        areaCtx.moveTo(0, y);
+        areaCtx.lineTo(w, y);
+        areaCtx.stroke();
+      }
+      
+      // 添加垂直网格线
+      for (let i = 0; i <= 6; i++) {
+        let x = (w / 6) * i;
+        areaCtx.beginPath();
+        areaCtx.moveTo(x, 0);
+        areaCtx.lineTo(x, h);
+        areaCtx.stroke();
+      }
+
+      if (areaHistory.length < 2) {
+        areaCtx.fillStyle = "#6b7a99";
+        areaCtx.font = "11px 'Inter'";
+        areaCtx.fillText("收集数据中...", 15, h/2+4);
+        return;
+      }
+
+      // 计算Y轴范围，添加边距使图表更美观
+      let minVal = Math.min(...areaHistory);
+      let maxVal = Math.max(...areaHistory);
+      const range = maxVal - minVal;
+      
+      if (range < 0.001) {
+        const center = (maxVal + minVal) / 2;
+        maxVal = center + 0.01;
+        minVal = center - 0.01;
+      } else {
+        // 添加10%的上下边距
+        const margin = range * 0.1;
+        maxVal += margin;
+        minVal -= margin;
+      }
+      
+      const yRange = maxVal - minVal;
+
+      // 使用贝塞尔曲线绘制更平滑的线条
+      areaCtx.beginPath();
+      areaCtx.strokeStyle = "#f0b34b";
+      areaCtx.lineWidth = 2.2;
+      areaCtx.shadowColor = "#f0b34b";
+      areaCtx.shadowBlur = 8;
+      areaCtx.lineCap = 'round';
+      areaCtx.lineJoin = 'round';
+
+      const points = areaHistory.map((val, i) => ({
+        x: (i / (MAX_HISTORY - 1)) * w,
+        y: h - ((val - minVal) / yRange) * (h - 12) - 6
+      }));
+
+      // 使用Catmull-Rom样条插值使曲线更平滑
+      areaCtx.moveTo(points[0].x, points[0].y);
+      
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[Math.max(0, i - 1)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(points.length - 1, i + 2)];
+        
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        
+        areaCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+      
+      areaCtx.stroke();
+      
+      // 添加发光效果
+      areaCtx.strokeStyle = "rgba(240, 179, 75, 0.3)";
+      areaCtx.lineWidth = 4;
+      areaCtx.shadowBlur = 0;
+      areaCtx.stroke();
+      
+      // 重新绘制主线使之上层
+      areaCtx.strokeStyle = "#f0b34b";
+      areaCtx.lineWidth = 2.0;
+      areaCtx.shadowColor = "#f0b34b";
+      areaCtx.shadowBlur = 6;
+      areaCtx.beginPath();
+      areaCtx.moveTo(points[0].x, points[0].y);
+      for (let i = 0; i < points.length - 1; i++) {
+        const p0 = points[Math.max(0, i - 1)];
+        const p1 = points[i];
+        const p2 = points[i + 1];
+        const p3 = points[Math.min(points.length - 1, i + 2)];
+        const cp1x = p1.x + (p2.x - p0.x) / 6;
+        const cp1y = p1.y + (p2.y - p0.y) / 6;
+        const cp2x = p2.x - (p3.x - p1.x) / 6;
+        const cp2y = p2.y - (p3.y - p1.y) / 6;
+        areaCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      }
+      areaCtx.stroke();
+      
+      areaCtx.shadowBlur = 0;
+      areaCtx.shadowColor = "transparent";
+
+      // 显示当前值标签
+      areaCtx.fillStyle = "#e0e8ff";
+      areaCtx.font = "bold 10px 'JetBrains Mono'";
+      areaCtx.fillText(currentAreaRate.toFixed(3), w-58, 16);
+      
+      // 绘制平均值参考线
+      const avgRate = areaHistory.reduce((a,b) => a+b, 0) / areaHistory.length;
+      const avgY = h - ((avgRate - minVal) / yRange) * (h - 12) - 6;
+      areaCtx.strokeStyle = "rgba(255,255,255,0.2)";
+      areaCtx.lineWidth = 1;
+      areaCtx.setLineDash([4, 4]);
+      areaCtx.beginPath();
+      areaCtx.moveTo(0, avgY);
+      areaCtx.lineTo(w, avgY);
+      areaCtx.stroke();
+      areaCtx.setLineDash([]);
+    }
+
+    // ----- 绘制主场景 -----
+    function drawScene() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const params = getOrbitParams();
+      const { a, b, c, sunX, sunY, e } = params;
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(140, 170, 230, 0.7)";
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = "#3f5b9b";
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, a, b, 0, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, 2*Math.PI);
+      ctx.fill();
+
+      const otherFocusX = cx - c;
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.beginPath();
+      ctx.arc(otherFocusX, cy, 3.5, 0, 2*Math.PI);
+      ctx.fill();
+
+      ctx.shadowColor = "#ffbb2e";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#ffd966";
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 9, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = "#ffb82e";
+      ctx.arc(sunX, sunY, 6, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
+
+      const planetPos = getPlanetPosition(angle, params);
+      ctx.shadowColor = "#4d7cff";
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = "#6ab0f5";
+      ctx.beginPath();
+      ctx.arc(planetPos.x, planetPos.y, 7.5, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.fillStyle = "#addbff";
+      ctx.arc(planetPos.x, planetPos.y, 5, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      ctx.strokeStyle = "rgba(255, 245, 200, 0.55)";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(sunX, sunY);
+      ctx.lineTo(planetPos.x, planetPos.y);
+      ctx.stroke();
+
+      ctx.fillStyle = "#cccccc";
+      ctx.font = "11px 'Segoe UI'";
+      ctx.fillText("近日点", cx + a + 6, cy - 8);
+      ctx.fillText("远日点", cx - a - 40, cy - 8);
+      ctx.restore();
+
+      const r = planetPos.r;
+      const omega = getAngularVelocity(r, params);
+      const velocity = r * omega;
+      const rawAreaRate = computeAreaRate(r, omega);
+      const smoothedRate = smoothAreaRate(rawAreaRate);
+      const period = computePeriod(a);
+      const aCubed = Math.pow(a, 3);
+      const tSquared = period * period;
+      const keplerRatio = tSquared > 0 ? (aCubed / tSquared).toFixed(1) : "0";
+
+      distanceValue.textContent = r.toFixed(1);
+      velocityValue.textContent = velocity.toFixed(2);
+      angularValue.textContent = omega.toFixed(4);
+      keplerRatioValue.textContent = keplerRatio;
+      areaRateValue.textContent = smoothedRate.toFixed(3);
+      periodDisplay.textContent = period.toFixed(2);
+
+      // 更频繁地更新历史数据，使用平滑值
+      areaHistory.push(smoothedRate);
+      if (areaHistory.length > MAX_HISTORY) {
+        // 移除旧数据时保持平滑过渡
+        areaHistory.splice(0, areaHistory.length - MAX_HISTORY);
+      }
+      
+      drawAreaChart(smoothedRate);
+    }
+
+    // ----- 动画循环 -----
+    function animationFrame(ts) {
+      if (isPaused) {
+        lastTimestamp = 0;
+        animationId = requestAnimationFrame(animationFrame);
+        drawScene();
+        return;
+      }
+      if (lastTimestamp === 0) {
+        lastTimestamp = ts;
+        animationId = requestAnimationFrame(animationFrame);
+        drawScene();
+        return;
+      }
+      const deltaTime = Math.min(100, ts - lastTimestamp);
+      lastTimestamp = ts;
+      const speedFactor = animationSpeed * (deltaTime / 16.6);
+      const params = getOrbitParams();
+      const planetPos = getPlanetPosition(angle, params);
+      const omega = getAngularVelocity(planetPos.r, params);
+      angle += omega * speedFactor;
+      if (angle > Math.PI * 2) angle -= Math.PI * 2;
+      if (angle < 0) angle += Math.PI * 2;
+      drawScene();
+      animationId = requestAnimationFrame(animationFrame);
+    }
+
+    function updateUI() {
+      eccValue.textContent = eccentricity.toFixed(2);
+      speedValue.textContent = animationSpeed.toFixed(1) + 'x';
+      semiValue.textContent = semiMajorFactor.toFixed(2);
+      massSliderValue.textContent = massRatio;
+    }
+
+    function resetParameters() {
+      eccentricity = 0.6;
+      semiMajorFactor = 1.0;
+      animationSpeed = 1.0;
+      massRatio = 1000;
+      eccSlider.value = eccentricity;
+      speedSlider.value = animationSpeed;
+      semiSlider.value = semiMajorFactor;
+      massRatioSlider.value = massRatio;
+      angle = 0.0;
+      isPaused = false;
+      pauseButton.textContent = '⏯️ 暂停';
+      areaHistory.length = 0;
+      lastAreaRate = null;
+      smoothedAreaRate = null;
+      updateUI();
+      drawScene();
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      pauseButton.textContent = isPaused ? '▶️ 播放' : '⏯️ 暂停';
+      if (!isPaused) lastTimestamp = 0;
+    }
+
+    function bindEvents() {
+      eccSlider.addEventListener('input', (e) => {
+        eccentricity = parseFloat(e.target.value);
+        updateUI();
+        drawScene();
+      });
+      speedSlider.addEventListener('input', (e) => {
+        animationSpeed = parseFloat(e.target.value);
+        updateUI();
+      });
+      semiSlider.addEventListener('input', (e) => {
+        semiMajorFactor = parseFloat(e.target.value);
+        updateUI();
+        drawScene();
+      });
+      massRatioSlider.addEventListener('input', (e) => {
+        massRatio = parseInt(e.target.value, 10);
+        updateUI();
+        drawScene();
+      });
+      pauseButton.addEventListener('click', togglePause);
+      resetBtn.addEventListener('click', resetParameters);
+    }
+
+    function startAnimation() {
+      if (animationId) cancelAnimationFrame(animationId);
+      lastTimestamp = 0;
+      animationId = requestAnimationFrame(animationFrame);
+    }
+
+    updateUI();
+    drawScene();
+    bindEvents();
+    startAnimation();
+
+    window.addEventListener('beforeunload', () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+  })();
+</script>
+</body>
+</html>

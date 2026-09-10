@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440, initial-scale=1">
+<title>烃类有机物及其反应 · 3D 交互演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1440px; height: 900px;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background:
+      radial-gradient(1.5px 1.5px at 120px 90px,  rgba(255,255,255,.85), transparent 100%),
+      radial-gradient(1.5px 1.5px at 340px 220px, rgba(255,255,255,.6),  transparent 100%),
+      radial-gradient(2px 2px at 520px 70px,  rgba(255,255,255,.7),  transparent 100%),
+      radial-gradient(1.5px 1.5px at 700px 300px, rgba(255,255,255,.55), transparent 100%),
+      radial-gradient(2px 2px at 900px 130px, rgba(255,255,255,.8),  transparent 100%),
+      radial-gradient(1.5px 1.5px at 1080px 260px, rgba(255,255,255,.6), transparent 100%),
+      radial-gradient(2px 2px at 1250px 90px,  rgba(255,255,255,.75), transparent 100%),
+      radial-gradient(1.5px 1.5px at 1390px 220px, rgba(255,255,255,.6), transparent 100%),
+      radial-gradient(2px 2px at 240px 420px,  rgba(255,255,255,.6),  transparent 100%),
+      radial-gradient(1.5px 1.5px at 860px 520px, rgba(255,255,255,.55), transparent 100%),
+      radial-gradient(2px 2px at 1180px 560px, rgba(255,255,255,.65), transparent 100%),
+      radial-gradient(1.5px 1.5px at 620px 640px, rgba(255,255,255,.5), transparent 100%),
+      radial-gradient(ellipse at 30% 25%, rgba(46,74,120,.55), transparent 55%),
+      radial-gradient(ellipse at 75% 70%, rgba(52,58,96,.45), transparent 55%),
+      #0a0e1c;
+    color: #e8ecf6; font-size: 16px; overflow: hidden;
+  }
+  .app { width: 1440px; height: 900px; display: flex; flex-direction: column; padding: 12px 18px 10px; }
+  header.bar {
+    flex: 0 0 auto; display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 2px solid rgba(140,170,255,.35); padding-bottom: 8px; margin-bottom: 10px;
+  }
+  header.bar h1 { font-size: 1.32rem; color: #dfe7ff; }
+  header.bar h1 .sub { color: #9db4ff; margin-left: 12px; font-size: .9rem; font-weight: 500; }
+  header.bar .goal { color: #c9d4f2; font-size: .84rem; max-width: 780px; text-align: right; }
+
+  .main {
+    flex: 1 1 auto; display: grid; gap: 12px; min-height: 0;
+    grid-template-columns: 250px 1fr 330px;
+  }
+  .panel {
+    background: rgba(18,26,46,.55); border: 1px solid rgba(140,170,255,.18);
+    border-radius: 12px; padding: 10px 12px; backdrop-filter: blur(8px);
+    display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  }
+  .panel h2 {
+    font-size: .96rem; color: #9db4ff; margin-bottom: 8px; flex: 0 0 auto;
+    border-left: 4px solid #5f7ff0; padding-left: 8px;
+  }
+
+  /* ---- 控制区 ---- */
+  .controls { gap: 10px; }
+  .ctl-group { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+  .ctl-label { font-size: .82rem; color: #aeb9dd; }
+  button {
+    font-family: inherit; font-size: .86rem; cursor: pointer; color: #e8ecf6;
+    background: rgba(95,127,240,.14); border: 1px solid rgba(140,170,255,.35);
+    border-radius: 8px; padding: 7px 10px; text-align: left; transition: all .15s;
+  }
+  button:hover { background: rgba(95,127,240,.28); }
+  button.active { background: rgba(95,127,240,.5); border-color: #9db4ff; box-shadow: 0 0 10px rgba(95,127,240,.4); }
+  button[aria-pressed="true"] { background: rgba(95,127,240,.5); border-color: #9db4ff; }
+  .range-row { display: flex; align-items: center; gap: 8px; }
+  .range-row input[type="range"] { flex: 1; accent-color: #5f7ff0; }
+  .range-val { font-size: .86rem; color: #ffd98a; min-width: 22px; text-align: center; }
+  .react-btns { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 4px; }
+  .hint-note { font-size: .76rem; color: #8f9cc4; line-height: 1.5; margin-top: auto; }
+
+  /* ---- 画布区 ---- */
+  .canvas-area { gap: 8px; }
+  .cv-wrap { flex: 1 1 auto; min-height: 0; position: relative; border-radius: 10px; overflow: hidden;
+    background: radial-gradient(circle at 50% 45%, rgba(40,55,100,.45), rgba(10,14,28,.7)); }
+  #cv3d { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  #cv3d:active { cursor: grabbing; }
+  .cv-hint {
+    position: absolute; left: 10px; bottom: 8px; font-size: .74rem; color: #93a2cc;
+    background: rgba(10,14,28,.6); border-radius: 6px; padding: 3px 8px; pointer-events: none;
+  }
+  .react-panel {
+    flex: 0 0 auto; background: rgba(18,26,46,.5); border: 1px solid rgba(140,170,255,.16);
+    border-radius: 10px; padding: 8px 10px; min-height: 264px;
+  }
+  .rxn-title { font-size: .86rem; color: #9db4ff; margin-bottom: 6px; line-height: 1.5; }
+  .rxn-title .eq { color: #ffd98a; font-family: "Cambria Math", Georgia, serif; }
+  .steps { display: flex; gap: 6px; margin-bottom: 6px; }
+  .steps button { flex: 1; text-align: center; font-size: .8rem; padding: 5px 2px; }
+  #stepMsg { font-size: .8rem; color: #cdd8f5; margin-bottom: 6px; min-height: 1.2em; }
+  .react-svg { background: rgba(8,12,24,.55); border-radius: 8px; }
+  .react-svg svg { display: block; width: 100%; height: auto; }
+
+  /* ---- 状态信息区 ---- */
+  .info { gap: 8px; }
+  .formula-card {
+    flex: 0 0 auto; background: rgba(95,127,240,.12); border: 1px solid rgba(140,170,255,.3);
+    border-radius: 10px; padding: 10px; text-align: center;
+  }
+  .formula-card .big { font-size: 1.5rem; color: #ffd98a; font-family: "Cambria Math", Georgia, serif; letter-spacing: 1px; }
+  .formula-card .nm { font-size: .9rem; color: #e8ecf6; margin-top: 2px; }
+  .formula-card .st { font-size: .76rem; color: #93a2cc; margin-top: 2px; }
+  .kvt { flex: 0 0 auto; font-size: .8rem; line-height: 1.7; color: #c3cdef; }
+  .kvt b { color: #ffd98a; }
+  .kvt .var { color: #7fe0b0; font-family: "Cambria Math", serif; }
+  .product-box {
+    flex: 1 1 auto; background: rgba(18,26,46,.4); border: 1px dashed rgba(140,170,255,.3);
+    border-radius: 10px; padding: 8px 10px; min-height: 0; overflow: auto;
+  }
+  .product-box h3 { font-size: .84rem; color: #9db4ff; margin-bottom: 4px; }
+  #prodInfo { font-size: .82rem; color: #d6dff7; line-height: 1.7; }
+  #prodInfo .pf { color: #ffd98a; font-family: "Cambria Math", serif; font-size: 1rem; }
+
+  /* ---- 观察与结论 ---- */
+  .conclusion {
+    flex: 0 0 auto; margin-top: 10px;
+    background: rgba(18,26,46,.55); border: 1px solid rgba(140,170,255,.18);
+    border-radius: 12px; padding: 10px 14px; backdrop-filter: blur(8px);
+  }
+  .conclusion h2 { font-size: .92rem; color: #9db4ff; border-left: 4px solid #5f7ff0; padding-left: 8px; margin-bottom: 6px; }
+  .conc-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .conc-card { font-size: .8rem; line-height: 1.6; color: #c3cdef; background: rgba(0,0,0,.22); border-radius: 8px; padding: 8px 10px; border-left: 3px solid #5f7ff0; }
+  .conc-card b { color: #7fe0b0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <h1>烃类有机物及其反应<span class="sub">烷烃 · 烯烃 · 取代 / 加成 / 加聚</span></h1>
+    <div class="goal">学习目标：观察可旋转 3D 立体结构 · 追踪化学键断裂与形成的分步动画 · 用碳数滑杆归纳同系物通式 CₙH₂ₙ₊₂</div>
+  </header>
+
+  <div class="main">
+    <!-- 控制区 -->
+    <section class="panel controls" aria-label="控制区">
+      <h2>控制区</h2>
+      <div class="ctl-group">
+        <div class="ctl-label">分子类型</div>
+        <button id="btnAlkane" class="active" aria-pressed="true" type="button">烷烃（C–C 单键）</button>
+        <button id="btnEthene" aria-pressed="false" type="button">烯烃（C=C 双键）</button>
+      </div>
+      <div class="ctl-group">
+        <div class="ctl-label">碳数滑杆（同系物探索）</div>
+        <div class="range-row">
+          <input type="range" id="carbonRange" min="2" max="8" step="1" value="3" aria-label="碳数滑杆，范围 2 到 8">
+          <span class="range-val" id="rangeVal">3</span>
+        </div>
+      </div>
+      <div class="ctl-group">
+        <div class="ctl-label">三类反应分步动画</div>
+        <div class="react-btns">
+          <button id="btnSub" type="button" aria-label="播放取代反应分步动画">取代反应 · CH₄ + Cl₂</button>
+          <button id="btnAdd" type="button" aria-label="播放加成反应分步动画">加成反应 · C₂H₄ + Br₂</button>
+          <button id="btnPoly" type="button" aria-label="播放加聚反应分步动画">加聚反应 · n CH₂=CH₂</button>
+        </div>
+      </div>
+      <div class="hint-note">提示：拖拽画布旋转 3D 模型，滚轮缩放；拖动碳数滑杆可切换乙烷 → 辛烷同系物。</div>
+    </section>
+
+    <!-- 画布区 -->
+    <section class="panel canvas-area" aria-label="3D 画布区与反应动画区">
+      <div class="cv-wrap">
+        <canvas id="cv3d" aria-label="3D 分子结构画布，可拖拽旋转、滚轮缩放"></canvas>
+        <div class="cv-hint">拖拽旋转 · 滚轮缩放</div>
+      </div>
+      <div class="react-panel" aria-label="反应分步动画面板">
+        <div class="rxn-title" id="rxnTitle">点击左侧反应按钮开始分步动画</div>
+        <div class="steps" id="stepBtns" aria-label="反应步骤按钮组"></div>
+        <div id="stepMsg">等待开始…</div>
+        <div class="react-svg" id="reactSvg" role="img" aria-label="反应步骤示意图"></div>
+      </div>
+    </section>
+
+    <!-- 状态信息区 -->
+    <section class="panel info" aria-label="状态信息区">
+      <h2>状态信息</h2>
+      <div class="formula-card">
+        <div class="big" id="formulaBig">C₃H₈</div>
+        <div class="nm" id="formulaName">丙烷</div>
+        <div class="st" id="formulaState">状态：气体 (g)</div>
+      </div>
+      <div class="kvt" id="kvt">
+        <div>烷烃通式：<span class="var">C<sub>n</sub>H<sub>2n+2</sub></span></div>
+        <div>键角（sp³）：<b>109.5°</b>（正四面体）</div>
+        <div>键角（sp²）：<b>120°</b>（乙烯平面型）</div>
+        <div>碳原子恒为<b>四价</b></div>
+      </div>
+      <div class="product-box">
+        <h3>反应产物</h3>
+        <div id="prodInfo">选择反应后将在此显示产物分子式与名称。</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 观察与结论 -->
+  <section class="conclusion" aria-label="观察与结论区">
+    <h2>观察与结论</h2>
+    <div class="conc-cards">
+      <div class="conc-card"><b>烷烃是饱和烃</b>：分子中只含 C–C 单键与 C–H 单键，性质稳定，光照下主要发生<b>取代反应</b>（如 CH₄ + Cl₂）。</div>
+      <div class="conc-card"><b>烯烃含 C=C 双键</b>：C=C 由一根 σ 键 + 一根 π 键组成，π 键易断裂，故烯烃易发生<b>加成反应</b>（如 Br₂ 的 1,2-加成）与<b>加聚反应</b>。</div>
+      <div class="conc-card"><b>官能团决定性质</b>：取代（饱和烃）、加成 / 加聚（含 π 键烯烃），机理差异源于化学键类型与断裂方式不同。</div>
+    </div>
+  </section>
+</div>
+
+<script>
+'use strict';
+/* ================= 向量工具 ================= */
+function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
+function add(a,b){return [a[0]+b[0],a[1]+b[1],a[2]+b[2]];}
+function scale(v,k){return [v[0]*k,v[1]*k,v[2]*k];}
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function cross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+function len(v){return Math.hypot(v[0],v[1],v[2]);}
+function unit(v){const l=len(v);return [v[0]/l,v[1]/l,v[2]/l];}
+
+/* 端基碳：轴 a 指向"已占邻居的反方向"，返回 3 个 H 单位方向（与 a 夹角 arccos(-1/3)=109.47°） */
+function tetraHs(a){
+  const t = Math.abs(a[0])<0.9 ? [1,0,0] : [0,1,0];
+  const e1 = unit(cross(a,t));
+  const e2 = cross(a,e1);
+  const c=-1/3, s=Math.sqrt(8)/3, q=-Math.sqrt(2)/3, r=Math.sqrt(6)/3;
+  return [
+    add(scale(a,c), scale(e1,s)),
+    add(add(scale(a,c), scale(e1,q)), scale(e2,r)),
+    add(add(scale(a,c), scale(e1,q)), scale(e2,-r))
+  ];
+}
+/* 中间碳：两个 C 邻居方向 u,v（夹角 109.47°），返回 2 个 H 单位方向 */
+function midHs(u,v){
+  const m = unit(add(u,v));
+  const n = unit(cross(u,v));
+  const c=-1/Math.sqrt(3), s=Math.sqrt(2/3);
+  return [add(scale(m,c),scale(n,s)), add(scale(m,c),scale(n,-s))];
+}
+
+/* ================= 模型生成 ================= */
+/* 烷烃 C_nH_2n+2：zigzag 骨架，C-C-C 键角 109.47°，碳四价 */
+function genAlkane(n){
+  const L=1.0, HL=0.85;
+  const pts=[[0,0,0]];
+  let ang=0, sgn=1;
+  const turn=(180-109.47)*Math.PI/180; // 70.53°
+  for(let i=1;i<n;i++){
+    ang += sgn*turn; sgn*=-1;
+    pts.push([pts[i-1][0]+L*Math.cos(ang), pts[i-1][1]+L*Math.sin(ang), 0]);
+  }
+  const atoms=[], bonds=[], carbonIdx=[];
+  for(let i=0;i<n;i++){
+    const neigh=[];
+    if(i>0) neigh.push(unit(sub(pts[i-1],pts[i])));
+    if(i<n-1) neigh.push(unit(sub(pts[i+1],pts[i])));
+    let hs;
+    if(neigh.length===1) hs=tetraHs(scale(neigh[0],-1));
+    else hs=midHs(neigh[0],neigh[1]);
+    const cIdx = atoms.length;
+    carbonIdx.push(cIdx);
+    atoms.push({p:pts[i], r:0.42, color:'#3d4560', el:'C'});
+    for(const hd of hs){
+      const hp = add(pts[i], scale(hd,HL));
+      atoms.push({p:hp, r:0.26, color:'#e9edf7', el:'H'});
+      bonds.push({a:cIdx, b:atoms.length-1, order:1, kind:'CH'});
+    }
+  }
+  for(let i=0;i<n-1;i++){
+    bonds.push({a:carbonIdx[i], b:carbonIdx[i+1], order:1, kind:'CC'});
+  }
+  return centerModel({atoms, bonds});
+}
+/* 乙烯 C2H4：平面 sp2，键角 120°，C=C 双键 */
+function genEthene(){
+  const L=1.0, HL=0.9;
+  const c1=[-L/2,0,0], c2=[L/2,0,0];
+  const atoms=[], bonds=[];
+  const idxA=atoms.length; atoms.push({p:c1, r:0.42, color:'#3d4560', el:'C'});
+  const idxB=atoms.length; atoms.push({p:c2, r:0.42, color:'#3d4560', el:'C'});
+  bonds.push({a:idxA, b:idxB, order:2, kind:'CC'});
+  const hAng=120*Math.PI/180;
+  const hDirs1=[[Math.cos(hAng),Math.sin(hAng),0],[Math.cos(-hAng),Math.sin(-hAng),0]];
+  const hDirs2=[[Math.cos(Math.PI-hAng),Math.sin(Math.PI-hAng),0],[Math.cos(Math.PI+hAng),Math.sin(Math.PI+hAng),0]];
+  for(const hd of hDirs1){ atoms.push({p:add(c1,scale(hd,HL)), r:0.26, color:'#e9edf7', el:'H'}); bonds.push({a:idxA,b:atoms.length-1,order:1,kind:'CH'}); }
+  for(const hd of hDirs2){ atoms.push({p:add(c2,scale(hd,HL)), r:0.26, color:'#e9edf7', el:'H'}); bonds.push({a:idxB,b:atoms.length-1,order:1,kind:'CH'}); }
+  return centerModel({atoms, bonds});
+}
+function centerModel(m){
+  const xs=m.atoms.map(a=>a.p[0]), ys=m.atoms.map(a=>a.p[1]), zs=m.atoms.map(a=>a.p[2]);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2, cz=(Math.min(...zs)+Math.max(...zs))/2;
+  const maxDim = Math.max(Math.max(...xs)-Math.min(...xs), Math.max(...ys)-Math.min(...ys), Math.max(...zs)-Math.min(...zs));
+  const k = 3.2 / (maxDim || 1);
+  m.atoms.forEach(a=>{ a.p=[(a.p[0]-cx)*k,(a.p[1]-cy)*k,(a.p[2]-cz)*k]; });
+  return m;
+}
+
+/* ================= 3D 渲染（内联轻量引擎，无任何外部库） ================= */
+const CV = document.getElementById('cv3d');
+const ctx = CV.getContext('2d');
+let rotY=-0.55, rotX=0.30, zoom=1.0;
+let model = genAlkane(3);
+
+function resizeCanvas(){
+  const dpr = window.devicePixelRatio||1;
+  const w = CV.clientWidth, h = CV.clientHeight;
+  CV.width = Math.max(1, w*dpr); CV.height = Math.max(1, h*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function project(v){
+  let x=v[0], y=v[1], z=v[2];
+  const cy=Math.cos(rotY), sy=Math.sin(rotY);
+  const x1=x*cy+z*sy, z1=-x*sy+z*cy;
+  const cx=Math.cos(rotX), sx=Math.sin(rotX);
+  const y1=y*cx-z1*sx, z2=y*sx+z1*cx;
+  const f = 5.0/(5.0+z2);
+  const R = 120*zoom;
+  return {X:CV.clientWidth/2 + x1*f*R, Y:CV.clientHeight/2 + y1*f*R, z:z2};
+}
+/* OrbitControls 的轻量内联实现：构造器接收 canvas DOM（对应 renderer.domElement），提供拖拽旋转与滚轮缩放 */
+class OrbitControls {
+  constructor(domElement){
+    this.domElement = domElement; // 必须传入 canvas DOM，而非 renderer
+    this.enableRotate = true;
+    this.enableZoom = true;
+    this.onRotate = ()=>render();
+    this.onZoom = ()=>render();
+    domElement.addEventListener('pointerdown', e=>{
+      if(!this.enableRotate) return;
+      this._drag = {x:e.clientX, y:e.clientY};
+      domElement.setPointerCapture(e.pointerId);
+    });
+    domElement.addEventListener('pointermove', e=>{
+      if(!this._drag) return;
+      const dx=e.clientX-this._drag.x, dy=e.clientY-this._drag.y;
+      this._drag = {x:e.clientX, y:e.clientY};
+      rotY += dx*0.009;
+      rotX += dy*0.009;
+      rotX = Math.max(-1.45, Math.min(1.45, rotX));
+      if(this.onRotate) this.onRotate();
+    });
+    const up=()=>{ this._drag=null; };
+    domElement.addEventListener('pointerup', up);
+    domElement.addEventListener('pointercancel', up);
+    domElement.addEventListener('wheel', e=>{
+      if(!this.enableZoom) return;
+      e.preventDefault();
+      zoom *= e.deltaY>0 ? 0.92 : 1.08;
+      zoom = Math.max(0.55, Math.min(1.9, zoom));
+      if(this.onZoom) this.onZoom();
+    }, {passive:false});
+  }
+}
+const controls = new OrbitControls(CV); // 传入 canvas DOM
+
+function render(){
+  const W=CV.clientWidth, H=CV.clientHeight;
+  ctx.clearRect(0,0,W,H);
+  const items=[];
+  // 键
+  for(const b of model.bonds){
+    const A=project(model.atoms[b.a].p), B=project(model.atoms[b.b].p);
+    const z=(A.z+B.z)/2;
+    const col = b.kind==='CC' ? '#8fa2d8' : '#5d6b94';
+    items.push({kind:'bond', z, x1:A.X, y1:A.Y, x2:B.X, y2:B.Y, order:b.order, color:col});
+  }
+  // 原子
+  for(const at of model.atoms){
+    const P=project(at.p);
+    items.push({kind:'atom', z:P.z, x:P.X, y:P.Y, r:at.r, color:at.color, el:at.el});
+  }
+  items.sort((p,q)=>p.z-q.z); // 远的先画
+  for(const it of items){
+    if(it.kind==='bond'){
+      drawBond(it);
+    }else{
+      const rr = it.r*26*zoom;
+      const g=ctx.createRadialGradient(it.x-rr*0.35, it.y-rr*0.35, rr*0.15, it.x, it.y, rr);
+      g.addColorStop(0,'#ffffff');
+      g.addColorStop(0.35, it.color);
+      g.addColorStop(1, shade(it.color, -0.5));
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(it.x, it.y, rr, 0, Math.PI*2); ctx.fill();
+    }
+  }
+}
+function shade(hex,f){
+  const n=parseInt(hex.slice(1),16);
+  const r=Math.max(0,Math.min(255,Math.round(((n>>16)&255)*(1+f))));
+  const g=Math.max(0,Math.min(255,Math.round(((n>>8)&255)*(1+f))));
+  const b=Math.max(0,Math.min(255,Math.round((n&255)*(1+f))));
+  return 'rgb('+r+','+g+','+b+')';
+}
+function drawBond(it){
+  const dx=it.x2-it.x1, dy=it.y2-it.y1, L=Math.hypot(dx,dy)||1;
+  const px=-dy/L, py=dx/L;
+  const w=5.2*zoom;
+  ctx.lineCap='round';
+  const offs = it.order===1 ? [0] : it.order===2 ? [-w,-w*0.28] : [-w*1.3,0,w*1.3];
+  if(it.order===2){ // 两根平行圆柱
+    drawLine(it.x1+px*w,it.y1+py*w,it.x2+px*w,it.y2+py*w,it.color);
+    drawLine(it.x1-px*w,it.y1-py*w,it.x2-px*w,it.y2-py*w,it.color);
+  }else if(it.order===3){
+    drawLine(it.x1+px*w*1.3,it.y1+py*w*1.3,it.x2+px*w*1.3,it.y2+py*w*1.3,it.color);
+    drawLine(it.x1,it.y1,it.x2,it.y2,it.color);
+    drawLine(it.x1-px*w*1.3,it.y1-py*w*1.3,it.x2-px*w*1.3,it.y2-py*w*1.3,it.color);
+  }else{
+    drawLine(it.x1,it.y1,it.x2,it.y2,it.color);
+  }
+  function drawLine(x1,y1,x2,y2,c){
+    ctx.strokeStyle=c; ctx.lineWidth=w;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  }
+}
+
+/* ================= 状态信息更新 ================= */
+const ALKNAME=['','甲烷','乙烷','丙烷','丁烷','戊烷','己烷','庚烷','辛烷'];
+function stateOf(n){ return n<=4 ? '气体 (g)' : '液体 (l)'; }
+function updateInfo(){
+  let big, name, st;
+  if(mode==='alkane'){
+    const H=2*n+2;
+    big='C'+subNum(n)+'H'+subNum(H);
+    name=ALKNAME[n];
+    st='状态：'+stateOf(n)+'　通式 C'+subNum(n)+'H'+subNum(2*n+2);
+  }else{
+    big='C₂H₄'; name='乙烯'; st='状态：气体 (g)　烯烃代表物';
+  }
+  document.getElementById('formulaBig').textContent=big;
+  document.getElementById('formulaName').textContent=name;
+  document.getElementById('formulaState').textContent=st;
+}
+function subNum(x){ return String(x).split('').map(d=>'₀₁₂₃₄₅₆₇₈₉'[+d]).join(''); }
+
+/* ================= 模式与滑杆 ================= */
+let mode='alkane', n=3;
+const btnAlkane=document.getElementById('btnAlkane'), btnEthene=document.getElementById('btnEthene');
+const range=document.getElementById('carbonRange');
+const rangeVal=document.getElementById('rangeVal');
+
+function setMode(m){
+  mode=m;
+  btnAlkane.classList.toggle('active', m==='alkane');
+  btnAlkane.setAttribute('aria-pressed', m==='alkane');
+  btnEthene.classList.toggle('active', m==='ethene');
+  btnEthene.setAttribute('aria-pressed', m==='ethene');
+  range.disabled = (m==='ethene');
+  rangeVal.textContent = (m==='ethene') ? '2' : n;
+  model = (m==='alkane') ? genAlkane(n) : genEthene();
+  updateInfo();
+  render();
+}
+btnAlkane.addEventListener('click', ()=>{ if(mode!=='alkane') setMode('alkane'); });
+btnEthene.addEventListener('click', ()=>{ if(mode!=='ethene') setMode('ethene'); });
+range.addEventListener('input', ()=>{
+  n=+range.value; rangeVal.textContent=n;
+  if(mode==='alkane'){ model=genAlkane(n); updateInfo(); render(); }
+});
+
+/* ================= 反应步骤 SVG 图（原子图例: C 深灰, H 白, Cl 绿, Br 棕红） ================= */
+const C='#3d4560', H='#e9edf7', CL='#46b46a', BR='#c2563d', BOND='#8fa2d8', BONDD='#6f82b8';
+function svgFrame(inner){ return '<svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="反应步骤示意图">'+inner+'</svg>'; }
+
+/* ================= 反应分步动画 ================= */
+const REACTIONS = {
+  sub: {
+    title:'取代反应：CH₄(g) + Cl₂(g) <span class="eq">→(光照)</span> CH₃Cl(g) + HCl(g)',
+    steps:[
+      {label:'① Cl–Cl 断', msg:'第 1 步：光照使 Cl–Cl 共价键断裂，Cl₂ 中两原子间 σ 键被紫外光能量激发而断裂。',
+       svg:svgSub1()},
+      {label:'② C–H 断', msg:'第 2 步：一个 Cl 自由基夺取 CH₄ 中的 H——C–H 键断裂，H 原子脱离碳（带一个电子离开）。',
+       svg:svgSub2()},
+      {label:'③ Cl 连 C', msg:'第 3 步：Cl 自由基与缺一个 H 的碳形成新的 C–Cl 键，得到 CH₃·（甲基自由基）。',
+       svg:svgSub3()},
+      {label:'④ 成 HCl', msg:'第 4 步：CH₃· 再与另一 Cl 结合成 CH₃Cl；同时脱离的 H 与剩余 Cl 自由基结合成 HCl。产物：氯甲烷 + 氯化氢。',
+       svg:svgSub4()}
+    ],
+    product:'产物：<span class="pf">CH₃Cl</span>（氯甲烷，气体 g）+ <span class="pf">HCl</span>（氯化氢，气体 g）'
+  },
+  add: {
+    title:'加成反应：C₂H₄(g) + Br₂(l) <span class="eq">→(常温，CCl₄)</span> BrCH₂CH₂Br(l)',
+    steps:[
+      {label:'① 初始', msg:'第 1 步：乙烯分子含 C=C 双键（一根 σ + 一根 π），Br–Br 分子靠近双键。',
+       svg:svgAdd1()},
+      {label:'② π 键断', msg:'第 2 步：C=C 中较弱的 π 键断裂，双键变为单键，两个碳出现未饱和的成键能力；Br–Br 键同时极化。',
+       svg:svgAdd2()},
+      {label:'③ Br 靠近', msg:'第 3 步：过渡态——Br–Br 共价键断裂，两个 Br 原子分别向两个不同的碳原子靠近。',
+       svg:svgAdd3()},
+      {label:'④ 1,2-加成', msg:'第 4 步：两个 Br 分别加成到两个不同的碳上（1,2-加成），产物为 1,2-二溴乙烷 BrCH₂CH₂Br。',
+       svg:svgAdd4()}
+    ],
+    product:'产物：<span class="pf">BrCH₂CH₂Br</span>（1,2-二溴乙烷，液体 l）——注意是 1,2- 而非 1,1-'
+  },
+  poly: {
+    title:'加聚反应：n CH₂=CH₂(g) <span class="eq">→(催化剂，加热)</span> [–CH₂–CH₂–]ₙ(s)',
+    steps:[
+      {label:'① 单体 C=C', msg:'第 1 步：多个乙烯单体（n CH₂=CH₂）在催化剂与加热条件下相互靠近，各自含完整 C=C 双键。',
+       svg:svgPoly1()},
+      {label:'② π 键断开', msg:'第 2 步：每个单体的 C=C 双键断开（π 键断裂，双键变单键），两端形成可成键的活性端。',
+       svg:svgPoly2()},
+      {label:'③ 单体成链', msg:'第 3 步：单体之间形成新的 C–C 单键，首尾相连成长链，得到聚乙烯 [–CH₂–CH₂–]ₙ。',
+       svg:svgPoly3()}
+    ],
+    product:'产物：<span class="pf">[–CH₂–CH₂–]ₙ</span>（聚乙烯，固体 s）——n 个 C₂H₄ 单元，C、H 原子守恒'
+  }
+};
+
+const stepBtnsBox=document.getElementById('stepBtns');
+const stepMsg=document.getElementById('stepMsg');
+const reactSvg=document.getElementById('reactSvg');
+const prodInfo=document.getElementById('prodInfo');
+const rxnTitle=document.getElementById('rxnTitle');
+let cur=null;
+
+function playReaction(key){
+  cur=key;
+  const R=REACTIONS[key];
+  rxnTitle.innerHTML=R.title;
+  prodInfo.innerHTML=R.product;
+  stepBtnsBox.innerHTML='';
+  R.steps.forEach((s,i)=>{
+    const b=document.createElement('button');
+    b.type='button'; b.textContent=s.label;
+    b.setAttribute('aria-label','步骤 '+(i+1)+'：'+s.label);
+    b.addEventListener('click',()=>gotoStep(i));
+    stepBtnsBox.appendChild(b);
+  });
+  gotoStep(0);
+}
+function gotoStep(i){
+  if(!cur) return;
+  const R=REACTIONS[cur];
+  const btns=stepBtnsBox.querySelectorAll('button');
+  btns.forEach((b,k)=>b.classList.toggle('active', k===i));
+  stepMsg.textContent=R.steps[i].msg;
+  reactSvg.innerHTML=R.steps[i].svg;
+}
+document.getElementById('btnSub').addEventListener('click',()=>playReaction('sub'));
+document.getElementById('btnAdd').addEventListener('click',()=>playReaction('add'));
+document.getElementById('btnPoly').addEventListener('click',()=>playReaction('poly'));
+
+/* ================= 反应步骤 SVG 绘制函数 ================= */
+function atom(cx,cy,r,col,label,labx,laby){
+  return '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+col+'" stroke="rgba(255,255,255,.35)" stroke-width="1"/>'+
+         (label?'<text x="'+labx+'" y="'+laby+'" fill="#c9d4f2" font-size="12" text-anchor="middle">'+label+'</text>':'');
+}
+function lne(x1,y1,x2,y2,color,width,dash){
+  return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+(color||BOND)+'" stroke-width="'+(width||4)+'"'+(dash?' stroke-dasharray="'+dash+'"':'')+' stroke-linecap="round"/>';
+}
+function tx(x,y,s,fs,fill){
+  return '<text x="'+x+'" y="'+y+'" fill="'+(fill||'#c9d4f2')+'" font-size="'+(fs||13)+'" text-anchor="middle">'+s+'</text>';
+}
+function lightMark(x,y){
+  return '<g stroke="#ffd98a" fill="none">'+
+    '<line x1="'+(x-14)+'" y1="'+(y-4)+'" x2="'+(x+14)+'" y2="'+(y+4)+'" stroke-width="2"/>'+
+    '<line x1="'+(x+14)+'" y1="'+(y-4)+'" x2="'+(x-14)+'" y2="'+(y+4)+'" stroke-width="2"/>'+
+    '</g><text x="'+(x+2)+'" y="'+(y+2)+'" fill="#ffd98a" font-size="14" text-anchor="middle" font-family="serif">hν</text>';
+}
+
+/* CH4 平面示意图: 中心 C(150,100)，四个 H */
+function ch4(cx,cy,mark,markColor){
+  let s='';
+  const cs=C;
+  s+=atom(cx,cy,16,cs);
+  s+=lne(cx,cy,cx-52,cy-44,BOND,3.5)+lne(cx,cy,cx+52,cy-44,BOND,3.5);
+  s+=lne(cx,cy,cx-52,cy+44,BOND,3.5)+lne(cx,cy,cx+52,cy+44,BOND,3.5);
+  s+=atom(cx-52,cy-44,9,H)+atom(cx+52,cy-44,9,H)+atom(cx-52,cy+44,9,H)+atom(cx+52,cy+44,9,H);
+  if(mark){ s+=lne(cx,cy,cx+52,cy-44,markColor||'#ff8a8a',4,'5,4'); }
+  return s;
+}
+/* Cl2 */
+function cl2(x,y,broken){
+  if(!broken) return lne(x-30,y,x+30,y,BOND,4)+atom(x-30,y,13,CL,'Cl',x-30,y+26)+atom(x+30,y,13,CL,'Cl',x+30,y+26);
+  return lne(x-26,y-14,x-40,y-22,BONDD,4)+lne(x+26,y+8,x+40,y+16,BONDD,4)+
+         atom(x-34,y-18,13,CL,'Cl',x-34,y+8)+atom(x+34,y+12,13,CL,'Cl',x+34,y+38);
+}
+function svgSub1(){
+  return svgFrame(
+    tx(280,26,'取代反应 · 光照引发 Cl–Cl 键断裂',13,'#9db4ff')+
+    lightMark(470,34)+
+    ch4(150,120)+tx(150,185,'CH₄(g)')+
+    cl2(400,120)+tx(400,185,'Cl₂(g)')+
+    tx(280,220,'Cl–Cl 键即将在光照下断裂','','#93a2cc')
+  );
+}
+function svgSub2(){
+  return svgFrame(
+    tx(280,26,'第 2 步：Cl–Cl 键断裂，生成两个 Cl 自由基',13,'#9db4ff')+
+    ch4(150,120)+tx(150,185,'CH₄(g)')+
+    cl2(400,120,true)+tx(400,185,'Cl· + Cl·（自由基）')+
+    tx(280,220,'Cl· 夺取 H 的时机已成熟','','#93a2cc')
+  );
+}
+function svgSub3(){
+  return svgFrame(
+    tx(280,26,'第 3 步：C–H 键断裂，H 脱离碳',13,'#9db4ff')+
+    ch4(150,120,true,'#ffb547')+tx(150,185,'CH₃·（甲基自由基）')+
+    atom(398,64,9,H,'H·',398,90)+lne(150+52,120-44,398,64,'#ff8a8a',3.5,'4,4')+
+    atom(455,120,13,CL,'Cl',455,146)+
+    tx(280,220,'H 原子（带 1 个电子）与碳分离','','#93a2cc')
+  );
+}
+function svgSub4(){
+  return svgFrame(
+    tx(280,26,'第 4 步：Cl 连到碳上，H 与另一 Cl 结合成 HCl',13,'#9db4ff')+
+    /* CH3Cl: 中心 C(150,120), 3 H + 1 Cl */
+    atom(150,120,16,C)+
+    lne(150,120,98,76,BOND,3.5)+lne(150,120,202,76,BOND,3.5)+lne(150,120,150,166,BOND,3.5)+lne(150,120,150,64,BOND,3.5)+
+    atom(98,76,9,H)+atom(202,76,9,H)+atom(150,166,9,H)+atom(150,56,13,CL,'Cl',150,30)+
+    tx(150,185,'CH₃Cl（氯甲烷 g）')+
+    atom(400,120,9,H)+lne(400,120,452,120,BOND,4)+atom(452,120,13,CL,'Cl',452,146)+tx(400,185,'HCl（氯化氢 g）')+
+    tx(280,220,'取代完成：C–H 被 C–Cl 替换','','#7fe0b0')
+  );
+}
+
+/* 乙烯示意: 双键两条线 */
+function ethene(cx,cy,piBreak){
+  const l=52;
+  let s='';
+  s+=lne(cx-l,cy,cx+l,cy,BOND,3.5)+lne(cx-l,cy-7,cx+l,cy-7,BOND,3.5);
+  s+=lne(cx-l,cy,cx-l-40,cy-32,BOND,3.5)+lne(cx-l,cy,cx-l-40,cy+32,BOND,3.5);
+  s+=lne(cx+l,cy,cx+l+40,cy-32,BOND,3.5)+lne(cx+l,cy,cx+l+40,cy+32,BOND,3.5);
+  s+=atom(cx-l,cy,15,C)+atom(cx+l,cy,15,C);
+  s+=atom(cx-l-40,cy-32,9,H)+atom(cx-l-40,cy+32,9,H)+atom(cx+l+40,cy-32,9,H)+atom(cx+l+40,cy+32,9,H);
+  if(piBreak) s+=tx(cx,cy-26,'π 断','','#ff8a8a');
+  else s+=tx(cx,cy-26,'π','','#ffd98a');
+  return s;
+}
+function svgAdd1(){
+  return svgFrame(
+    tx(280,26,'加成反应 · 初始：乙烯 C=C（σ+π）+ Br₂',13,'#9db4ff')+
+    ethene(140,120)+tx(140,190,'CH₂=CH₂(g)')+
+    lne(430,120,480,120,BOND,4)+atom(430,120,13,BR,'Br',430,146)+atom(480,120,13,BR,'Br',480,146)+tx(455,185,'Br₂(l)')+
+    tx(280,220,'π 键易断裂 → 加成反应活性来源','','#93a2cc')
+  );
+}
+function svgAdd2(){
+  return svgFrame(
+    tx(280,26,'第 2 步：π 键断裂，双键变单键',13,'#9db4ff')+
+    ethene(140,120,true)+tx(140,190,'C=C 剩 σ 键')+
+    lne(400,120,420,120,BONDD,4)+atom(408,120,13,BR,'Br',408,146)+atom(432,120,13,BR,'Br',432,146)+
+    tx(418,170,'Br–Br 极化','','#ffb547')+
+    tx(280,220,'π 电子云分离，碳原子出现空轨道','','#93a2cc')
+  );
+}
+function svgAdd3(){
+  return svgFrame(
+    tx(280,26,'第 3 步：过渡态——Br–Br 断裂，两 Br 分别靠近两碳',13,'#9db4ff')+
+    ethene(140,120,true)+tx(140,190,'C–C（σ）')+
+    atom(300,86,13,BR,'Br',300,112)+atom(300,154,13,BR,'Br',300,180)+
+    lne(193,120,300,86,'#ff8a8a',3.5,'4,4')+lne(193,120,300,154,'#ff8a8a',3.5,'4,4')+
+    tx(340,120,'Br–Br 断裂','','#ffb547')+
+    tx(280,220,'两个 Br 分别向两个不同碳靠近（1,2 位向）','','#93a2cc')
+  );
+}
+function svgAdd4(){
+  return svgFrame(
+    tx(280,26,'第 4 步：1,2-加成完成 → 1,2-二溴乙烷',13,'#7fe0b0')+
+    lne(120,120,180,120,BOND,4)+atom(120,120,15,C)+atom(180,120,15,C)+
+    lne(120,120,80,84,BOND,3.5)+lne(120,120,80,156,BOND,3.5)+atom(80,84,9,H)+atom(80,156,9,H)+
+    lne(180,120,220,84,BOND,3.5)+lne(180,120,220,156,BOND,3.5)+atom(220,84,9,H)+atom(220,156,9,H)+
+    lne(120,120,120,52,BOND,4)+atom(120,40,13,BR,'Br',120,14)+
+    lne(180,120,180,52,BOND,4)+atom(180,40,13,BR,'Br',180,14)+
+    tx(150,192,'BrCH₂CH₂Br（1,2-二溴乙烷 l）')+
+    tx(150,218,'两个 Br 连在不同碳上','','#ff8a8a')
+  );
+}
+
+/* 加聚 */
+function polyMono(cx,cy,broken){
+  let s=ethene(cx,cy,broken);
+  return s;
+}
+function svgPoly1(){
+  return svgFrame(
+    tx(280,26,'加聚反应 · 初始：n 个乙烯单体，C=C 双键完好',13,'#9db4ff')+
+    ethene(120,110)+tx(120,175,'CH₂=CH₂(g)')+
+    ethene(300,110)+tx(300,175,'CH₂=CH₂(g)')+
+    ethene(480,110)+tx(480,175,'… 共 n 个')+
+    tx(280,220,'催化剂 + 加热：π 键即将逐个断裂','','#93a2cc')
+  );
+}
+function svgPoly2(){
+  return svgFrame(
+    tx(280,26,'第 2 步：C=C 双键断开（π 键断裂，变单键）',13,'#9db4ff')+
+    ethene(120,110,true)+tx(120,175,'双键变单键')+
+    ethene(300,110,true)+tx(300,175,'双键变单键')+
+    ethene(480,110,true)+tx(480,175,'…')+
+    tx(280,220,'每个单体两端出现可成键活性端','','#ffb547')
+  );
+}
+function svgPoly3(){
+  return svgFrame(
+    tx(280,26,'第 3 步：单体间形成新 C–C 单键 → 长链',13,'#7fe0b0')+
+    /* 链: C-C-C-C */
+    lne(80,120,180,120,BOND,4)+lne(180,120,280,120,BOND,4)+lne(280,120,380,120,BOND,4)+lne(380,120,480,120,BOND,4)+
+    atom(80,120,15,C)+atom(180,120,15,C)+atom(280,120,15,C)+atom(380,120,15,C)+atom(480,120,15,C)+
+    lne(80,120,48,84,BOND,3.5)+lne(80,120,48,156,BOND,3.5)+atom(48,84,9,H)+atom(48,156,9,H)+
+    lne(480,120,512,84,BOND,3.5)+lne(480,120,512,156,BOND,3.5)+atom(512,84,9,H)+atom(512,156,9,H)+
+    atom(140,60,9,H)+atom(220,60,9,H)+atom(320,60,9,H)+atom(420,60,9,H)+
+    atom(140,180,9,H)+atom(220,180,9,H)+atom(320,180,9,H)+atom(420,180,9,H)+
+    lne(180,120,140,60,BOND,3)+lne(280,120,220,60,BOND,3)+lne(380,120,320,60,BOND,3)+
+    lne(180,120,140,180,BOND,3)+lne(280,120,220,180,BOND,3)+lne(380,120,320,180,BOND,3)+
+    tx(280,215,'[–CH₂–CH₂–]ₙ 聚乙烯（s）：n 个 C₂H₄ 单元原子守恒','','#7fe0b0')
+  );
+}
+
+/* ================= 启动 ================= */
+window.addEventListener('resize', ()=>{ resizeCanvas(); render(); });
+function init(){
+  resizeCanvas();
+  updateInfo();
+  render();
+}
+init();
+</script>
+</body>
+</html>

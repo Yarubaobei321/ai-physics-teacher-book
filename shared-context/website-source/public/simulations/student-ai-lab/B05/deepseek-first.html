@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>DNA转录与翻译 · 碱基配对自由练习</title>
+  <style>
+    :root {
+      --bg: #f7f9fc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --text-light: #475569;
+      --accent: #3b82f6;
+      --border: #e2e8f0;
+      --shadow: 0 4px 24px rgba(0,0,0,0.06);
+      --radius: 20px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; user-select: none; }
+    body {
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #eef2f6 0%, #f0f4f8 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .main-container {
+      width: 100%;
+      max-width: 960px;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border: 1px solid var(--border);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .header h1 { font-size: 1.6rem; font-weight: 700; color: #0f172a; }
+    .badge {
+      background: #e0f2fe; color: #0369a1; padding: 4px 14px;
+      border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+    }
+    .stage-tabs {
+      display: flex; gap: 6px; background: #f1f5f9;
+      border-radius: 26px; padding: 4px; align-self: flex-start;
+    }
+    .stage-tab {
+      padding: 8px 20px; border-radius: 22px; border: none;
+      cursor: pointer; font-weight: 600; font-size: 0.9rem;
+      background: transparent; color: #475569; transition: 0.2s;
+      display: flex; align-items: center; gap: 6px; font-family: inherit;
+    }
+    .stage-tab.active {
+      background: #fff; color: #0f172a; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .stage-tab .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-transcription { background: #8b5cf6; }
+    .dot-translation { background: #64748b; }
+
+    .canvas-wrapper {
+      position: relative; width: 100%; aspect-ratio: 16 / 9;
+      max-height: 500px; background: #ffffff; border-radius: 12px;
+      border: 1px solid var(--border); overflow: hidden;
+      touch-action: none;
+    }
+    .canvas-wrapper canvas { display: block; width: 100%; height: 100%; }
+    .drag-layer {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: auto;
+      z-index: 20;
+    }
+
+    .draggable {
+      position: absolute; width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1.2rem; color: #1e293b;
+      background: #dbeafe; border: 2.5px solid #3b82f6;
+      border-radius: 8px; cursor: grab; box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+      z-index: 100; touch-action: none; transition: box-shadow 0.1s;
+      font-family: 'SF Mono', monospace;
+    }
+    .draggable.grabbing {
+      cursor: grabbing; box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      background: #bfdbfe;
+    }
+    .draggable.trna-shape {
+      background: #d1fae5; border-color: #10b981;
+      font-size: 0.8rem; flex-direction: column; text-align: center;
+      line-height: 1.2; width: 60px; height: 65px;
+    }
+
+    .controls {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 22px; border-radius: 26px; border: 1.5px solid var(--border);
+      background: #fff; font-weight: 600; font-size: 0.9rem; cursor: pointer;
+      transition: 0.2s; display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit; color: var(--text);
+    }
+    .btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .btn:active { transform: scale(0.97); }
+    .btn-next {
+      background: #3b82f6; color: #fff; border-color: #3b82f6; font-weight: 700;
+    }
+    .btn-next:hover { background: #2563eb; }
+    .step-indicator {
+      font-size: 0.9rem; color: var(--text-light); min-height: 48px;
+      font-weight: 500; background: #f8fafc; padding: 8px 12px;
+      border-radius: 16px; line-height: 1.4;
+    }
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 8px 16px;
+      font-size: 0.75rem; color: #475569;
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+    @media (max-width: 600px) {
+      .main-container { padding: 12px 10px; }
+      .btn { padding: 8px 14px; font-size: 0.8rem; }
+      .stage-tab { padding: 6px 12px; font-size: 0.8rem; }
+      .draggable { width: 44px; height: 44px; font-size: 1rem; }
+      .draggable.trna-shape { width: 50px; height: 56px; font-size: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="main-container">
+  <div class="header">
+    <h1>🧬 DNA转录与翻译</h1>
+    <span class="badge">自由配对 · 顺序验证</span>
+  </div>
+  <div class="stage-tabs">
+    <button class="stage-tab active" data-stage="transcription"><span class="dot dot-transcription"></span>阶段一：转录</button>
+    <button class="stage-tab" data-stage="translation"><span class="dot dot-translation"></span>阶段二：翻译</button>
+  </div>
+  <div class="canvas-wrapper" id="canvasWrapper">
+    <canvas id="mainCanvas"></canvas>
+    <div class="drag-layer" id="dragLayer"></div>
+  </div>
+  <div class="step-indicator" id="stepIndicator"><strong>📌 自由练习模式</strong> 将所有虚线框按正确顺序配对 (从左到右)。拖动下方卡片到目标框。</div>
+  <div class="controls">
+    <button class="btn btn-next" id="btnAutoComplete">✨ 自动补全下一个</button>
+    <button class="btn" id="btnReset">↺ 全部重置</button>
+    <span style="margin-left:auto; font-size:0.8rem; color:#64748b;">拖拽碱基/tRNA → 虚线框</span>
+  </div>
+  <div class="legend" id="legendTranscription">
+    <span class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span>DNA模板链</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#a8d4ee;"></span>DNA编码链</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#e8764a;"></span>mRNA（合成中）</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#8b5cf6;"></span>RNA聚合酶</span>
+    <span class="legend-item"><span class="legend-dot" style="border:2px dashed #f97316; background:transparent;"></span>待配对框（需顺序配对）</span>
+  </div>
+  <div class="legend" id="legendTranslation" style="display:none;">
+    <span class="legend-item"><span class="legend-dot" style="background:#e8764a;"></span>mRNA</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span>核糖体</span>
+    <span class="legend-item"><span class="legend-dot" style="background:#10b981;"></span>tRNA（已配对）</span>
+    <span class="legend-item"><span class="legend-dot" style="border:2px dashed #f97316; background:transparent;"></span>待配对框（按密码子顺序）</span>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ======================== 全局字体大小变量 ========================
+  const GLOBAL_FONT_SIZE = 13;        // 基础字体大小 (px)
+  const MONO_FONT = `bold ${GLOBAL_FONT_SIZE}px "SF Mono", "Cascadia Code", monospace`;
+  const UI_FONT = `${GLOBAL_FONT_SIZE+1}px "Segoe UI", "PingFang SC"`;
+  
+  // ---------- 序列数据 ----------
+  const templateSeq = ['T','A','C','G','G','T','C','A','T','G','A','T']; // 模板链 3'→5' 展示时从左到右
+  const codingSeq =   ['A','T','G','C','C','A','G','T','A','C','T','A']; // 编码链
+  const mrnaSeq =      ['A','U','G','C','C','A','G','U','A','C','U','A']; // 完整mRNA
+  const codonsList = [
+    { codon:'AUG', aa:'Met', startIdx:0 },
+    { codon:'CCA', aa:'Pro', startIdx:3 },
+    { codon:'GUA', aa:'Val', startIdx:6 },
+    { codon:'CUA', aa:'Leu', startIdx:9 }
+  ];
+  // 每个密码子对应的正确反密码子 (5'->3')
+  const requiredAnticodons = ['UAC', 'GGU', 'CAU', 'GAU'];
+  
+  // 配对状态管理
+  let transcriptionPaired = new Array(templateSeq.length).fill(false);   // 每个模板碱基是否已配对
+  let transcriptionPairedBase = new Array(templateSeq.length).fill(null); // 配对上的碱基
+  let translationPaired = new Array(codonsList.length).fill(false);
+  let translationPairedAA = new Array(codonsList.length).fill(null);
+  
+  let currentStage = 'transcription';
+  let currentDragElements = []; // 存储当前可拖拽元素
+  
+  // canvas引用
+  const canvas = document.getElementById('mainCanvas');
+  const ctx = canvas.getContext('2d');
+  const wrapper = document.getElementById('canvasWrapper');
+  const dragLayer = document.getElementById('dragLayer');
+  const btnAuto = document.getElementById('btnAutoComplete');
+  const btnReset = document.getElementById('btnReset');
+  const stepIndicator = document.getElementById('stepIndicator');
+  const stageTabs = document.querySelectorAll('.stage-tab');
+  const legendTrans = document.getElementById('legendTranscription');
+  const legendTransla = document.getElementById('legendTranslation');
+  
+  let W, H;
+  
+  // ---------- 辅助函数 ----------
+  function getComplementRNA(dnaBase) {
+    const map = {'A':'U','T':'A','C':'G','G':'C'};
+    return map[dnaBase] || '?';
+  }
+  
+  // 重置所有状态
+  function resetState() {
+    if (currentStage === 'transcription') {
+      transcriptionPaired.fill(false);
+      transcriptionPairedBase.fill(null);
+    } else {
+      translationPaired.fill(false);
+      translationPairedAA.fill(null);
+    }
+    // 重新构建拖拽面板
+    rebuildDragPalette();
+    drawScene();
+    updateHintMessage(null, false);
+  }
+  
+  // 更新提示信息
+  function updateHintMessage(msg, isError = false) {
+    if (msg) {
+      stepIndicator.innerHTML = `<strong>${isError ? '⚠️ 顺序/配对错误' : 'ℹ️ 提示'}</strong> ${msg}`;
+    } else {
+      const total = currentStage === 'transcription' ? templateSeq.length : codonsList.length;
+      const pairedCount = currentStage === 'transcription' ? transcriptionPaired.filter(v=>v===true).length : translationPaired.filter(v=>v===true).length;
+      if (pairedCount === total) {
+        stepIndicator.innerHTML = `<strong>🎉 恭喜！本阶段全部配对完成！</strong> 点击重置可重新开始或切换阶段。`;
+      } else {
+        let nextIdx = currentStage === 'transcription' ? transcriptionPaired.findIndex(v=>!v) : translationPaired.findIndex(v=>!v);
+        stepIndicator.innerHTML = `<strong>📌 自由配对 · 必须按顺序 (从左到右)</strong> 下一个待配对: <span style="color:#2563eb;font-weight:bold;">${currentStage === 'transcription' ? `模板碱基${templateSeq[nextIdx]}` : `密码子 ${codonsList[nextIdx].codon} (${codonsList[nextIdx].aa})`}</span> 。拖动正确卡片到对应虚线框。`;
+      }
+    }
+  }
+  
+  // 获取下一个未配对索引 (用于顺序验证)
+  function getNextRequiredIndex() {
+    if (currentStage === 'transcription') {
+      return transcriptionPaired.findIndex(v => v === false);
+    } else {
+      return translationPaired.findIndex(v => v === false);
+    }
+  }
+  
+  // 检查配对并执行 (targetIdx, userValue)
+  function attemptPair(targetIdx, userValue) {
+    if (currentStage === 'transcription') {
+      // 转录: 必须按顺序配对 (从左到右)
+      const requiredIdx = getNextRequiredIndex();
+      if (targetIdx !== requiredIdx) {
+        updateHintMessage(`配对顺序错误！当前应该配对第 ${requiredIdx+1} 个模板碱基 (${templateSeq[requiredIdx]})，而不是第 ${targetIdx+1} 个。请从左到右依次配对。`, true);
+        return false;
+      }
+      // 验证碱基互补: 模板链碱基 -> 正确的RNA碱基
+      const templateBase = templateSeq[targetIdx];
+      const correctRNA = getComplementRNA(templateBase);
+      if (userValue !== correctRNA) {
+        updateHintMessage(`碱基配对错误！模板链碱基 ${templateBase} 应该配对 RNA 碱基 ${correctRNA}，您拖入的是 ${userValue}。`, true);
+        return false;
+      }
+      // 配对成功
+      if (!transcriptionPaired[targetIdx]) {
+        transcriptionPaired[targetIdx] = true;
+        transcriptionPairedBase[targetIdx] = userValue;
+        updateHintMessage(`✓ 正确！${templateBase} → ${userRNA} 配对成功。继续配对下一个。`, false);
+        drawScene();
+        rebuildDragPalette();  // 刷新可拖拽选项 (保持所有选项可用)
+        // 检查是否完成
+        if (transcriptionPaired.every(v=>v===true)) {
+          updateHintMessage(`🎉 转录阶段全部完成！所有mRNA碱基已正确合成。`, false);
+          clearDragLayer();
+          drawScene();
+        }
+        return true;
+      } else {
+        updateHintMessage(`此位置已完成配对，不可重复配对。`, true);
+        return false;
+      }
+    } 
+    else { // 翻译阶段
+      const requiredIdx = getNextRequiredIndex();
+      if (targetIdx !== requiredIdx) {
+        updateHintMessage(`翻译顺序错误！当前应当配对密码子 "${codonsList[requiredIdx].codon}" (${codonsList[requiredIdx].aa})，而不是后面的密码子。请从起始密码子开始依次配对。`, true);
+        return false;
+      }
+      const correctAnti = requiredAnticodons[targetIdx];
+      if (userValue !== correctAnti) {
+        updateHintMessage(`反密码子错误！密码子 ${codonsList[targetIdx].codon} 需要反密码子 ${correctAnti}，您拖入的是 ${userValue}。`, true);
+        return false;
+      }
+      if (!translationPaired[targetIdx]) {
+        translationPaired[targetIdx] = true;
+        translationPairedAA[targetIdx] = codonsList[targetIdx].aa;
+        updateHintMessage(`✓ 正确！tRNA (${userValue}) 携带 ${codonsList[targetIdx].aa} 进入核糖体。`, false);
+        drawScene();
+        rebuildDragPalette();
+        if (translationPaired.every(v=>v===true)) {
+          updateHintMessage(`🎉 翻译完成！多肽链 ${translationPairedAA.join('-')} 已合成。`, false);
+          clearDragLayer();
+          drawScene();
+        }
+        return true;
+      } else {
+        updateHintMessage(`该密码子已经配对过，不可重复。`, true);
+        return false;
+      }
+    }
+  }
+  
+  // ---------- 构建可拖拽卡片 ----------
+  function rebuildDragPalette() {
+    clearDragLayer();
+    if (currentStage === 'transcription') {
+      // 候选核糖核苷酸: A, U, G, C
+      const candidates = ['A', 'U', 'G', 'C'];
+      const startX = W - 90;
+      const startY = 20;
+      candidates.forEach((base, idx) => {
+        const div = document.createElement('div');
+        div.className = 'draggable';
+        div.textContent = base;
+        div.setAttribute('data-value', base);
+        div.style.left = (startX + (idx % 2) * 55) + 'px';
+        div.style.top = (startY + Math.floor(idx / 2) * 60) + 'px';
+        dragLayer.appendChild(div);
+        makeDraggable(div);
+        currentDragElements.push(div);
+      });
+    } 
+    else { // 翻译: 展示四个tRNA反密码子卡片
+      const trnas = [
+        { anti: 'UAC', aa: 'Met' },
+        { anti: 'GGU', aa: 'Pro' },
+        { anti: 'CAU', aa: 'Val' },
+        { anti: 'GAU', aa: 'Leu' }
+      ];
+      const startX = W - 100;
+      const startY = 20;
+      trnas.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = 'draggable trna-shape';
+        div.innerHTML = `<span style="font-size:1rem;font-weight:bold;">${item.anti}</span><span style="font-size:0.65rem;">(${item.aa})</span>`;
+        div.setAttribute('data-value', item.anti);
+        div.style.left = (startX + (idx % 2) * 70) + 'px';
+        div.style.top = (startY + Math.floor(idx / 2) * 75) + 'px';
+        dragLayer.appendChild(div);
+        makeDraggable(div);
+        currentDragElements.push(div);
+      });
+    }
+  }
+  
+  // 清空拖拽层
+  function clearDragLayer() {
+    dragLayer.innerHTML = '';
+    currentDragElements = [];
+  }
+  
+  // 拖拽逻辑 (保留原坐标记录)
+  function makeDraggable(el) {
+    let offsetX, offsetY;
+    let isDragging = false;
+    const start = (e) => {
+      e.preventDefault();
+      const touch = e.touches ? e.touches[0] : e;
+      const rect = el.getBoundingClientRect();
+      const wrapperRect = wrapper.getBoundingClientRect();
+      offsetX = touch.clientX - rect.left;
+      offsetY = touch.clientY - rect.top;
+      el.classList.add('grabbing');
+      el.style.zIndex = 200;
+      window.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+      window.addEventListener('touchmove', move, { passive: false });
+      window.addEventListener('touchend', end);
+    };
+    const move = (e) => {
+      e.preventDefault();
+      const touch = e.touches ? e.touches[0] : e;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      let left = touch.clientX - wrapperRect.left - offsetX;
+      let top = touch.clientY - wrapperRect.top - offsetY;
+      left = Math.min(Math.max(left, 0), wrapperRect.width - el.offsetWidth);
+      top = Math.min(Math.max(top, 0), wrapperRect.height - el.offsetHeight);
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+    };
+    const end = (e) => {
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', end);
+      window.removeEventListener('touchmove', move);
+      window.removeEventListener('touchend', end);
+      el.classList.remove('grabbing');
+      el.style.zIndex = 100;
+      // 检测释放位置对应的目标框
+      checkDropTarget(el);
+    };
+    el.addEventListener('mousedown', start);
+    el.addEventListener('touchstart', start, { passive: false });
+  }
+  
+  // 检测拖拽释放时是否在某个虚线框区域内
+  function checkDropTarget(el) {
+    const rect = el.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const centerX = rect.left + rect.width/2 - wrapperRect.left;
+    const centerY = rect.top + rect.height/2 - wrapperRect.top;
+    // 获取所有目标框位置 (动态根据当前绘图坐标)
+    const targets = getCurrentTargetSlots();
+    let bestDist = 45;
+    let bestTarget = null;
+    for (let t of targets) {
+      const dx = centerX - t.x, dy = centerY - t.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestTarget = t;
+      }
+    }
+    if (bestTarget) {
+      const userValue = el.getAttribute('data-value');
+      const success = attemptPair(bestTarget.idx, userValue);
+      if (success) {
+        // 配对成功，移除该拖拽元素 (从界面消失代表该卡片被使用，但转录中允许相同卡片多次使用，为了体验不消失但刷新即可，但消失会导致无卡片，可保留不消失；但为直观，配对成功后卡片闪烁一下复位)
+        el.style.transition = '0.1s';
+        el.style.opacity = '0.5';
+        setTimeout(() => {
+          el.style.opacity = '1';
+          el.style.transition = '';
+        }, 150);
+        // 将拖拽卡片复位到原始区域
+        resetDragElementPosition(el);
+        // 重绘场景，虚线框更新
+        drawScene();
+        rebuildDragPalette(); // 重建所有卡片，但是会重置所有卡片位置并重新生成，导致之前半透明失效；更友好方式保留卡片但刷新坐标
+        // 为了避免重建闪烁，直接重新构建拖拽面板
+      } else {
+        // 配对失败，卡片回到原来位置
+        resetDragElementPosition(el);
+      }
+    } else {
+      resetDragElementPosition(el);
+    }
+  }
+  
+  function resetDragElementPosition(el) {
+    // 恢复原位 : 重新定位到初始位置
+    const siblings = Array.from(dragLayer.children);
+    const index = siblings.indexOf(el);
+    if (currentStage === 'transcription') {
+      const startX = W - 90;
+      const startY = 20;
+      const candidates = ['A', 'U', 'G', 'C'];
+      const idx = Array.from(dragLayer.children).indexOf(el);
+      if (idx >= 0 && idx < candidates.length) {
+        el.style.left = (startX + (idx % 2) * 55) + 'px';
+        el.style.top = (startY + Math.floor(idx / 2) * 60) + 'px';
+      } else {
+        el.style.left = (W - 80) + 'px';
+        el.style.top = '20px';
+      }
+    } else {
+      const startX = W - 100;
+      const startY = 20;
+      const idx = Array.from(dragLayer.children).indexOf(el);
+      if (idx >= 0 && idx < 4) {
+        el.style.left = (startX + (idx % 2) * 70) + 'px';
+        el.style.top = (startY + Math.floor(idx / 2) * 75) + 'px';
+      } else {
+        el.style.left = (W - 80) + 'px';
+        el.style.top = '20px';
+      }
+    }
+  }
+  
+  // 获取当前所有虚线框坐标 (用于命中检测)
+  function getCurrentTargetSlots() {
+    const slots = [];
+    if (currentStage === 'transcription') {
+      const baseSpacing = W / (templateSeq.length + 1.2);
+      const startX = W/2 - (templateSeq.length-1) * baseSpacing / 2;
+      const templateY = H * 0.28 + 22; // 模板链碱基Y坐标
+      // 虚线框位于模板碱基正下方，避免遮盖文字（偏移+26px）
+      const slotY = templateY + 28;
+      for (let i = 0; i < templateSeq.length; i++) {
+        if (!transcriptionPaired[i]) {  // 只显示未配对的虚线框
+          const slotX = startX + i * baseSpacing;
+          slots.push({ x: slotX, y: slotY, idx: i });
+        }
+      }
+    } 
+    else {
+      // 翻译: 每个未配对的密码子都有一个配对区域 (位于密码子上方或适当偏移)
+      const baseSpacing = W / (mrnaSeq.length + 1.2);
+      const mRNAStartX = W/2 - (mrnaSeq.length-1) * baseSpacing / 2;
+      const mRNAY = H * 0.34;
+      for (let c = 0; c < codonsList.length; c++) {
+        if (!translationPaired[c]) {
+          const codonStartIdx = codonsList[c].startIdx;
+          const firstBaseX = mRNAStartX + codonStartIdx * baseSpacing;
+          const thirdBaseX = mRNAStartX + (codonStartIdx + 2) * baseSpacing;
+          const centerX = (firstBaseX + thirdBaseX) / 2;
+          const slotY = mRNAY - 20;   // 放在密码子上方，不遮挡碱基
+          slots.push({ x: centerX, y: slotY, idx: c });
+        }
+      }
+    }
+    return slots;
+  }
+  
+  // ---------- 绘图核心 (所有虚线框同时显示) ----------
+  function drawScene() {
+    if (!W || !H) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    if (currentStage === 'transcription') {
+      drawTranscriptionFull();
+    } else {
+      drawTranslationFull();
+    }
+  }
+  
+  function drawTranscriptionFull() {
+    const baseSpacing = W / (templateSeq.length + 1.2);
+    const startX = W/2 - (templateSeq.length-1) * baseSpacing / 2;
+    const dnaY = H * 0.28;
+    const codingY = dnaY - 22;
+    const templateY = dnaY + 22;
+    const mrnaY = templateY + 48;
+    // 网格装饰
+    ctx.save();
+    // DNA编码链和模板链
+    ctx.strokeStyle = '#a8d4ee'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(startX-8, codingY); ctx.lineTo(startX+(templateSeq.length-1)*baseSpacing+8, codingY); ctx.stroke();
+    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(startX-8, templateY); ctx.lineTo(startX+(templateSeq.length-1)*baseSpacing+8, templateY); ctx.stroke();
+    // 绘制碱基
+    for (let i=0; i<templateSeq.length; i++) {
+      const bx = startX + i*baseSpacing;
+      ctx.fillStyle = '#1e3a8a';
+      ctx.font = MONO_FONT;
+      ctx.fillText(templateSeq[i], bx, templateY+16);
+      ctx.fillStyle = '#2563eb';
+      ctx.fillText(codingSeq[i], bx, codingY-16);
+      // 碱基对连线
+      ctx.beginPath(); ctx.setLineDash([3,5]); ctx.strokeStyle = '#cbd5e6';
+      ctx.moveTo(bx, codingY-6); ctx.lineTo(bx, templateY+6); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    // RNA聚合酶
+    const enzymeX = startX + (transcriptionPaired.filter(v=>v===true).length) * baseSpacing - baseSpacing*0.3;
+    ctx.fillStyle = '#8b5cf6'; ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.ellipse(enzymeX, dnaY, 30, 20, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = 'white'; ctx.font = `bold 10px "PingFang SC"`;
+    ctx.fillText('RNA聚合酶', enzymeX-20, dnaY+4);
+    // 已合成的mRNA
+    let pairedCount = transcriptionPaired.filter(v=>v===true).length;
+    if (pairedCount > 0) {
+      ctx.strokeStyle = '#e8764a'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(startX, mrnaY); ctx.lineTo(startX + (pairedCount-1)*baseSpacing, mrnaY); ctx.stroke();
+      for (let i=0; i<pairedCount; i++) {
+        const bx = startX + i*baseSpacing;
+        ctx.fillStyle = '#d97706';
+        ctx.font = MONO_FONT;
+        ctx.fillText(transcriptionPairedBase[i] || '?', bx, mrnaY+16);
+      }
+    }
+    // 绘制所有未配对的虚线框 (位于模板链正下方，避免重叠)
+    const slotY = templateY + 32;
+    for (let i=0; i<templateSeq.length; i++) {
+      if (!transcriptionPaired[i]) {
+        const bx = startX + i*baseSpacing;
+        ctx.save();
+        ctx.strokeStyle = '#f97316'; ctx.lineWidth = 2.5;
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(bx-20, slotY-14, 40, 32);
+        ctx.fillStyle = 'rgba(249,115,22,0.05)';
+        ctx.fillRect(bx-20, slotY-14, 40, 32);
+        ctx.fillStyle = '#f97316'; ctx.font = `10px monospace`;
+        ctx.fillText('配对区', bx-12, slotY+4);
+        ctx.restore();
+      }
+    }
+    ctx.fillStyle = '#475569'; ctx.font = UI_FONT;
+    ctx.fillText('模板链 3\' → 5\'', startX-30, templateY+30);
+    ctx.fillText('mRNA 5\' → 3\'', startX-30, mrnaY+30);
+  }
+  
+  function drawTranslationFull() {
+    const baseSpacing = W / (mrnaSeq.length + 1.2);
+    const mRNAStartX = W/2 - (mrnaSeq.length-1) * baseSpacing / 2;
+    const mRNAY = H * 0.34;
+    // mRNA链
+    ctx.strokeStyle = '#e8764a'; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(mRNAStartX-8, mRNAY); ctx.lineTo(mRNAStartX+(mrnaSeq.length-1)*baseSpacing+8, mRNAY); ctx.stroke();
+    for (let i=0; i<mrnaSeq.length; i++) {
+      ctx.fillStyle = '#c2410c';
+      ctx.font = MONO_FONT;
+      ctx.fillText(mrnaSeq[i], mRNAStartX + i*baseSpacing, mRNAY+16);
+    }
+    // 核糖体图示(位置随配对进度移动)
+    let progress = translationPaired.filter(v=>v===true).length;
+    let ribosomeX = mRNAStartX + (progress * 3 * baseSpacing) + baseSpacing;
+    ribosomeX = Math.min(ribosomeX, mRNAStartX + (mrnaSeq.length-1)*baseSpacing + 20);
+    ctx.fillStyle = '#94a3b8'; ctx.beginPath(); ctx.ellipse(ribosomeX, mRNAY-10, 40, 24, 0, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#334155'; ctx.font = UI_FONT; ctx.fillText('核糖体', ribosomeX-20, mRNAY-18);
+    // 绘制肽链
+    if (progress > 0) {
+      const startPeptide = mRNAStartX - 10;
+      const endPeptide = mRNAStartX + (progress * 3 - 1) * baseSpacing;
+      ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.moveTo(startPeptide, mRNAY-38); ctx.lineTo(endPeptide, mRNAY-38); ctx.stroke();
+      ctx.fillStyle = '#9333ea'; ctx.font = UI_FONT;
+      ctx.fillText('多肽链', (startPeptide+endPeptide)/2-20, mRNAY-48);
+    }
+    // 虚线框 (每个未配对的密码子区域，位于密码子上方)
+    for (let c=0; c<codonsList.length; c++) {
+      if (!translationPaired[c]) {
+        const startIdx = codonsList[c].startIdx;
+        const firstX = mRNAStartX + startIdx * baseSpacing;
+        const lastX = mRNAStartX + (startIdx+2) * baseSpacing;
+        const centerX = (firstX + lastX)/2;
+        ctx.save();
+        ctx.strokeStyle = '#f97316'; ctx.lineWidth = 2.5;
+        ctx.setLineDash([6,6]);
+        ctx.strokeRect(centerX-28, mRNAY-36, 56, 32);
+        ctx.fillStyle = 'rgba(249,115,22,0.08)'; ctx.fillRect(centerX-28, mRNAY-36, 56, 32);
+        ctx.fillStyle = '#f97316'; ctx.font = `9px monospace`;
+        ctx.fillText('tRNA结合区', centerX-24, mRNAY-18);
+        ctx.restore();
+      } else {
+        // 显示已配对的tRNA图示
+        const startIdx = codonsList[c].startIdx;
+        const firstX = mRNAStartX + startIdx * baseSpacing;
+        const lastX = mRNAStartX + (startIdx+2) * baseSpacing;
+        const centerX = (firstX + lastX)/2;
+        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.ellipse(centerX, mRNAY-28, 18, 14, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = `bold 8px monospace`;
+        ctx.fillText(requiredAnticodons[c], centerX-10, mRNAY-25);
+        ctx.fillStyle = '#065f46'; ctx.font = `bold 9px`;
+        ctx.fillText(codonsList[c].aa, centerX-6, mRNAY-36);
+      }
+    }
+    ctx.fillStyle = '#475569'; ctx.font = UI_FONT;
+    ctx.fillText('mRNA 5\' → 3\'', mRNAStartX-30, mRNAY+36);
+  }
+  
+  // 自动补全下一个正确配对
+  function autoCompleteNext() {
+    const nextIdx = getNextRequiredIndex();
+    if (nextIdx === -1) {
+      updateHintMessage(`已完成全部配对！无需补全。`, false);
+      return;
+    }
+    if (currentStage === 'transcription') {
+      const correctBase = getComplementRNA(templateSeq[nextIdx]);
+      attemptPair(nextIdx, correctBase);
+    } else {
+      const correctAnti = requiredAnticodons[nextIdx];
+      attemptPair(nextIdx, correctAnti);
+    }
+    drawScene();
+  }
+  
+  // 重置阶段
+  function resetFull() {
+    resetState();
+    drawScene();
+  }
+  
+  function switchStage(stage) {
+    currentStage = stage;
+    clearDragLayer();
+    if (stage === 'transcription') {
+      transcriptionPaired.fill(false);
+      transcriptionPairedBase.fill(null);
+      legendTrans.style.display = 'flex';
+      legendTransla.style.display = 'none';
+    } else {
+      translationPaired.fill(false);
+      translationPairedAA.fill(null);
+      legendTrans.style.display = 'none';
+      legendTransla.style.display = 'flex';
+    }
+    stageTabs.forEach(tab => {
+      if (tab.dataset.stage === stage) tab.classList.add('active');
+      else tab.classList.remove('active');
+    });
+    resizeCanvas();
+    drawScene();
+    rebuildDragPalette();
+    updateHintMessage(null, false);
+  }
+  
+  function resizeCanvas() {
+    const rect = wrapper.getBoundingClientRect();
+    const cssW = rect.width, cssH = rect.height;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = cssW * dpr; canvas.height = cssH * dpr;
+    canvas.style.width = cssW + 'px'; canvas.style.height = cssH + 'px';
+    W = cssW; H = cssH;
+    ctx.setTransform(1,0,0,1,0,0); ctx.scale(dpr,dpr);
+    drawScene();
+    rebuildDragPalette();
+  }
+  
+  // 事件绑定
+  btnReset.addEventListener('click', () => resetFull());
+  btnAuto.addEventListener('click', () => autoCompleteNext());
+  stageTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      if (tab.dataset.stage !== currentStage) switchStage(tab.dataset.stage);
+    });
+  });
+  window.addEventListener('resize', () => { resizeCanvas(); });
+  // 初始化
+  resizeCanvas();
+  switchStage('transcription');
+})();
+</script>
+</body>
+</html>

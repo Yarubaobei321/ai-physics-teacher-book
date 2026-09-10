@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>生物必修二：遗传定律交互模拟器 | 分离定律 & 自由组合定律</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动干扰，不影响文本选择 */
+        }
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #e9f5e6 0%, #c8e6c9 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        /* 主容器 */
+        .app-container {
+            max-width: 1400px;
+            width: 100%;
+            background: #fef9e8;
+            border-radius: 48px;
+            box-shadow: 0 25px 45px rgba(0, 20, 0, 0.3);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        /* 头部模式切换 */
+        .mode-header {
+            display: flex;
+            background: #2e5c2e;
+            padding: 0 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .mode-buttons {
+            display: flex;
+            gap: 16px;
+            padding: 12px 0;
+        }
+        .mode-btn {
+            background: #f5b042;
+            border: none;
+            padding: 10px 28px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 40px;
+            cursor: pointer;
+            color: #2d3e2b;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .mode-btn.active {
+            background: #ffdd99;
+            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2e5c2e;
+            color: #1f4f1f;
+        }
+        .mode-btn:hover {
+            background: #ffc266;
+            transform: scale(0.97);
+        }
+        .close-btn {
+            background: #aa6f3c;
+            color: white;
+            border: none;
+            border-radius: 32px;
+            padding: 8px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .close-btn:hover {
+            background: #8b562a;
+        }
+        /* 主内容区 */
+        .main-panel {
+            padding: 24px 28px;
+        }
+        /* 展示模式表单区域 */
+        .demo-options, .custom-options {
+            background: #fff7e8;
+            border-radius: 32px;
+            padding: 20px;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+            border: 1px solid #e9d6b0;
+        }
+        .selector-group {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .radio-group label {
+            margin-right: 20px;
+            font-weight: 600;
+        }
+        button.primary {
+            background: #4c8b4c;
+            border: none;
+            color: white;
+            padding: 10px 28px;
+            border-radius: 60px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        button.primary:hover {
+            background: #3a6e3a;
+            transform: translateY(-2px);
+        }
+        button.secondary {
+            background: #b8863b;
+        }
+        /* 遗传图解区域 */
+        .genetics-diagram {
+            background: #fef5e0;
+            border-radius: 40px;
+            padding: 20px;
+            margin-top: 20px;
+            overflow-x: auto;
+            border: 2px solid #e2cf9c;
+            min-height: 300px;
+        }
+        .generation-card {
+            background: #ffffffd9;
+            border-radius: 28px;
+            padding: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-left: 12px solid #8bc34a;
+        }
+        .pea-images {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            margin: 15px 0;
+        }
+        .pheno-card {
+            background: #fff3cf;
+            border-radius: 20px;
+            padding: 12px;
+            text-align: center;
+            width: 130px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .pea-emoji {
+            font-size: 55px;
+        }
+        .ratio {
+            font-weight: bold;
+            background: #ffecb3;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 40px;
+            margin-top: 8px;
+        }
+        .gene-type {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        hr {
+            margin: 15px 0;
+            border-color: #ecd9a6;
+        }
+        .custom-breed-panel {
+            background: #e7f0e3;
+            border-radius: 28px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .inline-select {
+            padding: 6px 12px;
+            border-radius: 24px;
+            border: 1px solid #b3a05e;
+            margin: 0 8px;
+            font-weight: bold;
+        }
+        .warning {
+            color: #b45f2b;
+            font-style: italic;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        @media (max-width: 700px) {
+            .main-panel {
+                padding: 16px;
+            }
+            .pheno-card {
+                width: 100px;
+            }
+        }
+        .close-icon {
+            float: right;
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: #cfa668;
+            padding: 0px 12px;
+            border-radius: 30px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="appRoot">
+    <div class="mode-header">
+        <div class="mode-buttons">
+            <button class="mode-btn active" data-mode="demo">🌱 展示模式</button>
+            <button class="mode-btn" data-mode="custom">🧬 自定义交配模式</button>
+        </div>
+        <button class="close-btn" id="globalResetBtn">🏠 重置 & 返回主界面</button>
+    </div>
+    <div class="main-panel" id="mainPanel">
+        <!-- 动态渲染内容 -->
+    </div>
+</div>
+
+<script>
+    // ---------- 全局状态 ----------
+    let currentMode = "demo";   // 'demo' or 'custom'
+    let demoState = {
+        lawType: "segregation",   // 'segregation' or 'independent'
+        running: false,
+        stepIndex: 0,            // 0:亲本P, 1:F1, 2:F2
+        diagramHTML: ""
+    };
+    // 自定义交配模式状态机
+    let customState = {
+        active: false,           // 是否在模拟中 (展示图解未关闭)
+        parent1Geno: "AA",       // 可选 AA, Aa, aa 或当自由组合时格式 "AABB"等，注意自由组合支持双基因
+        parent2Geno: "aa",
+        isDihybrid: false,       // 是否双基因自由组合模拟: 由用户选的基因型包含B/b决定自动识别
+        historyRendered: false,   // 是否已渲染亲本及F1代结果
+        currentStep: "F1",        // 'F1' , 'F2_self', 'F2_random' , 'stopped'
+        nextAction: null,         // 等待用户选择自交/自由交配
+        lastF1Genotypes: null,    // 存储子一代基因型分布 [{genotype, ratio}]
+        lastF1Pheno: null,
+        f1Details: null,
+        diagramCache: "",          // 当前显示的遗传图解html
+        stopped: false
+    };
+
+    // 辅助: 豌豆图片映射 (分离定律单性状)
+    function getPeaImageByPheno(pheno, lawType = "segregation") {
+        // pheno 例如 "黄色" "绿色" 或者独立 "黄圆","黄皱","绿圆","绿皱"
+        if (lawType === "segregation") {
+            if (pheno === "黄色") return "🟡 黄色豌豆";
+            if (pheno === "绿色") return "🟢 绿色豌豆";
+            return "🟡?";
+        } else {
+            // 自由组合显示组合图标
+            if (pheno === "黄圆") return "🟡🔵 黄圆";
+            if (pheno === "黄皱") return "🟡〰️ 黄皱";
+            if (pheno === "绿圆") return "🟢🔵 绿圆";
+            if (pheno === "绿皱") return "🟢〰️ 绿皱";
+            return pheno;
+        }
+    }
+
+    // 构建分离定律完整图解 (P, F1, F2 逐步)
+    function buildSegregationDiagram(stepLimit = 2) { // step 0亲本,1 F1,2 F2
+        let html = `<div class="generation-card"><h3>📍 亲本 (P) : 黄粒(YY) × 绿粒(yy)</h3>
+        <div class="pea-images"><div class="pheno-card"><div class="pea-emoji">🟡</div><div>表型: 黄色</div><div class="gene-type">YY</div></div>
+        <span style="font-size:28px;">✖</span>
+        <div class="pheno-card"><div class="pea-emoji">🟢</div><div>表型: 绿色</div><div class="gene-type">yy</div></div></div>
+        <div>配子: Y 和 y → 杂交得 F1</div></div>`;
+        if (stepLimit >= 1) {
+            html += `<div class="generation-card"><h3>🌱 子一代 (F1) : 全部为黄粒</h3>
+            <div class="pea-images"><div class="pheno-card"><div class="pea-emoji">🟡</div><div>表型: 黄色</div><div class="gene-type">Yy</div></div></div>
+            <div>F1 自交 (Yy × Yy) → 产生配子 Y, y</div></div>`;
+        }
+        if (stepLimit >= 2) {
+            html += `<div class="generation-card"><h3>🌿 子二代 (F2) : 自交后代</h3>
+            <div class="pea-images">
+                <div class="pheno-card"><div class="pea-emoji">🟡</div><div>黄粒 YY</div><div class="gene-type">YY</div></div>
+                <div class="pheno-card"><div class="pea-emoji">🟡</div><div>黄粒 Yy</div><div class="gene-type">Yy</div></div>
+                <div class="pheno-card"><div class="pea-emoji">🟢</div><div>绿粒 yy</div><div class="gene-type">yy</div></div>
+            </div>
+            <div><strong>基因型比例:</strong> 1 YY : 2 Yy : 1 yy</div>
+            <div><strong>表型比例:</strong> 黄色 : 绿色 = 3 : 1</div>
+            <div class="ratio">📊 性状分离比 3:1</div></div>`;
+        }
+        return html;
+    }
+
+    // 自由组合定律图解 (黄绿圆皱)
+    function buildIndependentDiagram(stepLimit = 2) {
+        let html = `<div class="generation-card"><h3>🧬 亲本 (P) : 黄圆 (YYRR) × 绿皱 (yyrr)</h3>
+        <div class="pea-images"><div class="pheno-card"><div class="pea-emoji">🟡🔵</div><div>黄圆 YYRR</div></div><span>✖</span>
+        <div class="pheno-card"><div class="pea-emoji">🟢〰️</div><div>绿皱 yyrr</div></div></div>
+        <div>配子: YR 和 yr → F1 全为 YyRr (黄圆)</div></div>`;
+        if (stepLimit >= 1) {
+            html += `<div class="generation-card"><h3>🌱 子一代 (F1) : 黄圆杂合子</h3>
+            <div class="pea-images"><div class="pheno-card"><div class="pea-emoji">🟡🔵</div><div>黄圆 YyRr</div><div class="gene-type">YyRr</div></div></div>
+            <div>F1 自交 (YyRr × YyRr) → 配子 YR, Yr, yR, yr</div></div>`;
+        }
+        if (stepLimit >= 2) {
+            html += `<div class="generation-card"><h3>🌿 子二代 (F2) : 9:3:3:1 分离比</h3>
+            <div class="pea-images" style="justify-content:flex-start;">
+                <div class="pheno-card"><div class="pea-emoji">🟡🔵</div><div>黄圆</div><div>基因型: Y_R_</div></div>
+                <div class="pheno-card"><div class="pea-emoji">🟡〰️</div><div>黄皱</div><div>基因型: Y_rr</div></div>
+                <div class="pheno-card"><div class="pea-emoji">🟢🔵</div><div>绿圆</div><div>基因型: yyR_</div></div>
+                <div class="pheno-card"><div class="pea-emoji">🟢〰️</div><div>绿皱</div><div>基因型: yyrr</div></div>
+            </div>
+            <div><strong>表型比例:</strong> 黄圆 : 黄皱 : 绿圆 : 绿皱 = 9 : 3 : 3 : 1</div>
+            <div class="ratio">✨ 孟德尔自由组合定律 9:3:3:1 ✨</div>
+            <div>详细基因型: 1YYRR:2YYRr:1YYrr:2YyRR:4YyRr:2Yyrr:1yyRR:2yyRr:1yyrr</div></div>`;
+        }
+        return html;
+    }
+
+    // 渲染展示模式 (逐步动画)
+    let currentDemoInterval = null;
+    function renderDemoMode() {
+        const panel = document.getElementById("mainPanel");
+        if (!panel) return;
+        let law = demoState.lawType;
+        let stepMax = demoState.stepIndex;
+        let content = `<div class="demo-options">
+            <div class="selector-group">
+                <div class="radio-group"><strong>📌 选择遗传定律：</strong>
+                    <label><input type="radio" name="law" value="segregation" ${law === 'segregation' ? 'checked' : ''}> 分离定律 (粒色黄/绿)</label>
+                    <label><input type="radio" name="law" value="independent" ${law === 'independent' ? 'checked' : ''}> 自由组合定律 (粒色+粒形)</label>
+                </div>
+                <button id="startDemoBtn" class="primary">▶ 开始展示 (逐步)</button>
+                <button id="resetDemoBtn" class="secondary">🔄 重置展示</button>
+            </div>
+        </div>
+        <div class="genetics-diagram" id="diagramArea">${getCurrentDemoDiagram()}</div>`;
+        panel.innerHTML = content;
+        // 绑定事件
+        document.querySelectorAll('input[name="law"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                demoState.lawType = e.target.value;
+                demoState.stepIndex = 0;
+                renderDemoMode();
+            });
+        });
+        document.getElementById("startDemoBtn")?.addEventListener("click", startDemoProgressive);
+        document.getElementById("resetDemoBtn")?.addEventListener("click", () => {
+            demoState.stepIndex = 0;
+            if (currentDemoInterval) clearInterval(currentDemoInterval);
+            renderDemoMode();
+        });
+    }
+
+    function getCurrentDemoDiagram() {
+        let law = demoState.lawType;
+        let step = demoState.stepIndex;
+        if (law === "segregation") {
+            if (step === 0) return buildSegregationDiagram(0);
+            if (step === 1) return buildSegregationDiagram(1);
+            return buildSegregationDiagram(2);
+        } else {
+            if (step === 0) return buildIndependentDiagram(0);
+            if (step === 1) return buildIndependentDiagram(1);
+            return buildIndependentDiagram(2);
+        }
+    }
+
+    function startDemoProgressive() {
+        if (currentDemoInterval) clearInterval(currentDemoInterval);
+        demoState.stepIndex = 0;
+        renderDemoMode();
+        let steps = [0,1,2];
+        let idx = 0;
+        currentDemoInterval = setInterval(() => {
+            if (idx < steps.length) {
+                demoState.stepIndex = steps[idx];
+                renderDemoMode();
+                idx++;
+            } else {
+                clearInterval(currentDemoInterval);
+                currentDemoInterval = null;
+            }
+        }, 1800);
+    }
+
+    // ---------- 自定义交配模块核心 ----------
+    // 解析亲本基因型支持单基因 A/a 或双基因 A/a B/b (格式如 "AABB","AaBB","Aabb","aaBB" 等)
+    function parseGenotype(geno) {
+        // 返回 { type: 'mono', alleles: [A1,A2] } 或 { type: 'di', locus1: [A1,A2], locus2: [B1,B2] }
+        const upper = geno.toUpperCase();
+        if (upper.includes('B') || upper.includes('b') && (upper.length>=3)) {
+            // 双基因 格式如 AABB, AaBb, aaBB等
+            let match = upper.match(/^([A|a])([A|a])([B|b])([B|b])$/);
+            if (!match) return null;
+            return { type: "di", A1: match[1], A2: match[2], B1: match[3], B2: match[4] };
+        } else {
+            let match = upper.match(/^([A|a])([A|a])$/);
+            if (!match) return null;
+            return { type: "mono", A1: match[1], A2: match[2] };
+        }
+    }
+    // 杂交单基因
+    function crossMono(p1, p2) {
+        let gametes1 = [p1.A1, p1.A2];
+        let gametes2 = [p2.A1, p2.A2];
+        let combos = {};
+        for(let g1 of gametes1){
+            for(let g2 of gametes2){
+                let off = [g1, g2].sort().join('');
+                combos[off] = (combos[off]||0)+1;
+            }
+        }
+        let total = 4;
+        let result = Object.entries(combos).map(([g, c]) => ({genotype: g, ratio: c/total, ratioText: `${c}/${total}`}));
+        return result;
+    }
+    // 双基因杂交 (独立分配)
+    function crossDi(p1, p2){
+        let gametes1 = [];
+        for(let a of [p1.A1, p1.A2]){
+            for(let b of [p1.B1, p1.B2]){
+                gametes1.push(a+b);
+            }
+        }
+        let gametes2 = [];
+        for(let a of [p2.A1, p2.A2]){
+            for(let b of [p2.B1, p2.B2]){
+                gametes2.push(a+b);
+            }
+        }
+        let combos = {};
+        for(let g1 of gametes1){
+            for(let g2 of gametes2){
+                let a1 = g1[0], a2 = g2[0];
+                let b1 = g1[1], b2 = g2[1];
+                let offA = [a1,a2].sort().join('');
+                let offB = [b1,b2].sort().join('');
+                let geno = offA+offB;
+                combos[geno] = (combos[geno]||0)+1;
+            }
+        }
+        let total = 16;
+        return Object.entries(combos).map(([g,c]) => ({genotype: g, ratio: c/total, ratioText: `${c}/${total}`}));
+    }
+    // 单基因自交后代比例 (基于现有F1基因型分布) 或 自由交配需按基因频率计算
+    function selfMonoFromDistribution(distribution) {
+        // distribution [{genotype, ratio}] 用配子池方法
+        let alleleCount = { A:0, a:0 };
+        let total = 0;
+        for(let item of distribution){
+            let freq = item.ratio;
+            let gen = item.genotype;
+            let a1=gen[0], a2=gen[1];
+            alleleCount[a1] += freq;
+            alleleCount[a2] += freq;
+            total += freq*2;
+        }
+        let pA = alleleCount.A/total;
+        let pa = alleleCount.a/total;
+        let newDist = [
+            {genotype:"AA", ratio: pA*pA, ratioText: (pA*pA).toFixed(3)},
+            {genotype:"Aa", ratio: 2*pA*pa, ratioText: (2*pA*pa).toFixed(3)},
+            {genotype:"aa", ratio: pa*pa, ratioText: (pa*pa).toFixed(3)}
+        ];
+        return newDist;
+    }
+    // 双基因自由交配 基于配子频率
+    function randomMatingDiFromDist(distribution) {
+        let gamFreq = {};
+        for(let item of distribution){
+            let freq = item.ratio;
+            let g = item.genotype;
+            let a1=g[0], a2=g[1], b1=g[2], b2=g[3];
+            let gametes = [`${a1}${b1}`,`${a1}${b2}`,`${a2}${b1}`,`${a2}${b2}`];
+            for(let gam of gametes){
+                gamFreq[gam] = (gamFreq[gam]||0) + freq*0.25;
+            }
+        }
+        let gamList = Object.entries(gamFreq);
+        let combos = {};
+        for(let [g1, f1] of gamList){
+            for(let [g2, f2] of gamList){
+                let aA = [g1[0],g2[0]].sort().join('');
+                let bB = [g1[1],g2[1]].sort().join('');
+                let zyg = aA+bB;
+                let prob = f1*f2;
+                combos[zyg] = (combos[zyg]||0) + prob;
+            }
+        }
+        return Object.entries(combos).map(([g, p]) => ({genotype: g, ratio: p, ratioText: p.toFixed(4)}));
+    }
+    // 渲染自定义图解
+    function renderCustomMode(resetView = true) {
+        const panel = document.getElementById("mainPanel");
+        if(!panel) return;
+        let html = `<div class="custom-options">
+            <div class="flex-between"><h3>🧬 自定义双亲基因型 (支持 A/a 单性状 或 A/a & B/b 两对基因)</h3>
+            <button id="backToMainCustom" class="close-btn" style="background:#aa6f3c;">✖ 关闭并返回主界面</button></div>
+            <div><label>亲本1基因型: <input type="text" id="parent1Geno" placeholder="例: AA 或 AABB" value="${customState.parent1Geno}" style="border-radius:20px;padding:6px;"></label>
+            <label>亲本2基因型: <input type="text" id="parent2Geno" placeholder="例: aa 或 aabb" value="${customState.parent2Geno}" style="border-radius:20px;padding:6px;"></label>
+            <button id="simulateF1Btn" class="primary">🔬 开始模拟 (杂交得F1)</button></div>
+            <div id="customDiagramArea" class="genetics-diagram" style="margin-top:16px;">${customState.diagramCache || "等待开始模拟……"}</div>`;
+        if(customState.historyRendered && !customState.stopped){
+            html += `<div class="custom-breed-panel"><strong>⚡ 子一代已生成，请选择后续操作：</strong>
+            <button id="selfingBtn" class="secondary">🌻 分别自交</button>
+            <button id="randomMatingBtn" class="secondary">🌀 自由交配</button>
+            <button id="stopSimBtn" class="close-btn">⏹️ 停止模拟并保留图解</button></div>`;
+        } else if(customState.stopped){
+            html += `<div class="custom-breed-panel"><em>✅ 遗传图解已保留，可按右上角关闭</em></div>`;
+        }
+        panel.innerHTML = html;
+        document.getElementById("backToMainCustom")?.addEventListener("click", ()=>{
+            resetCustomToIdle();
+            switchMode("demo");
+        });
+        document.getElementById("simulateF1Btn")?.addEventListener("click", () => {
+            let p1 = document.getElementById("parent1Geno").value.trim().toUpperCase();
+            let p2 = document.getElementById("parent2Geno").value.trim().toUpperCase();
+            let geno1 = parseGenotype(p1);
+            let geno2 = parseGenotype(p2);
+            if(!geno1 || !geno2 || geno1.type !== geno2.type){
+                alert("基因型无效或类型不一致（单/双基因不匹配）请使用AA/Aa/aa 或 AABB/ AaBb等格式");
+                return;
+            }
+            customState.parent1Geno = p1;
+            customState.parent2Geno = p2;
+            customState.isDihybrid = (geno1.type === "di");
+            let crossResult = customState.isDihybrid ? crossDi(geno1, geno2) : crossMono(geno1, geno2);
+            customState.lastF1Genotypes = crossResult;
+            customState.historyRendered = true;
+            customState.stopped = false;
+            customState.currentStep = "F1";
+            // 构建F1显示
+            let f1Html = `<div class="generation-card"><h3>✨ 亲本杂交 → 子一代 (F1) ✨</h3><div>亲本: ${p1} × ${p2}</div>
+            <div><strong>子代基因型及比例:</strong><br/>${crossResult.map(g => `${g.genotype} : ${g.ratioText}`).join(' ; ')}</div></div>`;
+            customState.diagramCache = f1Html;
+            customState.lastF1Pheno = crossResult;
+            renderCustomMode();
+        });
+        if(customState.historyRendered && !customState.stopped){
+            document.getElementById("selfingBtn")?.addEventListener("click", ()=>{
+                let newDist = customState.isDihybrid ? randomMatingDiFromDist(customState.lastF1Genotypes) : selfMonoFromDistribution(customState.lastF1Genotypes);
+                let addHtml = `<div class="generation-card"><h3>🌱 自交后代 (F2) 分别自交结果</h3><div>${newDist.map(g=>`${g.genotype} : ${g.ratioText}`).join(' ; ')}</div></div>`;
+                customState.diagramCache += addHtml;
+                customState.stopped = true;
+                renderCustomMode();
+            });
+            document.getElementById("randomMatingBtn")?.addEventListener("click", ()=>{
+                let newDist = customState.isDihybrid ? randomMatingDiFromDist(customState.lastF1Genotypes) : selfMonoFromDistribution(customState.lastF1Genotypes);
+                let addHtml = `<div class="generation-card"><h3>🌀 自由交配后代</h3><div>${newDist.map(g=>`${g.genotype} : ${g.ratioText}`).join(' ; ')}</div></div>`;
+                customState.diagramCache += addHtml;
+                customState.stopped = true;
+                renderCustomMode();
+            });
+            document.getElementById("stopSimBtn")?.addEventListener("click", ()=>{
+                customState.stopped = true;
+                renderCustomMode();
+            });
+        }
+    }
+    function resetCustomToIdle(){
+        customState = {
+            active: false, parent1Geno: "AA", parent2Geno: "aa", isDihybrid: false,
+            historyRendered: false, currentStep: "F1", nextAction: null,
+            lastF1Genotypes: null, lastF1Pheno: null, f1Details: null, diagramCache: "", stopped: false
+        };
+    }
+    function switchMode(mode){
+        currentMode = mode;
+        if(currentMode === "demo"){
+            if(customState.historyRendered) resetCustomToIdle();
+            if(currentDemoInterval) clearInterval(currentDemoInterval);
+            demoState.stepIndex = 0;
+            renderDemoMode();
+        } else {
+            if(currentDemoInterval) clearInterval(currentDemoInterval);
+            renderCustomMode();
+        }
+        document.querySelectorAll(".mode-btn").forEach(btn => {
+            if(btn.dataset.mode === mode) btn.classList.add("active");
+            else btn.classList.remove("active");
+        });
+    }
+    // 事件挂载
+    document.querySelectorAll(".mode-btn").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            let mode = btn.dataset.mode;
+            switchMode(mode);
+        });
+    });
+    document.getElementById("globalResetBtn")?.addEventListener("click", () => {
+        if(currentDemoInterval) clearInterval(currentDemoInterval);
+        resetCustomToIdle();
+        demoState.stepIndex = 0;
+        switchMode("demo");
+    });
+    // 初始化
+    switchMode("demo");
+</script>
+</body>
+</html>

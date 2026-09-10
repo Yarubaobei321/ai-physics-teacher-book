@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>细胞分裂与分化 - 交互式演示</title>
+    <style>
+        :root {
+            --bg: #f7f4f0;
+            --card-bg: #ffffff;
+            --text: #2c2416;
+            --text-secondary: #5c5347;
+            --accent: #7b4fbf;
+            --accent-light: #e8ddf5;
+            --membrane: #d4856b;
+            --cytoplasm: #fbe8df;
+            --nucleus: #c5d5f0;
+            --nuclear-membrane: #5b7db5;
+            --chromosome: #6b3fa0;
+            --spindle: #4caf84;
+            --centrosome: #e8833a;
+            --cleavage: #e8967a;
+            --phase-active: #7b4fbf;
+            --phase-inactive: #d5c8e8;
+            --button-bg: #f0ebe3;
+            --button-hover: #e3d9cc;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.10), 0 3px 10px rgba(0, 0, 0, 0.05);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 20px;
+            --transition: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(160deg, #f5f1eb 0%, #faf7f3 30%, #f0ece5 60%, #f7f3ed 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 16px 40px;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 820px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 标题区域 */
+        .header {
+            text-align: center;
+            padding: 8px 0;
+        }
+        .header .icon-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .header .cell-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--cytoplasm);
+            border: 3px solid var(--membrane);
+            position: relative;
+            flex-shrink: 0;
+        }
+        .header .cell-icon::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--nucleus);
+            border: 2px solid var(--nuclear-membrane);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .header h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            background: linear-gradient(135deg, #5b3e8c, #7b4fbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.3;
+        }
+        .header .subtitle {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            font-weight: 400;
+        }
+
+        /* 标签切换 */
+        .tab-switcher {
+            display: flex;
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 5px;
+            gap: 4px;
+            box-shadow: var(--shadow-sm);
+            align-self: center;
+        }
+        .tab-btn {
+            padding: 11px 26px;
+            border-radius: 24px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            background: transparent;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .tab-btn.active {
+            background: var(--accent);
+            color: #fff;
+            box-shadow: var(--shadow-md);
+        }
+        .tab-btn:hover:not(.active) {
+            background: var(--button-bg);
+            color: var(--text);
+        }
+
+        /* 主卡片 */
+        .main-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 20px 20px 16px;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: var(--transition);
+        }
+
+        /* Canvas容器 */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1.5 / 1;
+            max-height: 480px;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #fefdfb 0%, #f8f4ed 60%, #f0e9dc 100%);
+            box-shadow: inset 0 0 60px rgba(180, 160, 140, 0.10);
+            cursor: default;
+        }
+        .canvas-wrapper canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .canvas-hint {
+            position: absolute;
+            bottom: 10px;
+            right: 16px;
+            font-size: 0.75rem;
+            color: #b5a99a;
+            pointer-events: none;
+            letter-spacing: 0.03em;
+        }
+
+        /* 阶段信息栏 */
+        .phase-info-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-light);
+            color: var(--accent);
+            padding: 7px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+        .phase-badge .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+        .phase-desc {
+            flex: 1;
+            min-width: 180px;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            letter-spacing: 0.02em;
+        }
+
+        /* 控制栏 */
+        .controls-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .ctrl-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid #e0d8cc;
+            background: var(--card-bg);
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+            font-family: inherit;
+        }
+        .ctrl-btn:hover {
+            background: var(--button-hover);
+            border-color: #c8bda8;
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        .ctrl-btn:active {
+            transform: scale(0.94);
+            transition: 0.1s;
+        }
+        .ctrl-btn.play-btn {
+            width: 50px;
+            height: 50px;
+            font-size: 1.3rem;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            box-shadow: var(--shadow-md);
+        }
+        .ctrl-btn.play-btn:hover {
+            background: #6a3db5;
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+        .ctrl-btn.play-btn.playing {
+            background: #e8833a;
+        }
+        .ctrl-btn.play-btn.playing:hover {
+            background: #d4722e;
+        }
+        .speed-indicator {
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.03em;
+            padding: 0 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+        .speed-indicator:hover {
+            color: var(--accent);
+        }
+
+        /* 阶段指示器圆点 */
+        .phase-dots {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .phase-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--phase-inactive);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            border: 2px solid transparent;
+        }
+        .phase-dot:hover {
+            background: #c4b0de;
+            transform: scale(1.2);
+        }
+        .phase-dot.active {
+            background: var(--phase-active);
+            box-shadow: 0 0 0 6px rgba(123, 79, 191, 0.18);
+            border-color: #fff;
+            width: 16px;
+            height: 16px;
+        }
+        .phase-dot-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.03em;
+            text-align: center;
+            min-width: 40px;
+            margin-top: 2px;
+            pointer-events: none;
+        }
+        .phase-dot-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        /* 分化展示区 */
+        .differentiation-area {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+        }
+        .diff-canvas-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 1;
+            max-height: 350px;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #fefdfb 0%, #f8f4ed 60%, #f0e9dc 100%);
+            box-shadow: inset 0 0 60px rgba(180, 160, 140, 0.10);
+        }
+        .diff-canvas-wrapper canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .diff-legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .diff-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            padding: 6px 13px;
+            border-radius: 18px;
+            transition: var(--transition);
+            background: transparent;
+            border: 1.5px solid transparent;
+            font-family: inherit;
+        }
+        .diff-legend-item:hover {
+            background: var(--button-bg);
+            border-color: #e0d8cc;
+        }
+        .diff-legend-item.selected {
+            background: var(--accent-light);
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: 600;
+        }
+        .diff-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        /* 提示卡片 */
+        .tip-card {
+            background: #fdfaf6;
+            border: 1.5px solid #ede4d4;
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: 0.8rem;
+            color: #8b7b65;
+            letter-spacing: 0.03em;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .tip-card strong {
+            color: #6b5030;
+        }
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            .header .cell-icon {
+                width: 32px;
+                height: 32px;
+            }
+            .header .cell-icon::after {
+                width: 13px;
+                height: 13px;
+            }
+            .tab-btn {
+                padding: 9px 16px;
+                font-size: 0.82rem;
+            }
+            .main-card {
+                padding: 12px 10px 10px;
+                border-radius: var(--radius-md);
+                gap: 10px;
+            }
+            .ctrl-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+            }
+            .ctrl-btn.play-btn {
+                width: 42px;
+                height: 42px;
+                font-size: 1.1rem;
+            }
+            .phase-dot {
+                width: 11px;
+                height: 11px;
+            }
+            .phase-dot.active {
+                width: 13px;
+                height: 13px;
+                box-shadow: 0 0 0 4px rgba(123, 79, 191, 0.18);
+            }
+            .phase-dot-label {
+                font-size: 0.62rem;
+                min-width: 30px;
+            }
+            .phase-desc {
+                font-size: 0.78rem;
+            }
+            .phase-badge {
+                font-size: 0.78rem;
+                padding: 5px 11px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题 -->
+        <div class="header">
+            <div class="icon-row">
+                <div class="cell-icon"></div>
+                <h1>细胞分裂与分化</h1>
+            </div>
+            <p class="subtitle">有丝分裂 · 细胞分化 · 交互式演示</p>
+        </div>
+
+        <!-- 标签切换 -->
+        <div class="tab-switcher">
+            <button class="tab-btn active" data-tab="mitosis" id="tabMitosis">🧬 有丝分裂</button>
+            <button class="tab-btn" data-tab="differentiation" id="tabDiff">🔬 细胞分化</button>
+        </div>
+
+        <!-- 有丝分裂主卡片 -->
+        <div class="main-card" id="mitosisCard">
+            <div class="canvas-wrapper" id="mitosisCanvasWrapper">
+                <canvas id="mitosisCanvas"></canvas>
+                <span class="canvas-hint">🖱 点击阶段圆点可跳转</span>
+            </div>
+            <div class="phase-info-bar">
+                <span class="phase-badge" id="phaseBadge"><span class="dot"></span><span id="phaseName">间期</span></span>
+                <span class="phase-desc" id="phaseDesc">DNA复制，染色质呈细丝状分散在细胞核中，核膜核仁完整清晰。</span>
+            </div>
+            <div class="controls-row">
+                <button class="ctrl-btn" id="btnPrev" title="上一阶段">◀</button>
+                <button class="ctrl-btn play-btn" id="btnPlay" title="自动播放">▶</button>
+                <button class="ctrl-btn" id="btnNext" title="下一阶段">▶</button>
+                <span class="speed-indicator" id="speedLabel" title="点击切换播放速度">⏱ 中速</span>
+            </div>
+            <div class="phase-dots" id="phaseDots">
+                <!-- JS动态生成 -->
+            </div>
+        </div>
+
+        <!-- 细胞分化主卡片 -->
+        <div class="main-card" id="diffCard" style="display:none;">
+            <div class="diff-canvas-wrapper">
+                <canvas id="diffCanvas"></canvas>
+            </div>
+            <div class="diff-legend" id="diffLegend">
+                <button class="diff-legend-item selected" data-highlight="stem">
+                    <span class="diff-legend-dot" style="background:#7b9ec4;"></span> 多能干细胞
+                </button>
+                <button class="diff-legend-item" data-highlight="rbc">
+                    <span class="diff-legend-dot" style="background:#e05550;"></span> 红细胞
+                </button>
+                <button class="diff-legend-item" data-highlight="neuron">
+                    <span class="diff-legend-dot" style="background:#5b9ecf;"></span> 神经细胞
+                </button>
+                <button class="diff-legend-item" data-highlight="muscle">
+                    <span class="diff-legend-dot" style="background:#d4856b;"></span> 肌肉细胞
+                </button>
+                <button class="diff-legend-item" data-highlight="wbc">
+                    <span class="diff-legend-dot" style="background:#c38ec7;"></span> 淋巴细胞
+                </button>
+            </div>
+            <div class="tip-card" id="diffTip">
+                💡 <strong>提示：</strong>悬停或点击上方图例，查看不同分化细胞的特点。干细胞通过<strong>基因选择性表达</strong>分化为各种功能细胞。
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== DOM元素 ====================
+            const mitosisCanvas = document.getElementById('mitosisCanvas');
+            const mitosisCtx = mitosisCanvas.getContext('2d');
+            const mitosisWrapper = document.getElementById('mitosisCanvasWrapper');
+            const diffCanvas = document.getElementById('diffCanvas');
+            const diffCtx = diffCanvas.getContext('2d');
+            const diffWrapper = document.querySelector('.diff-canvas-wrapper');
+
+            const phaseBadge = document.getElementById('phaseBadge');
+            const phaseNameEl = document.getElementById('phaseName');
+            const phaseDescEl = document.getElementById('phaseDesc');
+            const phaseDotsContainer = document.getElementById('phaseDots');
+            const btnPlay = document.getElementById('btnPlay');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnNext = document.getElementById('btnNext');
+            const speedLabel = document.getElementById('speedLabel');
+            const mitosisCard = document.getElementById('mitosisCard');
+            const diffCard = document.getElementById('diffCard');
+            const tabMitosis = document.getElementById('tabMitosis');
+            const tabDiff = document.getElementById('tabDiff');
+            const diffLegend = document.getElementById('diffLegend');
+            const diffTip = document.getElementById('diffTip');
+
+            // ==================== 有丝分裂阶段定义 ====================
+            const phaseNames = ['间期', '前期', '中期', '后期', '末期'];
+            const phaseDescs = [
+                'DNA复制完成，染色质呈细丝状松散分布在细胞核中。核膜、核仁完整清晰可见，中心体复制。此阶段是细胞周期中最长的阶段。',
+                '染色质螺旋化缩短变粗，成为可见的染色体。每条染色体含两条姐妹染色单体，由着丝粒相连。核膜、核仁逐渐解体消失，纺锤体开始形成。',
+                '纺锤丝连接染色体着丝粒，牵引染色体整齐排列在细胞中央的赤道板上。此时染色体形态最清晰、数目最易观察，是核型分析的最佳时期。',
+                '着丝粒一分为二，姐妹染色单体分开成为两条子染色体。纺锤丝缩短，牵引子染色体分别移向细胞两极。细胞开始拉长。',
+                '染色体到达两极后解螺旋，重新变为细丝状染色质。核膜、核仁重新出现，纺锤体消失。细胞质分裂，最终形成两个遗传物质相同的子细胞。'
+            ];
+
+            // 各阶段的目标参数
+            const phaseParams = [
+                { // 间期
+                    nuclearMembraneOpacity: 1,
+                    nucleolusOpacity: 1,
+                    chromosomeCondensation: 0,
+                    spindleVisibility: 0,
+                    chromosomesAtEquator: 0,
+                    chromatidSeparation: 0,
+                    cellElongation: 0,
+                    cleavageFurrow: 0,
+                    centriolePosition: 0,
+                    membraneIntact: 1,
+                },
+                { // 前期
+                    nuclearMembraneOpacity: 0.35,
+                    nucleolusOpacity: 0.25,
+                    chromosomeCondensation: 0.7,
+                    spindleVisibility: 0.55,
+                    chromosomesAtEquator: 0.05,
+                    chromatidSeparation: 0,
+                    cellElongation: 0.02,
+                    cleavageFurrow: 0,
+                    centriolePosition: 0.45,
+                    membraneIntact: 1,
+                },
+                { // 中期
+                    nuclearMembraneOpacity: 0,
+                    nucleolusOpacity: 0,
+                    chromosomeCondensation: 1,
+                    spindleVisibility: 1,
+                    chromosomesAtEquator: 1,
+                    chromatidSeparation: 0,
+                    cellElongation: 0.05,
+                    cleavageFurrow: 0,
+                    centriolePosition: 0.75,
+                    membraneIntact: 1,
+                },
+                { // 后期
+                    nuclearMembraneOpacity: 0,
+                    nucleolusOpacity: 0,
+                    chromosomeCondensation: 1,
+                    spindleVisibility: 0.85,
+                    chromosomesAtEquator: 0.1,
+                    chromatidSeparation: 1,
+                    cellElongation: 0.55,
+                    cleavageFurrow: 0.25,
+                    centriolePosition: 0.95,
+                    membraneIntact: 1,
+                },
+                { // 末期
+                    nuclearMembraneOpacity: 0.75,
+                    nucleolusOpacity: 0.7,
+                    chromosomeCondensation: 0.25,
+                    spindleVisibility: 0.05,
+                    chromosomesAtEquator: 0,
+                    chromatidSeparation: 1,
+                    cellElongation: 0.85,
+                    cleavageFurrow: 0.7,
+                    centriolePosition: 1,
+                    membraneIntact: 0.6,
+                },
+            ];
+
+            // 当前动画状态
+            let currentParams = { ...phaseParams[0] };
+            let targetParams = { ...phaseParams[0] };
+            let currentPhaseIndex = 0;
+            let isAutoPlaying = false;
+            let autoPlayTimer = null;
+            let animationId = null;
+            let transitionStartTime = 0;
+            let transitionDuration = 900; // ms
+            let transitionSource = null;
+            let playSpeed = 1; // 0.5=慢速, 1=中速, 2=快速
+            const speedLabels = { 0.5: '🐢 慢速', 1: '⏱ 中速', 2: '🐇 快速' };
+            const phaseDurations = { 0.5: 4000, 1: 2500, 2: 1400 };
+
+            // ==================== Canvas尺寸管理 ====================
+            function resizeMitosisCanvas() {
+                const rect = mitosisWrapper.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const w = rect.width;
+                const h = rect.height;
+                if (mitosisCanvas.width !== w * dpr || mitosisCanvas.height !== h * dpr) {
+                    mitosisCanvas.width = w * dpr;
+                    mitosisCanvas.height = h * dpr;
+                    mitosisCanvas.style.width = w + 'px';
+                    mitosisCanvas.style.height = h + 'px';
+                    mitosisCtx.setTransform(1, 0, 0, 1, 0, 0);
+                    mitosisCtx.scale(dpr, dpr);
+                }
+            }
+
+            function resizeDiffCanvas() {
+                if (!diffWrapper) return;
+                const rect = diffWrapper.getBoundingClientRect();
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                const w = rect.width;
+                const h = rect.height;
+                if (diffCanvas.width !== w * dpr || diffCanvas.height !== h * dpr) {
+                    diffCanvas.width = w * dpr;
+                    diffCanvas.height = h * dpr;
+                    diffCanvas.style.width = w + 'px';
+                    diffCanvas.style.height = h + 'px';
+                    diffCtx.setTransform(1, 0, 0, 1, 0, 0);
+                    diffCtx.scale(dpr, dpr);
+                }
+            }
+
+            // ==================== 缓动函数 ====================
+            function easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+
+            function lerp(a, b, t) {
+                return a + (b - a) * t;
+            }
+
+            function lerpParams(from, to, t) {
+                const result = {};
+                for (const key in to) {
+                    result[key] = lerp(from[key], to[key], t);
+                }
+                return result;
+            }
+
+            // ==================== 绘制有丝分裂 ====================
+            function drawMitosisCell(ctx, w, h, params) {
+                ctx.clearRect(0, 0, w, h);
+
+                const cx = w / 2;
+                const cy = h / 2;
+                const baseRadiusX = Math.min(w, h) * 0.35;
+                const baseRadiusY = Math.min(w, h) * 0.35;
+                const elongationFactor = 1 + params.cellElongation * 0.9;
+                const radiusX = baseRadiusX * elongationFactor;
+                const radiusY = baseRadiusY / Math.max(elongationFactor * 0.7, 0.55);
+
+                // 分裂沟参数
+                const furrowDepth = params.cleavageFurrow * baseRadiusY * 1.1;
+
+                // --- 绘制细胞质 ---
+                ctx.save();
+                ctx.beginPath();
+                if (params.cleavageFurrow > 0.05 && params.cellElongation > 0.4) {
+                    // 绘制带分裂沟的细胞形态（哑铃形/花生形）
+                    const fDepth = furrowDepth;
+                    const midX = cx;
+                    const midY = cy;
+                    // 使用两个椭圆+中间收缩来近似
+                    const sepX = radiusX * 0.38 * params.cellElongation;
+                    const leftCx = midX - sepX;
+                    const rightCx = midX + sepX;
+                    const lobeRx = radiusX * 0.55;
+                    const lobeRy = radiusY;
+
+                    // 左半部分
+                    ctx.moveTo(leftCx - lobeRx, midY);
+                    ctx.ellipse(leftCx, midY, lobeRx, lobeRy, 0, 0, Math.PI * 2);
+                    // 右半部分
+                    ctx.moveTo(rightCx + lobeRx, midY);
+                    ctx.ellipse(rightCx, midY, lobeRx, lobeRy, 0, 0, Math.PI * 2);
+
+                    // 用一个大路径来包含两个叶
+                    const totalW = sepX * 2 + lobeRx * 2;
+                    const totalH = lobeRy * 2;
+                    ctx.beginPath();
+                    // 上部外轮廓
+                    ctx.moveTo(leftCx - lobeRx, midY - lobeRy * 0.3);
+                    ctx.bezierCurveTo(
+                        leftCx - lobeRx, midY - lobeRy,
+                        leftCx, midY - lobeRy,
+                        leftCx + lobeRx * 0.5, midY - lobeRy * 0.7
+                    );
+                    ctx.lineTo(rightCx - lobeRx * 0.5, midY - lobeRy * 0.7);
+                    ctx.bezierCurveTo(
+                        rightCx, midY - lobeRy,
+                        rightCx + lobeRx, midY - lobeRy,
+                        rightCx + lobeRx, midY - lobeRy * 0.3
+                    );
+                    // 右侧弧线
+                    ctx.arc(rightCx, midY, lobeRx, -0.35, 0.35);
+                    // 下部外轮廓
+                    ctx.bezierCurveTo(
+                        rightCx + lobeRx, midY + lobeRy * 0.3,
+                        rightCx + lobeRx, midY + lobeRy,
+                        rightCx, midY + lobeRy,
+                        rightCx - lobeRx * 0.5, midY + lobeRy * 0.7
+                    );
+                    ctx.lineTo(leftCx + lobeRx * 0.5, midY + lobeRy * 0.7);
+                    ctx.bezierCurveTo(
+                        leftCx, midY + lobeRy,
+                        leftCx - lobeRx, midY + lobeRy,
+                        leftCx - lobeRx, midY + lobeRy * 0.3
+                    );
+                    ctx.arc(leftCx, midY, lobeRx, Math.PI - 0.35, Math.PI + 0.35);
+                    ctx.closePath();
+                } else if (params.cellElongation > 0.05) {
+                    ctx.ellipse(cx, cy, radiusX, radiusY, 0, 0, Math.PI * 2);
+                } else {
+                    ctx.arc(cx, cy, baseRadiusX, 0, Math.PI * 2);
+                }
+                ctx.fillStyle = '#fef5ef';
+                ctx.fill();
+                ctx.strokeStyle = '#d4856b';
+                ctx.lineWidth = 3.2;
+                ctx.stroke();
+                ctx.restore();
+
+                // --- 细胞质纹理颗粒 ---
+                ctx.save();
+                const numParticles = 50;
+                const seed = 42;
+                for (let i = 0; i < numParticles; i++) {
+                    const angle = (seed + i * 137.5) % 360 * Math.PI / 180;
+                    const dist = ((i * 0.618) % 1) * baseRadiusX * 0.78;
+                    const px = cx + Math.cos(angle) * dist * (1 + params.cellElongation * 0.4);
+                    const py = cy + Math.sin(angle) * dist * (1 - params.cellElongation * 0.25);
+                    const alpha = 0.15 + ((i * 0.33) % 1) * 0.2;
+                    const size = 1.2 + ((i * 0.57) % 1) * 2;
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(210,170,140,${alpha})`;
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                // --- 核膜 ---
+                const nucOpacity = params.nuclearMembraneOpacity;
+                if (nucOpacity > 0.01) {
+                    ctx.save();
+                    ctx.globalAlpha = nucOpacity;
+                    const nucRx = baseRadiusX * 0.55;
+                    const nucRy = baseRadiusY * 0.55;
+                    ctx.beginPath();
+                    if (params.cellElongation > 0.3 && params.chromatidSeparation > 0.5) {
+                        // 末期：两个新核膜
+                        const sepX2 = radiusX * 0.35;
+                        ctx.arc(cx - sepX2, cy, nucRx * 0.7, 0, Math.PI * 2);
+                        ctx.arc(cx + sepX2, cy, nucRx * 0.7, 0, Math.PI * 2);
+                    } else if (params.cellElongation > 0.08) {
+                        ctx.ellipse(cx, cy, nucRx * (1 + params.cellElongation * 0.4), nucRy * (1 - params
+                            .cellElongation * 0.3), 0, 0, Math.PI * 2);
+                    } else {
+                        ctx.arc(cx, cy, nucRx, 0, Math.PI * 2);
+                    }
+                    ctx.fillStyle = 'rgba(197,213,240,0.55)';
+                    ctx.fill();
+                    ctx.strokeStyle = '#5b7db5';
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([7, 4]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+
+                // --- 核仁 ---
+                if (params.nucleolusOpacity > 0.01) {
+                    ctx.save();
+                    ctx.globalAlpha = params.nucleolusOpacity;
+                    const nolRx = baseRadiusX * 0.16;
+                    const nolX = cx + baseRadiusX * 0.1;
+                    const nolY = cy - baseRadiusY * 0.08;
+                    ctx.beginPath();
+                    ctx.arc(nolX, nolY, nolRx, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(90,60,140,0.55)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(70,40,120,0.5)';
+                    ctx.lineWidth = 1.3;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // --- 中心体 ---
+                const centPos = params.centriolePosition;
+                if (centPos > 0.01) {
+                    const centDist = baseRadiusX * 0.75 * centPos;
+                    const centSize = 6;
+                    [
+                        [cx - centDist, cy],
+                        [cx + centDist, cy]
+                    ].forEach(([cpx, cpy]) => {
+                        if (cpx > cx - radiusX - 10 && cpx < cx + radiusX + 10) {
+                            ctx.save();
+                            ctx.beginPath();
+                            ctx.arc(cpx, cpy, centSize, 0, Math.PI * 2);
+                            ctx.fillStyle = '#e8833a';
+                            ctx.fill();
+                            ctx.strokeStyle = '#c56a28';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                            // 中心体辐射线
+                            for (let a = 0; a < 8; a++) {
+                                const ang = a * Math.PI / 4;
+                                ctx.beginPath();
+                                ctx.moveTo(cpx + Math.cos(ang) * centSize, cpy + Math.sin(ang) * centSize);
+                                ctx.lineTo(cpx + Math.cos(ang) * (centSize + 7), cpy + Math.sin(ang) * (centSize +
+                                    7));
+                                ctx.strokeStyle = 'rgba(232,131,58,0.5)';
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+                            }
+                            ctx.restore();
+                        }
+                    });
+                }
+
+                // --- 纺锤丝 ---
+                if (params.spindleVisibility > 0.02 && params.centriolePosition > 0.15) {
+                    ctx.save();
+                    ctx.globalAlpha = params.spindleVisibility * 0.7;
+                    const centDist = baseRadiusX * 0.75 * Math.max(params.centriolePosition, 0.2);
+                    const leftPole = { x: cx - centDist, y: cy };
+                    const rightPole = { x: cx + centDist, y: cy };
+                    const numFibers = 16;
+                    const equY = cy;
+                    const equXRange = baseRadiusX * 0.4;
+
+                    for (let i = 0; i < numFibers; i++) {
+                        const frac = (i / (numFibers - 1) - 0.5) * 1.6;
+                        const targetX = cx + frac * equXRange * (1 - params.chromatidSeparation * 0.6);
+                        const targetY = equY + (Math.sin(i * 1.3) * baseRadiusY * 0.25) * (1 - params
+                            .chromosomesAtEquator);
+
+                        // 从两极发出到染色体
+                        [leftPole, rightPole].forEach(pole => {
+                            ctx.beginPath();
+                            ctx.moveTo(pole.x, pole.y);
+                            const midX = (pole.x + targetX) / 2;
+                            const midY = (pole.y + targetY) / 2 + (Math.random() - 0.5) * 20 * (1 -
+                                params.chromosomesAtEquator);
+                            ctx.quadraticCurveTo(midX, midY, targetX, targetY);
+                            ctx.strokeStyle = 'rgba(76,175,132,0.55)';
+                            ctx.lineWidth = 0.8 + Math.random() * 1.2;
+                            ctx.stroke();
+                        });
+                    }
+                    ctx.restore();
+                }
+
+                // --- 赤道板虚线（中期明显） ---
+                if (params.chromosomesAtEquator > 0.5 && params.spindleVisibility > 0.4) {
+                    ctx.save();
+                    ctx.globalAlpha = params.chromosomesAtEquator * 0.5;
+                    ctx.setLineDash([4, 8]);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy - baseRadiusY * 0.7);
+                    ctx.lineTo(cx, cy + baseRadiusY * 0.7);
+                    ctx.strokeStyle = '#b5a99a';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+
+                // --- 染色体 ---
+                const chromCond = params.chromosomeCondensation;
+                const chromAtEquator = params.chromosomesAtEquator;
+                const chromSep = params.chromatidSeparation;
+
+                // 染色体数量：展示4条染色体（2对同源染色体），便于观察
+                const numChromosomes = 4;
+                const chromData = [
+                    { equOffsetY: -baseRadiusY * 0.18, color: '#6b3fa0', size: 1.0 },
+                    { equOffsetY: -baseRadiusY * 0.05, color: '#7b4fbf', size: 1.05 },
+                    { equOffsetY: baseRadiusY * 0.07, color: '#5a3090', size: 0.95 },
+                    { equOffsetY: baseRadiusY * 0.20, color: '#6b3fa0', size: 1.02 },
+                ];
+
+                chromData.forEach((cd, idx) => {
+                    ctx.save();
+                    const targetEquY = cy + cd.equOffsetY;
+                    const targetEquX = cx;
+
+                    // 根据chromAtEquator在随机位置和赤道板之间插值
+                    const randAngle = (idx * 2.7 + 1.3) * Math.PI;
+                    const randDist = baseRadiusX * 0.38 * (1 - chromAtEquator);
+                    const randX = cx + Math.cos(randAngle) * randDist;
+                    const randY = cy + Math.sin(randAngle) * randDist * 0.7;
+
+                    const baseX = lerp(randX, targetEquX, chromAtEquator);
+                    const baseY = lerp(randY, targetEquY, chromAtEquator);
+
+                    // 分离程度：后期姐妹染色单体分开
+                    const sepDist = baseRadiusX * 0.5 * chromSep;
+                    const leftX = baseX - sepDist;
+                    const rightX = baseX + sepDist;
+
+                    // 凝聚程度影响染色体大小
+                    const chromWidth = lerp(1.5, 7.5, chromCond) * cd.size;
+                    const chromHeight = lerp(18, 32, chromCond) * cd.size;
+
+                    // 绘制染色体对（姐妹染色单体）
+                    const drawChromosomePair = (px, py, alpha) => {
+                        ctx.globalAlpha = alpha;
+                        const armAngle = 0.25 + chromCond * 0.55; // X形角度
+
+                        // 着丝粒位置
+                        const centX = px;
+                        const centY = py;
+
+                        // 上臂
+                        ctx.beginPath();
+                        ctx.moveTo(centX - chromWidth * 0.5, centY);
+                        ctx.lineTo(centX - chromWidth * 0.3, centY - chromHeight * 0.35);
+                        ctx.lineTo(centX, centY - chromHeight * 0.55);
+                        ctx.lineTo(centX + chromWidth * 0.3, centY - chromHeight * 0.35);
+                        ctx.lineTo(centX + chromWidth * 0.5, centY);
+                        ctx.closePath();
+                        ctx.fillStyle = cd.color;
+                        ctx.fill();
+                        ctx.strokeStyle = 'rgba(40,20,70,0.5)';
+                        ctx.lineWidth = 1.2;
+                        ctx.stroke();
+
+                        // 下臂
+                        ctx.beginPath();
+                        ctx.moveTo(centX - chromWidth * 0.5, centY);
+                        ctx.lineTo(centX - chromWidth * 0.3, centY + chromHeight * 0.35);
+                        ctx.lineTo(centX, centY + chromHeight * 0.55);
+                        ctx.lineTo(centX + chromWidth * 0.3, centY + chromHeight * 0.35);
+                        ctx.lineTo(centX + chromWidth * 0.5, centY);
+                        ctx.closePath();
+                        ctx.fillStyle = cd.color;
+                        ctx.fill();
+                        ctx.strokeStyle = 'rgba(40,20,70,0.5)';
+                        ctx.lineWidth = 1.2;
+                        ctx.stroke();
+
+                        // 着丝粒圆点
+                        ctx.beginPath();
+                        ctx.arc(centX, centY, chromWidth * 0.55, 0, Math.PI * 2);
+                        ctx.fillStyle = '#ffd54f';
+                        ctx.fill();
+                        ctx.strokeStyle = 'rgba(180,120,30,0.7)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    };
+
+                    if (chromSep < 0.05) {
+                        // 姐妹染色单体未分离，绘制在赤道板位置
+                        drawChromosomePair(baseX, baseY, 1);
+                    } else if (chromSep < 0.5) {
+                        // 部分分离
+                        drawChromosomePair(leftX, baseY, 1);
+                        drawChromosomePair(rightX, baseY, 0.85);
+                    } else {
+                        // 完全分离到两极
+                        const farLeftX = cx - baseRadiusX * 0.55 * chromSep;
+                        const farRightX = cx + baseRadiusX * 0.55 * chromSep;
+                        drawChromosomePair(farLeftX, baseY, 1);
+                        drawChromosomePair(farRightX, baseY, 1);
+                    }
+
+                    ctx.restore();
+                });
+
+                // --- 分裂沟标记线（后期/末期） ---
+                if (params.cleavageFurrow > 0.1) {
+                    ctx.save();
+                    ctx.globalAlpha = params.cleavageFurrow * 0.7;
+                    const fx = cx;
+                    const fyTop = cy - radiusY * (1 - params.cleavageFurrow * 0.5);
+                    const fyBot = cy + radiusY * (1 - params.cleavageFurrow * 0.5);
+                    ctx.beginPath();
+                    ctx.moveTo(fx - 8, fyTop);
+                    ctx.lineTo(fx + 8, fyTop);
+                    ctx.moveTo(fx - 8, fyBot);
+                    ctx.lineTo(fx + 8, fyBot);
+                    ctx.strokeStyle = '#e8967a';
+                    ctx.lineWidth = 2.5;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    // 中间箭头提示
+                    const arrowY = cy;
+                    ctx.beginPath();
+                    ctx.moveTo(fx - 6, arrowY - 8);
+                    ctx.lineTo(fx, arrowY);
+                    ctx.lineTo(fx + 6, arrowY - 8);
+                    ctx.strokeStyle = '#e8967a';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(fx - 6, arrowY + 8);
+                    ctx.lineTo(fx, arrowY);
+                    ctx.lineTo(fx + 6, arrowY + 8);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            // ==================== 动画循环 ====================
+            function animateMitosis(timestamp) {
+                if (!transitionStartTime) transitionStartTime = timestamp;
+                let elapsed = timestamp - transitionStartTime;
+                let t = Math.min(elapsed / transitionDuration, 1);
+                t = easeInOutCubic(t);
+
+                if (transitionSource) {
+                    currentParams = lerpParams(transitionSource, targetParams, t);
+                }
+
+                resizeMitosisCanvas();
+                const w = mitosisWrapper.getBoundingClientRect().width;
+                const h = mitosisWrapper.getBoundingClientRect().height;
+                drawMitosisCell(mitosisCtx, w, h, currentParams);
+
+                if (t < 1) {
+                    animationId = requestAnimationFrame(animateMitosis);
+                } else {
+                    currentParams = { ...targetParams };
+                    transitionSource = null;
+                    animationId = null;
+                    // 重绘最后一帧
+                    resizeMitosisCanvas();
+                    const w2 = mitosisWrapper.getBoundingClientRect().width;
+                    const h2 = mitosisWrapper.getBoundingClientRect().height;
+                    drawMitosisCell(mitosisCtx, w2, h2, currentParams);
+                }
+            }
+
+            function startTransition() {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                transitionSource = { ...currentParams };
+                transitionStartTime = 0;
+                animationId = requestAnimationFrame(animateMitosis);
+            }
+
+            function jumpToPhase(index) {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                currentPhaseIndex = index;
+                targetParams = { ...phaseParams[index] };
+                transitionSource = { ...currentParams };
+                transitionStartTime = 0;
+                transitionDuration = 700;
+                animationId = requestAnimationFrame(animateMitosis);
+                updateUI();
+            }
+
+            function updateUI() {
+                phaseNameEl.textContent = phaseNames[currentPhaseIndex];
+                phaseDescEl.textContent = phaseDescs[currentPhaseIndex];
+                // 更新阶段圆点
+                document.querySelectorAll('.phase-dot').forEach((dot, i) => {
+                    dot.classList.toggle('active', i === currentPhaseIndex);
+                });
+            }
+
+            // ==================== 控制逻辑 ====================
+            function goToNext() {
+                const next = (currentPhaseIndex + 1) % phaseNames.length;
+                jumpToPhase(next);
+            }
+
+            function goToPrev() {
+                const prev = (currentPhaseIndex - 1 + phaseNames.length) % phaseNames.length;
+                jumpToPhase(prev);
+            }
+
+            function toggleAutoPlay() {
+                isAutoPlaying = !isAutoPlaying;
+                if (isAutoPlaying) {
+                    btnPlay.textContent = '⏸';
+                    btnPlay.classList.add('playing');
+                    scheduleNextAuto();
+                } else {
+                    btnPlay.textContent = '▶';
+                    btnPlay.classList.remove('playing');
+                    if (autoPlayTimer) {
+                        clearTimeout(autoPlayTimer);
+                        autoPlayTimer = null;
+                    }
+                }
+            }
+
+            function scheduleNextAuto() {
+                if (!isAutoPlaying) return;
+                if (autoPlayTimer) clearTimeout(autoPlayTimer);
+                const duration = phaseDurations[playSpeed] || 2500;
+                autoPlayTimer = setTimeout(() => {
+                    if (isAutoPlaying) {
+                        goToNext();
+                        // 等过渡动画完成后再调度下一个
+                        const waitForTransition = transitionDuration + 200;
+                        setTimeout(() => {
+                            if (isAutoPlaying) scheduleNextAuto();
+                        }, waitForTransition);
+                    }
+                }, duration);
+            }
+
+            function cycleSpeed() {
+                const speeds = [0.5, 1, 2];
+                const currentIdx = speeds.indexOf(playSpeed);
+                const nextIdx = (currentIdx + 1) % speeds.length;
+                playSpeed = speeds[nextIdx];
+                speedLabel.textContent = speedLabels[playSpeed];
+                if (isAutoPlaying) {
+                    if (autoPlayTimer) clearTimeout(autoPlayTimer);
+                    scheduleNextAuto();
+                }
+            }
+
+            // ==================== 阶段圆点生成 ====================
+            function buildPhaseDots() {
+                phaseDotsContainer.innerHTML = '';
+                phaseNames.forEach((name, i) => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'phase-dot-wrapper';
+                    wrapper.addEventListener('click', () => {
+                        if (isAutoPlaying) toggleAutoPlay();
+                        jumpToPhase(i);
+                    });
+
+                    const dot = document.createElement('div');
+                    dot.className = 'phase-dot';
+                    if (i === currentPhaseIndex) dot.classList.add('active');
+
+                    const label = document.createElement('span');
+                    label.className = 'phase-dot-label';
+                    label.textContent = name;
+
+                    wrapper.appendChild(dot);
+                    wrapper.appendChild(label);
+                    phaseDotsContainer.appendChild(wrapper);
+                });
+            }
+
+            // ==================== 按钮事件 ====================
+            btnPlay.addEventListener('click', toggleAutoPlay);
+            btnNext.addEventListener('click', () => {
+                if (isAutoPlaying) toggleAutoPlay();
+                goToNext();
+            });
+            btnPrev.addEventListener('click', () => {
+                if (isAutoPlaying) toggleAutoPlay();
+                goToPrev();
+            });
+            speedLabel.addEventListener('click', cycleSpeed);
+
+            // 键盘控制
+            document.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                if (document.getElementById('mitosisCard').style.display !== 'none') {
+                    if (e.key === 'ArrowRight' || e.key === ' ') {
+                        e.preventDefault();
+                        if (e.key === ' ') {
+                            toggleAutoPlay();
+                        } else {
+                            if (isAutoPlaying) toggleAutoPlay();
+                            goToNext();
+                        }
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        if (isAutoPlaying) toggleAutoPlay();
+                        goToPrev();
+                    }
+                }
+            });
+
+            // ==================== 标签切换 ====================
+            tabMitosis.addEventListener('click', () => {
+                tabMitosis.classList.add('active');
+                tabDiff.classList.remove('active');
+                mitosisCard.style.display = 'flex';
+                diffCard.style.display = 'none';
+                resizeMitosisCanvas();
+                const w = mitosisWrapper.getBoundingClientRect().width;
+                const h = mitosisWrapper.getBoundingClientRect().height;
+                drawMitosisCell(mitosisCtx, w, h, currentParams);
+            });
+
+            tabDiff.addEventListener('click', () => {
+                tabDiff.classList.add('active');
+                tabMitosis.classList.remove('active');
+                mitosisCard.style.display = 'none';
+                diffCard.style.display = 'flex';
+                if (isAutoPlaying) toggleAutoPlay();
+                setTimeout(() => {
+                    resizeDiffCanvas();
+                    drawDifferentiation(diffCtx, diffWrapper.getBoundingClientRect().width, diffWrapper
+                        .getBoundingClientRect().height, diffHighlighted);
+                }, 150);
+            });
+
+            // ==================== 细胞分化绘制 ====================
+            let diffHighlighted = 'stem';
+
+            function drawDifferentiation(ctx, w, h, highlight) {
+                ctx.clearRect(0, 0, w, h);
+
+                const cx = w * 0.28;
+                const cy = h * 0.5;
+                const stemRadius = Math.min(w, h) * 0.14;
+
+                // 绘制干细胞
+                const drawStemCell = (x, y, r, alpha) => {
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    // 细胞质
+                    const grad = ctx.createRadialGradient(x, y, r * 0.3, x, y, r);
+                    grad.addColorStop(0, '#e8eef7');
+                    grad.addColorStop(0.7, '#c8d8ed');
+                    grad.addColorStop(1, '#a8bfda');
+                    ctx.beginPath();
+                    ctx.arc(x, y, r, 0, Math.PI * 2);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                    ctx.strokeStyle = '#7b9ec4';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    // 细胞核
+                    const nucGrad = ctx.createRadialGradient(x, y, r * 0.1, x, y, r * 0.5);
+                    nucGrad.addColorStop(0, '#b8cfe8');
+                    nucGrad.addColorStop(1, '#8aafd4');
+                    ctx.beginPath();
+                    ctx.arc(x, y, r * 0.5, 0, Math.PI * 2);
+                    ctx.fillStyle = nucGrad;
+                    ctx.fill();
+                    ctx.strokeStyle = '#5b8db5';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([3, 3]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // 标签
+                    ctx.fillStyle = '#3a4f63';
+                    ctx.font = `bold ${Math.max(r*0.3,11)}px -apple-system, "PingFang SC", sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText('多能干细胞', x, y - r - 14);
+                    ctx.restore();
+                };
+
+                // 高亮环
+                if (highlight === 'stem') {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, stemRadius + 10, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#ffb74d';
+                    ctx.lineWidth = 4;
+                    ctx.setLineDash([6, 3]);
+                    ctx.lineDashOffset = Date.now() / 200;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.restore();
+                }
+
+                drawStemCell(cx, cy, stemRadius, highlight === 'stem' ? 1 : 0.75);
+
+                // 分化箭头
+                const drawArrow = (fromX, fromY, toX, toY, color) => {
+                    ctx.save();
+                    const angle = Math.atan2(toY - fromY, toX - fromX);
+                    const dist = Math.hypot(toX - fromX, toY - fromY);
+                    const startX = fromX + Math.cos(angle) * (stemRadius + 8);
+                    const startY = fromY + Math.sin(angle) * (stemRadius + 8);
+                    const endX = toX - Math.cos(angle) * 30;
+                    const endY = toY - Math.sin(angle) * 30;
+
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2.5;
+                    ctx.globalAlpha = 0.65;
+                    ctx.stroke();
+
+                    // 箭头尖
+                    const arrowSize = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(
+                        endX - arrowSize * Math.cos(angle - Math.PI / 6),
+                        endY - arrowSize * Math.sin(angle - Math.PI / 6)
+                    );
+                    ctx.lineTo(
+                        endX - arrowSize * Math.cos(angle + Math.PI / 6),
+                        endY - arrowSize * Math.sin(angle + Math.PI / 6)
+                    );
+                    ctx.closePath();
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.restore();
+                };
+
+                // 分化目标细胞位置
+                const targets = [
+                    { id: 'rbc', x: w * 0.62, y: h * 0.2, color: '#e05550', label: '红细胞',
+                        desc: '双凹圆盘状，无核，含血红蛋白，运输氧气' },
+                    { id: 'neuron', x: w * 0.78, y: h * 0.38, color: '#5b9ecf', label: '神经细胞',
+                        desc: '具有轴突和树突，传递电信号，构成神经系统' },
+                    { id: 'muscle', x: w * 0.75, y: h * 0.68, color: '#d4856b', label: '肌肉细胞',
+                        desc: '长梭形，含肌原纤维，负责收缩运动' },
+                    { id: 'wbc', x: w * 0.55, y: h * 0.78, color: '#c38ec7', label: '淋巴细胞',
+                        desc: '圆形，有大细胞核，参与免疫防御' },
+                ];
+
+                targets.forEach(t => {
+                    const isHL = highlight === t.id;
+                    drawArrow(cx, cy, t.x, t.y, t.color);
+
+                    ctx.save();
+                    if (isHL) {
+                        ctx.beginPath();
+                        ctx.arc(t.x, t.y, 32, 0, Math.PI * 2);
+                        ctx.strokeStyle = '#ffb74d';
+                        ctx.lineWidth = 4;
+                        ctx.setLineDash([6, 3]);
+                        ctx.lineDashOffset = Date.now() / 200;
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                    ctx.globalAlpha = isHL ? 1 : 0.7;
+                    ctx.restore();
+
+                    // 绘制分化细胞
+                    drawDiffCell(ctx, t.x, t.y, t.id, isHL);
+                    ctx.fillStyle = '#3a4f63';
+                    ctx.font = `bold ${Math.max(12,Math.min(w,h)*0.025)}px -apple-system, "PingFang SC", sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(t.label, t.x, t.y + 36);
+                    if (isHL) {
+                        ctx.fillStyle = '#5c5347';
+                        ctx.font = `${Math.max(10,Math.min(w,h)*0.02)}px -apple-system, "PingFang SC", sans-serif`;
+                        ctx.fillText(t.desc, t.x, t.y + 54);
+                    }
+                });
+
+                // 标题
+                ctx.fillStyle = '#2c2416';
+                ctx.font = `bold ${Math.max(14,Math.min(w,h)*0.035)}px -apple-system, "PingFang SC", sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.fillText('基因选择性表达 → 细胞分化', w * 0.5, h * 0.06);
+
+                // 底部提示
+                if (highlight === 'stem') {
+                    ctx.fillStyle = '#8b7b65';
+                    ctx.font = `${Math.max(11,Math.min(w,h)*0.022)}px -apple-system, "PingFang SC", sans-serif`;
+                    ctx.fillText('💡 点击右侧图例查看不同分化细胞', w * 0.5, h * 0.94);
+                }
+            }
+
+            function drawDiffCell(ctx, x, y, type, highlighted) {
+                ctx.save();
+                const size = 20;
+                switch (type) {
+                    case 'rbc':
+                        // 双凹圆盘状红细胞
+                        ctx.beginPath();
+                        ctx.ellipse(x, y, size * 1.1, size * 0.55, 0, 0, Math.PI * 2);
+                        const rbcGrad = ctx.createRadialGradient(x, y - size * 0.1, size * 0.2, x, y, size * 1.1);
+                        rbcGrad.addColorStop(0, '#f28b82');
+                        rbcGrad.addColorStop(0.6, '#e05550');
+                        rbcGrad.addColorStop(1, '#b8403a');
+                        ctx.fillStyle = rbcGrad;
+                        ctx.fill();
+                        ctx.strokeStyle = '#a0302a';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        // 中央凹陷
+                        ctx.beginPath();
+                        ctx.ellipse(x, y, size * 0.35, size * 0.2, 0, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(180,50,40,0.4)';
+                        ctx.fill();
+                        break;
+                    case 'neuron':
+                        // 神经细胞（星形）
+                        const nGrad = ctx.createRadialGradient(x, y, size * 0.1, x, y, size);
+                        nGrad.addColorStop(0, '#a8d0f0');
+                        nGrad.addColorStop(1, '#5b9ecf');
+                        ctx.beginPath();
+                        ctx.arc(x, y, size * 0.7, 0, Math.PI * 2);
+                        ctx.fillStyle = nGrad;
+                        ctx.fill();
+                        ctx.strokeStyle = '#3b7099';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        // 树突
+                        const dendriteAngles = [-0.8, -0.35, 0.15, 0.6, 1.0, -1.3, 2.0, 2.5];
+                        dendriteAngles.forEach(a => {
+                            ctx.beginPath();
+                            ctx.moveTo(x + Math.cos(a) * size * 0.55, y + Math.sin(a) * size * 0.55);
+                            const endX = x + Math.cos(a) * size * 1.8;
+                            const endY = y + Math.sin(a) * size * 1.8;
+                            ctx.lineTo(endX, endY);
+                            ctx.strokeStyle = '#5b9ecf';
+                            ctx.lineWidth = 1.5;
+                            ctx.stroke();
+                            ctx.beginPath();
+                            ctx.arc(endX, endY, 3, 0, Math.PI * 2);
+                            ctx.fillStyle = '#7bb8e0';
+                            ctx.fill();
+                        });
+                        // 轴突（长）
+                        ctx.beginPath();
+                        ctx.moveTo(x + size * 0.5, y);
+                        ctx.lineTo(x + size * 2.2, y - size * 0.5);
+                        ctx.strokeStyle = '#4a8ab5';
+                        ctx.lineWidth = 2.2;
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.arc(x + size * 2.2, y - size * 0.5, 4, 0, Math.PI * 2);
+                        ctx.fillStyle = '#7bb8e0';
+                        ctx.fill();
+                        break;
+                    case 'muscle':
+                        // 长梭形肌肉细胞
+                        ctx.beginPath();
+                        ctx.moveTo(x - size * 1.6, y);
+                        ctx.quadraticCurveTo(x - size * 0.6, y - size * 0.6, x, y - size * 0.25);
+                        ctx.quadraticCurveTo(x + size * 0.6, y - size * 0.5, x + size * 1.5, y);
+                        ctx.quadraticCurveTo(x + size * 0.6, y + size * 0.5, x, y + size * 0.25);
+                        ctx.quadraticCurveTo(x - size * 0.6, y + size * 0.6, x - size * 1.6, y);
+                        ctx.closePath();
+                        const mGrad = ctx.createLinearGradient(x - size * 1.6, y, x + size * 1.5, y);
+                        mGrad.addColorStop(0, '#e8b8a8');
+                        mGrad.addColorStop(0.5, '#d4856b');
+                        mGrad.addColorStop(1, '#c07055');
+                        ctx.fillStyle = mGrad;
+                        ctx.fill();
+                        ctx.strokeStyle = '#a05540';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                        // 横纹
+                        for (let sx = x - size * 0.8; sx < x + size * 0.9; sx += size * 0.35) {
+                            ctx.beginPath();
+                            ctx.moveTo(sx, y - size * 0.3);
+                            ctx.lineTo(sx, y + size * 0.3);
+                            ctx.strokeStyle = 'rgba(140,70,50,0.35)';
+                            ctx.lineWidth = 1;
+                            ctx.stroke();
+                        }
+                        break;
+                    case 'wbc':
+                        // 淋巴细胞（圆形，大核）
+                        ctx.beginPath();
+                        ctx.arc(x, y, size, 0, Math.PI * 2);
+                        const wGrad = ctx.createRadialGradient(x, y, size * 0.2, x, y, size);
+                        wGrad.addColorStop(0, '#e8d0f0');
+                        wGrad.addColorStop(1, '#c38ec7');
+                        ctx.fillStyle = wGrad;
+                        ctx.fill();
+                        ctx.strokeStyle = '#8a5d9e';
+                        ctx.lineWidth = 2.2;
+                        ctx.stroke();
+                        // 大细胞核（偏一侧）
+                        ctx.beginPath();
+                        ctx.arc(x + size * 0.2, y - size * 0.1, size * 0.65, 0, Math.PI * 2);
+                        const nucWGrad = ctx.createRadialGradient(x + size * 0.2, y - size * 0.1, size * 0.1, x + size *
+                            0.2, y - size * 0.1, size * 0.65);
+                        nucWGrad.addColorStop(0, '#b890c8');
+                        nucWGrad.addColorStop(1, '#7a4d8e');
+                        ctx.fillStyle = nucWGrad;
+                        ctx.fill();
+                        ctx.strokeStyle = '#5a3070';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                        break;
+                }
+                ctx.restore();
+            }
+
+            // 分化图例交互
+            diffLegend.addEventListener('click', (e) => {
+                const item = e.target.closest('.diff-legend-item');
+                if (!item) return;
+                const hl = item.dataset.highlight;
+                diffHighlighted = hl;
+                document.querySelectorAll('.diff-legend-item').forEach(el => el.classList.remove(
+                    'selected'));
+                item.classList.add('selected');
+                resizeDiffCanvas();
+                drawDifferentiation(diffCtx, diffWrapper.getBoundingClientRect().width, diffWrapper
+                    .getBoundingClientRect().height, diffHighlighted);
+                // 更新提示
+                const tips = {
+                    stem: '💡 <strong>多能干细胞</strong>具有自我更新能力，可通过<strong>基因选择性表达</strong>分化为多种功能细胞。',
+                    rbc: '💡 <strong>红细胞</strong>呈双凹圆盘状，成熟后无细胞核，富含<strong>血红蛋白</strong>，专职运输氧气和二氧化碳。',
+                    neuron: '💡 <strong>神经细胞（神经元）</strong>具有轴突和树突，通过<strong>动作电位</strong>传递信息，是神经系统的基本单位。',
+                    muscle: '💡 <strong>肌肉细胞</strong>呈长梭形，含有大量<strong>肌原纤维</strong>（肌动蛋白和肌球蛋白），通过收缩产生运动。',
+                    wbc: '💡 <strong>淋巴细胞</strong>是免疫系统核心成员，包括B细胞和T细胞，负责<strong>特异性免疫</strong>，识别并清除病原体。',
+                };
+                diffTip.innerHTML = tips[hl] || tips['stem'];
+            });
+
+            // ==================== 初始化 ====================
+            function init() {
+                buildPhaseDots();
+                updateUI();
+                resizeMitosisCanvas();
+                const w = mitosisWrapper.getBoundingClientRect().width;
+                const h = mitosisWrapper.getBoundingClientRect().height;
+                currentParams = { ...phaseParams[0] };
+                targetParams = { ...phaseParams[0] };
+                drawMitosisCell(mitosisCtx, w, h, currentParams);
+
+                // 初始化分化canvas
+                resizeDiffCanvas();
+                if (diffWrapper) {
+                    const dw = diffWrapper.getBoundingClientRect().width;
+                    const dh = diffWrapper.getBoundingClientRect().height;
+                    drawDifferentiation(diffCtx, dw, dh, diffHighlighted);
+                }
+            }
+
+            // 响应式处理
+            let resizeDebounce = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeDebounce);
+                resizeDebounce = setTimeout(() => {
+                    if (mitosisCard.style.display !== 'none') {
+                        resizeMitosisCanvas();
+                        const w = mitosisWrapper.getBoundingClientRect().width;
+                        const h = mitosisWrapper.getBoundingClientRect().height;
+                        drawMitosisCell(mitosisCtx, w, h, currentParams);
+                    }
+                    if (diffCard.style.display !== 'none') {
+                        resizeDiffCanvas();
+                        if (diffWrapper) {
+                            const dw = diffWrapper.getBoundingClientRect().width;
+                            const dh = diffWrapper.getBoundingClientRect().height;
+                            drawDifferentiation(diffCtx, dw, dh, diffHighlighted);
+                        }
+                    }
+                }, 200);
+            });
+
+            // 分化canvas的悬停动画
+            let diffAnimId = null;
+
+            function animateDiffHighlight() {
+                if (diffCard.style.display !== 'none' && diffHighlighted !== 'stem') {
+                    resizeDiffCanvas();
+                    if (diffWrapper) {
+                        const dw = diffWrapper.getBoundingClientRect().width;
+                        const dh = diffWrapper.getBoundingClientRect().height;
+                        drawDifferentiation(diffCtx, dw, dh, diffHighlighted);
+                    }
+                }
+                diffAnimId = requestAnimationFrame(() => {
+                    if (diffCard.style.display !== 'none') {
+                        animateDiffHighlight();
+                    }
+                });
+            }
+
+            // 当切换到分化标签时启动微动画
+            const origTabDiffClick = tabDiff.onclick;
+            tabDiff.addEventListener('click', () => {
+                if (diffAnimId) cancelAnimationFrame(diffAnimId);
+                setTimeout(() => {
+                    if (diffHighlighted !== 'stem') {
+                        animateDiffHighlight();
+                    }
+                }, 200);
+            });
+
+            // 当高亮为非stem时启动动画
+            diffLegend.addEventListener('click', () => {
+                if (diffAnimId) cancelAnimationFrame(diffAnimId);
+                if (diffHighlighted !== 'stem' && diffCard.style.display !== 'none') {
+                    setTimeout(() => animateDiffHighlight(), 100);
+                }
+            });
+
+            init();
+
+            console.log('🧬 细胞分裂与分化交互演示已就绪');
+            console.log('   🖱 操作提示：');
+            console.log('   - 点击阶段圆点跳转阶段');
+            console.log('   - 点击播放按钮自动播放');
+            console.log('   - 使用键盘 ← → 切换阶段');
+            console.log('   - 按空格键播放/暂停');
+            console.log('   - 点击速度标签切换播放速度');
+            console.log('   - 切换标签查看细胞分化演示');
+            console.log('   - 点击分化图例高亮不同细胞类型');
+        })();
+    </script>
+</body>
+</html>

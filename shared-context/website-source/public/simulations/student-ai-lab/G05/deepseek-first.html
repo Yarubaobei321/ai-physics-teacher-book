@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>工业区位因素交互学习 | 地理学科 · 深圳高中生演示</title>
+    <!-- 引入 Font Awesome 6 (免费图标库) 和 Chart.js 轻量图表库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f7ff 0%, #e9f0fa 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Inter', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding: 2rem 1.5rem;
+            color: #1a2c3e;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.65);
+            backdrop-filter: blur(2px);
+            border-radius: 3rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.2);
+            padding: 2rem 1.8rem;
+            transition: all 0.2s;
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #cbdde9;
+            padding-bottom: 1rem;
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #1f5e3a, #2c7a4d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header h1 i {
+            background: none;
+            color: #2c7a4d;
+            font-size: 2rem;
+        }
+        .sub {
+            color: #2c5368;
+            font-size: 1rem;
+            margin-top: 8px;
+            font-weight: 500;
+            background: #eef3fcbb;
+            display: inline-block;
+            padding: 0.3rem 1.2rem;
+            border-radius: 40px;
+            backdrop-filter: blur(2px);
+        }
+
+        /* 两列布局 */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        /* 左侧 因素卡片区 */
+        .factors-grid {
+            flex: 1.2;
+            min-width: 260px;
+            background: rgba(255,255,240,0.5);
+            border-radius: 2rem;
+            padding: 0.2rem 0.2rem 0.6rem 0.2rem;
+        }
+        .factors-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0.8rem 0 1rem 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #1f4e2d;
+        }
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+        .factor-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 0.8rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 12px -8px rgba(0,0,0,0.08);
+            border: 1px solid rgba(100,108,118,0.12);
+            backdrop-filter: blur(2px);
+        }
+        .factor-card i {
+            font-size: 2rem;
+            color: #2b7a4b;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+        .factor-card h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: #1e3a2f;
+        }
+        .factor-card p {
+            font-size: 0.8rem;
+            color: #4a627a;
+            line-height: 1.3;
+        }
+        .factor-card:hover {
+            transform: translateY(-5px);
+            background: #fffef7;
+            box-shadow: 0 20px 25px -12px rgba(34, 96, 58, 0.2);
+            border-color: #8bc34a80;
+        }
+        .factor-card.active {
+            background: linear-gradient(135deg, #e8f3e6, #ffffff);
+            border-left: 4px solid #2e7d5e;
+            box-shadow: 0 12px 18px -10px rgba(46,125,94,0.2);
+        }
+
+        /* 右侧 雷达图 + 工业选择区 */
+        .right-panel {
+            flex: 1.5;
+            min-width: 320px;
+            background: rgba(255,255,255,0.75);
+            border-radius: 2rem;
+            padding: 1.2rem 1.5rem 1.8rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            backdrop-filter: blur(4px);
+        }
+        .industry-selector {
+            background: #f9fbfd;
+            border-radius: 1.8rem;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 1.6rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .industry-selector label {
+            font-weight: 700;
+            color: #1f5e3a;
+            font-size: 1.1rem;
+        }
+        select {
+            background: white;
+            border: 1px solid #cbdbe0;
+            padding: 0.6rem 1.2rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        select:focus {
+            outline: none;
+            border-color: #2e7d5e;
+            box-shadow: 0 0 0 3px #a3d8b6;
+        }
+        .radar-wrapper {
+            background: #ffffffcc;
+            border-radius: 1.8rem;
+            padding: 0.8rem;
+            margin: 1rem 0 1rem 0;
+            text-align: center;
+        }
+        canvas {
+            max-height: 280px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .industry-desc {
+            background: #eef2f6;
+            border-radius: 1.6rem;
+            padding: 1rem 1.4rem;
+            margin-top: 1rem;
+            border-left: 6px solid #2b7a4b;
+        }
+        .industry-desc h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.2rem;
+            color: #1c4d2d;
+        }
+        .industry-desc p {
+            margin-top: 8px;
+            line-height: 1.45;
+            color: #2c3e4e;
+        }
+        .factor-detail-area {
+            margin-top: 1.5rem;
+            background: #e2f0e9b3;
+            border-radius: 1.4rem;
+            padding: 0.9rem 1.2rem;
+            transition: 0.2s;
+            border: 1px solid #bdd9cb;
+        }
+        .factor-detail-area span {
+            font-weight: 700;
+            color: #135b3a;
+        }
+
+        /* 底部趣味小测验 */
+        .quiz-area {
+            margin-top: 2rem;
+            background: #f9f6ef;
+            border-radius: 1.6rem;
+            padding: 1.2rem 1.5rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            border: 1px solid #dde0dc;
+        }
+        .quiz-text {
+            font-weight: 600;
+            color: #2c5a2e;
+        }
+        .quiz-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .quiz-btn {
+            background: #eef2f5;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .quiz-btn:hover {
+            background: #cbe5d4;
+            transform: scale(0.97);
+        }
+        .feedback {
+            font-size: 0.9rem;
+            background: #fff2df;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            color: #a5581c;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #4a6a7c;
+            border-top: 1px solid #cbdde9;
+            padding-top: 1.2rem;
+        }
+
+        @media (max-width: 800px) {
+            body {
+                padding: 1rem;
+            }
+            .container {
+                padding: 1.2rem;
+            }
+            .header h1 {
+                font-size: 1.6rem;
+            }
+        }
+        button, select, .factor-card {
+            user-select: none;
+        }
+        .highlight {
+            animation: pulse 0.6s ease;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); background: #fff0c0;}
+            100% { transform: scale(1); background: white;}
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-industry"></i> 工业区位因素 · 动态决策模型</h1>
+        <div class="sub"><i class="fas fa-map-marked-alt"></i> 地理交互课堂 | 点击因素卡片 · 选择工业类型 · 洞察选址关键</div>
+    </div>
+
+    <div class="dashboard">
+        <!-- 左侧 区位因素卡片库 (可点击展示详细理论) -->
+        <div class="factors-grid">
+            <div class="factors-title">
+                <i class="fas fa-cubes"></i> 核心区位因素
+                <span style="font-size: 0.75rem; background:#dfe9e2; padding:2px 10px; border-radius: 30px;">点击卡片查看解释</span>
+            </div>
+            <div class="card-container" id="factorCardsContainer">
+                <!-- 六个因素卡片：原料、市场、劳动力、交通、能源、政策土地 -->
+                <div class="factor-card" data-factor="raw">
+                    <i class="fas fa-mine"></i>
+                    <h3>原料</h3>
+                    <p>资源禀赋 · 原料运量/损耗</p>
+                </div>
+                <div class="factor-card" data-factor="market">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>市场</h3>
+                    <p>消费地距离 · 需求规模</p>
+                </div>
+                <div class="factor-card" data-factor="labor">
+                    <i class="fas fa-users"></i>
+                    <h3>劳动力</h3>
+                    <p>数量 · 技能 · 工资水平</p>
+                </div>
+                <div class="factor-card" data-factor="transport">
+                    <i class="fas fa-truck-fast"></i>
+                    <h3>交通</h3>
+                    <p>物流网络 · 运输成本</p>
+                </div>
+                <div class="factor-card" data-factor="energy">
+                    <i class="fas fa-bolt"></i>
+                    <h3>能源</h3>
+                    <p>电力/燃料供应 & 成本</p>
+                </div>
+                <div class="factor-card" data-factor="policy">
+                    <i class="fas fa-landmark"></i>
+                    <h3>政策/土地</h3>
+                    <p>优惠扶持 · 地价/环境规划</p>
+                </div>
+            </div>
+            <!-- 点击因素后显示额外知识点区域 -->
+            <div class="factor-detail-area" id="factorDetailBox">
+                <i class="fas fa-info-circle"></i> <span>区位知识库</span><br>
+                点击左侧任一因素，获取详细的地理区位影响说明。
+            </div>
+        </div>
+
+        <!-- 右侧交互区：工业类型切换 + 雷达图显示因素重要性 -->
+        <div class="right-panel">
+            <div class="industry-selector">
+                <label><i class="fas fa-chalkboard-user"></i> 工业类型：</label>
+                <select id="industrySelect">
+                    <option value="steel">🏭 钢铁厂 (传统重工业)</option>
+                    <option value="sugar">🍬 制糖厂 (原料导向型)</option>
+                    <option value="clothing">👕 服装厂 (劳动力导向型)</option>
+                    <option value="electronics">📱 电子装配厂 (技术/劳动力)</option>
+                    <option value="brewery">🍺 啤酒厂 (市场导向型)</option>
+                </select>
+            </div>
+            <div class="radar-wrapper">
+                <canvas id="radarChartCanvas" width="400" height="300" style="max-width:100%; height:auto; width:100%"></canvas>
+            </div>
+            <div class="industry-desc" id="industryDescBox">
+                <h3><i class="fas fa-chart-pie"></i> <span id="currentIndustryName">钢铁厂</span></h3>
+                <p id="industryDetailText">钢铁工业早期趋向煤铁复合型，原料和能源权重极高，现代临海布局看重交通与市场。</p>
+                <div style="font-size:0.85rem; margin-top:6px;"><i class="fas fa-lightbulb"></i> <strong>主导区位因素：</strong> <span id="dominateFactors">原料 · 能源</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 趣味小测验 加强互动 -->
+    <div class="quiz-area">
+        <div class="quiz-text"><i class="fas fa-question-circle"></i> 📍 工业选址小挑战：</div>
+        <div class="quiz-buttons">
+            <button class="quiz-btn" data-quiz="sugar">制糖厂首要因素？</button>
+            <button class="quiz-btn" data-quiz="brewery">啤酒厂主导因素？</button>
+            <button class="quiz-btn" data-quiz="electronics">电子装配厂关键？</button>
+        </div>
+        <div class="feedback" id="quizFeedback">点击按钮，检验区位知识 👆</div>
+    </div>
+    <footer>
+        🌍 工业区位因素动态演示 | 地理学科核心素养：原料、市场、劳动力、交通、能源、政策 — 雷达图展示不同工业类型权重差异
+    </footer>
+</div>
+
+<script>
+    // ---------- 定义工业类型数据 (六项因素顺序：原料、市场、劳动力、交通、能源、政策/土地) ----------
+    const industriesData = {
+        steel: {
+            name: "钢铁厂 (传统型)",
+            scores: [5, 3, 2, 4, 5, 2],     // 原料5、市场3、劳动力2、交通4、能源5、政策2
+            description: "钢铁工业初期靠近煤铁产地，原料和能源消耗大；现代多趋向沿海港口布局 (重视交通/市场)。",
+            dominate: "原料 · 能源 · 交通"
+        },
+        sugar: {
+            name: "制糖厂 (原料导向)",
+            scores: [5, 2, 3, 3, 4, 2],
+            description: "甘蔗/甜菜易腐烂且运输成本高，原料损耗大，因此工厂须接近原料产地，属于典型原料指向型。",
+            dominate: "原料 (最关键) + 能源辅助"
+        },
+        clothing: {
+            name: "服装厂 (劳动力导向)",
+            scores: [2, 3, 5, 2, 1, 3],
+            description: "服装加工需要大量廉价且熟练的劳动力，对原料依赖小，市场靠近可降低物流，但劳动力主导区位。",
+            dominate: "劳动力 (数量与成本)"
+        },
+        electronics: {
+            name: "电子装配厂",
+            scores: [1, 4, 5, 4, 2, 3],
+            description: "电子装配需要大量技术熟练工和便捷交通出口，市场近且配套齐全，属于技术与劳动力结合型。",
+            dominate: "高素质劳动力 · 交通 · 市场"
+        },
+        brewery: {
+            name: "啤酒厂 (市场导向)",
+            scores: [3, 5, 2, 4, 2, 3],
+            description: "啤酒产品不易长期储存且运输成本较高，应接近消费市场，属于市场指向型工业。",
+            dominate: "市场 · 交通"
+        }
+    };
+
+    // 因素标签 (雷达图显示)
+    const factorLabels = ["原料资源", "市场距离", "劳动力", "交通物流", "能源动力", "政策/土地"];
+
+    let radarChart = null;     // 保存Chart实例
+    let currentIndustry = "steel";   // 默认钢铁厂
+
+    // 获取canvas上下文，初始化/更新雷达图
+    function initOrUpdateRadar(industryKey) {
+        const data = industriesData[industryKey];
+        if (!data) return;
+        const scores = [...data.scores];
+        const ctx = document.getElementById('radarChartCanvas').getContext('2d');
+        if (radarChart) {
+            // 更新数据
+            radarChart.data.datasets[0].data = scores;
+            radarChart.update();
+        } else {
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: factorLabels,
+                    datasets: [{
+                        label: '区位因素重要性评分',
+                        data: scores,
+                        backgroundColor: 'rgba(46, 125, 94, 0.25)',
+                        borderColor: '#2e7d5e',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#1f5e3a',
+                        pointBorderColor: '#ffffff',
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 5,
+                            stepSize: 1,
+                            ticks: {
+                                stepSize: 1,
+                                backdropColor: 'transparent',
+                                color: '#2c4a5e'
+                            },
+                            grid: {
+                                color: '#cbdbe4',
+                                lineWidth: 0.8
+                            },
+                            angleLines: { color: '#cfdfd0' },
+                            pointLabels: { font: { size: 11, weight: '500' }, color: '#1e4a3b' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} 分 (最高5分)` } },
+                        legend: { position: 'top', labels: { font: { size: 12 }, color: '#285c43' } }
+                    }
+                }
+            });
+        }
+        // 更新右侧描述区域
+        updateIndustryDescription(industryKey);
+    }
+
+    // 更新右侧说明文字
+    function updateIndustryDescription(industryKey) {
+        const data = industriesData[industryKey];
+        if (!data) return;
+        document.getElementById('currentIndustryName').innerHTML = `${data.name} <i class="fas fa-chart-simple"></i>`;
+        document.getElementById('industryDetailText').innerHTML = data.description;
+        document.getElementById('dominateFactors').innerHTML = data.dominate;
+    }
+
+    // 因素卡片 详细知识映射 (地理教学)
+    const factorKnowledge = {
+        raw: {
+            title: "🌾 原料因素",
+            detail: "原料的运输成本、易腐烂性、重量减轻程度直接影响工厂选址。例如制糖厂、水产品加工厂应接近原料产地，减少损耗。原料导向型工业多布局在原料丰富区。"
+        },
+        market: {
+            title: "📈 市场因素",
+            detail: "接近消费市场可降低产品运输成本，及时响应需求。啤酒、饮料、家具等易碎或易变质产品以及现代高端制造业，倾向市场指向型。城市化进程也强化市场因素。"
+        },
+        labor: {
+            title: "👩‍🏭 劳动力因素",
+            detail: "劳动密集型产业（服装、电子装配）需要大量廉价劳动力；技术密集型产业（精密仪器）依赖高技能劳动力及科技人才。劳动力工资水平和素质影响区位选择。"
+        },
+        transport: {
+            title: "🚛 交通因素",
+            detail: "便捷的公路、铁路、港口可大幅降低原料与产品的运输成本。临港工业区、交通枢纽多形成集聚效应，是现代工业区位的重要考量。"
+        },
+        energy: {
+            title: "⚡ 能源动力",
+            detail: "高耗能工业如电解铝、钢铁、石化靠近水电站或煤炭基地可显著降低成本。能源供应稳定性也影响生产连续性。"
+        },
+        policy: {
+            title: "🏛️ 政策/土地因素",
+            detail: "政府通过税收优惠、工业用地价格、环保法规引导产业布局。经济技术开发区、高新区吸引企业入驻；环境政策制约污染工业布局。"
+        }
+    };
+
+    // 显示点击因素的详情
+    function showFactorDetail(factorKey) {
+        const info = factorKnowledge[factorKey];
+        if (info) {
+            const detailBox = document.getElementById('factorDetailBox');
+            detailBox.innerHTML = `<i class="fas fa-graduation-cap"></i> <strong>${info.title}</strong><br>${info.detail}`;
+            // 添加高亮动画
+            detailBox.style.transition = "0.2s";
+            detailBox.style.backgroundColor = "#f7fef5";
+            setTimeout(() => { detailBox.style.backgroundColor = "#e2f0e9b3"; }, 500);
+        } else {
+            document.getElementById('factorDetailBox').innerHTML = `<i class="fas fa-info-circle"></i> <span>区位知识库</span><br>点击左侧任一因素，获取详细的地理区位影响说明。`;
+        }
+    }
+
+    // 高亮被点击卡片
+    function highlightCard(cardElement) {
+        // 移除所有active样式
+        document.querySelectorAll('.factor-card').forEach(card => {
+            card.classList.remove('active');
+        });
+        if (cardElement) cardElement.classList.add('active');
+    }
+
+    // 绑定因素卡片事件
+    function bindFactorCards() {
+        const cards = document.querySelectorAll('.factor-card');
+        cards.forEach(card => {
+            card.addEventListener('click', (e) => {
+                const factor = card.getAttribute('data-factor');
+                if (factor) {
+                    showFactorDetail(factor);
+                    highlightCard(card);
+                    // 额外震动反馈：增加短暂闪烁
+                    card.classList.add('highlight');
+                    setTimeout(() => card.classList.remove('highlight'), 300);
+                }
+            });
+        });
+    }
+
+    // 处理工业类型下拉改变
+    function bindIndustrySelector() {
+        const selectEl = document.getElementById('industrySelect');
+        selectEl.addEventListener('change', (e) => {
+            const newType = e.target.value;
+            currentIndustry = newType;
+            initOrUpdateRadar(newType);
+            // 可选：重置因素高亮但不影响知识面板，保留上次点击因素但不清空也好，不清空知识库更连贯
+            // 取消卡片高亮？保留也未尝不可，但为了避免误导，不清除也可以，但更友好保留之前知识讲解
+            // 并且我们可以在更换工业类型时，右侧雷达图自然更新。同时右下工业描述更新。不做额外操作。
+            // 小优化：在quiz反馈时不用自动改变
+        });
+    }
+
+    // 趣味测验逻辑
+    function bindQuiz() {
+        const btns = document.querySelectorAll('.quiz-btn');
+        const feedbackDiv = document.getElementById('quizFeedback');
+        btns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const quizType = btn.getAttribute('data-quiz');
+                let answer = "";
+                let correct = true;
+                switch (quizType) {
+                    case 'sugar':
+                        answer = "✅ 制糖厂首要因素是【原料】! 因为原料易腐烂或运输成本高 → 原料导向型工业。";
+                        break;
+                    case 'brewery':
+                        answer = "🍺 啤酒厂主导因素是【市场】! 啤酒保质期短、运输成本较高 → 市场导向型布局。";
+                        break;
+                    case 'electronics':
+                        answer = "📱 电子装配厂关键因素是【劳动力(技术)】与【交通】! 需要大量熟练工并靠近出口/市场。";
+                        break;
+                    default:
+                        answer = "点击更多工业类型，观察雷达图权重变化！";
+                        correct = false;
+                }
+                feedbackDiv.innerHTML = `<i class="fas fa-comment-dots"></i> ${answer}`;
+                // 额外视觉反馈：闪烁一下quiz区域
+                const quizAreaDiv = document.querySelector('.quiz-area');
+                quizAreaDiv.style.transition = "0.1s";
+                quizAreaDiv.style.backgroundColor = "#fff9e8";
+                setTimeout(() => quizAreaDiv.style.backgroundColor = "#f9f6ef", 400);
+                // 如果是啤酒厂测验时可以顺便将雷达图跳转到啤酒厂, 教育联动 (可选提升体验)
+                if (quizType === 'brewery') {
+                    // 联动：下拉菜单改为啤酒厂并更新雷达图
+                    const select = document.getElementById('industrySelect');
+                    if (select.value !== 'brewery') {
+                        select.value = 'brewery';
+                        const changeEvent = new Event('change');
+                        select.dispatchEvent(changeEvent);
+                        feedbackDiv.innerHTML += `<br><i class="fas fa-sync-alt"></i> 已切换至啤酒厂，可查看雷达图市场因素权重↑`;
+                    }
+                }
+                if (quizType === 'sugar') {
+                    const select = document.getElementById('industrySelect');
+                    if (select.value !== 'sugar') {
+                        select.value = 'sugar';
+                        const changeEvent = new Event('change');
+                        select.dispatchEvent(changeEvent);
+                        feedbackDiv.innerHTML += `<br><i class="fas fa-sync-alt"></i> 已切换至制糖厂，原料因素评分最高！`;
+                    }
+                }
+                if (quizType === 'electronics') {
+                    const select = document.getElementById('industrySelect');
+                    if (select.value !== 'electronics') {
+                        select.value = 'electronics';
+                        const changeEvent = new Event('change');
+                        select.dispatchEvent(changeEvent);
+                        feedbackDiv.innerHTML += `<br><i class="fas fa-sync-alt"></i> 已切换至电子装配厂，劳动力+交通双高。`;
+                    }
+                }
+            });
+        });
+    }
+
+    // 页面完全加载后初始化
+    window.addEventListener('DOMContentLoaded', () => {
+        // 初始化雷达图 (钢铁厂)
+        initOrUpdateRadar('steel');
+        // 绑定因素卡片
+        bindFactorCards();
+        // 绑定工业下拉
+        bindIndustrySelector();
+        // 绑定小测验按钮
+        bindQuiz();
+        // 设定初始默认说明卡片（默认展示市场或原料等，给一个友好的初始知识介绍）
+        document.getElementById('factorDetailBox').innerHTML = `<i class="fas fa-lightbulb"></i> <strong>💡 学习提示</strong><br>点击左侧任意区位因素卡片，查看工业选址原理。<br>👉 右侧雷达图展示不同工业类型对六大因素的依赖程度（1-5分）。<br><i class="fas fa-chart-radar"></i> 切换工业类型观察权重变化！`;
+        // 预置轻微高亮样式无
+        // 默认使得钢铁厂描述文案已经显示正确
+        // 可选初始因素无高亮
+        // 适应性：为卡片增加小响应
+        const defaultFactorDetail = document.getElementById('factorDetailBox');
+        defaultFactorDetail.style.backgroundColor = "#eef1e6";
+        // 增加雷达图说明辅助
+    });
+</script>
+</body>
+</html>

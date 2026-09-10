@@ -1,0 +1,2141 @@
+/*
+ * 尘光一号 · 火星巡检地面站 —— 深空 HUD 科幻主题
+ *
+ * 设计语言：
+ * - 深空底色 + 火星橙辉光 + 透视网格地板，全屏固定背景（.hud-bg）。
+ * - 面板是半透明深色玻璃（backdrop blur）+ 1px 青色描边 + 四角切角高光。
+ * - 数据一律等宽字体；标题大写、宽字距，像航天任务控制台。
+ * - 颜色语义：青 #3ce6ff = 链路/信息，绿 #51f5a3 = 正常/能源，
+ *   琥珀 #ffb547 = 告警/太阳能，红 #ff4757 = 危险/急停，紫 #c792ff = 距离。
+ * - 所有动画在 prefers-reduced-motion 下停用。
+ */
+
+/*
+ * 作用域说明（数智育才网站合并版）：
+ * 原 :root/html/body 上的全局样式全部收敛到 .rover-stage 容器内，
+ * 避免污染站点其余页面；基础归一化由站点 Tailwind preflight 提供，
+ * 原 mini-preflight 已删除。
+ * 注意：.rover-stage 上不要设置 position/z-index/transform/filter/isolation，
+ * .hud-bg 的 position:fixed 星空背景依赖根层叠上下文。
+ */
+
+/* ---------- 主题变量 ---------- */
+
+.rover-stage {
+  color-scheme: dark;
+  --bg-deep: #05080f;
+  --bg-panel: rgba(10, 18, 33, 0.78);
+  --bg-panel-solid: #0b1322;
+  --bg-inset: rgba(5, 10, 20, 0.65);
+  --line: rgba(60, 230, 255, 0.16);
+  --line-strong: rgba(60, 230, 255, 0.38);
+  --ink: #dbeeff;
+  --muted: #7e95b3;
+  --cyan: #3ce6ff;
+  --green: #51f5a3;
+  --amber: #ffb547;
+  --red: #ff4757;
+  --violet: #c792ff;
+  --mars: #ff6a3d;
+  --mono: "SFMono-Regular", "JetBrains Mono", ui-monospace, Menlo, Consolas, "Liberation Mono", monospace;
+  --glow-cyan: 0 0 12px rgba(60, 230, 255, 0.35);
+  --panel-shadow: 0 14px 44px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(120, 220, 255, 0.06);
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--bg-deep);
+  color: var(--ink);
+}
+
+.rover-stage button,
+.rover-stage input {
+  font: inherit;
+  color: inherit;
+}
+
+.rover-stage button {
+  touch-action: manipulation;
+}
+
+.rover-stage button:focus-visible,
+.rover-stage input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.rover-stage ::selection {
+  background: rgba(60, 230, 255, 0.3);
+}
+
+/* ---------- HUD 全屏背景：星空 / 火星辉光 / 透视网格 ---------- */
+
+.hud {
+  position: relative;
+  z-index: 0;
+  width: min(1280px, calc(100% - 32px));
+  margin-inline: auto;
+  padding: 24px 0 56px;
+}
+
+.hud-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 120% 70% at 50% -10%, rgba(24, 48, 88, 0.55), transparent 60%),
+    var(--bg-deep);
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(220, 240, 255, 0.9), transparent 50%),
+    radial-gradient(1px 1px at 28% 64%, rgba(220, 240, 255, 0.6), transparent 50%),
+    radial-gradient(1.5px 1.5px at 41% 12%, rgba(160, 220, 255, 0.85), transparent 50%),
+    radial-gradient(1px 1px at 55% 42%, rgba(220, 240, 255, 0.5), transparent 50%),
+    radial-gradient(1.5px 1.5px at 67% 8%, rgba(220, 240, 255, 0.8), transparent 50%),
+    radial-gradient(1px 1px at 74% 55%, rgba(160, 220, 255, 0.6), transparent 50%),
+    radial-gradient(1.5px 1.5px at 86% 26%, rgba(220, 240, 255, 0.75), transparent 50%),
+    radial-gradient(1px 1px at 93% 70%, rgba(220, 240, 255, 0.5), transparent 50%),
+    radial-gradient(1px 1px at 6% 80%, rgba(160, 220, 255, 0.45), transparent 50%),
+    radial-gradient(1px 1px at 48% 78%, rgba(220, 240, 255, 0.4), transparent 50%);
+  animation: star-twinkle 6s ease-in-out infinite alternate;
+}
+
+.mars-glow {
+  position: absolute;
+  left: 50%;
+  bottom: -42vh;
+  width: 140vw;
+  height: 70vh;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255, 106, 61, 0.28), rgba(255, 106, 61, 0.1) 38%, transparent 68%);
+  filter: blur(6px);
+}
+
+.grid-floor {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 220vw;
+  height: 46vh;
+  transform: translateX(-50%) perspective(420px) rotateX(58deg);
+  transform-origin: 50% 100%;
+  background:
+    linear-gradient(rgba(60, 230, 255, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(60, 230, 255, 0.12) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent 85%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent 85%);
+}
+
+@keyframes star-twinkle {
+  from { opacity: 0.55; }
+  to { opacity: 1; }
+}
+
+/* ---------- 面板基底 ---------- */
+
+.panel,
+.topbar,
+.connection-panel,
+.support-warning,
+.view-tabs,
+.anatomy-card,
+.anatomy-intro {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-panel);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--panel-shadow);
+}
+
+/* 面板左上角的「舱口切角」高光 */
+.panel::before,
+.anatomy-card::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 26px;
+  height: 26px;
+  border-top: 2px solid var(--line-strong);
+  border-left: 2px solid var(--line-strong);
+  border-top-left-radius: 10px;
+  pointer-events: none;
+}
+
+.panel-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  color: var(--ink);
+  font-size: 1.02rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.panel-title small {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 顶栏 ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 22px 26px;
+  background:
+    linear-gradient(120deg, rgba(60, 230, 255, 0.07), transparent 38%),
+    var(--bg-panel);
+  overflow: hidden;
+}
+
+.topbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
+  pointer-events: none;
+}
+
+.mission-code {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--mars);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.topbar h1 {
+  font-size: clamp(1.5rem, 3.2vw, 2.3rem);
+  font-weight: 850;
+  line-height: 1.12;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 24px rgba(60, 230, 255, 0.25);
+}
+
+.lead {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+}
+
+/* 链路状态链：地面站-BLE-B板-UART-A板 */
+.link-chain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 auto;
+}
+
+.chain-node {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-inset);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 6px 9px;
+  white-space: nowrap;
+  transition: color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+
+/* 链路中的「线缆」节点（BLE / UART）做成小标签 */
+.chain-node.chain-wire {
+  border-style: dashed;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  padding: 4px 8px;
+}
+
+.chain-node.live {
+  border-color: var(--line-strong);
+  color: var(--cyan);
+  box-shadow: var(--glow-cyan), inset 0 0 8px rgba(60, 230, 255, 0.08);
+}
+
+/* 连接状态灯 */
+.status-cluster {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 12px;
+  min-width: 190px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 12px 14px;
+}
+
+.status-cluster strong,
+.status-cluster span {
+  display: block;
+}
+
+.status-cluster strong {
+  font-size: 0.92rem;
+  letter-spacing: 0.04em;
+}
+
+.status-cluster > div > span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
+}
+
+.status-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #5a6c80;
+  box-shadow: 0 0 0 4px rgba(90, 108, 128, 0.18);
+}
+
+.state-connected,
+.state-demo {
+  background: var(--green);
+  box-shadow: 0 0 0 4px rgba(81, 245, 163, 0.16), 0 0 12px rgba(81, 245, 163, 0.7);
+  animation: lamp-pulse 2.2s ease-in-out infinite;
+}
+
+.state-connecting {
+  background: var(--amber);
+  box-shadow: 0 0 0 4px rgba(255, 181, 71, 0.18), 0 0 10px rgba(255, 181, 71, 0.6);
+  animation: lamp-pulse 0.9s ease-in-out infinite;
+}
+
+.state-error,
+.state-unsupported {
+  background: var(--red);
+  box-shadow: 0 0 0 4px rgba(255, 71, 87, 0.18), 0 0 12px rgba(255, 71, 87, 0.7);
+}
+
+@keyframes lamp-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* ---------- 连接操作区 ---------- */
+
+.connection-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px 16px;
+}
+
+.connection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.demo-hint {
+  color: var(--amber);
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+}
+
+/* ---------- 按钮体系 ---------- */
+
+.button,
+.mode-btn,
+.toggle,
+.view-tabs button {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+
+.button:hover:not(:disabled),
+.mode-btn:hover:not(:disabled),
+.toggle:hover:not(:disabled),
+.view-tabs button:hover {
+  transform: translateY(-1px);
+}
+
+.button:disabled,
+.mode-btn:disabled,
+.toggle:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.button {
+  padding: 0 16px;
+}
+
+.button.primary {
+  border-color: rgba(60, 230, 255, 0.55);
+  background: linear-gradient(160deg, rgba(60, 230, 255, 0.22), rgba(60, 230, 255, 0.08));
+  color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+.button.primary:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(60, 230, 255, 0.5);
+}
+
+.button.secondary {
+  border-color: var(--line);
+  background: rgba(60, 230, 255, 0.05);
+  color: var(--ink);
+}
+
+.button.secondary.demo-on {
+  border-color: rgba(255, 181, 71, 0.5);
+  background: rgba(255, 181, 71, 0.1);
+  color: var(--amber);
+}
+
+.button.ghost {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+}
+
+.button.ghost:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.button.danger {
+  border-color: rgba(255, 71, 87, 0.55);
+  background: rgba(255, 71, 87, 0.14);
+  color: var(--red);
+}
+
+/* ---------- 浏览器不支持警告 ---------- */
+
+.support-warning {
+  margin-top: 12px;
+  padding: 13px 16px;
+  border-color: rgba(255, 71, 87, 0.4);
+  background: rgba(255, 71, 87, 0.08);
+  color: #ffb3bb;
+  line-height: 1.65;
+}
+
+/* ---------- 视图选项卡 ---------- */
+
+.view-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 8px;
+  overflow-x: auto;
+}
+
+.view-tabs button {
+  flex: 1 0 auto;
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 8px 18px;
+  text-align: left;
+}
+
+.view-tabs button small {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  opacity: 0.7;
+}
+
+.view-tabs button.active {
+  border-color: var(--line-strong);
+  background: linear-gradient(180deg, rgba(60, 230, 255, 0.14), rgba(60, 230, 255, 0.04));
+  color: var(--cyan);
+  box-shadow: inset 0 -2px 0 var(--cyan);
+}
+
+/* ---------- 三个主视图的栅格 ---------- */
+
+.mission-grid,
+.control-grid,
+.anatomy-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.panel {
+  padding: 18px;
+}
+
+.gauges-panel {
+  grid-column: span 3;
+}
+
+.rover-panel {
+  grid-column: span 6;
+}
+
+.safety-panel {
+  grid-column: span 3;
+}
+
+.trends-panel {
+  grid-column: 1 / -1;
+}
+
+.drive-panel {
+  grid-column: span 7;
+}
+
+.log-panel {
+  grid-column: span 5;
+}
+
+.anatomy-intro {
+  grid-column: 1 / -1;
+  padding: 18px;
+}
+
+.anatomy-intro p {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.anatomy-intro strong {
+  color: var(--cyan);
+}
+
+.anatomy-card {
+  grid-column: span 6;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 18px;
+}
+
+/* ---------- 弧形仪表 ---------- */
+
+.gauge-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.arc-gauge {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  border: 1px solid rgba(60, 230, 255, 0.08);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 10px 8px 12px;
+}
+
+.arc-gauge svg {
+  width: min(132px, 100%);
+}
+
+.arc-track {
+  fill: none;
+  stroke: rgba(126, 149, 179, 0.22);
+  stroke-width: 7;
+}
+
+.arc-value {
+  fill: none;
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dasharray 500ms ease;
+}
+
+.arc-display {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 19px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.arc-unit {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  text-anchor: middle;
+  letter-spacing: 0.1em;
+}
+
+.arc-gauge strong {
+  font-size: 0.86rem;
+  letter-spacing: 0.06em;
+}
+
+.arc-gauge span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  text-align: center;
+}
+
+.arc-gauge.warn {
+  border-color: rgba(255, 181, 71, 0.4);
+  animation: warn-border 1.6s ease-in-out infinite;
+}
+
+.arc-gauge.warn span {
+  color: var(--amber);
+}
+
+@keyframes warn-border {
+  0%, 100% { box-shadow: inset 0 0 0 0 rgba(255, 181, 71, 0); }
+  50% { box-shadow: inset 0 0 18px 0 rgba(255, 181, 71, 0.14); }
+}
+
+/* ---------- 实时态势面板 ---------- */
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.mode-badge {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.mode-manual {
+  border-color: rgba(81, 245, 163, 0.45);
+  color: var(--green);
+  background: rgba(81, 245, 163, 0.08);
+}
+
+.mode-auto {
+  border-color: rgba(60, 230, 255, 0.45);
+  color: var(--cyan);
+  background: rgba(60, 230, 255, 0.08);
+}
+
+.mode-safe {
+  border-color: rgba(255, 181, 71, 0.45);
+  color: var(--amber);
+  background: rgba(255, 181, 71, 0.08);
+}
+
+.rover-readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rover-readout > div {
+  border: 1px solid rgba(60, 230, 255, 0.08);
+  border-radius: 6px;
+  background: var(--bg-inset);
+  padding: 8px 10px;
+}
+
+.rover-readout label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.rover-readout strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-size: 1.05rem;
+}
+
+.rover-readout small {
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.update-stamp {
+  margin-top: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- 火星车俯视动画 ---------- */
+
+.rover-topview {
+  border: 1px solid rgba(60, 230, 255, 0.1);
+  border-radius: 8px;
+  background:
+    radial-gradient(ellipse at 50% 120%, rgba(255, 106, 61, 0.12), transparent 60%),
+    var(--bg-inset);
+  overflow: hidden;
+}
+
+.rover-topview svg {
+  width: 100%;
+  height: auto;
+}
+
+.ground-grid line {
+  stroke: rgba(255, 106, 61, 0.1);
+  stroke-width: 1;
+}
+
+.tof-beam {
+  transition: opacity 200ms ease;
+}
+
+.tof-beam.alert {
+  animation: beam-flash 0.7s ease-in-out infinite;
+}
+
+@keyframes beam-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.obstacle-rock path {
+  fill: #6b4a3a;
+  stroke: rgba(255, 106, 61, 0.6);
+  stroke-width: 1;
+}
+
+.obstacle-rock.alert path {
+  fill: #7a3a30;
+  stroke: var(--red);
+  filter: drop-shadow(0 0 4px rgba(255, 71, 87, 0.8));
+}
+
+.dist-label {
+  fill: var(--violet);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.rover-topview .wheel {
+  fill: #18202c;
+  stroke: rgba(60, 230, 255, 0.4);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 3;
+  animation: wheel-roll 1s linear infinite;
+  animation-play-state: paused;
+}
+
+@keyframes wheel-roll {
+  to { stroke-dashoffset: -14; }
+}
+
+.rover-topview .rover-body {
+  fill: rgba(20, 32, 50, 0.92);
+  stroke: var(--line-strong);
+  stroke-width: 1.4;
+}
+
+.solar-deck rect {
+  fill: rgba(18, 42, 66, 0.95);
+  stroke: rgba(60, 230, 255, 0.5);
+  stroke-width: 1;
+}
+
+.solar-deck line {
+  stroke: rgba(60, 230, 255, 0.3);
+  stroke-width: 1;
+}
+
+.solar-deck.tracking rect {
+  stroke: var(--amber);
+  filter: drop-shadow(0 0 4px rgba(255, 181, 71, 0.5));
+}
+
+.dust-dot {
+  fill: rgba(255, 160, 110, 0.8);
+}
+
+.board-chip {
+  stroke-width: 1.2;
+}
+
+.board-a-chip {
+  fill: rgba(81, 245, 163, 0.12);
+  stroke: var(--green);
+}
+
+.board-b-chip {
+  fill: rgba(60, 230, 255, 0.12);
+  stroke: var(--cyan);
+}
+
+.chip-label {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fan-rotor .fan-ring {
+  fill: rgba(10, 18, 33, 0.9);
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1.2;
+}
+
+.fan-rotor .fan-blades path,
+.fan-blades.big path {
+  fill: rgba(60, 230, 255, 0.65);
+}
+
+.fan-rotor.spinning .fan-blades,
+.fan-blades.big.spinning {
+  animation: spin 0.5s linear infinite;
+  transform-origin: 0 0;
+  transform-box: fill-box;
+}
+
+.fan-rotor.spinning .fan-blades {
+  transform-origin: center;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.line-probe {
+  fill: rgba(126, 149, 179, 0.3);
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1;
+}
+
+.line-probe.on {
+  fill: var(--green);
+  stroke: var(--green);
+  filter: drop-shadow(0 0 3px rgba(81, 245, 163, 0.9));
+}
+
+.pit-sensor {
+  fill: rgba(199, 146, 255, 0.25);
+  stroke: var(--violet);
+  stroke-width: 1.2;
+}
+
+.pit-sensor.alert {
+  fill: var(--red);
+  stroke: var(--red);
+  animation: lamp-pulse 0.5s ease-in-out infinite;
+}
+
+.estop-overlay rect {
+  fill: rgba(255, 71, 87, 0.12);
+  animation: lamp-pulse 0.8s ease-in-out infinite;
+}
+
+.estop-overlay text {
+  fill: var(--red);
+  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  animation: lamp-pulse 0.8s ease-in-out infinite;
+}
+
+.rover-topview.estop {
+  border-color: rgba(255, 71, 87, 0.5);
+}
+
+.motion-trail line {
+  stroke: rgba(60, 230, 255, 0.55);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 8 6;
+  animation: dash-flow 0.6s linear infinite;
+}
+
+@keyframes dash-flow {
+  to { stroke-dashoffset: -14; }
+}
+
+/* ---------- 安全裁决面板 ---------- */
+
+.risk-badge {
+  border: 1px solid rgba(81, 245, 163, 0.4);
+  border-radius: 999px;
+  background: rgba(81, 245, 163, 0.08);
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+}
+
+.risk-badge.danger {
+  border-color: rgba(255, 71, 87, 0.5);
+  background: rgba(255, 71, 87, 0.1);
+  color: var(--red);
+  animation: lamp-pulse 1s ease-in-out infinite;
+}
+
+.status-list {
+  margin-top: 12px;
+}
+
+.status-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  border-top: 1px solid rgba(126, 149, 179, 0.12);
+}
+
+.status-row:first-of-type {
+  border-top: 0;
+}
+
+.status-lamp {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(126, 149, 179, 0.35);
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+.status-row.active .status-lamp {
+  background: var(--green);
+  box-shadow: 0 0 8px rgba(81, 245, 163, 0.8);
+}
+
+.status-row.danger .status-lamp {
+  background: var(--red);
+  box-shadow: 0 0 8px rgba(255, 71, 87, 0.8);
+  animation: lamp-pulse 0.7s ease-in-out infinite;
+}
+
+.status-row strong {
+  font-size: 0.86rem;
+  letter-spacing: 0.02em;
+}
+
+.status-row.danger strong {
+  color: #ffb3bb;
+}
+
+.status-row em {
+  color: var(--muted);
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 0.76rem;
+}
+
+.status-row.danger em {
+  color: var(--red);
+}
+
+/* ---------- 人工地平仪 ---------- */
+
+.horizon {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  border: 1px solid rgba(60, 230, 255, 0.08);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 10px;
+}
+
+.horizon svg {
+  width: min(150px, 100%);
+}
+
+.horizon-sky {
+  fill: #14304e;
+}
+
+.horizon-ground {
+  fill: #6e3018;
+}
+
+.horizon-line {
+  stroke: rgba(220, 240, 255, 0.9);
+  stroke-width: 1.6;
+}
+
+.horizon-tick {
+  stroke: rgba(220, 240, 255, 0.55);
+  stroke-width: 1;
+}
+
+.horizon-ring {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+}
+
+.horizon.danger .horizon-ring {
+  stroke: var(--red);
+  filter: drop-shadow(0 0 6px rgba(255, 71, 87, 0.7));
+}
+
+.horizon-marker {
+  fill: none;
+  stroke: var(--amber);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.horizon-dot {
+  fill: var(--amber);
+}
+
+.horizon-readout {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+}
+
+.horizon-readout span {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.horizon.danger .horizon-readout span {
+  color: var(--red);
+}
+
+/* ---------- 趋势图 ---------- */
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sparkline-card {
+  border: 1px solid rgba(60, 230, 255, 0.08);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 12px 14px;
+}
+
+.sparkline-card > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sparkline-card strong {
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+}
+
+.sparkline-card span {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.sparkline-card svg {
+  width: 100%;
+  height: 84px;
+  margin-top: 8px;
+}
+
+.spark-base {
+  fill: none;
+  stroke: rgba(126, 149, 179, 0.25);
+  stroke-width: 0.6;
+  stroke-dasharray: 2 2;
+}
+
+.sparkline-card polyline {
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ---------- 操控台 ---------- */
+
+.mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.mode-btn {
+  position: relative;
+  flex: 1 1 110px;
+  background: var(--bg-inset);
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.14em;
+  padding: 0 14px;
+}
+
+.mode-btn.selected {
+  border-color: var(--line-strong);
+  background: linear-gradient(180deg, rgba(60, 230, 255, 0.16), rgba(60, 230, 255, 0.04));
+  color: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+.actual-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px rgba(81, 245, 163, 0.9);
+}
+
+.mode-truth {
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.mode-truth strong {
+  color: var(--green);
+  font-family: var(--mono);
+}
+
+.mode-truth.mismatch {
+  color: var(--amber);
+}
+
+.mode-truth.mismatch strong {
+  color: var(--amber);
+}
+
+/* 摇杆 + 滑杆 */
+.drive-cluster {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 20px;
+  margin-top: 18px;
+}
+
+.joystick {
+  position: relative;
+  width: 172px;
+  height: 172px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(60, 230, 255, 0.08), transparent 65%),
+    var(--bg-inset);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.joystick.dragging {
+  cursor: grabbing;
+  border-color: var(--cyan);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.6), var(--glow-cyan);
+}
+
+.joystick.disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.joystick-cross {
+  position: absolute;
+  inset: 14px;
+  background:
+    linear-gradient(rgba(60, 230, 255, 0.18) 1px, transparent 1px) 50% 50% / 100% calc(50% - 0.5px) no-repeat,
+    linear-gradient(90deg, rgba(60, 230, 255, 0.18) 1px, transparent 1px) 50% 50% / calc(50% - 0.5px) 100% no-repeat;
+  pointer-events: none;
+}
+
+.joystick-cross::before,
+.joystick-cross::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+
+.joystick-cross::before {
+  width: 100%;
+  height: 1px;
+  background: rgba(60, 230, 255, 0.22);
+}
+
+.joystick-cross::after {
+  width: 1px;
+  height: 100%;
+  background: rgba(60, 230, 255, 0.22);
+}
+
+.joystick-ring {
+  position: absolute;
+  inset: 28px;
+  border: 1px dashed rgba(60, 230, 255, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.joystick-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border: 2px solid var(--cyan);
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, rgba(60, 230, 255, 0.45), rgba(13, 30, 50, 0.95) 70%);
+  box-shadow: 0 0 16px rgba(60, 230, 255, 0.45), inset 0 0 8px rgba(60, 230, 255, 0.3);
+  pointer-events: none;
+  transition: transform 60ms linear;
+}
+
+.joystick.disabled .joystick-knob {
+  border-color: rgba(126, 149, 179, 0.5);
+  box-shadow: none;
+}
+
+.joystick-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.range-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.range-stack label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  border: 1px solid rgba(60, 230, 255, 0.08);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 12px 14px;
+}
+
+.range-stack span {
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.range-stack output {
+  color: var(--cyan);
+  font-family: var(--mono);
+  font-weight: 700;
+}
+
+.range-stack input {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--cyan);
+}
+
+.drive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 急停区 */
+.estop-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.estop-button {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  min-width: 150px;
+  min-height: 64px;
+  border: 2px solid rgba(255, 71, 87, 0.7);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(-45deg, rgba(255, 71, 87, 0.14) 0 10px, transparent 10px 20px),
+    rgba(255, 71, 87, 0.1);
+  color: var(--red);
+  font-size: 1.2rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+  animation: estop-breathe 2s ease-in-out infinite;
+}
+
+.estop-button span {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  opacity: 0.8;
+}
+
+.estop-button:hover:not(:disabled) {
+  background:
+    repeating-linear-gradient(-45deg, rgba(255, 71, 87, 0.22) 0 10px, transparent 10px 20px),
+    rgba(255, 71, 87, 0.18);
+  box-shadow: 0 0 24px rgba(255, 71, 87, 0.45);
+}
+
+.estop-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+  animation: none;
+}
+
+@keyframes estop-breathe {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 71, 87, 0.25); }
+  50% { box-shadow: 0 0 18px rgba(255, 71, 87, 0.45); }
+}
+
+.clear-estop {
+  flex: 1 1 auto;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  text-align: left;
+  padding: 8px 16px;
+}
+
+.clear-estop small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+
+/* 快捷开关 */
+.quick-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.toggle {
+  flex: 1 1 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-inset);
+  color: var(--muted);
+  padding: 0 14px;
+}
+
+.toggle strong {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+
+.toggle.active {
+  border-color: var(--line-strong);
+  background: rgba(60, 230, 255, 0.08);
+  color: var(--ink);
+  box-shadow: var(--glow-cyan);
+}
+
+.toggle.active strong {
+  color: var(--cyan);
+}
+
+.icon-fan,
+.icon-sun {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-fan path,
+.icon-fan circle {
+  fill: currentColor;
+}
+
+.icon-fan.spinning {
+  animation: spin 0.7s linear infinite;
+}
+
+.icon-sun circle {
+  fill: currentColor;
+}
+
+.icon-sun line {
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+}
+
+.icon-sun.glowing {
+  color: var(--amber);
+  filter: drop-shadow(0 0 4px rgba(255, 181, 71, 0.8));
+}
+
+.safety-note {
+  margin-top: 16px;
+  border-left: 3px solid var(--amber);
+  border-radius: 6px;
+  background: rgba(255, 181, 71, 0.07);
+  color: #e8c890;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  padding: 12px 14px;
+}
+
+/* ---------- 链路日志（终端风） ---------- */
+
+.log-list {
+  display: grid;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(60, 230, 255, 0.3) transparent;
+}
+
+.empty-log {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.log-entry {
+  border: 1px solid rgba(126, 149, 179, 0.12);
+  border-left: 3px solid rgba(126, 149, 179, 0.5);
+  border-radius: 6px;
+  background: var(--bg-inset);
+  padding: 8px 12px;
+}
+
+.log-entry time,
+.log-entry strong,
+.log-entry code {
+  display: block;
+}
+
+.log-entry time {
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+}
+
+.log-entry strong {
+  margin-top: 3px;
+  font-size: 0.84rem;
+}
+
+.log-entry code {
+  margin-top: 5px;
+  color: #9fc3e8;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.level-tx {
+  border-left-color: var(--cyan);
+}
+
+.level-rx {
+  border-left-color: var(--green);
+}
+
+.level-info {
+  border-left-color: rgba(126, 149, 179, 0.7);
+}
+
+.level-warn {
+  border-left-color: var(--amber);
+  background: rgba(255, 181, 71, 0.05);
+}
+
+.level-error {
+  border-left-color: var(--red);
+  background: rgba(255, 71, 87, 0.06);
+}
+
+/* ---------- 部件原理卡片 ---------- */
+
+.anatomy-card header {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.anatomy-tag {
+  border: 1px solid rgba(255, 106, 61, 0.5);
+  border-radius: 4px;
+  color: var(--mars);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.anatomy-card h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.anatomy-live {
+  color: var(--green);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.anatomy-diagram {
+  border: 1px solid rgba(60, 230, 255, 0.08);
+  border-radius: 8px;
+  background: var(--bg-inset);
+  padding: 8px;
+}
+
+.anatomy-diagram svg {
+  width: 100%;
+  height: auto;
+}
+
+.anatomy-card > p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.75;
+}
+
+/* ----- 原理图 SVG 公共元素 ----- */
+
+.node-box {
+  fill: rgba(20, 36, 58, 0.9);
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.node-label {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.node-sub {
+  fill: var(--muted);
+  font-size: 9px;
+}
+
+.wire {
+  stroke: rgba(60, 230, 255, 0.55);
+  stroke-width: 1.4;
+}
+
+.wire.dim {
+  stroke: rgba(81, 245, 163, 0.35);
+  stroke-dasharray: 4 3;
+}
+
+.wire-label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+}
+
+.wire-label.dim {
+  fill: rgba(126, 149, 179, 0.7);
+}
+
+.wire-label.alert-text,
+.alert-text {
+  fill: var(--red);
+  font-weight: 700;
+}
+
+.wire-label.warn-text,
+.warn-text {
+  fill: var(--amber);
+}
+
+.packet.cmd {
+  fill: var(--cyan);
+  filter: drop-shadow(0 0 3px rgba(60, 230, 255, 0.9));
+}
+
+.packet.telem {
+  fill: var(--green);
+  filter: drop-shadow(0 0 3px rgba(81, 245, 163, 0.9));
+}
+
+.formula {
+  fill: var(--violet);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+/* ----- 安全裁决门 ----- */
+
+.gate {
+  stroke-width: 1.2;
+  transition: fill 300ms ease, stroke 300ms ease;
+}
+
+.gate.open {
+  fill: rgba(81, 245, 163, 0.08);
+  stroke: rgba(81, 245, 163, 0.6);
+}
+
+.gate.blocked {
+  fill: rgba(255, 71, 87, 0.14);
+  stroke: var(--red);
+}
+
+.gate-label {
+  fill: var(--ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.gate-state {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.gate-state.open {
+  fill: var(--green);
+}
+
+.gate-state.blocked {
+  fill: var(--red);
+}
+
+.motor-node {
+  stroke-width: 1.6;
+  transition: fill 300ms ease, stroke 300ms ease;
+}
+
+.motor-node.on {
+  fill: rgba(81, 245, 163, 0.16);
+  stroke: var(--green);
+  filter: drop-shadow(0 0 5px rgba(81, 245, 163, 0.6));
+}
+
+.motor-node.off {
+  fill: rgba(126, 149, 179, 0.08);
+  stroke: rgba(126, 149, 179, 0.5);
+}
+
+/* ----- H 桥 ----- */
+
+.rail {
+  stroke: rgba(220, 240, 255, 0.5);
+  stroke-width: 1.6;
+}
+
+.switch-box {
+  fill: rgba(126, 149, 179, 0.08);
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1.2;
+  transition: fill 250ms ease, stroke 250ms ease;
+}
+
+.switch-box.on {
+  fill: rgba(60, 230, 255, 0.16);
+  stroke: var(--cyan);
+}
+
+.switch-state {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+.switch-state.on {
+  fill: var(--cyan);
+  font-weight: 700;
+}
+
+.current-path {
+  stroke: var(--cyan);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 7 5;
+  filter: drop-shadow(0 0 3px rgba(60, 230, 255, 0.7));
+  animation: dash-flow 0.5s linear infinite;
+}
+
+.current-path.reverse {
+  stroke: var(--amber);
+  filter: drop-shadow(0 0 3px rgba(255, 181, 71, 0.7));
+}
+
+.duty-track {
+  fill: rgba(126, 149, 179, 0.15);
+}
+
+.duty-fill {
+  fill: var(--cyan);
+  transition: width 300ms ease;
+}
+
+.duty-fill.solar {
+  fill: var(--green);
+}
+
+.duty-fill.solar.dimmed {
+  fill: var(--amber);
+}
+
+.pwm-wave {
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1.6;
+}
+
+.pwm-wave.active {
+  stroke: var(--cyan);
+  stroke-dasharray: 90 30;
+  animation: dash-flow 1s linear infinite;
+}
+
+/* ----- 编码器 ----- */
+
+.encoder-disk {
+  animation: spin 2s linear infinite;
+  animation-play-state: paused;
+  transform-box: view-box;
+  transform-origin: 70px 60px;
+}
+
+.disk-body {
+  fill: rgba(20, 36, 58, 0.95);
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1;
+}
+
+.pole.n {
+  fill: rgba(255, 106, 61, 0.85);
+}
+
+.pole.s {
+  fill: rgba(60, 230, 255, 0.75);
+}
+
+.disk-hub {
+  fill: #0b1322;
+  stroke: rgba(220, 240, 255, 0.4);
+  stroke-width: 1;
+}
+
+.hall-sensor {
+  fill: rgba(81, 245, 163, 0.16);
+  stroke: var(--green);
+  stroke-width: 1.2;
+}
+
+.pulse-wave {
+  stroke: rgba(126, 149, 179, 0.4);
+  stroke-width: 1.6;
+}
+
+.pulse-wave.active {
+  stroke: var(--green);
+  stroke-dasharray: 120 24;
+  filter: drop-shadow(0 0 2px rgba(81, 245, 163, 0.7));
+  animation: dash-flow 0.5s linear infinite;
+}
+
+/* ----- ToF 激光 ----- */
+
+.laser-path {
+  stroke: rgba(255, 71, 87, 0.55);
+  stroke-width: 1.2;
+  stroke-dasharray: 6 4;
+}
+
+.laser-path.return {
+  stroke: rgba(199, 146, 255, 0.55);
+}
+
+.photon.out {
+  fill: var(--red);
+  filter: drop-shadow(0 0 3px rgba(255, 71, 87, 0.9));
+}
+
+.photon.back {
+  fill: var(--violet);
+  filter: drop-shadow(0 0 3px rgba(199, 146, 255, 0.9));
+}
+
+.tof-wall {
+  fill: rgba(126, 149, 179, 0.45);
+  stroke: rgba(220, 240, 255, 0.35);
+  stroke-width: 1;
+  transition: x 300ms ease;
+}
+
+.tof-wall.alert {
+  fill: var(--red);
+  filter: drop-shadow(0 0 5px rgba(255, 71, 87, 0.8));
+}
+
+/* ----- IMU 姿态 ----- */
+
+.tilt-zone {
+  stroke: none;
+  opacity: 0.5;
+}
+
+.tilt-zone.ok {
+  fill: rgba(81, 245, 163, 0.14);
+}
+
+.tilt-zone.warn {
+  fill: rgba(255, 181, 71, 0.16);
+}
+
+.tilt-zone.danger {
+  fill: rgba(255, 71, 87, 0.18);
+}
+
+.tilt-rover rect {
+  fill: rgba(20, 36, 58, 0.95);
+  stroke: var(--line-strong);
+  stroke-width: 1.2;
+  transition: stroke 300ms ease;
+}
+
+.tilt-rover circle {
+  fill: #18202c;
+  stroke: rgba(126, 149, 179, 0.6);
+  stroke-width: 1;
+}
+
+.tilt-rover.warn rect {
+  stroke: var(--amber);
+}
+
+.tilt-rover.estop rect {
+  stroke: var(--red);
+  filter: drop-shadow(0 0 4px rgba(255, 71, 87, 0.8));
+}
+
+.gravity-vector {
+  stroke: var(--amber);
+  stroke-width: 2;
+  stroke-linecap: round;
+  marker-end: none;
+}
+
+/* ----- 五路循迹 ----- */
+
+.track-ground {
+  fill: rgba(110, 48, 24, 0.4);
+  stroke: rgba(255, 106, 61, 0.25);
+  stroke-width: 1;
+}
+
+.track-line {
+  fill: none;
+  stroke: #05080f;
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+
+.probe {
+  fill: rgba(126, 149, 179, 0.12);
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1;
+  transition: fill 200ms ease, stroke 200ms ease;
+}
+
+.probe.on {
+  fill: rgba(81, 245, 163, 0.25);
+  stroke: var(--green);
+}
+
+.probe-beam {
+  stroke: rgba(255, 71, 87, 0.5);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 3;
+}
+
+.probe-beam.absorbed {
+  stroke: rgba(81, 245, 163, 0.8);
+  stroke-dasharray: none;
+}
+
+/* ----- 太阳能追光 ----- */
+
+.sun-core {
+  fill: var(--amber);
+  filter: drop-shadow(0 0 8px rgba(255, 181, 71, 0.8));
+}
+
+.sun-ray {
+  stroke: var(--amber);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.anim-sun {
+  animation: sun-breathe 3s ease-in-out infinite;
+}
+
+@keyframes sun-breathe {
+  0%, 100% { filter: none; }
+  50% { filter: brightness(1.25); }
+}
+
+.light-ray {
+  stroke: rgba(255, 181, 71, 0.55);
+  stroke-width: 1.6;
+  stroke-dasharray: 6 5;
+  animation: dash-flow 0.8s linear infinite;
+}
+
+.ldr-quad {
+  fill: rgba(126, 149, 179, 0.12);
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1;
+}
+
+.ldr-quad.lit {
+  fill: rgba(255, 181, 71, 0.3);
+  stroke: var(--amber);
+}
+
+.tracker-panel.tracking {
+  animation: panel-seek 4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+@keyframes panel-seek {
+  0%, 100% { transform: rotate(-6deg); }
+  50% { transform: rotate(6deg); }
+}
+
+.panel-cell {
+  fill: rgba(18, 42, 66, 0.95);
+  stroke: rgba(60, 230, 255, 0.5);
+  stroke-width: 1;
+}
+
+.panel-cell.big {
+  stroke-width: 1.2;
+}
+
+.panel-grid-line {
+  stroke: rgba(60, 230, 255, 0.3);
+  stroke-width: 1;
+}
+
+.servo-base {
+  fill: rgba(126, 149, 179, 0.2);
+  stroke: rgba(126, 149, 179, 0.6);
+  stroke-width: 1;
+}
+
+/* ----- 积尘与风扇 ----- */
+
+.dust-particle {
+  fill: rgba(255, 160, 110, 0.85);
+}
+
+.dust-particle.blown {
+  animation: dust-blow 1.2s ease-out infinite;
+}
+
+@keyframes dust-blow {
+  0% { opacity: 1; transform: translate(0, 0); }
+  100% { opacity: 0; transform: translate(-26px, -10px); }
+}
+
+.fan-ring {
+  fill: rgba(10, 18, 33, 0.9);
+  stroke: rgba(126, 149, 179, 0.5);
+  stroke-width: 1.2;
+}
+
+.airflow line {
+  stroke: rgba(60, 230, 255, 0.55);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 5 4;
+  animation: dash-flow 0.5s linear infinite;
+}
+
+/* ---------- 页脚 ---------- */
+
+.hud-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin-top: 18px;
+  padding: 12px 4px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- 响应式 ---------- */
+
+@media (max-width: 1020px) {
+  .gauges-panel,
+  .safety-panel {
+    grid-column: span 6;
+  }
+
+  .rover-panel,
+  .drive-panel,
+  .log-panel,
+  .anatomy-card {
+    grid-column: 1 / -1;
+  }
+
+  .gauge-stack {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .chart-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .topbar {
+    flex-wrap: wrap;
+  }
+
+  .link-chain {
+    order: 3;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .hud {
+    width: min(100% - 20px, 1280px);
+    padding-top: 12px;
+  }
+
+  .topbar {
+    padding: 18px;
+  }
+
+  .gauges-panel,
+  .safety-panel {
+    grid-column: 1 / -1;
+  }
+
+  .gauge-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .drive-cluster {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .range-stack {
+    width: 100%;
+  }
+
+  .estop-row {
+    flex-direction: column;
+  }
+
+  .estop-button {
+    min-height: 72px;
+  }
+
+  .connection-actions .button {
+    flex: 1 1 100%;
+  }
+
+  .view-tabs button {
+    padding: 8px 12px;
+  }
+
+  .rover-readout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- 无障碍：减少动态 ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .rover-stage *,
+  .rover-stage *::before,
+  .rover-stage *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

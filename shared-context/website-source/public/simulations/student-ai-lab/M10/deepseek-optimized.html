@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>五点作图法 · 正弦型函数交互学习页</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#2b3a4a; --sub:#64748b;
+    --accent:#059669; --accent-soft:#d1fae5; --line:#e2e8f0;
+    --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-border:#fcd34d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink);}
+  header.app{background:linear-gradient(120deg,#047857,#059669); color:#fff; padding:18px 28px;}
+  header.app h1{font-size:22px; letter-spacing:1px;}
+  header.app p{font-size:13px; opacity:.92; margin-top:4px;}
+  .wrap{display:grid; grid-template-columns:300px 1fr 340px; gap:16px; padding:16px 20px; max-width:1440px; margin:0 auto; align-items:start;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(15,23,42,.05);}
+  .panel h2{font-size:15px; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:12px;}
+  .panel h3{font-size:13px; color:var(--ink); margin:12px 0 6px;}
+  .panel p, .panel li{font-size:13px; line-height:1.7;}
+  .panel ul{padding-left:18px;}
+  .formula{background:var(--accent-soft); border-radius:8px; padding:9px 12px; margin:7px 0; font-family:"Cambria Math",Georgia,serif; font-size:15px; color:#065f46; text-align:center; word-break:break-all;}
+  .warn{background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-ink); border-radius:8px; padding:10px 12px; margin-top:10px; font-size:12.5px; line-height:1.6;}
+  .warn b{display:block; margin-bottom:4px; font-size:13px;}
+  .canvas-box{background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px;}
+  canvas#wave{display:block; width:100%; height:auto; border-radius:6px;}
+  .canvas-cap{font-size:12px; color:var(--sub); margin-top:6px; line-height:1.5;}
+  .slider-field{margin-top:12px;}
+  .slider-field label{display:flex; justify-content:space-between; font-size:13px; color:var(--ink); margin-bottom:4px;}
+  .slider-field label output{color:var(--accent); font-family:"SF Mono",Menlo,Consolas,monospace; font-weight:600;}
+  input[type=range]{width:100%; accent-color:var(--accent); cursor:pointer;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;}
+  button.btn{appearance:none; border:none; border-radius:8px; padding:9px 16px; font-size:13px; cursor:pointer; color:#fff; background:var(--accent); transition:filter .15s;}
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.ghost{background:#fff; color:var(--accent); border:1px solid var(--accent);}
+  .readout{background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:12px;}
+  .readout table{width:100%; border-collapse:collapse;}
+  .readout td{padding:6px 4px; font-size:13px; border-bottom:1px dashed var(--line);}
+  .readout td:first-child{color:var(--sub);}
+  .readout td:last-child{text-align:right; font-family:"Cambria Math","SF Mono",Menlo,monospace; font-size:14px; font-weight:600; color:#047857;}
+  table.five{width:100%; border-collapse:collapse; margin-top:8px;}
+  table.five th,table.five td{border:1px solid var(--line); padding:7px 6px; font-size:13px; text-align:center;}
+  table.five th{background:var(--accent-soft); color:#065f46;}
+  .status-msg{margin-top:8px; font-size:13px; min-height:20px;}
+  .status-msg.ok{color:#16a34a;}
+  @media(max-width:1180px){ .wrap{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>📐 五点作图法 · y = A·sin(ωx + φ) + b</h1>
+  <p>四个参数滑块 → 五点坐标实时联动 → 波形绘制，掌握振幅 / 周期 / 初相 / 竖直位移</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 讲解区 -->
+  <section class="panel" aria-label="讲解区">
+    <h2>一、原理讲解</h2>
+
+    <h3>五点作图法</h3>
+    <p>正弦型函数一个周期内的图像只需描出<b>五个关键点</b>：取相位 θ = 0、π/2、π、3π/2、2π，即「<b>起—峰—平—谷—平</b>」，再平滑连线即可。五点相位固定为：</p>
+    <div class="formula">x<sub>相</sub> = 0, π/2, π, 3π/2, 2π</div>
+    <div class="formula">y = A·sin(ω·x<sub>相</sub> + φ) + b</div>
+
+    <h3>参数几何含义</h3>
+    <ul>
+      <li><b>A</b>：振幅，控制最值 —— 最大值 b+|A|，最小值 b−|A|；</li>
+      <li><b>ω</b>：角频率，控制周期 T = 2π/|ω|，ω 越大波形越密；</li>
+      <li><b>φ</b>：初相，控制<b>左右平移</b>（形状不变）；</li>
+      <li><b>b</b>：竖直位移，控制<b>上下平移</b>。</li>
+    </ul>
+
+    <div class="warn">
+      <b>⚠️ 参数范围与边界</b>
+      A∈[0.1,3]、ω∈[0.5,3]、φ∈[−π,π]、b∈[−3,3]，均采用<b>弧度制</b>。重置后为 A=1、ω=1、φ=0、b=0，即基础函数 <b>y = sin x</b>。
+    </div>
+  </section>
+
+  <!-- 画布区 -->
+  <section class="panel" aria-label="画布区">
+    <h2>二、波形画布</h2>
+    <div class="canvas-box">
+      <canvas id="wave" aria-label="正弦型函数波形画布，绘制当前解析式与五个关键点坐标"></canvas>
+    </div>
+    <p class="canvas-cap">绿色点为五个关键点：θ=0、π/2、π、3π/2、2π 对应位置；x 轴标度为弧度。</p>
+    <div class="readout">
+      <table>
+        <tr><td>解析式</td><td id="rEq">y = sin x</td></tr>
+        <tr><td>周期 T = 2π/|ω|</td><td id="rT">2π</td></tr>
+        <tr><td>最值范围 [b−|A|, b+|A|]</td><td id="rRange">[−1, 1]</td></tr>
+        <tr><td>峰值 / 谷值</td><td id="rPeak">1 / −1</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 控制与读数区 -->
+  <section class="panel" aria-label="控制与读数区">
+    <h2>三、参数控制</h2>
+
+    <div class="slider-field">
+      <label for="sA">振幅 A <output id="oA">1.00</output></label>
+      <input type="range" id="sA" min="0.1" max="3" step="0.1" value="1">
+    </div>
+    <div class="slider-field">
+      <label for="sW">角频率 ω <output id="oW">1.00</output></label>
+      <input type="range" id="sW" min="0.5" max="3" step="0.1" value="1">
+    </div>
+    <div class="slider-field">
+      <label for="sP">初相 φ <output id="oP">0</output></label>
+      <input type="range" id="sP" min="-3.1416" max="3.1416" step="0.01" value="0">
+    </div>
+    <div class="slider-field">
+      <label for="sB">竖直位移 b <output id="oB">0.00</output></label>
+      <input type="range" id="sB" min="-3" max="3" step="0.1" value="0">
+    </div>
+
+    <div class="controls">
+      <button type="button" class="btn" id="btnReset">↺ 重置（A=1, ω=1, φ=0, b=0）</button>
+    </div>
+
+    <h3>五点坐标表（相位 | 函数值）</h3>
+    <table class="five" aria-label="五点坐标列表">
+      <thead>
+        <tr><th>相位 θ</th><th>x<sub>相</sub></th><th>函数值 y</th></tr>
+      </thead>
+      <tbody id="fiveRows"></tbody>
+    </table>
+    <div class="status-msg" id="status" role="status"></div>
+
+    <div class="panel" style="box-shadow:none; padding:0; margin-top:14px; border:none;">
+      <h3>🧭 观察与结论</h3>
+      <p>滑动 ω 至 3：周期 T=2π/3，波形明显变密；滑动 φ：波形整体左右平移但<b>形状不变</b>——验证「ω 控制周期、φ 控制平移」的参数独立性。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var canvas = document.getElementById('wave');
+  var ctx = canvas.getContext('2d');
+  var CW = 860, CH = 460;
+
+  var sA = document.getElementById('sA');
+  var sW = document.getElementById('sW');
+  var sP = document.getElementById('sP');
+  var sB = document.getElementById('sB');
+  var oA = document.getElementById('oA');
+  var oW = document.getElementById('oW');
+  var oP = document.getElementById('oP');
+  var oB = document.getElementById('oB');
+  var rEq = document.getElementById('rEq');
+  var rT = document.getElementById('rT');
+  var rRange = document.getElementById('rRange');
+  var rPeak = document.getElementById('rPeak');
+  var fiveRows = document.getElementById('fiveRows');
+  var btnReset = document.getElementById('btnReset');
+  var statusEl = document.getElementById('status');
+
+  var PI = Math.PI;
+  // 五点相位（弧度）
+  var PHASES = [0, PI/2, PI, 3*PI/2, 2*PI];
+  var PHASE_LABEL = ['0', 'π/2', 'π', '3π/2', '2π'];
+  var PHASE_STYLE = ['起', '峰', '平', '谷', '平'];
+
+  function setupCanvas(){
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = CW * dpr;
+    canvas.height = CH * dpr;
+    canvas.style.width = CW + 'px';
+    canvas.style.height = CH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  setupCanvas();
+  window.addEventListener('resize', setupCanvas);
+
+  // 布局常量
+  var M = {left:70, right:30, top:40, bottom:60};
+  var PW = CW - M.left - M.right;
+  var PH = CH - M.top - M.bottom;
+  // x 范围固定显示 [0, 2π]
+  var X0 = 0, X1 = 2*PI;
+
+  function getParams(){
+    var A = parseFloat(sA.value);
+    var w = parseFloat(sW.value);
+    var p = parseFloat(sP.value);
+    var b = parseFloat(sB.value);
+    // 初相硬归零：|φ| < 1e-6 时精确显示 0
+    if (Math.abs(p) < 1e-6) p = 0;
+    return {A:A, w:w, p:p, b:b};
+  }
+
+  function fn(params, x){
+    return params.A * Math.sin(params.w * x + params.p) + params.b;
+  }
+
+  function toPxX(x){ return M.left + (x - X0) / (X1 - X0) * PW; }
+  function toPxY(y){
+    var maxV = 4;
+    return M.top + (maxV - y) / (2*maxV) * PH;
+  }
+
+  function fmt(v, d){
+    if (typeof v !== 'number' || !isFinite(v)) return '—';
+    if (Math.abs(v) < 1e-9) v = 0;
+    var s = v.toFixed(d);
+    return s;
+  }
+
+  // 解析式字符串（φ=0 时省略）
+  function eqStr(p){
+    var s = 'y = ';
+    if (Math.abs(p.A - 1) < 1e-9) s += 'sin';
+    else if (Math.abs(p.A + 1) < 1e-9) s += '−sin';
+    else s += fmt(p.A,1) + '·sin';
+    s += '(';
+    if (Math.abs(p.w - 1) < 1e-9) s += 'x';
+    else s += fmt(p.w,2) + 'x';
+    if (Math.abs(p.p) >= 1e-9){
+      s += (p.p > 0 ? ' + ' : ' − ') + fmt(Math.abs(p.p),2);
+    }
+    s += ')';
+    if (Math.abs(p.b) >= 1e-9){
+      s += (p.b > 0 ? ' + ' : ' − ') + fmt(Math.abs(p.b),2);
+    }
+    return s;
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, CW, CH);
+    var p = getParams();
+    var period = 2*PI / Math.abs(p.w);
+
+    // 网格
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 1;
+    for (var gy = -4; gy <= 4; gy++){
+      var yp = toPxY(gy);
+      ctx.beginPath(); ctx.moveTo(M.left, yp); ctx.lineTo(M.left + PW, yp); ctx.stroke();
+    }
+    var xStep = PI/2;
+    for (var gx = 0; gx <= 4; gx++){
+      var xp = toPxX(gx * xStep);
+      ctx.beginPath(); ctx.moveTo(xp, M.top); ctx.lineTo(xp, M.top + PH); ctx.stroke();
+    }
+
+    // 坐标轴
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(M.left, M.top); ctx.lineTo(M.left, M.top + PH); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(M.left, toPxY(0)); ctx.lineTo(M.left + PW, toPxY(0)); ctx.stroke();
+    // 轴标签
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px -apple-system,"PingFang SC",sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText('0', M.left - 12, toPxY(0));
+    for (var lx = 1; lx <= 4; lx++){
+      ctx.fillText(lx + 'π/2', toPxX(lx * PI/2), toPxY(0) + 8);
+    }
+    ctx.textAlign = 'right';
+    ctx.fillText('x →', M.left + PW, toPxY(0) + 22);
+    ctx.save();
+    ctx.translate(14, M.top + 10); ctx.rotate(-Math.PI/2);
+    ctx.textAlign = 'right';
+    ctx.fillText('y ↑', 0, 0);
+    ctx.restore();
+
+    // 正弦波形
+    ctx.strokeStyle = '#059669';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (var i = 0; i <= 300; i++){
+      var xx = X0 + (X1 - X0) * i / 300;
+      var yy = fn(p, xx);
+      if (i === 0) ctx.moveTo(toPxX(xx), toPxY(yy));
+      else ctx.lineTo(toPxX(xx), toPxY(yy));
+    }
+    ctx.stroke();
+
+    // 水平中线 y=b
+    ctx.strokeStyle = 'rgba(5,150,105,.35)';
+    ctx.setLineDash([5,5]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(M.left, toPxY(p.b)); ctx.lineTo(M.left + PW, toPxY(p.b)); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 五点
+    var rowsHtml = '';
+    for (var k = 0; k < 5; k++){
+      var xph = PHASES[k];
+      var yv = fn(p, xph);
+      var px = toPxX(xph);
+      var py = toPxY(yv);
+      ctx.fillStyle = '#059669';
+      ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.stroke();
+      // 垂线
+      ctx.strokeStyle = 'rgba(5,150,105,.25)';
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(px, M.top); ctx.lineTo(px, M.top + PH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#065f46';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('(' + PHASE_LABEL[k] + ')', px, M.top + 14);
+      rowsHtml += '<tr><td>' + PHASE_STYLE[k] + '（θ=' + PHASE_LABEL[k] + '）</td><td>' + PHASE_LABEL[k] + '</td><td><b>' + fmt(yv,4) + '</b></td></tr>';
+    }
+    if (fiveRows) fiveRows.innerHTML = rowsHtml;
+
+    // 读数
+    var maxV = p.b + Math.abs(p.A);
+    var minV = p.b - Math.abs(p.A);
+    if (rEq) rEq.textContent = eqStr(p);
+    if (rT) rT.textContent = fmt(period, 4) + '（' + (Math.abs(period - 2*PI) < 1e-6 ? '2π' : '') + '）';
+    if (rRange) rRange.textContent = '[' + fmt(minV,3) + ', ' + fmt(maxV,3) + ']';
+    if (rPeak) rPeak.textContent = fmt(maxV,3) + ' / ' + fmt(minV,3);
+    if (oA) oA.textContent = fmt(p.A,2);
+    if (oW) oW.textContent = fmt(p.w,2);
+    if (oP) oP.textContent = fmt(p.p,2);
+    if (oB) oB.textContent = fmt(p.b,2);
+    if (statusEl){ statusEl.className = 'status-msg ok'; statusEl.textContent = '✓ 已同步：' + eqStr(p); }
+    canvas.setAttribute('aria-label', '正弦型函数波形画布：解析式 ' + eqStr(p) + '，五点坐标 ' + PHASE_LABEL.map(function(l,i){return '('+l+','+fmt(fn(p,PHASES[i]),2)+')';}).join('，'));
+  }
+
+  function onSlider(){
+    draw();
+  }
+
+  sA.addEventListener('input', onSlider);
+  sW.addEventListener('input', onSlider);
+  sP.addEventListener('input', onSlider);
+  sB.addEventListener('input', onSlider);
+
+  btnReset.addEventListener('click', function(){
+    sA.value = '1';
+    sW.value = '1';
+    sP.value = '0';
+    sB.value = '0';
+    draw();
+  });
+
+  // 初始化
+  draw();
+})();
+</script>
+</body>
+</html>

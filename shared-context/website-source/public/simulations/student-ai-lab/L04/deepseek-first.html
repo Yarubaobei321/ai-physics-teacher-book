@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高中语文·文言实词与古诗文赏析助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f5efe7;
+            font-family: 'Segoe UI', 'Noto Sans CJK SC', 'PingFang SC', Roboto, '微软雅黑', system-ui, sans-serif;
+            color: #2c3e2f;
+            padding: 2rem 1.5rem;
+        }
+
+        /* 主页面容器 (双栏/双模块) */
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        /* 通用卡片样式 */
+        .card {
+            background: #ffffffdd;
+            backdrop-filter: blur(2px);
+            background: #fffef7;
+            border-radius: 2rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            padding: 1.6rem 1.8rem 2rem 1.8rem;
+            transition: all 0.2s ease;
+            border: 1px solid #e9dfce;
+        }
+
+        .card h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            border-left: 6px solid #b87333;
+            padding-left: 1rem;
+            margin-bottom: 1.5rem;
+            color: #3a2c1f;
+        }
+
+        .search-area {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .search-area input {
+            flex: 1;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid #d9cbad;
+            border-radius: 3rem;
+            font-size: 1rem;
+            background: #fff;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+
+        .search-area input:focus {
+            outline: none;
+            border-color: #b87333;
+            box-shadow: 0 0 0 2px rgba(184, 115, 51, 0.2);
+        }
+
+        .search-area button {
+            background: #b87333;
+            color: white;
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 3rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+
+        .search-area button:hover {
+            background: #9b5e2a;
+            transform: scale(0.97);
+        }
+
+        /* 精选标签组 */
+        .hot-section {
+            margin-top: 1.2rem;
+        }
+
+        .hot-title {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #7f6b4a;
+            margin-bottom: 0.8rem;
+            letter-spacing: 1px;
+        }
+
+        .word-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.7rem;
+        }
+
+        .word-btn, .poem-btn {
+            background: #f2ebe0;
+            border: none;
+            padding: 0.4rem 1.2rem;
+            border-radius: 2rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #4e3e2c;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .word-btn:hover, .poem-btn:hover {
+            background: #e2d4c2;
+            transform: translateY(-2px);
+        }
+
+        /* 结果页 (覆盖样式，全屏卡片，带返回) */
+        .result-page {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #fffef7;
+            border-radius: 2rem;
+            padding: 2rem 2rem 2.5rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #b87333;
+            cursor: pointer;
+            margin-bottom: 1.8rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 2rem;
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            background: #f0e7db;
+        }
+
+        .result-title {
+            font-size: 1.9rem;
+            font-weight: 600;
+            border-bottom: 3px solid #e7cfb0;
+            display: inline-block;
+            padding-bottom: 0.2rem;
+            margin-bottom: 1.5rem;
+            color: #3a2c1f;
+        }
+
+        .meaning-block, .trans-block, .appreciate-block {
+            margin-top: 1.2rem;
+            background: #fefaf5;
+            padding: 1rem 1.4rem;
+            border-radius: 1.2rem;
+            line-height: 1.6;
+        }
+
+        .meaning-block h3, .trans-block h3, .appreciate-block h3 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #a2652b;
+            margin-bottom: 0.5rem;
+        }
+
+        .original-meaning {
+            font-weight: 500;
+            margin-bottom: 0.8rem;
+            color: #2c5f2d;
+        }
+
+        .ext-meanings {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .ext-meanings li {
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+        }
+
+        hr {
+            margin: 1rem 0;
+            border-color: #ede3d3;
+        }
+
+        .error-msg {
+            color: #bc6f2c;
+            background: #fff0e0;
+            padding: 0.8rem;
+            border-radius: 1rem;
+        }
+
+        @media (max-width: 800px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            body {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        // --------------------------------------------------------------
+        // 权威词典数据 (基于古汉语常用字字典及历年高考高频义项)
+        // 本义 + 衍生意 (① ② ...)
+        // 覆盖近几十年高考高频实词 (选自高考常考120实词中高频部分)
+        // --------------------------------------------------------------
+        const dictionary = {
+            "安": {
+                original: "安定，安稳，安全。",
+                extensions: [
+                    "① 安逸，安乐。例：然后知生于忧患，而死于安乐也。",
+                    "② 安抚，抚慰。例：若备与彼协心，上下齐同，则宜抚安。",
+                    "③ 疑问代词，哪里，怎么。例：安能摧眉折腰事权贵。"
+                ]
+            },
+            "被": {
+                original: "被子，覆盖。",
+                extensions: [
+                    "① 蒙受，遭受。例：秦王复击轲，被八创。",
+                    "② 介词，表示被动。例：妆成每被秋娘妒。",
+                    "③ 通“披”，穿在身上。例：将军身被坚执锐。"
+                ]
+            },
+            "本": {
+                original: "草木的根或茎干。",
+                extensions: [
+                    "① 根源，来源。例：人穷则反本。",
+                    "② 本来的，原来的。例：此之谓失其本心。",
+                    "③ 书本，版本。例：今存其本不忍废。"
+                ]
+            },
+            "道": {
+                original: "道路。",
+                extensions: [
+                    "① 道理，规律。例：师者，所以传道受业解惑也。",
+                    "② 主张，思想，学说。例：于是废先王之道。",
+                    "③ 说，谈论。例：仲尼之徒无道桓文之事者。",
+                    "④ 通“导”，引导。例：道之以政，齐之以刑。"
+                ]
+            },
+            "度": {
+                original: "计量长短的标准，尺码。",
+                extensions: [
+                    "① 限度，法度。例：生之有时而用之亡度。",
+                    "② 渡过，越过。例：关山度若飞。",
+                    "③ 揣度，估计。例：度我至军中，公乃入。"
+                ]
+            },
+            "方": {
+                original: "并行的两船，方形。",
+                extensions: [
+                    "① 方向，方位。例：乃令史官记地动所从方起。",
+                    "② 方法，办法。例：教之以进退方略。",
+                    "③ 当……时候。例：方其破荆州，下江陵。",
+                    "④ 正直。例：方正之不容也。"
+                ]
+            },
+            "见": {
+                original: "看见。",
+                extensions: [
+                    "① 见解，见识。例：汝真女子之见。",
+                    "② 召见，接见。例：曹刿请见。",
+                    "③ 表被动，相当于“被”。例：信而见疑。",
+                    "④ 放在动词前，表示对自己怎么样。例：冀君实或见恕也。"
+                ]
+            },
+            "间": {
+                original: "缝隙，空隙。",
+                extensions: [
+                    "① 中间，期间。例：天地之间。",
+                    "② 间隔，间断。例：送之至湖口，因得观所谓石钟者。",
+                    "③ 秘密地，悄悄地。例：又间令吴广之次所旁丛祠中。",
+                    "④ 参与，夹杂。例：肉食者谋之，又何间焉。"
+                ]
+            },
+            "举": {
+                original: "举起，抬起。",
+                extensions: [
+                    "① 推荐，选拔。例：举孝廉不行。",
+                    "② 全，都。例：举欣欣然有喜色。",
+                    "③ 攻克，占领。例：戍卒叫，函谷举。",
+                    "④ 举动，行动。例：此妇无礼节，举动自专由。"
+                ]
+            },
+            "胜": {
+                original: "胜任，禁得起。",
+                extensions: [
+                    "① 胜利。例：此所谓战胜于朝廷。",
+                    "② 优美的，好的。例：予观夫巴陵胜状。",
+                    "③ 尽，完。例：何可胜道也哉。",
+                    "④ 超过。例：略胜一筹。"
+                ]
+            },
+            "易": {
+                original: "交换。",
+                extensions: [
+                    "① 改变，变更。例：寒暑易节。",
+                    "② 容易。例：冯唐易老，李广难封。",
+                    "③ 轻视。例：是以古之易财，非仁也。",
+                    "④ 治，整治。例：易其田畴，薄其税敛。"
+                ]
+            },
+            "致": {
+                original: "送达，给予。",
+                extensions: [
+                    "① 招致，引来。例：致食客三千人。",
+                    "② 表达，表示。例：听妇前致词。",
+                    "③ 尽，极。例：衡善机巧，尤致思于天文。",
+                    "④ 情趣，意志。例：所以兴怀，其致一也。"
+                ]
+            }
+        };
+
+        // 补充更多高频词保证展示多样性
+        const extraWords = ["殆", "顾", "归", "过", "何", "恨", "患", "或", "及", "即"];
+        extraWords.forEach(w => {
+            if (!dictionary[w]) {
+                dictionary[w] = {
+                    original: `【${w}】古汉语常见义项待考，依据古汉语常用字字典补充。`,
+                    extensions: [`① 根据语境推测，常用作虚词或实词。`, `② 具体详见教材注解。`]
+                };
+            }
+        });
+        // 针对部分词精修 (使其丰富)
+        if(dictionary["顾"]) {
+            dictionary["顾"] = { original: "回头看，环视。", extensions: ["① 照顾，顾念。例：三顾臣于草庐之中。","② 副词，不过，只是。例：顾吾念之。","③ 反而，难道。例：人之立志，顾不如蜀鄙之僧哉？"]};
+        }
+        if(dictionary["归"]) {
+            dictionary["归"] = { original: "女子出嫁。", extensions: ["① 返回，回去。例：一屠晚归。","② 归还。例：而其归书也必速。","③ 归属，归附。例：众士仰慕，若水之归海。"]};
+        }
+
+        // 课内古诗文库 (高中统编版 + 高考高频篇目)
+        // 每项: title, 翻译文本, 赏析文本
+        const poemsDatabase = {
+            "念奴娇·赤壁怀古": {
+                translation: "长江朝东流去，千百年来，所有才华横溢的英雄豪杰，都被长江滚滚的波浪冲洗掉了。那旧营垒的西边，人们说那是三国时周郎大破曹兵的赤壁。陡峭的石壁直耸云天，如雷的惊涛拍击着江岸，激起的浪花好似卷起千万堆白雪。雄壮的江山奇丽如图画，一时间涌现出多少英雄豪杰。遥想当年的周瑜，小乔刚嫁给他，他英姿奋发豪气满怀。手摇羽扇头戴纶巾，谈笑之间，强敌的战船烧得灰飞烟灭。我今日神游当年的战地，可笑我多情善感，过早地生出满头白发。人生犹如一场梦，且洒一杯酒祭奠江上的明月。",
+                appreciation: "《念奴娇·赤壁怀古》是苏轼豪放词的代表作。上阕咏赤壁，着重写景，即景抒怀，引起对古代英雄人物的怀念。下阕着重写人，借对周瑜的仰慕，抒发自己功业无成的感慨。全词借古抒怀，雄浑苍凉，大气磅礴，笔力遒劲，境界宏阔，将写景、咏史、抒情融为一体，被誉为‘千古绝唱’。"
+            },
+            "永遇乐·京口北固亭怀古": {
+                translation: "历经千古的江山，再也难找到像孙权那样的英雄。当年的舞榭歌台还在，英雄人物却随着岁月的流逝早已不复存在。斜阳照着长满草树的普通小巷，人们说那是当年刘裕曾经住过的地方。回想当年，他领军北伐、收复失地的时候是何等威猛！然而元嘉帝兴兵北伐，想建立不朽战功封狼居胥，却落得仓皇逃命。四十三年过去了，如今瞭望长江北岸，还记得扬州战火连天的情景。真是不堪回首，拓跋焘祠内香火旺盛，如同神鸦社鼓一般。有谁会问，廉颇老了，饭量还好吗？",
+                appreciation: "辛弃疾登临北固亭，感叹时局，怀古伤今。全词豪迈悲凉，大量用典借古讽今，表达对南宋朝廷苟安的不满和为国效力的迫切愿望。末句以廉颇自比，悲壮苍凉，极具感染力。"
+            },
+            "劝学": {
+                translation: "君子说：学习不可以停止。靛青是从蓼蓝中提取的，但比蓼蓝更青；冰是水凝成的，但比水更冷。木材直得合乎墨线，用火烤使它弯曲做成车轮，它的弯度合乎圆规，即使又晒干了，也不再挺直，这是火烤使它变成这样的。所以木材经墨线量过就笔直了，金属刀具在磨刀石上磨过就锋利了。君子广泛学习而且每天对照检查自己，就能智慧明达，行为没有过错了。……",
+                appreciation: "《劝学》是荀子的名篇，运用大量比喻论证，层层递进，论述学习的重要意义、作用及方法态度。文章形象生动，说理透彻，强调后天学习和改造对人品才智的重要性，是古代议论文的典范。"
+            },
+            "师说": {
+                translation: "古代求学的人一定有老师。老师，是传授道理、教授学业、解答疑难问题的人。人不是生下来就知道道理的，谁能没有疑惑？有了疑惑，不跟从老师，那些成为疑惑的，终究不能解决。出生在我前面的人，他懂得道理本来就早于我，我应该跟从他把他当作老师；出生在我后面的人，如果他懂得道理也早于我，我也应该跟从他把他当作老师。……",
+                appreciation: "韩愈针对当时士大夫耻于相师的风气，作《师说》阐述师道。文章破立结合，对比论证，提出‘无贵无贱，无长无少，道之所存，师之所存’。全文气势充沛，逻辑严密，体现了古文运动的革新精神。"
+            },
+            "登高": {
+                translation: "风急天高猿猴啼叫显得十分悲哀，水清沙白的河洲上有鸟儿在盘旋。无边无际的树木萧萧地飘下落叶，望不到头的长江水滚滚奔腾而来。悲对秋色感叹漂泊万里，常年为客，一生当中疾病缠身今日独上高台。历尽了艰难苦恨白发长满了双鬓，衰颓满心偏又暂停了消愁的酒杯。",
+                appreciation: "杜甫《登高》被誉为‘七律第一’。前四句写景，后四句抒情，情景交融。通过登高所见秋江景色，倾诉了诗人长年漂泊、老病孤愁的复杂感情。对仗工整，气象高浑，沉郁顿挫。"
+            },
+            "琵琶行": {
+                translation: "秋夜我到浔阳江头送一位归客，冷风吹着枫叶和芦花秋声瑟瑟。我和客人下马在船上饯别设宴，举起酒杯要饮却无助兴的音乐。酒喝得不痛快更伤心将要分别，临别时夜茫茫江水倒映着明月。忽听得江面上传来琵琶清脆声；我忘却了回归客人也不想动身。寻着声源探问弹琵琶的是何人？琵琶声停了许久却迟迟没有动静。……",
+                appreciation: "白居易长篇叙事诗，通过琵琶女的不幸身世，结合自身贬谪遭遇，‘同是天涯沦落人’引起强烈共鸣。诗歌音乐描写出神入化，运用比喻、通感等手法，将抽象的音乐化为具体形象，情感起伏跌宕，极具艺术感染力。"
+            }
+        };
+        // 增加补充热门篇目
+        poemsDatabase["赤壁赋"] = {
+            translation: "壬戌年秋天，七月十六日，苏轼与友人在赤壁泛舟游玩。清风徐徐吹来，水面不起波浪。举杯劝客，吟诵《诗经》篇章。一会儿，月亮从东山升起，在斗宿和牛宿之间徘徊。白茫茫的雾气横贯江面，水光连着天际。……",
+            appreciation: "《赤壁赋》表现了苏轼豁达的宇宙观和人生观。通过主客问答，由悲转乐，阐发‘变与不变’的哲理，文采斐然，情景理交融，是文赋典范。"
+        };
+        poemsDatabase["虞美人"] = {
+            translation: "春花秋月的美好时光什么时候结束？过去的事情还记得多少。昨夜小楼上又吹来了春风，在这皓月当空的夜晚哪里忍受得了回忆故国的伤痛。精雕细刻的栏杆和玉石砌成的台阶应该还在，只是所怀念的人已经衰老。要问我心中有多少哀愁，就像那不尽的春江之水滚滚东流。",
+            appreciation: "李煜绝命词，以水喻愁，将亡国之痛与物是人非的感慨表现得深沉凄婉。全词语言明净，比喻贴切，结构天然，是千古传诵的名篇。"
+        };
+
+        // 课内精选古诗词标题列表 (高考高频)
+        const recommendedPoems = ["念奴娇·赤壁怀古", "永遇乐·京口北固亭怀古", "劝学", "师说", "登高", "琵琶行", "赤壁赋", "虞美人"];
+
+        // 高频实词列表 (展示)
+        const highFreqWords = ["安", "被", "本", "道", "度", "方", "见", "间", "举", "胜", "易", "致", "顾", "归"];
+
+        // ---------- DOM 渲染控制 ----------
+        let root = document.getElementById("app");
+
+        // 当前页面状态: 'home' 或 'result'
+        let currentPage = "home";
+        let resultData = null;      // 存储结果数据 { type, keyword, content } content包含结构
+
+        // 渲染主页面 (双模块)
+        function renderHome() {
+            // 文言文实词模块
+            const wordModule = `
+                <div class="card">
+                    <h2>📖 文言文实词 · 寻义</h2>
+                    <div class="search-area">
+                        <input type="text" id="wordSearchInput" placeholder="输入实词，如：安、道、见..." autocomplete="off">
+                        <button id="wordSearchBtn">🔍 释词</button>
+                    </div>
+                    <div class="hot-section">
+                        <div class="hot-title">⭐ 近年高考高频实词 (点击直接查看)</div>
+                        <div class="word-cloud" id="hotWordsContainer">
+                            ${highFreqWords.map(w => `<button class="word-btn" data-word="${w}">${w}</button>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // 古诗文赏析模块
+            const poemModule = `
+                <div class="card">
+                    <h2>🍃 课内古诗文 · 赏析</h2>
+                    <div class="search-area">
+                        <input type="text" id="poemSearchInput" placeholder="输入篇目，如：念奴娇·赤壁怀古" autocomplete="off">
+                        <button id="poemSearchBtn">📜 赏析</button>
+                    </div>
+                    <div class="hot-section">
+                        <div class="hot-title">🏆 高考高频古诗文 (点击赏析)</div>
+                        <div class="word-cloud" id="hotPoemsContainer">
+                            ${recommendedPoems.map(title => `<button class="poem-btn" data-poem="${title}">${title}</button>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const dashboard = `
+                <div class="dashboard">
+                    ${wordModule}
+                    ${poemModule}
+                </div>
+            `;
+            root.innerHTML = dashboard;
+
+            // 绑定事件
+            // 实词搜索
+            const wordSearchBtn = document.getElementById("wordSearchBtn");
+            const wordInput = document.getElementById("wordSearchInput");
+            wordSearchBtn.addEventListener("click", () => {
+                const keyword = wordInput.value.trim();
+                if (keyword === "") {
+                    alert("请输入要查询的文言实词");
+                    return;
+                }
+                fetchWordMeaning(keyword);
+            });
+            // 回车搜索
+            wordInput.addEventListener("keypress", (e) => { if (e.key === "Enter") wordSearchBtn.click(); });
+
+            // 古诗文搜索
+            const poemSearchBtn = document.getElementById("poemSearchBtn");
+            const poemInput = document.getElementById("poemSearchInput");
+            poemSearchBtn.addEventListener("click", () => {
+                const keyword = poemInput.value.trim();
+                if (keyword === "") {
+                    alert("请输入古诗文篇目名");
+                    return;
+                }
+                fetchPoemContent(keyword);
+            });
+            poemInput.addEventListener("keypress", (e) => { if (e.key === "Enter") poemSearchBtn.click(); });
+
+            // 高频实词点击 (事件委托)
+            const hotWordsContainer = document.getElementById("hotWordsContainer");
+            hotWordsContainer.querySelectorAll(".word-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const word = btn.getAttribute("data-word");
+                    fetchWordMeaning(word);
+                });
+            });
+
+            // 高频古诗文点击
+            const hotPoemsContainer = document.getElementById("hotPoemsContainer");
+            hotPoemsContainer.querySelectorAll(".poem-btn").forEach(btn => {
+                btn.addEventListener("click", (e) => {
+                    const title = btn.getAttribute("data-poem");
+                    fetchPoemContent(title);
+                });
+            });
+        }
+
+        // 获取实词释义，跳转结果页
+        function fetchWordMeaning(word) {
+            const data = dictionary[word];
+            let contentHtml = "";
+            if (data) {
+                const extListHtml = data.extensions.map((ext, idx) => `<li>${ext}</li>`).join('');
+                contentHtml = `
+                    <div class="meaning-block">
+                        <div class="original-meaning">📌 本义：${data.original}</div>
+                        <ul class="ext-meanings">
+                            ${extListHtml}
+                        </ul>
+                    </div>
+                `;
+            } else {
+                contentHtml = `<div class="error-msg">⚠️ 暂未收录“${word}”，参考古汉语词典：该词为常见实词，可查阅《古汉语常用字字典》。</div>`;
+            }
+            resultData = {
+                type: "word",
+                keyword: word,
+                content: contentHtml
+            };
+            renderResultPage();
+        }
+
+        // 获取古诗文翻译+赏析
+        function fetchPoemContent(title) {
+            const poem = poemsDatabase[title];
+            let translationHtml = "", appreciationHtml = "";
+            if (poem) {
+                translationHtml = `<div class="trans-block"><h3>📝 翻译</h3><p>${poem.translation}</p></div>`;
+                appreciationHtml = `<div class="appreciate-block"><h3>✨ 赏析</h3><p>${poem.appreciation}</p></div>`;
+            } else {
+                translationHtml = `<div class="error-msg">🔍 未找到“${title}”的详细资料，请尝试输入完整篇目名（如“念奴娇·赤壁怀古”“劝学”等）。</div>`;
+                appreciationHtml = "";
+            }
+            const combined = translationHtml + appreciationHtml;
+            resultData = {
+                type: "poem",
+                keyword: title,
+                content: combined
+            };
+            renderResultPage();
+        }
+
+        // 渲染结果页 (带左上角返回)
+        function renderResultPage() {
+            if (!resultData) return;
+            const { type, keyword, content } = resultData;
+            const titlePrefix = type === "word" ? `「${keyword}」 释义` : `「${keyword}」 翻译 · 赏析`;
+            
+            const resultHtml = `
+                <div class="result-page">
+                    <button class="back-btn" id="backHomeBtn">← 返回主页面</button>
+                    <div class="result-title">${titlePrefix}</div>
+                    ${content}
+                </div>
+            `;
+            root.innerHTML = resultHtml;
+            const backBtn = document.getElementById("backHomeBtn");
+            backBtn.addEventListener("click", () => {
+                currentPage = "home";
+                renderHome();
+            });
+            currentPage = "result";
+        }
+
+        // 初始化渲染
+        renderHome();
+    </script>
+</body>
+</html>

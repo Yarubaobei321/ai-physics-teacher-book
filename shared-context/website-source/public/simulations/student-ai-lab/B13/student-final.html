@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中生物：光合作用原理 - 分阶段物质流动动画 | 叶绿体3D教学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
+            background-color: #05180e;
+            color: #eef;
+        }
+        /* 主滑动容器 */
+        .app-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .slide-wrapper {
+            display: flex;
+            width: 300%;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+        .slide {
+            width: 33.333%;
+            height: 100%;
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+        }
+        /* 动画展示区 (第一屏) */
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: radial-gradient(circle at center, #0a2a1c, #031008);
+        }
+        .anim-stage-control {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 60px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            z-index: 40;
+            pointer-events: auto;
+            border: 1px solid #66bb6a;
+        }
+        .stage-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        button {
+            background: #2e7d32;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 13px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        button:hover {
+            background: #66bb6a;
+            transform: scale(1.02);
+        }
+        .active-stage {
+            background: #ff9800;
+            color: #1e2a1e;
+            box-shadow: 0 0 8px #ffb74d;
+        }
+        .question-popup {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            background: rgba(20, 35, 25, 0.96);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 16px;
+            z-index: 50;
+            border-left: 4px solid #ffc107;
+            box-shadow: 0 8px 20px black;
+            pointer-events: auto;
+        }
+        .question-popup h4 {
+            color: #ffd966;
+            margin-bottom: 10px;
+        }
+        .quiz-opt {
+            background: #2c3e2f;
+            margin: 8px 0;
+            padding: 6px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+        }
+        .quiz-opt:hover { background: #4caf50; }
+        .feedback { font-size: 13px; margin-top: 8px; }
+        /* 课后习题屏 */
+        .exercise-panel {
+            background: linear-gradient(145deg, #0e2a1f, #051a12);
+            padding: 30px 24px;
+            min-height: 100%;
+        }
+        .exercise-card {
+            max-width: 750px;
+            margin: 20px auto;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(4px);
+            border-radius: 44px;
+            padding: 28px;
+        }
+        .question-item {
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #3a6741;
+        }
+        .options label { display: block; margin: 8px 0; cursor: pointer; }
+        .submit-exercise { background: #ff9800; margin-top: 20px; width: 100%; }
+        .result-area { margin-top: 20px; background: #1e3a2a; border-radius: 28px; padding: 14px; }
+        /* 总结屏 */
+        .summary-panel {
+            background: linear-gradient(135deg, #0a2a1c, #03100b);
+            padding: 30px 24px;
+            min-height: 100%;
+        }
+        .summary-container {
+            max-width: 820px;
+            margin: 0 auto;
+            background: rgba(0,0,0,0.6);
+            border-radius: 48px;
+            padding: 28px;
+            backdrop-filter: blur(5px);
+        }
+        .eq-block {
+            background: #1e2f24;
+            padding: 12px;
+            border-radius: 28px;
+            font-family: monospace;
+            margin: 14px 0;
+            border-left: 4px solid #ffc107;
+        }
+        .badge {
+            background: #2e7d32;
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        .nav-buttons {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 60;
+            display: flex;
+            gap: 12px;
+        }
+        .nav-btn {
+            background: #1e2a32;
+            padding: 10px 18px;
+        }
+        .page-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.5);
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 13px;
+            z-index: 60;
+        }
+        @media (max-width: 650px) {
+            .question-popup { width: 250px; padding: 12px; top: 12px; right: 12px; }
+            .stage-buttons button { padding: 5px 12px; font-size: 11px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="slide-wrapper" id="slideWrapper">
+        <!-- 第一屏：分阶段动画 (展示物质流动) -->
+        <div class="slide" id="slideAnimation">
+            <div id="canvas-container" style="width:100%;height:100%"></div>
+            <div class="anim-stage-control">
+                <div class="stage-buttons">
+                    <button id="stage0Btn" class="active-stage">🌞 阶段0: 类囊体受光</button>
+                    <button id="stage1Btn">💧 阶段1: 水的光解 → O₂释放</button>
+                    <button id="stage2Btn">⚡ 阶段2: ATP & NADPH 合成</button>
+                    <button id="stage3Btn">🌿 阶段3: 暗反应·碳固定</button>
+                    <button id="stage4Btn">🔄 阶段4: 物质再生与糖合成</button>
+                </div>
+                <button id="resetAnimBtn">🔄 重置视图</button>
+            </div>
+            <div id="stageQuestion" class="question-popup" style="display: none;">
+                <h4>📖 阶段互动·预习思考</h4>
+                <div id="questionText"></div>
+                <div id="questionOptions"></div>
+                <div id="questionFeedback" class="feedback"></div>
+                <button id="closeStageQuestion" style="margin-top:8px; background:#3a6ea5; width:100%;">继续动画</button>
+            </div>
+        </div>
+
+        <!-- 第二屏：课后习题 -->
+        <div class="slide" id="slideExercise">
+            <div class="exercise-panel">
+                <div class="exercise-card">
+                    <h2 style="color:#ffd966;">📝 光合作用 · 课后精练</h2>
+                    <div id="exerciseList"></div>
+                    <button id="submitExBtn" class="submit-exercise">✅ 提交答案</button>
+                    <div id="exResult" class="result-area"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三屏：总结 + 拓展 + 同位素 / 呼吸联系 -->
+        <div class="slide" id="slideSummary">
+            <div class="summary-panel">
+                <div class="summary-container">
+                    <h2 style="color:#c8e6a5;">📚 光合作用 · 完全总结 & 拓展</h2>
+                    <div style="margin-top:20px;">
+                        <p><span class="badge">⭐ 常考</span> 光反应场所: <strong>类囊体膜</strong> &nbsp;|&nbsp; 暗反应场所: <strong>叶绿体基质</strong></p>
+                        <p><span class="badge">⚠️ 易错点</span> O₂全部来自水的光解；ATP和NADPH只用于暗反应；光反应为暗反应提供能量和还原力。</p>
+                        <div class="eq-block"><strong>总反应式</strong><br>6CO₂ + 12H₂O  —光能、叶绿体—→  C₆H₁₂O₆ + 6O₂ + 6H₂O</div>
+                        <div class="eq-block"><strong>光反应 (类囊体膜)</strong><br>2H₂O → O₂ + 4H⁺ + 4e⁻ <br> ADP + Pi + 光能 → ATP &nbsp;&nbsp; NADP⁺ + H⁺ + 2e⁻ → NADPH</div>
+                        <div class="eq-block"><strong>暗反应 (卡尔文循环)</strong><br>CO₂ + C₅ → 2C₃ → (CH₂O) + C₅ (消耗ATP、NADPH)</div>
+                        <div class="eq-block"><strong>🔬 同位素标记拓展</strong><br>• ¹⁸O标记H₂O → 释放的O₂有放射性<br>• ¹⁴C标记CO₂ → 糖类等有机物中出现放射性<br>• ³H标记水 → NADPH及有机物可检测</div>
+                        <div class="eq-block"><strong>🔥 与呼吸作用结合 & 能量供应</strong><br>光合作用: 光能→化学能(有机物)；呼吸作用: 有机物分解释放能量(ATP)<br>净光合速率 = 总光合 - 呼吸速率；二者共同维持碳氧平衡。</div>
+                        <p style="margin-top:16px;">💡 <strong>记忆口诀：</strong>“光解水产氧，ATP、NADPH忙；暗固定C₃还，糖类合成储能量”</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="nav-buttons">
+        <button id="prevSlideBtn" class="nav-btn">◀ 上一页</button>
+        <button id="nextSlideBtn" class="nav-btn">下一页 ▶</button>
+    </div>
+    <div class="page-indicator" id="pageIndicator">第1页 / 分阶段动画演示</div>
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+    
+    // ---- 初始化场景 (放大叶绿体比例，相机更近) ----
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x051a12);
+    scene.fog = new THREE.FogExp2(0x051a12, 0.008);
+    
+    const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(3.8, 2.8, 5.6);
+    camera.lookAt(0, 0.1, 0);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+    
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(container.clientWidth, container.clientHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    container.appendChild(labelRenderer.domElement);
+    
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.autoRotate = false;
+    controls.enableZoom = true;
+    controls.zoomSpeed = 1.2;
+    controls.target.set(0, 0.2, 0);
+    
+    // 光照
+    const ambient = new THREE.AmbientLight(0x3a5a3a);
+    scene.add(ambient);
+    const mainLight = new THREE.DirectionalLight(0xfff5cc, 1.1);
+    mainLight.position.set(3, 5, 2);
+    scene.add(mainLight);
+    const fillLight = new THREE.PointLight(0x88ccaa, 0.6);
+    fillLight.position.set(-2, 2, 3);
+    scene.add(fillLight);
+    
+    // ---- 叶绿体核心模型 (放大比例，轮廓清晰) ----
+    const chloroplastGroup = new THREE.Group();
+    const outerGeo = new THREE.SphereGeometry(1.7, 80, 80);
+    const outerMat = new THREE.MeshPhongMaterial({ color: 0x8bc34a, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+    const chloroplastShell = new THREE.Mesh(outerGeo, outerMat);
+    chloroplastShell.scale.set(2.0, 1.4, 1.6);
+    chloroplastGroup.add(chloroplastShell);
+    // 内膜线框
+    const wireGeo = new THREE.SphereGeometry(1.62, 64, 64);
+    const wireMat = new THREE.MeshBasicMaterial({ color: 0xb5ff8c, wireframe: true, transparent: true, opacity: 0.3 });
+    const innerWire = new THREE.Mesh(wireGeo, wireMat);
+    innerWire.scale.set(1.9, 1.3, 1.5);
+    chloroplastGroup.add(innerWire);
+    scene.add(chloroplastGroup);
+    
+    // 类囊体基粒 (更精细)
+    const thylakoidGroup = new THREE.Group();
+    const granaPos = [[-1.0,0.4,0.9],[0.85,0.6,-0.7],[-0.55,-0.3,1.2],[1.15,-0.25,-0.5],[-1.2,-0.55,-0.6],[0.45,1.0,-1.0],[-0.75,1.1,0.4],[1.0,-0.9,0.8]];
+    granaPos.forEach(pos => {
+        const stack = new THREE.Group();
+        for(let i=0;i<4;i++) {
+            const disk = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.11,32), new THREE.MeshStandardMaterial({ color: 0x7cb342, emissive: 0x336622, emissiveIntensity: 0.2, roughness: 0.4 }));
+            disk.position.y = i*0.14 - 0.21;
+            stack.add(disk);
+        }
+        stack.position.set(pos[0], pos[1]+0.25, pos[2]);
+        thylakoidGroup.add(stack);
+    });
+    // 更多游离类囊体
+    for(let i=0;i<24;i++) {
+        const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.25,0.25,0.09,24), new THREE.MeshStandardMaterial({ color: 0x8bc34a }));
+        disc.position.set((Math.random()-0.5)*2.2, (Math.random()-0.5)*1.5, (Math.random()-0.5)*2.0);
+        thylakoidGroup.add(disc);
+    }
+    scene.add(thylakoidGroup);
+    
+    // ---- 物质流动粒子系统: 光子/ATP/NADPH/CO₂/糖 ----
+    const photonGroup = new THREE.Group();
+    const photons = [];
+    for(let i=0;i<100;i++) {
+        const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.05,12,12), new THREE.MeshStandardMaterial({ color: 0xffaa55, emissive: 0xff6600 }));
+        sphere.userData = { speed: 0.006+Math.random()*0.012, angle: Math.random()*Math.PI*2, radius: 1.6+Math.random()*1.5 };
+        photonGroup.add(sphere);
+        photons.push(sphere);
+    }
+    scene.add(photonGroup);
+    
+    // 氧气泡粒子
+    const oxyPointsGeo = new THREE.BufferGeometry();
+    const oxyCount = 280;
+    const oxyPositions = new Float32Array(oxyCount*3);
+    for(let i=0;i<oxyCount;i++) {
+        oxyPositions[i*3] = (Math.random()-0.5)*3.2;
+        oxyPositions[i*3+1] = Math.random()*1.8-0.5;
+        oxyPositions[i*3+2] = (Math.random()-0.5)*2.8;
+    }
+    oxyPointsGeo.setAttribute('position', new THREE.BufferAttribute(oxyPositions,3));
+    const oxyMaterial = new THREE.PointsMaterial({ color: 0x88ddff, size: 0.045 });
+    const oxyPointsObj = new THREE.Points(oxyPointsGeo, oxyMaterial);
+    scene.add(oxyPointsObj);
+    
+    // ATP/NADPH 示意粒子 (金色小球代表能量载体)
+    const energyParticles = new THREE.BufferGeometry();
+    const energyCount = 180;
+    const energyPositions = new Float32Array(energyCount*3);
+    for(let i=0;i<energyCount;i++) {
+        energyPositions[i*3] = (Math.random()-0.5)*2.5;
+        energyPositions[i*3+1] = (Math.random()-0.5)*1.8;
+        energyPositions[i*3+2] = (Math.random()-0.5)*2.2;
+    }
+    energyParticles.setAttribute('position', new THREE.BufferAttribute(energyPositions,3));
+    const energyMat = new THREE.PointsMaterial({ color: 0xffcc77, size: 0.055 });
+    const energyPoints = new THREE.Points(energyParticles, energyMat);
+    scene.add(energyPoints);
+    
+    // CO₂ 粒子 (暗反应阶段显示)
+    const co2Particles = new THREE.BufferGeometry();
+    const co2Count = 150;
+    const co2Positions = new Float32Array(co2Count*3);
+    for(let i=0;i<co2Count;i++) {
+        co2Positions[i*3] = (Math.random()-0.5)*2.8;
+        co2Positions[i*3+1] = (Math.random()-0.5)*1.5;
+        co2Positions[i*3+2] = (Math.random()-0.5)*2.5;
+    }
+    co2Particles.setAttribute('position', new THREE.BufferAttribute(co2Positions,3));
+    const co2Mat = new THREE.PointsMaterial({ color: 0x99cc99, size: 0.05 });
+    const co2PointsObj = new THREE.Points(co2Particles, co2Mat);
+    scene.add(co2PointsObj);
+    co2PointsObj.visible = false;
+    
+    // 糖分子小球 (产物)
+    const sugarGroup = new THREE.Group();
+    for(let i=0;i<35;i++) {
+        const sug = new THREE.Mesh(new THREE.SphereGeometry(0.07,8,8), new THREE.MeshStandardMaterial({ color: 0xffaa88, emissive: 0x663322 }));
+        sug.userData = { phase: 0 };
+        sugarGroup.add(sug);
+    }
+    scene.add(sugarGroup);
+    
+    // CSS 标注
+    function addLabel(text,color,pos) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        div.style.color = color;
+        div.style.background = 'rgba(0,0,0,0.65)';
+        div.style.padding = '2px 14px';
+        div.style.borderRadius = '30px';
+        div.style.fontSize = '13px';
+        div.style.fontWeight = 'bold';
+        const label = new CSS2DObject(div);
+        label.position.copy(pos);
+        scene.add(label);
+    }
+    addLabel('🌿 叶绿体 (双层膜)', '#b8f0b0', new THREE.Vector3(2.3,1.4,1.4));
+    addLabel('类囊体膜 · 光反应', '#ffd966', new THREE.Vector3(1.5,1.1,1.1));
+    addLabel('基质 · 暗反应', '#7bc8ff', new THREE.Vector3(0.9,-1.1,1.5));
+    addLabel('O₂ 释放', '#aaf0ff', new THREE.Vector3(1.8,-0.2,-1.2));
+    
+    // 动画阶段控制
+    let currentStage = 0; // 0:受光,1:光解产氧,2:合成ATP/NADPH,3:碳固定,4:糖合成
+    let photonIntensity = 0.4;
+    let showOxyFlow = false;
+    let showEnergyFlow = false;
+    let showCo2 = false;
+    let showSugar = false;
+    
+    function setStage(stage) {
+        currentStage = stage;
+        // 更新按钮样式
+        ['stage0Btn','stage1Btn','stage2Btn','stage3Btn','stage4Btn'].forEach((id,idx)=>{
+            const btn = document.getElementById(id);
+            if(idx === stage) btn.classList.add('active-stage');
+            else btn.classList.remove('active-stage');
+        });
+        // 更新视觉状态
+        if(stage >= 0) photonIntensity = 0.9;  // 光强
+        if(stage >= 1) showOxyFlow = true;
+        else showOxyFlow = false;
+        if(stage >= 2) showEnergyFlow = true;
+        else showEnergyFlow = false;
+        if(stage >= 3) { showCo2 = true; co2PointsObj.visible = true; } 
+        else { showCo2 = false; co2PointsObj.visible = false; }
+        if(stage >= 4) showSugar = true;
+        else showSugar = false;
+        
+        // 调整类囊体光效
+        thylakoidGroup.children.forEach(group => {
+            group.children.forEach(disk => {
+                if(disk.material) disk.material.emissiveIntensity = (stage>=1)? 0.45 : 0.15;
+            });
+        });
+        // 弹出互动问题
+        showStageQuestion(stage);
+    }
+    
+    function showStageQuestion(stage) {
+        const qPanel = document.getElementById('stageQuestion');
+        const qText = document.getElementById('questionText');
+        const qOpts = document.getElementById('questionOptions');
+        const fbDiv = document.getElementById('questionFeedback');
+        let q = null;
+        if(stage === 1) {
+            q = { text: "🔍 水的光解产物中，释放到外界的气体是？它来源于什么物质？", options: ["A. CO₂", "B. O₂ ，来源于水", "C. H₂，来源于葡萄糖"], correctHint:"B" };
+        } else if(stage === 2) {
+            q = { text: "⚡ 光反应合成了哪两种高能物质，用于暗反应？", options: ["A. ATP和NADPH", "B. ADP和NADP⁺", "C. CO₂和H₂O"], correctHint:"A" };
+        } else if(stage === 3) {
+            q = { text: "🌿 暗反应中，CO₂被固定后首先形成的C₃化合物需要什么物质还原？", options: ["A. ATP和NADPH", "B. 光能", "C. 氧气"], correctHint:"A" };
+        } else if(stage === 4) {
+            q = { text: "🧪 最终合成的有机物是？光合作用储存能量的形式是？", options: ["A. 葡萄糖/淀粉 (化学能)", "B. 氧气", "C. ATP"], correctHint:"A" };
+        } else {
+            qPanel.style.display = 'none';
+            return;
+        }
+        qPanel.style.display = 'block';
+        qText.innerText = q.text;
+        qOpts.innerHTML = q.options.map(opt => `<div class="quiz-opt" data-val="${opt[0]}">${opt}</div>`).join('');
+        const optDivs = qOpts.querySelectorAll('.quiz-opt');
+        optDivs.forEach(div => {
+            div.addEventListener('click', () => {
+                const selected = div.getAttribute('data-val');
+                if(selected === q.correctHint) {
+                    fbDiv.innerHTML = `<span style="color:#b9f6ca;">✅ 正确！很棒的知识点。</span>`;
+                } else {
+                    fbDiv.innerHTML = `<span style="color:#ffab91;">❌ 再想想，正确答案是 ${q.correctHint} 。</span>`;
+                }
+            });
+        });
+        document.getElementById('closeStageQuestion').onclick = () => { qPanel.style.display = 'none'; };
+    }
+    
+    // 绑定按钮
+    document.getElementById('stage0Btn').onclick = () => setStage(0);
+    document.getElementById('stage1Btn').onclick = () => setStage(1);
+    document.getElementById('stage2Btn').onclick = () => setStage(2);
+    document.getElementById('stage3Btn').onclick = () => setStage(3);
+    document.getElementById('stage4Btn').onclick = () => setStage(4);
+    document.getElementById('resetAnimBtn').onclick = () => { camera.position.set(3.8,2.8,5.6); controls.target.set(0,0.2,0); controls.update(); };
+    
+    // 动画循环实现物质流动: 氧气上升、能量粒子汇聚类囊体再到基质、CO₂流动、糖类出现
+    let time = 0;
+    function animateFlow() {
+        requestAnimationFrame(animateFlow);
+        time += 0.018;
+        // 光子运动
+        photons.forEach(p => {
+            const r = p.userData.radius;
+            const ang = p.userData.angle + time * p.userData.speed;
+            p.position.x = Math.cos(ang) * r * 0.9;
+            p.position.z = Math.sin(ang) * r * 0.9;
+            p.position.y = Math.sin(ang*1.4) * 0.5;
+            p.userData.angle = ang;
+            if(currentStage>=0) p.material.emissiveIntensity = 0.6 + Math.sin(time*6)*0.3;
+        });
+        // 氧气泡动态：阶段1及以后上升明显
+        const oxyPosAttr = oxyPointsGeo.attributes.position.array;
+        for(let i=0;i<oxyCount;i++) {
+            let y = oxyPosAttr[i*3+1];
+            if(showOxyFlow) y += 0.0035;
+            else y += 0.0008;
+            if(y > 1.6) y = -0.9;
+            oxyPosAttr[i*3+1] = y;
+        }
+        oxyPointsGeo.attributes.position.needsUpdate = true;
+        
+        // 能量粒子 (ATP/NADPH示意) 阶段2以后流动模拟：从类囊体区域向基质扩散
+        if(showEnergyFlow) {
+            const ePos = energyParticles.attributes.position.array;
+            for(let i=0;i<energyCount;i++) {
+                let x = ePos[i*3], y = ePos[i*3+1], z = ePos[i*3+2];
+                // 向基质区域飘移 (中心偏下)
+                x += (0 - x) * 0.008;
+                y += (-0.3 - y) * 0.006;
+                z += (0 - z) * 0.008;
+                if(Math.abs(x)<0.1 && y<-0.2) { // 重置
+                    x = (Math.random()-0.5)*2.2;
+                    y = 0.6 + Math.random()*0.6;
+                    z = (Math.random()-0.5)*2.0;
+                }
+                ePos[i*3]=x; ePos[i*3+1]=y; ePos[i*3+2]=z;
+            }
+            energyParticles.attributes.position.needsUpdate = true;
+        }
+        // CO₂ 粒子 (阶段3) 向基质中心靠近
+        if(showCo2) {
+            const cPos = co2Particles.attributes.position.array;
+            for(let i=0;i<co2Count;i++) {
+                let x = cPos[i*3], y = cPos[i*3+1], z = cPos[i*3+2];
+                x += (0 - x) * 0.01;
+                y += (-0.2 - y) * 0.008;
+                z += (0 - z) * 0.01;
+                if(Math.abs(x)<0.2 && y<-0.1) {
+                    x = (Math.random()-0.5)*2.5;
+                    y = 0.8;
+                    z = (Math.random()-0.5)*2.4;
+                }
+                cPos[i*3]=x; cPos[i*3+1]=y; cPos[i*3+2]=z;
+            }
+            co2Particles.attributes.position.needsUpdate = true;
+        }
+        // 糖产物显示与运动 (阶段4)
+        if(showSugar) {
+            sugarGroup.children.forEach((s,idx) => {
+                if(!s.userData.phase) {
+                    s.position.set((Math.random()-0.5)*2, -0.8+Math.random()*0.5, (Math.random()-0.5)*2);
+                    s.userData.phase = 1;
+                } else {
+                    s.position.y += 0.002;
+                    if(s.position.y > 1.0) s.position.y = -0.9;
+                }
+            });
+        } else {
+            sugarGroup.children.forEach(s => { s.userData.phase = 0; });
+        }
+        
+        thylakoidGroup.rotation.y = Math.sin(time*0.2)*0.04;
+        controls.update();
+        renderer.render(scene, camera);
+        labelRenderer.render(scene, camera);
+    }
+    animateFlow();
+    
+    // 滑动逻辑
+    const slideWrapper = document.getElementById('slideWrapper');
+    const prevBtn = document.getElementById('prevSlideBtn');
+    const nextBtn = document.getElementById('nextSlideBtn');
+    const pageIndicator = document.getElementById('pageIndicator');
+    let currentPage = 0;
+    function updateSlide() {
+        slideWrapper.style.transform = `translateX(-${currentPage * 33.333}%)`;
+        if(currentPage === 0) pageIndicator.innerText = '第1页 / 分阶段动画演示 (物质流动)';
+        else if(currentPage === 1) pageIndicator.innerText = '第2页 / 课后习题';
+        else pageIndicator.innerText = '第3页 / 总结+拓展';
+    }
+    prevBtn.onclick = () => { if(currentPage > 0) { currentPage--; updateSlide(); } };
+    nextBtn.onclick = () => { if(currentPage < 2) { currentPage++; updateSlide(); } };
+    
+    // 课后习题
+    const exercises = [
+        { question: "光合作用中，光反应产生的O₂中的氧原子直接来源于？", options: ["A. CO₂", "B. H₂O", "C. 葡萄糖", "D. ATP"], answer: 1, explanation: "水的光解: 2H₂O → O₂ + 4H⁺ + 4e⁻" },
+        { question: "暗反应（卡尔文循环）消耗下列哪些物质？", options: ["A. ATP和NADPH", "B. O₂和H₂O", "C. 叶绿素", "D. 光能"], answer: 0, explanation: "暗反应消耗ATP和NADPH将CO₂还原为糖类。" },
+        { question: "用同位素¹⁴C标记CO₂，最先在哪种化合物中出现放射性？", options: ["A. C₃", "B. C₅", "C. 葡萄糖", "D. 氧气"], answer: 0, explanation: "CO₂固定生成C₃，故¹⁴C首先出现在C₃。" }
+    ];
+    const exDiv = document.getElementById('exerciseList');
+    function renderEx() {
+        exDiv.innerHTML = '';
+        exercises.forEach((ex, idx) => {
+            const card = document.createElement('div');
+            card.className = 'question-item';
+            card.innerHTML = `<p><strong>${idx+1}. ${ex.question}</strong></p><div class="options">${ex.options.map((opt, optIdx) => `<label><input type="radio" name="q${idx}" value="${optIdx}"> ${opt}</label>`).join('')}</div>`;
+            exDiv.appendChild(card);
+        });
+    }
+    renderEx();
+    document.getElementById('submitExBtn').addEventListener('click', () => {
+        let score = 0;
+        let html = '';
+        exercises.forEach((ex, idx) => {
+            const selected = document.querySelector(`input[name="q${idx}"]:checked`);
+            const correct = selected && parseInt(selected.value) === ex.answer;
+            if(correct) score++;
+            html += `<div><strong>${idx+1}. ${ex.question}</strong><br> ${correct ? '✅ 正确' : '❌ 错误'}。解析: ${ex.explanation}</div>`;
+        });
+        document.getElementById('exResult').innerHTML = `<h4>得分: ${score}/${exercises.length}</h4>${html}`;
+    });
+    
+    setStage(0);
+    window.addEventListener('resize', () => {
+        const w = container.clientWidth, h = container.clientHeight;
+        camera.aspect = w/h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+        labelRenderer.setSize(w, h);
+    });
+</script>
+</body>
+</html>

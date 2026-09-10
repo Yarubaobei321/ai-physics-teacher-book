@@ -1,0 +1,139 @@
+---
+interface Props {
+  id: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+  src: string | null;
+}
+
+const { id, eyebrow, title, description, src } = Astro.props;
+const safeId = id.replace(/[^a-zA-Z0-9_-]/g, '-');
+const dialogId = `artifact-preview-${safeId}`;
+const sandboxPolicy = 'allow-scripts allow-forms allow-modals';
+---
+
+<article
+  class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-soft"
+  data-artifact-preview
+>
+  <div class="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-start sm:justify-between">
+    <div class="min-w-0">
+      <p class="text-xs font-black uppercase tracking-[0.12em] text-yucai-700">{eyebrow}</p>
+      <h3 class="mt-2 text-xl font-black leading-tight text-ink">{title}</h3>
+      <p class="mt-2 text-sm leading-7 text-slate-600">{description}</p>
+    </div>
+    {
+      src && (
+        <button
+          type="button"
+          class="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center rounded-md bg-yucai-700 px-4 py-2 text-sm font-black text-white transition hover:bg-yucai-800"
+          aria-haspopup="dialog"
+          aria-controls={dialogId}
+          data-preview-open
+        >
+          页内全屏预览
+        </button>
+      )
+    }
+  </div>
+
+  {
+    src ? (
+      <div class="bg-lab p-3 sm:p-4">
+        <iframe
+          src={src}
+          title={`${title}交互预览`}
+          class="focus-ring h-[32rem] w-full rounded-md border border-slate-200 bg-white sm:h-[38rem]"
+          loading="lazy"
+          sandbox={sandboxPolicy}
+          referrerpolicy="no-referrer"
+        />
+      </div>
+    ) : (
+      <p class="m-5 rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-sm leading-7 text-slate-600">
+        该版本未通过完整性或脱敏门禁，暂不提供预览。
+      </p>
+    )
+  }
+
+  {
+    src && (
+      <dialog
+        id={dialogId}
+        class="artifact-preview-dialog m-0 h-[100dvh] max-h-none w-screen max-w-none bg-white p-0 text-ink"
+        data-preview-dialog
+      >
+        <div class="flex h-full min-h-0 flex-col">
+          <div class="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+            <div class="min-w-0">
+              <p class="truncate text-sm font-black text-ink">{title}</p>
+              <p class="mt-0.5 text-xs font-bold text-slate-500">隔离交互预览</p>
+            </div>
+            <button
+              type="button"
+              class="focus-ring inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white px-4 text-sm font-black text-yucai-800 transition hover:border-yucai-300 hover:bg-yucai-50"
+              data-preview-close
+              autofocus
+            >
+              关闭预览
+            </button>
+          </div>
+          <iframe
+            title={`${title}页内全屏交互预览`}
+            class="focus-ring min-h-0 flex-1 border-0 bg-white"
+            loading="lazy"
+            sandbox={sandboxPolicy}
+            referrerpolicy="no-referrer"
+            data-preview-dialog-frame
+            data-src={src}
+          />
+        </div>
+      </dialog>
+    )
+  }
+</article>
+
+<script>
+  function setupArtifactPreviews() {
+    document.querySelectorAll<HTMLElement>('[data-artifact-preview]').forEach((root) => {
+      if (root.dataset.previewReady === 'true') return;
+
+      const openButton = root.querySelector<HTMLButtonElement>('[data-preview-open]');
+      const closeButton = root.querySelector<HTMLButtonElement>('[data-preview-close]');
+      const dialog = root.querySelector<HTMLDialogElement>('[data-preview-dialog]');
+      const frame = root.querySelector<HTMLIFrameElement>('[data-preview-dialog-frame]');
+
+      if (!openButton || !closeButton || !dialog || !frame) return;
+      root.dataset.previewReady = 'true';
+
+      const closeDialog = () => {
+        if (typeof dialog.close === 'function') dialog.close();
+        else dialog.removeAttribute('open');
+        openButton.focus();
+      };
+
+      openButton.addEventListener('click', () => {
+        if (!frame.hasAttribute('src') && frame.dataset.src) frame.src = frame.dataset.src;
+        if (typeof dialog.showModal === 'function') dialog.showModal();
+        else dialog.setAttribute('open', '');
+        closeButton.focus();
+      });
+
+      closeButton.addEventListener('click', closeDialog);
+      dialog.addEventListener('close', () => openButton.focus());
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog) closeDialog();
+      });
+    });
+  }
+
+  setupArtifactPreviews();
+  document.addEventListener('astro:page-load', setupArtifactPreviews);
+</script>
+
+<style>
+  .artifact-preview-dialog::backdrop {
+    background: rgba(16, 32, 51, 0.82);
+  }
+</style>

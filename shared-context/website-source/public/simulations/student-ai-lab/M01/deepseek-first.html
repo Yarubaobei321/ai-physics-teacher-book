@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0, minimum-scale=0.5">
+  <title>高中数学 · 三角函数图像演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(145deg, #1a1e2b 0%, #2a3142 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+    .card {
+      max-width: 950px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 3rem;
+      padding: 2rem 2rem 2.2rem;
+      box-shadow: 0 30px 55px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.2s ease;
+    }
+    h1 {
+      text-align: center;
+      color: #f0e9d8;
+      font-weight: 500;
+      font-size: 2.2rem;
+      letter-spacing: 2px;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    h1 span {
+      background: #f7b731;
+      color: #1e1e2f;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 0.2rem 1rem;
+      border-radius: 30px;
+      letter-spacing: 0.5px;
+      margin-left: 8px;
+      box-shadow: 0 4px 10px rgba(247, 183, 49, 0.4);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #0f1219;
+      border-radius: 2rem;
+      box-shadow: inset 0 0 25px rgba(0,0,0,0.8), 0 20px 30px rgba(0, 0, 0, 0.7);
+      margin: 1.2rem 0 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.2s;
+    }
+    .control-panel {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      margin: 0.5rem 0 1rem;
+      background: rgba(10, 12, 20, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 50px;
+      padding: 1.2rem 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+    .func-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      justify-content: center;
+    }
+    .func-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #ddd;
+      font-weight: 600;
+      font-size: 1.2rem;
+      padding: 0.7rem 1.6rem;
+      border-radius: 3rem;
+      cursor: pointer;
+      backdrop-filter: blur(5px);
+      transition: all 0.25s;
+      letter-spacing: 0.8px;
+      background: rgba(20, 25, 35, 0.7);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .func-btn:hover {
+      background: rgba(247, 183, 49, 0.2);
+      border-color: #f7b731;
+      color: #f7eac7;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.5);
+    }
+    .func-btn.active {
+      background: #f7b731;
+      border-color: #f7b731;
+      color: #0b0d14;
+      font-weight: 700;
+      box-shadow: 0 0 25px #f7b731aa;
+      text-shadow: none;
+    }
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .slider-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #ccd6e0;
+      font-weight: 500;
+    }
+    .slider-item label {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.95rem;
+      background: rgba(0,0,0,0.4);
+      padding: 0.3rem 0.9rem;
+      border-radius: 20px;
+    }
+    input[type="range"] {
+      width: 110px;
+      height: 6px;
+      -webkit-appearance: none;
+      background: linear-gradient(to right, #f7b731, #fcbd4b);
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #f7b731;
+      border: 2px solid #f7b731;
+      transition: 0.2s;
+    }
+    .value-display {
+      display: inline-block;
+      min-width: 58px;
+      background: #0b0d14;
+      color: #f7b731;
+      padding: 0.25rem 0.7rem;
+      border-radius: 20px;
+      font-weight: 700;
+      text-align: center;
+      font-size: 0.9rem;
+      letter-spacing: 0.4px;
+      border: 1px solid #4a4f5c;
+    }
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 2.2rem;
+      margin-top: 0.8rem;
+      color: #b9c2d0;
+      font-weight: 500;
+      flex-wrap: wrap;
+    }
+    .legend span::before {
+      content: "●";
+      margin-right: 0.4rem;
+      font-size: 1.3rem;
+      vertical-align: middle;
+      display: inline-block;
+    }
+    .legend .sin-legend::before { content: "●"; color: #ff6b8b; }
+    .legend .cos-legend::before { content: "●"; color: #4dabf7; }
+    .legend .tan-legend::before { content: "●"; color: #ffd43b; }
+    @media (max-width: 650px) {
+      .card {
+        padding: 1.5rem 1rem;
+      }
+      .control-panel {
+        flex-direction: column;
+        gap: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>
+    📐 三角函数图像
+    <span>sin · cos · tan</span>
+  </h1>
+  
+  <!-- 画布区域：绘制三角函数曲线 -->
+  <canvas id="trigCanvas" width="800" height="450" aria-label="三角函数图像演示画布"></canvas>
+  
+  <div class="control-panel">
+    <div class="func-buttons">
+      <button id="btnSin" class="func-btn active">sin θ</button>
+      <button id="btnCos" class="func-btn">cos θ</button>
+      <button id="btnTan" class="func-btn">tan θ</button>
+    </div>
+    
+    <div class="slider-group">
+      <div class="slider-item">
+        <label>🔹 振幅 <span style="color:#f7b731;">A</span></label>
+        <input type="range" id="amplitudeSlider" min="0.2" max="2.5" value="1.0" step="0.1">
+        <span class="value-display" id="amplitudeValue">1.0</span>
+      </div>
+      <div class="slider-item">
+        <label>🔄 频率 <span style="color:#f7b731;">ω</span></label>
+        <input type="range" id="frequencySlider" min="0.3" max="3.0" value="1.0" step="0.1">
+        <span class="value-display" id="frequencyValue">1.0</span>
+      </div>
+      <div class="slider-item">
+        <label>⏺️ 相位 <span style="color:#f7b731;">φ</span></label>
+        <input type="range" id="phaseSlider" min="-3.14" max="3.14" value="0.0" step="0.01">
+        <span class="value-display" id="phaseValue">0.00</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="legend">
+    <span class="sin-legend">sin(x)</span>
+    <span class="cos-legend">cos(x)</span>
+    <span class="tan-legend">tan(x)</span>
+  </div>
+  <div style="text-align: center; color: #8892a4; margin-top: 0.7rem; font-size: 0.8rem;">
+    💡 拖动滑块调整参数 · 函数: y = A · f(ω·x + φ)   (tan振幅控制纵向缩放)
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---------- DOM 元素 ----------
+    const canvas = document.getElementById('trigCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 按钮
+    const btnSin = document.getElementById('btnSin');
+    const btnCos = document.getElementById('btnCos');
+    const btnTan = document.getElementById('btnTan');
+
+    // 滑块
+    const amplitudeSlider = document.getElementById('amplitudeSlider');
+    const frequencySlider = document.getElementById('frequencySlider');
+    const phaseSlider = document.getElementById('phaseSlider');
+
+    // 数值显示
+    const amplitudeValue = document.getElementById('amplitudeValue');
+    const frequencyValue = document.getElementById('frequencyValue');
+    const phaseValue = document.getElementById('phaseValue');
+
+    // ---------- 状态变量 ----------
+    let currentFunc = 'sin';        // 'sin', 'cos', 'tan'
+    let amplitude = 1.0;
+    let frequency = 1.0;
+    let phase = 0.0;               // 弧度
+
+    // 固定画布尺寸 (与HTML属性一致)
+    const CW = 800, CH = 450;
+    
+    // 坐标系设置 (在画布上的像素范围)
+    const padding = { left: 70, right: 40, top: 40, bottom: 55 };
+    const graphWidth = CW - padding.left - padding.right;
+    const graphHeight = CH - padding.top - padding.bottom;
+
+    // 数学坐标范围：x 从 -2π 到 2π (大约 -6.28 到 6.28)
+    const xMin = -2 * Math.PI;
+    const xMax = 2 * Math.PI;
+    
+    // y 轴动态范围 (会根据振幅调整，但正切需特殊处理)
+    // 对于sin/cos 使用固定范围 [-2.8, 2.8] 以保持稳定，但tan会裁剪。
+    const yBaseMin = -2.8;
+    const yBaseMax = 2.8;
+
+    // ---------- 工具函数：坐标转换 ----------
+    function transformX(mathX) {
+      // 将数学x映射到画布像素x
+      return padding.left + ((mathX - xMin) / (xMax - xMin)) * graphWidth;
+    }
+
+    function transformY(mathY, yMin, yMax) {
+      // 将数学y映射到画布像素y (注意canvas y轴向下)
+      return padding.top + graphHeight - ((mathY - yMin) / (yMax - yMin)) * graphHeight;
+    }
+
+    // ---------- 更新按钮激活样式 ----------
+    function updateActiveButton(funcName) {
+      [btnSin, btnCos, btnTan].forEach(btn => btn.classList.remove('active'));
+      if (funcName === 'sin') btnSin.classList.add('active');
+      else if (funcName === 'cos') btnCos.classList.add('active');
+      else if (funcName === 'tan') btnTan.classList.add('active');
+    }
+
+    // ---------- 从滑块读取数值并更新显示 ----------
+    function syncSlidersToState() {
+      amplitude = parseFloat(amplitudeSlider.value);
+      frequency = parseFloat(frequencySlider.value);
+      phase = parseFloat(phaseSlider.value);
+
+      amplitudeValue.textContent = amplitude.toFixed(1);
+      frequencyValue.textContent = frequency.toFixed(1);
+      phaseValue.textContent = phase.toFixed(2);
+    }
+
+    // ---------- 绘制整个图像 ----------
+    function draw() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, CW, CH);
+
+      // 根据当前函数决定y轴范围 (tan需要更大范围且裁剪)
+      let yMin, yMax;
+      if (currentFunc === 'tan') {
+        // 正切值可能非常大，固定显示范围较大，但绘图时会裁剪
+        yMin = -4.5;
+        yMax = 4.5;
+      } else {
+        // sin/cos 基于振幅动态调整一点，但保持对称美观
+        const amp = Math.max(0.2, amplitude);
+        yMin = -Math.max(2.2, amp * 1.4);
+        yMax = Math.max(2.2, amp * 1.4);
+      }
+
+      // 绘制网格和坐标轴
+      drawGridAndAxes(yMin, yMax);
+
+      // 绘制函数曲线
+      drawFunctionCurve(yMin, yMax);
+
+      // 绘制图例标签（动态显示当前函数表达式）
+      drawDynamicLabel(yMin, yMax);
+    }
+
+    // 绘制坐标轴、网格
+    function drawGridAndAxes(yMin, yMax) {
+      ctx.save();
+      ctx.strokeStyle = '#4a5568';
+      ctx.lineWidth = 0.8;
+      ctx.fillStyle = '#cbd5e0';
+      ctx.font = '12px "Segoe UI", "Roboto", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // 绘制垂直网格线 (对应x轴刻度: -2π, -π, 0, π, 2π 等)
+      const xTicks = [
+        { val: -2*Math.PI, label: '-2π' },
+        { val: -Math.PI, label: '-π' },
+        { val: 0, label: '0' },
+        { val: Math.PI, label: 'π' },
+        { val: 2*Math.PI, label: '2π' }
+      ];
+      
+      ctx.beginPath();
+      ctx.strokeStyle = '#3a4155';
+      ctx.lineWidth = 0.6;
+      xTicks.forEach(tick => {
+        const x = transformX(tick.val);
+        if (x >= padding.left && x <= CW - padding.right) {
+          ctx.beginPath();
+          ctx.moveTo(x, padding.top);
+          ctx.lineTo(x, CH - padding.bottom);
+          ctx.stroke();
+        }
+      });
+
+      // 水平网格线 (y轴刻度)
+      const yTickCount = 7;
+      for (let i = 0; i <= yTickCount; i++) {
+        const t = i / yTickCount;
+        const yVal = yMin + t * (yMax - yMin);
+        const yPixel = transformY(yVal, yMin, yMax);
+        if (yPixel >= padding.top && yPixel <= CH - padding.bottom) {
+          ctx.beginPath();
+          ctx.strokeStyle = '#3a4155';
+          ctx.lineWidth = 0.6;
+          ctx.moveTo(padding.left, yPixel);
+          ctx.lineTo(CW - padding.right, yPixel);
+          ctx.stroke();
+        }
+      }
+
+      // 绘制坐标轴主线
+      ctx.lineWidth = 2.2;
+      ctx.strokeStyle = '#dce1e8';
+      ctx.beginPath();
+      // Y轴 (x=0 对应的像素位置)
+      const originX = transformX(0);
+      if (originX >= padding.left && originX <= CW - padding.right) {
+        ctx.moveTo(originX, padding.top);
+        ctx.lineTo(originX, CH - padding.bottom);
+      }
+      // X轴 (y=0)
+      const originY = transformY(0, yMin, yMax);
+      if (originY >= padding.top && originY <= CH - padding.bottom) {
+        ctx.moveTo(padding.left, originY);
+        ctx.lineTo(CW - padding.right, originY);
+      }
+      ctx.stroke();
+
+      // 标注x轴刻度文本
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = 'bold 13px "Segoe UI", "Roboto"';
+      xTicks.forEach(tick => {
+        const x = transformX(tick.val);
+        if (x >= padding.left - 5 && x <= CW - padding.right + 5) {
+          ctx.fillText(tick.label, x, CH - padding.bottom + 18);
+        }
+      });
+
+      // 标注y轴刻度数值
+      ctx.fillStyle = '#cbd5e0';
+      ctx.font = '11px "Segoe UI"';
+      ctx.textAlign = 'right';
+      for (let i = 0; i <= yTickCount; i++) {
+        const t = i / yTickCount;
+        const yVal = yMin + t * (yMax - yMin);
+        const yPixel = transformY(yVal, yMin, yMax);
+        if (yPixel >= padding.top && yPixel <= CH - padding.bottom) {
+          ctx.fillText(yVal.toFixed(1), padding.left - 8, yPixel);
+        }
+      }
+      
+      // 原点标记
+      if (originX >= padding.left && originX <= CW - padding.right && 
+          originY >= padding.top && originY <= CH - padding.bottom) {
+        ctx.fillStyle = '#f7b731';
+        ctx.beginPath();
+        ctx.arc(originX, originY, 4, 0, 2*Math.PI);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px "Segoe UI"';
+        ctx.textAlign = 'left';
+        ctx.fillText('O', originX + 6, originY - 6);
+      }
+      
+      ctx.restore();
+    }
+
+    // 绘制三角函数曲线
+    function drawFunctionCurve(yMin, yMax) {
+      const step = (xMax - xMin) / (graphWidth * 1.5); // 采样密度
+      
+      ctx.save();
+      ctx.lineWidth = 2.8;
+      
+      // 根据函数选择颜色
+      if (currentFunc === 'sin') {
+        ctx.strokeStyle = '#ff6b8b';
+        ctx.shadowColor = '#ff6b8b80';
+      } else if (currentFunc === 'cos') {
+        ctx.strokeStyle = '#4dabf7';
+        ctx.shadowColor = '#4dabf780';
+      } else if (currentFunc === 'tan') {
+        ctx.strokeStyle = '#ffd43b';
+        ctx.shadowColor = '#ffd43b99';
+      }
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      
+      let firstPoint = true;
+      let previousY = null;
+      
+      // 遍历x数学坐标
+      for (let mathX = xMin; mathX <= xMax; mathX += step) {
+        const argument = frequency * mathX + phase;  // ω*x + φ
+        
+        let mathY;
+        // 计算函数值
+        if (currentFunc === 'sin') {
+          mathY = amplitude * Math.sin(argument);
+        } else if (currentFunc === 'cos') {
+          mathY = amplitude * Math.cos(argument);
+        } else if (currentFunc === 'tan') {
+          // 正切：使用振幅作为纵向缩放因子 (A * tan(θ))
+          mathY = amplitude * Math.tan(argument);
+        }
+        
+        // 处理无穷或NaN (正切在渐近线附近)
+        if (!isFinite(mathY) || isNaN(mathY)) {
+          // 发生断点：结束当前路径，准备开始新路径
+          firstPoint = true;
+          previousY = null;
+          continue;
+        }
+        
+        // 裁剪到可视范围 (避免绘制到极远区域，但保留连接)
+        const clampedY = Math.min(yMax + 0.5, Math.max(yMin - 0.5, mathY));
+        
+        const pixelX = transformX(mathX);
+        const pixelY = transformY(clampedY, yMin, yMax);
+        
+        // 对于正切，检测垂直跳跃 (避免连接渐近线两侧)
+        if (currentFunc === 'tan' && previousY !== null) {
+          const deltaY = Math.abs(mathY - previousY);
+          // 如果跳跃过大 (比如 > 3.0)，断开路径
+          if (deltaY > 3.5) {
+            firstPoint = true;
+            previousY = mathY;
+            continue;
+          }
+        }
+        
+        if (firstPoint) {
+          ctx.moveTo(pixelX, pixelY);
+          firstPoint = false;
+        } else {
+          ctx.lineTo(pixelX, pixelY);
+        }
+        
+        previousY = mathY;
+      }
+      
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // 动态显示当前函数表达式
+    function drawDynamicLabel(yMin, yMax) {
+      ctx.save();
+      ctx.font = 'italic 16px "Segoe UI", "Roboto", sans-serif';
+      ctx.fillStyle = '#f8f9fa';
+      ctx.shadowColor = '#00000080';
+      ctx.shadowBlur = 6;
+      ctx.textAlign = 'left';
+      
+      let expr = '';
+      const ampText = amplitude === 1.0 ? '' : amplitude.toFixed(1);
+      const freqText = frequency === 1.0 ? '' : frequency.toFixed(1);
+      const phaseText = phase === 0 ? '' : (phase > 0 ? `+${phase.toFixed(2)}` : phase.toFixed(2));
+      
+      if (currentFunc === 'sin') {
+        expr = `y = ${ampText || '1'}·sin(${freqText || '1'}x ${phaseText})`;
+      } else if (currentFunc === 'cos') {
+        expr = `y = ${ampText || '1'}·cos(${freqText || '1'}x ${phaseText})`;
+      } else {
+        expr = `y = ${ampText || '1'}·tan(${freqText || '1'}x ${phaseText})`;
+      }
+      
+      // 放在左上角
+      ctx.fillText(expr, padding.left + 5, padding.top + 20);
+      ctx.restore();
+    }
+
+    // ---------- 事件绑定与UI更新 ----------
+    function onFunctionChange(func) {
+      if (currentFunc === func) return;
+      currentFunc = func;
+      updateActiveButton(func);
+      draw();
+    }
+
+    function onSliderChange() {
+      syncSlidersToState();
+      draw();
+    }
+
+    // 初始化与添加监听器
+    function bindEvents() {
+      btnSin.addEventListener('click', () => onFunctionChange('sin'));
+      btnCos.addEventListener('click', () => onFunctionChange('cos'));
+      btnTan.addEventListener('click', () => onFunctionChange('tan'));
+
+      amplitudeSlider.addEventListener('input', onSliderChange);
+      frequencySlider.addEventListener('input', onSliderChange);
+      phaseSlider.addEventListener('input', onSliderChange);
+      
+      // 窗口resize不需要额外操作，canvas像素固定。
+    }
+
+    // 设置初始滑块与状态同步
+    function initialize() {
+      // 设置滑块默认值已在HTML中定义，同步显示
+      syncSlidersToState();
+      updateActiveButton('sin');
+      draw();
+      bindEvents();
+    }
+
+    // 启动一切
+    initialize();
+  })();
+</script>
+</body>
+</html>

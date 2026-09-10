@@ -1,0 +1,2035 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="弹簧-小球（物块）模型模拟，演示系统动量守恒、机械能守恒以及 A、B 两物体速度随时间变化的 v-t 图像。">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:,">
+  <title>弹簧-小球（物块）模型 | 模拟实验室</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]]
+      },
+      svg: {
+        fontCache: "global"
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --yucai-blue: #0b63c7;
+      --yucai-50: #eef7ff;
+      --yucai-100: #d8ecff;
+      --yucai-200: #b7dcff;
+      --yucai-700: #074f9f;
+      --yucai-800: #0a437f;
+      --yucai-900: #0d3969;
+      --ink: #102033;
+      --lab: #f5f8fb;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --signal: #f4a51c;
+      --green: #059669;
+      --red: #b8442b;
+      --surface: rgba(255, 255, 255, 0.94);
+      --shadow-soft: 0 18px 60px rgba(16, 32, 51, 0.12);
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--lab);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      touch-action: manipulation;
+    }
+
+    ::selection {
+      background: var(--yucai-200);
+      color: var(--ink);
+    }
+
+    .page-shell {
+      width: min(1120px, calc(100% - 32px));
+      margin-inline: auto;
+    }
+
+    .focus-ring {
+      outline: 3px solid transparent;
+      outline-offset: 3px;
+    }
+
+    .focus-ring:focus-visible {
+      outline-color: #85c6ff;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid var(--slate-200);
+      background: #fff;
+    }
+
+    .header-row {
+      display: flex;
+      height: 64px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 12px;
+      color: inherit;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #fff 0%, var(--yucai-50) 100%);
+      border: 1px solid var(--yucai-100);
+      box-shadow: 0 8px 20px rgba(16, 32, 51, 0.08);
+    }
+
+    .brand-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .desktop-nav,
+    .mobile-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .desktop-nav a,
+    .mobile-nav a {
+      border-radius: 6px;
+      color: var(--slate-700);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .desktop-nav a {
+      padding: 8px 12px;
+    }
+
+    .mobile-nav {
+      display: none;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+
+    .mobile-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mobile-nav a {
+      min-width: fit-content;
+      flex: 1 0 auto;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .desktop-nav a:hover,
+    .mobile-nav a:hover {
+      background: var(--slate-100);
+      color: var(--yucai-800);
+    }
+
+    .desktop-nav a.active,
+    .mobile-nav a.active {
+      background: var(--yucai-100);
+      color: var(--yucai-800);
+    }
+
+    .hero {
+      padding: 44px 0 28px;
+      background:
+        linear-gradient(180deg, rgba(238, 247, 255, 0.94), rgba(245, 248, 251, 0.98)),
+        radial-gradient(circle at 80% 20%, rgba(244, 165, 28, 0.16), transparent 30%);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.55fr);
+      gap: 34px;
+      align-items: end;
+    }
+
+    .hero-grid > *,
+    .tool-grid > *,
+    .principle-section > * {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--yucai-blue);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+    }
+
+    h1 {
+      margin: 12px 0 0;
+      color: var(--ink);
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.05;
+      font-weight: 950;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 760px;
+      margin: 20px 0 0;
+      color: var(--slate-700);
+      font-size: 17px;
+      line-height: 1.95;
+    }
+
+    .model-card {
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow-soft);
+      padding: 18px;
+    }
+
+    .model-card h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.35;
+      font-weight: 900;
+    }
+
+    .model-card p {
+      margin: 10px 0 0;
+      color: var(--slate-600);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .formula {
+      margin-top: 12px;
+      max-width: 100%;
+      min-width: 0;
+      color: var(--ink);
+      font-size: 13px;
+      line-height: 1.7;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .formula mjx-container,
+    .formula-block mjx-container {
+      display: block;
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .main-section {
+      padding: 24px 0 72px;
+    }
+
+    .tool-surface {
+      overflow: hidden;
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .simulation-area {
+      display: flex;
+      min-width: 0;
+      min-height: 0;
+      flex-direction: column;
+      background: #fff;
+    }
+
+    .stage-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--slate-200);
+      padding: 14px 16px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .simulation-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(260px, 1fr);
+      align-items: stretch;
+      min-height: 0;
+    }
+
+    .stage-wrap {
+      min-width: 0;
+      padding: 14px;
+      border-right: 1px solid var(--slate-200);
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .controls h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 18px;
+      line-height: 1.25;
+      font-weight: 950;
+    }
+
+    .control {
+      display: grid;
+      gap: 8px;
+    }
+
+    .control > label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .case-toggle {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .case-button {
+      min-height: 112px;
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--slate-700);
+      padding: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .case-button:hover {
+      border-color: var(--yucai-200);
+      background: var(--yucai-50);
+    }
+
+    .case-button[aria-pressed="true"] {
+      border-color: var(--yucai-blue);
+      background: var(--yucai-50);
+      box-shadow: inset 0 0 0 1px var(--yucai-blue);
+    }
+
+    .case-button strong {
+      display: block;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 950;
+    }
+
+    .case-button span {
+      display: block;
+      margin-top: 4px;
+      color: var(--yucai-800);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .case-button p {
+      margin: 6px 0 0;
+      color: var(--slate-600);
+      font-size: 12px;
+      line-height: 1.65;
+    }
+
+    .button-row,
+    .toolbar-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .button {
+      min-height: 40px;
+      border: 1px solid var(--yucai-700);
+      border-radius: 6px;
+      background: var(--yucai-blue);
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .button.secondary,
+    .toolbar-tools .button {
+      border-color: var(--slate-200);
+      background: #fff;
+      color: var(--slate-700);
+    }
+
+    .button:hover,
+    .toolbar-tools .button:hover {
+      background: var(--yucai-50);
+      border-color: var(--yucai-200);
+    }
+
+    .time-readout {
+      min-width: 96px;
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--slate-600);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      padding: 8px 10px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .scene {
+      display: block;
+      width: 100%;
+      min-height: 330px;
+      aspect-ratio: 16 / 4.1;
+      background:
+        linear-gradient(rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+        radial-gradient(circle at 45% 22%, rgba(216, 236, 255, 0.66), transparent 43%),
+        #ffffff;
+      background-size: 34px 34px, 34px 34px, auto, auto;
+    }
+
+    .track {
+      stroke: #1e293b;
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .track-base {
+      fill: none;
+      stroke: #94a3b8;
+      stroke-width: 3;
+      stroke-dasharray: 8 8;
+    }
+
+    .block {
+      stroke: #102033;
+      stroke-width: 3;
+      rx: 6;
+    }
+
+    .block-a {
+      fill: #d8ecff;
+    }
+
+    .block-b {
+      fill: #fff7da;
+    }
+
+    .spring {
+      fill: none;
+      stroke: #102033;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .spring-glow {
+      fill: none;
+      stroke: rgba(244, 165, 28, 0.32);
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .velocity {
+      stroke-width: 7;
+      stroke-linecap: round;
+      opacity: 0.95;
+    }
+
+    .velocity-a {
+      stroke: var(--yucai-blue);
+      marker-end: url(#arrowBlue);
+    }
+
+    .velocity-b {
+      stroke: var(--signal);
+      marker-end: url(#arrowOrange);
+    }
+
+    .velocity-label {
+      font-size: 13px;
+      font-weight: 900;
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 5px;
+      stroke-linejoin: round;
+    }
+
+    .velocity-label-a {
+      fill: var(--yucai-blue);
+    }
+
+    .velocity-label-b {
+      fill: #a35f05;
+    }
+
+    .contact-gap {
+      stroke: var(--red);
+      stroke-width: 2.4;
+      stroke-dasharray: 6 5;
+      marker-start: url(#gapArrowLeft);
+      marker-end: url(#gapArrowRight);
+    }
+
+    .spring-end {
+      fill: #fff;
+      stroke: #102033;
+      stroke-width: 3;
+    }
+
+    .cm-line {
+      stroke: rgba(11, 99, 199, 0.62);
+      stroke-width: 1.8;
+      stroke-dasharray: 7 6;
+    }
+
+    .axis,
+    .grid-line {
+      stroke: #cbd5e1;
+      stroke-width: 1.3;
+    }
+
+    .axis {
+      stroke: #334155;
+      stroke-width: 2;
+      marker-end: url(#axisArrow);
+    }
+
+    .curve-a {
+      fill: none;
+      stroke: var(--yucai-blue);
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .curve-b {
+      fill: none;
+      stroke: var(--signal);
+      stroke-width: 3.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .curve-future {
+      opacity: 0.22;
+    }
+
+    .graph-cursor {
+      stroke: var(--red);
+      stroke-width: 2;
+      stroke-dasharray: 5 5;
+    }
+
+    .graph-separate {
+      stroke: rgba(11, 99, 199, 0.55);
+      stroke-width: 1.8;
+      stroke-dasharray: 6 5;
+      opacity: 0.85;
+    }
+
+    .scene-label,
+    .axis-label {
+      fill: var(--slate-700);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .axis-label {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tiny-label {
+      fill: var(--slate-600);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .readable-text {
+      paint-order: stroke;
+      stroke: #fff;
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .energy-panel {
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 10px 12px;
+    }
+
+    .energy-panel-head {
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .energy-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px 14px;
+    }
+
+    .energy-item {
+      display: grid;
+      grid-template-columns: minmax(58px, auto) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .energy-item-label {
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .energy-bar-track {
+      height: 12px;
+      overflow: hidden;
+      border: 1px solid var(--slate-200);
+      border-radius: 4px;
+      background: var(--slate-100);
+    }
+
+    .energy-bar-fill {
+      width: 0;
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.08s linear;
+    }
+
+    .energy-a { background: var(--yucai-blue); }
+
+    .energy-b { background: var(--signal); }
+
+    .energy-spring { background: var(--green); }
+
+    .energy-item-value {
+      min-width: 42px;
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .chart-card {
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 12px 14px 14px;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+
+    .chart-card h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.25;
+      font-weight: 950;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px 12px;
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--yucai-blue);
+    }
+
+    .legend-dot.b {
+      background: var(--signal);
+    }
+
+    .vt-graph {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 90 / 19;
+      overflow: visible;
+    }
+
+    .side-panel {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.95fr) minmax(320px, 1.05fr);
+      gap: 18px;
+      border-top: 1px solid var(--slate-200);
+      background: #fff;
+      padding: 22px 24px;
+    }
+
+    .current-demo {
+      border-radius: 6px;
+      background: var(--yucai-50);
+      padding: 16px;
+    }
+
+    .panel-label {
+      margin: 0;
+      color: var(--yucai-700);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .current-demo h2,
+    .control-group h2 {
+      margin: 8px 0 0;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 950;
+    }
+
+    .current-demo p {
+      margin: 12px 0 0;
+      color: var(--slate-700);
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid var(--slate-200);
+      padding: 10px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--slate-500);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 3px;
+      color: var(--yucai-800);
+      font-size: 18px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .toggle-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      border-top: 1px solid var(--slate-200);
+      padding-top: 12px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 850;
+      line-height: 1.45;
+    }
+
+    .toggle input {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      accent-color: var(--yucai-700);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--yucai-700);
+    }
+
+    .control output {
+      color: var(--slate-600);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .model-check {
+      margin-top: 0;
+      border-top: 1px solid var(--slate-200);
+      padding: 12px 0 0;
+      color: var(--slate-600);
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    .model-check summary {
+      color: var(--ink);
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .check-list {
+      display: grid;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .check-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-radius: 6px;
+      background: var(--slate-50);
+      padding: 8px 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .teaching-note {
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 14px;
+      line-height: 1.85;
+    }
+
+    .principle-section {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+      gap: 18px;
+    }
+
+    .principle-card {
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 10px 30px rgba(16, 32, 51, 0.08);
+      padding: 22px;
+    }
+
+    .principle-card h2 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 22px;
+      line-height: 1.3;
+      font-weight: 950;
+    }
+
+    .principle-card h3 {
+      margin: 18px 0 8px;
+      color: var(--ink);
+      font-size: 16px;
+      line-height: 1.4;
+      font-weight: 900;
+    }
+
+    .principle-card p,
+    .principle-card li {
+      color: var(--slate-700);
+      font-size: 15px;
+      line-height: 1.9;
+    }
+
+    .principle-card p {
+      margin: 10px 0 0;
+    }
+
+    .principle-card ol,
+    .principle-card ul {
+      margin: 12px 0 0;
+      padding-left: 1.25rem;
+    }
+
+    .principle-card li + li {
+      margin-top: 6px;
+    }
+
+    .formula-block {
+      margin-top: 12px;
+      max-width: 100%;
+      min-width: 0;
+      border-left: 4px solid var(--yucai-blue);
+      background: var(--yucai-50);
+      padding: 12px 14px;
+      color: var(--ink);
+      font-size: 14px;
+      line-height: 1.8;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .task-list li::marker {
+      color: var(--yucai-blue);
+      font-weight: 900;
+    }
+
+    .footer {
+      border-top: 1px solid var(--slate-200);
+      background: #fff;
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 32px 0;
+      color: var(--slate-600);
+      font-size: 14px;
+    }
+
+    .footer strong {
+      display: block;
+      color: var(--ink);
+    }
+
+    @media (min-width: 760px) {
+      .footer-inner {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+    }
+
+    @media (max-width: 940px) {
+      .desktop-nav {
+        display: none;
+      }
+
+      .mobile-nav {
+        display: flex;
+      }
+
+      .hero-grid,
+      .principle-section,
+      .simulation-workspace,
+      .side-panel,
+      .case-toggle {
+        grid-template-columns: 1fr;
+      }
+
+      .stage-wrap {
+        border-right: 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+
+      .hero {
+        padding-top: 34px;
+      }
+
+      .toolbar-tools {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .page-shell {
+        width: min(100% - 20px, 1120px);
+      }
+
+      .brand-name {
+        font-size: 16px;
+      }
+
+      .hero-copy {
+        font-size: 16px;
+        line-height: 1.85;
+      }
+
+      .model-card,
+      .side-panel {
+        padding: 16px;
+      }
+
+      .stage-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .scene {
+        min-height: 260px;
+        aspect-ratio: 16 / 5.3;
+      }
+
+      .energy-row {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .chart-legend {
+        justify-content: flex-start;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *,
+      *::before,
+      *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  
+    .gif-download-panel {
+      width: min(1120px, calc(100% - 32px));
+      margin: 28px auto 0;
+      padding: 22px;
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 18px 60px rgba(16, 32, 51, 0.10);
+    }
+    .gif-download-panel h2 {
+      margin: 0;
+      color: #102033;
+      font-size: 1.25rem;
+      font-weight: 900;
+    }
+    .gif-download-panel p {
+      margin: 8px 0 0;
+      color: #475569;
+      line-height: 1.8;
+    }
+    .gif-download-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .gif-download-actions a {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: 1px solid #0b63c7;
+      background: #0b63c7;
+      color: #fff;
+      padding: 9px 14px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .gif-download-actions a:hover {
+      background: #074f9f;
+    }
+    @media (max-width: 640px) {
+      .gif-download-actions a { width: 100%; }
+    }
+
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="page-shell header-row">
+      <a class="brand focus-ring" href="/" aria-label="返回育才物理创新实验室首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 30 30" role="img">
+            <rect x="3" y="3" width="24" height="24" rx="5" fill="#0b63c7"/>
+            <path d="M9 17.6 14.2 7.8h2.2l-3.3 6.4h7.9L15.7 24h-2.2l3.5-6.4H9Z" fill="#fff"/>
+            <circle cx="21.5" cy="8.2" r="2.3" fill="#f4a51c"/>
+          </svg>
+        </span>
+        <span class="brand-name">育才物理创新实验室</span>
+      </a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <a class="focus-ring" href="/">首页</a>
+        <a class="focus-ring" href="/programming/">在线编程</a>
+        <a class="focus-ring" href="/dis/">网页版 DIS</a>
+        <a class="focus-ring" href="/photogate-comparison/">光电门对比</a>
+        <a class="focus-ring" href="/online-lab/">在线实验室</a>
+        <a class="focus-ring active" href="/simulations/" aria-current="page">模拟实验室</a>
+      </nav>
+    </div>
+    <nav class="page-shell mobile-nav" aria-label="移动端主导航">
+      <a class="focus-ring" href="/">首页</a>
+      <a class="focus-ring" href="/programming/">在线编程</a>
+      <a class="focus-ring" href="/dis/">网页版 DIS</a>
+      <a class="focus-ring" href="/photogate-comparison/">光电门对比</a>
+      <a class="focus-ring" href="/online-lab/">在线实验室</a>
+      <a class="focus-ring active" href="/simulations/" aria-current="page">模拟实验室</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="page-shell hero-grid">
+        <div>
+          <p class="eyebrow">SIMULATION LAB</p>
+          <h1>弹簧-小球（物块）模型</h1>
+          <p class="hero-copy">两道题都可以先把 A、B 和轻弹簧看成同一系统。水平方向没有外力，所以总动量守恒；弹簧理想、水平面光滑，所以机械能守恒。这个页面用同一个解析模型同步展示运动动画和 v-t 图像。</p>
+        </div>
+        <aside class="model-card" aria-label="模型假设和守恒关系">
+          <h2>核心关系</h2>
+          <p>设 A 初速度为 \(v_0\)，B 初速度为 \(0\)。质心速度恒为 \(v_{\mathrm{cm}}\)，相对运动是简谐运动，角频率为 \(\omega\)。</p>
+          <div class="formula">
+            \[
+              \mu = \frac{m_A m_B}{m_A + m_B},\quad
+              \omega = \sqrt{\frac{k}{\mu}},\quad
+              v_{\mathrm{cm}} = \frac{m_A v_0}{m_A + m_B}
+            \]
+            \[
+              v_A = v_{\mathrm{cm}} + \frac{m_B}{m_A + m_B}v_0\cos\omega t,\quad
+              v_B = v_{\mathrm{cm}} - \frac{m_A}{m_A + m_B}v_0\cos\omega t
+            \]
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="main-section">
+      <div class="page-shell">
+        <div class="tool-surface">
+          <div class="simulation-area">
+            <div class="stage-toolbar">
+              <div class="button-row">
+                <button class="button focus-ring" id="playPause" type="button">播放</button>
+                <button class="button secondary focus-ring" id="reset" type="button">复位</button>
+                <button class="button secondary focus-ring" id="step" type="button">单步</button>
+              </div>
+              <div class="toolbar-tools" aria-label="关键位置">
+                <button class="button focus-ring" type="button" data-jump="0">初始</button>
+                <button class="button focus-ring" type="button" data-jump="0.25">压缩中</button>
+                <button class="button focus-ring" type="button" data-jump="0.5">共速</button>
+                <button class="button focus-ring" type="button" data-jump="0.75" id="jumpRestore">恢复中</button>
+                <button class="button focus-ring" type="button" data-jump="1" id="jumpEnd">分离</button>
+                <div class="time-readout" id="timeReadout">t = 0.00 s</div>
+              </div>
+            </div>
+
+            <div class="simulation-workspace">
+              <div class="stage-wrap">
+                <svg class="scene" id="scene" viewBox="0 35 960 245" role="img" aria-labelledby="svgTitle svgDesc">
+                <title id="svgTitle">弹簧-小球（物块）模型模拟动画</title>
+                <desc id="svgDesc">画面显示 A、B 两个物体和中间弹簧的运动，并用速度箭头提示两物体速度方向。</desc>
+                <defs>
+                  <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L8,3 L0,6 Z" fill="#0b63c7"/>
+                  </marker>
+                  <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L8,3 L0,6 Z" fill="#f4a51c"/>
+                  </marker>
+                  <marker id="gapArrowLeft" markerWidth="10" markerHeight="10" refX="2" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M8,0 L0,3 L8,6 Z" fill="#b8442b"/>
+                  </marker>
+                  <marker id="gapArrowRight" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L8,3 L0,6 Z" fill="#b8442b"/>
+                  </marker>
+                  <marker id="axisArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                    <path d="M0,0 L8,3 L0,6 Z" fill="#334155"/>
+                  </marker>
+                </defs>
+
+                <text class="scene-label readable-text" x="58" y="42">动画：A 与弹簧、B 的相互作用</text>
+                <line class="cm-line" id="cmLine" x1="480" y1="58" x2="480" y2="258"/>
+                <text class="axis-label readable-text" id="cmText" x="492" y="74">质心匀速线</text>
+                <line class="track" x1="80" y1="240" x2="880" y2="240"/>
+                <path class="track-base" d="M90 250 H870"/>
+                <path class="spring-glow" id="springGlow" d=""/>
+                <path class="spring" id="springPath" d=""/>
+                <circle class="spring-end" id="springFreeEnd" cx="0" cy="0" r="6"/>
+                <line class="contact-gap" id="contactGap" x1="0" y1="0" x2="0" y2="0"/>
+                <text class="tiny-label readable-text" id="contactGapLabel" x="0" y="0">已分离</text>
+                <line class="velocity velocity-a" id="velA" x1="0" y1="0" x2="0" y2="0"/>
+                <line class="velocity velocity-b" id="velB" x1="0" y1="0" x2="0" y2="0"/>
+                <text class="velocity-label velocity-label-a" id="velALabel" x="0" y="0">vA</text>
+                <text class="velocity-label velocity-label-b" id="velBLabel" x="0" y="0">vB</text>
+                <rect class="block block-a" id="blockA" x="250" y="180" width="76" height="60"/>
+                <rect class="block block-b" id="blockB" x="610" y="180" width="76" height="60"/>
+                <text class="scene-label readable-text" id="labelA" x="280" y="217">A</text>
+                <text class="scene-label readable-text" id="labelB" x="640" y="217">B</text>
+                <text class="tiny-label readable-text" id="springLabel" x="422" y="168">弹簧压缩量 / 伸长量</text>
+
+                </svg>
+
+                <div class="energy-panel" aria-label="能量分配">
+                  <div class="energy-panel-head">能量分配</div>
+                  <div class="energy-row">
+                    <div class="energy-item">
+                      <span class="energy-item-label">A 动能</span>
+                      <div class="energy-bar-track" aria-hidden="true">
+                        <div class="energy-bar-fill energy-a" id="barKA"></div>
+                      </div>
+                      <span class="energy-item-value" id="barKAText">0.0%</span>
+                    </div>
+                    <div class="energy-item">
+                      <span class="energy-item-label">B 动能</span>
+                      <div class="energy-bar-track" aria-hidden="true">
+                        <div class="energy-bar-fill energy-b" id="barKB"></div>
+                      </div>
+                      <span class="energy-item-value" id="barKBText">0.0%</span>
+                    </div>
+                    <div class="energy-item">
+                      <span class="energy-item-label">弹性势能</span>
+                      <div class="energy-bar-track" aria-hidden="true">
+                        <div class="energy-bar-fill energy-spring" id="barSpring"></div>
+                      </div>
+                      <span class="energy-item-value" id="barSpringText">0.0%</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="chart-card" aria-label="A、B 两物体速度时间图像">
+                  <div class="chart-head">
+                    <h3>v-t 图像</h3>
+                    <div class="chart-legend" aria-live="polite">
+                      <span class="legend-item"><span class="legend-dot" aria-hidden="true"></span>A：蓝线 v<sub>A</sub></span>
+                      <span class="legend-item"><span class="legend-dot b" aria-hidden="true"></span>B：橙线 v<sub>B</sub></span>
+                      <span class="legend-item" id="phaseText">初始：A 右行，弹簧原长</span>
+                    </div>
+                  </div>
+                  <svg class="vt-graph" id="vtGraph" viewBox="0 300 960 270" role="img" aria-label="A、B 两物体速度随时间变化图像">
+                    <line class="grid-line graph-y-grid" x1="96" y1="345" x2="900" y2="345"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="390" x2="900" y2="390"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="435" x2="900" y2="435"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="480" x2="900" y2="480"/>
+                    <line class="grid-line graph-y-grid" x1="96" y1="525" x2="900" y2="525"/>
+                    <line class="axis" id="xAxis" x1="96" y1="525" x2="910" y2="525"/>
+                    <line class="axis" x1="96" y1="550" x2="96" y2="325"/>
+                    <text class="axis-label readable-text" x="918" y="530">t/s</text>
+                    <text class="axis-label readable-text" x="66" y="322">v/(m·s⁻¹)</text>
+                    <text class="axis-label readable-text" id="vMaxLabel" x="58" y="349">3</text>
+                    <text class="axis-label readable-text" id="vMidLabel" x="58" y="409">1</text>
+                    <text class="axis-label readable-text" id="vZeroLabel" x="70" y="529">0</text>
+                    <text class="axis-label readable-text" id="vMinLabel" x="52" y="558">-1</text>
+                    <text class="axis-label readable-text" id="tMaxLabel" x="872" y="548">2.6</text>
+                    <line class="graph-separate" id="separateMarker" x1="96" y1="325" x2="96" y2="525"/>
+                    <path class="curve-a curve-future" id="curveAFuture" d=""/>
+                    <path class="curve-b curve-future" id="curveBFuture" d=""/>
+                    <path class="curve-a" id="curveA" d=""/>
+                    <path class="curve-b" id="curveB" d=""/>
+                    <line class="graph-cursor" id="graphCursor" x1="96" y1="325" x2="96" y2="550"/>
+                    <circle id="pointA" r="5.5" fill="#0b63c7" cx="96" cy="345"/>
+                    <circle id="pointB" r="5.5" fill="#f4a51c" cx="96" cy="525"/>
+                  </svg>
+                </div>
+              </div>
+
+              <aside class="controls" aria-label="参数调节">
+                <h2>参数调节</h2>
+
+                <div class="control" aria-label="题型选择">
+                  <label>题型选择</label>
+                  <div class="case-toggle" role="group" aria-label="选择弹簧模型">
+                    <button class="case-button focus-ring" id="modeContact" type="button" aria-pressed="true">
+                      <strong>题型一：接触后分离</strong>
+                      <span>B 端固定轻弹簧</span>
+                      <p>A 压缩弹簧后，恢复原长时与弹簧分离，之后各自匀速。</p>
+                    </button>
+                    <button class="case-button focus-ring" id="modeConnected" type="button" aria-pressed="false">
+                      <strong>题型二：始终连接</strong>
+                      <span>A、B 由弹簧连接</span>
+                      <p>弹簧可压缩也可伸长，两物体速度按同一频率周期变化。</p>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="control">
+                  <label for="massA">A 质量 <output id="massAOut">1.00 kg</output></label>
+                  <input class="focus-ring" id="massA" type="range" min="0.5" max="4" value="1" step="0.1">
+                </div>
+                <div class="control">
+                  <label for="massB">B 质量 <output id="massBOut">1.00 kg</output></label>
+                  <input class="focus-ring" id="massB" type="range" min="0.5" max="4" value="1" step="0.1">
+                </div>
+                <div class="control">
+                  <label for="initialSpeed">A 初速度 <output id="initialSpeedOut">3.00 m/s</output></label>
+                  <input class="focus-ring" id="initialSpeed" type="range" min="0.8" max="5" value="3" step="0.1">
+                </div>
+                <div class="control">
+                  <label for="springK">弹簧劲度系数 <output id="springKOut">2 N/m</output></label>
+                  <input class="focus-ring" id="springK" type="range" min="1" max="12" value="2" step="1">
+                </div>
+                <div class="control">
+                  <label for="speed">播放倍率 <output id="speedOut">0.75×</output></label>
+                  <input class="focus-ring" id="speed" type="range" min="0.15" max="2.5" value="0.75" step="0.05">
+                </div>
+
+                <div class="toggle-row">
+                  <label class="toggle">
+                    <input id="showVelocity" type="checkbox" checked>
+                    显示速度箭头
+                  </label>
+                  <label class="toggle">
+                    <input id="showFullCurve" type="checkbox" checked>
+                    显示完整 v-t 曲线
+                  </label>
+                </div>
+              </aside>
+            </div>
+          </div>
+
+          <aside class="side-panel" aria-label="状态和学习提示">
+            <div class="current-demo">
+              <p class="panel-label">当前模型</p>
+              <h2 id="modeTitle">接触弹簧碰撞</h2>
+              <p id="modeDesc">对应第一道题：A 接触轻弹簧后压缩弹簧，压缩最大时两物体共速；弹簧恢复原长后 A 与弹簧分离，之后两物体各自匀速。</p>
+              <div class="metrics">
+                <div class="metric">
+                  <span>\(v_A\)</span>
+                  <strong id="vARead">3.00</strong>
+                </div>
+                <div class="metric">
+                  <span>\(v_B\)</span>
+                  <strong id="vBRead">0.00</strong>
+                </div>
+                <div class="metric">
+                  <span>弹簧能</span>
+                  <strong id="springEnergyRead">0.00</strong>
+                </div>
+                <div class="metric">
+                  <span>系统动量</span>
+                  <strong id="momentumRead">3.00</strong>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <details class="model-check" open>
+                <summary>守恒校验</summary>
+                <div class="check-list">
+                  <div class="check-row">
+                    <span>动量误差</span>
+                    <strong id="momentumError">0.000%</strong>
+                  </div>
+                  <div class="check-row">
+                    <span>机械能误差</span>
+                    <strong id="energyError">0.000%</strong>
+                  </div>
+                  <div class="check-row">
+                    <span>作用时长 T</span>
+                    <strong id="contactTimeRead">1.11 s</strong>
+                  </div>
+                  <div class="check-row">
+                    <span>最大压缩/伸长</span>
+                    <strong id="ampRead">0.00 m</strong>
+                  </div>
+                </div>
+              </details>
+
+              <p class="teaching-note">读图顺序：先看 \(v-t\) 图中两条曲线是否在同一时刻达到“共速”；再回到动画看弹簧长度。共速对应相对速度为零，因此弹簧形变量最大，弹性势能最大。</p>
+            </div>
+          </aside>
+        </div>
+
+        <section class="principle-section" aria-label="原理说明和观察任务">
+          <article class="principle-card">
+            <h2>为什么这两题是同一种模型</h2>
+            <h3>1. 建立系统</h3>
+            <p>研究对象取 A、B 和轻弹簧。水平面光滑，弹簧内力只在系统内部传递，所以系统水平方向总动量守恒。</p>
+            <h3>2. 能量转化</h3>
+            <p>A 的初动能不会凭空消失。相互作用过程中，动能可以暂时转化为弹簧弹性势能；弹簧恢复时，弹性势能又转回 A、B 的动能。</p>
+            <div class="formula-block">
+              \[
+                P = m_A v_A + m_B v_B = m_A v_0
+              \]
+              \[
+                E = \frac{1}{2}m_A v_A^2 + \frac{1}{2}m_B v_B^2 + \frac{1}{2}kx^2 = \text{常量}
+              \]
+            </div>
+            <h3>3. 关键时刻</h3>
+            <p>弹簧形变量最大时，A、B 没有相对运动，速度相同，均为质心速度 \(v_{\mathrm{cm}}\)。接触弹簧题中，弹簧恢复原长后两者分离；连接弹簧题中，弹簧还会继续伸长并周期性振动。</p>
+          </article>
+
+          <article class="principle-card">
+            <h2>观察任务</h2>
+            <ol class="task-list">
+              <li>选择“接触后分离”，把 \(m_A=m_B\)，观察最终是否出现 A 停下、B 以原速前进。</li>
+              <li>选择“始终连接”，把 \(m_A=1\,\mathrm{kg}\)、\(m_B=2\,\mathrm{kg}\)、\(v_0=3\,\mathrm{m/s}\)，观察 \(v-t\) 图是否出现 \(v_A\) 最小为 \(-1\,\mathrm{m/s}\)、\(v_B\) 最大为 \(2\,\mathrm{m/s}\)。</li>
+              <li>在 v-t 图中找到两条曲线相交的位置，并判断弹簧此时是原长、最长还是最短。</li>
+              <li>改变 B 的质量，比较质心速度和共速时刻的速度值怎样变化。</li>
+            </ol>
+            <h3>易错提醒</h3>
+            <p>机械能守恒不等于“两个物体的动能之和守恒”。弹簧被压缩或拉伸时，部分机械能在弹性势能中，所以 A、B 的总动能会变小；只有把弹簧能也算进去，机械能才守恒。</p>
+          </article>
+        </section>
+      </div>
+    </section>
+  </main>
+  <section class="gif-download-panel" aria-label="动画下载">
+    <h2>动画下载</h2>
+    <p>弹簧-小球（物块）模型动画 可下载为 GIF，方便插入课件、班级群或复习资料。</p>
+    <div class="gif-download-actions">
+      <a href="exports/spring-contact-separation.gif" download>接触弹簧：压缩后分离</a>
+      <a href="exports/spring-connected-oscillation.gif" download>连接弹簧：往复振动</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="page-shell footer-inner">
+      <div>
+        <strong>育才物理创新实验室</strong>
+      </div>
+      <div>面向物理实验、创新教具和学生作品发布的校园实验室门户</div>
+    </div>
+  </footer>
+
+  <script>
+    const els = {
+      playPause: document.querySelector("#playPause"),
+      reset: document.querySelector("#reset"),
+      step: document.querySelector("#step"),
+      timeReadout: document.querySelector("#timeReadout"),
+      modeContact: document.querySelector("#modeContact"),
+      modeConnected: document.querySelector("#modeConnected"),
+      jumpRestore: document.querySelector("#jumpRestore"),
+      jumpEnd: document.querySelector("#jumpEnd"),
+      modeTitle: document.querySelector("#modeTitle"),
+      modeDesc: document.querySelector("#modeDesc"),
+      massA: document.querySelector("#massA"),
+      massB: document.querySelector("#massB"),
+      initialSpeed: document.querySelector("#initialSpeed"),
+      springK: document.querySelector("#springK"),
+      speed: document.querySelector("#speed"),
+      massAOut: document.querySelector("#massAOut"),
+      massBOut: document.querySelector("#massBOut"),
+      initialSpeedOut: document.querySelector("#initialSpeedOut"),
+      springKOut: document.querySelector("#springKOut"),
+      speedOut: document.querySelector("#speedOut"),
+      showVelocity: document.querySelector("#showVelocity"),
+      showFullCurve: document.querySelector("#showFullCurve"),
+      cmLine: document.querySelector("#cmLine"),
+      cmText: document.querySelector("#cmText"),
+      blockA: document.querySelector("#blockA"),
+      blockB: document.querySelector("#blockB"),
+      labelA: document.querySelector("#labelA"),
+      labelB: document.querySelector("#labelB"),
+      springPath: document.querySelector("#springPath"),
+      springGlow: document.querySelector("#springGlow"),
+      springFreeEnd: document.querySelector("#springFreeEnd"),
+      contactGap: document.querySelector("#contactGap"),
+      contactGapLabel: document.querySelector("#contactGapLabel"),
+      springLabel: document.querySelector("#springLabel"),
+      velA: document.querySelector("#velA"),
+      velB: document.querySelector("#velB"),
+      velALabel: document.querySelector("#velALabel"),
+      velBLabel: document.querySelector("#velBLabel"),
+      curveA: document.querySelector("#curveA"),
+      curveB: document.querySelector("#curveB"),
+      curveAFuture: document.querySelector("#curveAFuture"),
+      curveBFuture: document.querySelector("#curveBFuture"),
+      graphCursor: document.querySelector("#graphCursor"),
+      graphGrids: document.querySelectorAll(".graph-y-grid"),
+      xAxis: document.querySelector("#xAxis"),
+      pointA: document.querySelector("#pointA"),
+      pointB: document.querySelector("#pointB"),
+      phaseText: document.querySelector("#phaseText"),
+      vMaxLabel: document.querySelector("#vMaxLabel"),
+      vMidLabel: document.querySelector("#vMidLabel"),
+      vZeroLabel: document.querySelector("#vZeroLabel"),
+      vMinLabel: document.querySelector("#vMinLabel"),
+      tMaxLabel: document.querySelector("#tMaxLabel"),
+      separateMarker: document.querySelector("#separateMarker"),
+      vARead: document.querySelector("#vARead"),
+      vBRead: document.querySelector("#vBRead"),
+      springEnergyRead: document.querySelector("#springEnergyRead"),
+      momentumRead: document.querySelector("#momentumRead"),
+      momentumError: document.querySelector("#momentumError"),
+      energyError: document.querySelector("#energyError"),
+      ampRead: document.querySelector("#ampRead"),
+      contactTimeRead: document.querySelector("#contactTimeRead"),
+      barKA: document.querySelector("#barKA"),
+      barKB: document.querySelector("#barKB"),
+      barSpring: document.querySelector("#barSpring"),
+      barKAText: document.querySelector("#barKAText"),
+      barKBText: document.querySelector("#barKBText"),
+      barSpringText: document.querySelector("#barSpringText")
+    };
+
+    const GRAPH = {
+      postSeparateTime: 1.0
+    };
+
+    const state = {
+      mode: "contact",
+      time: 0,
+      running: false,
+      lastFrame: null
+    };
+
+    const scene = {
+      centerX0: 480,
+      trackY: 240,
+      naturalCenterGapPx: 330,
+      springNaturalPx: 250,
+      meterScale: 125,
+      motionScale: 0.36,
+      blockW: 76,
+      blockH: 60,
+      graph: { left: 96, right: 900, top: 325, bottom: 525 }
+    };
+
+    function travelScale() {
+      return scene.meterScale * scene.motionScale;
+    }
+
+    function num(input) {
+      return Number(input.value);
+    }
+
+    function slowestOmega(mA, mB) {
+      const mu = mA * mB / (mA + mB);
+      return Math.sqrt(Number(els.springK.min) / mu);
+    }
+
+    function graphAxisDuration(mA, mB) {
+      const omegaMin = slowestOmega(mA, mB);
+      if (state.mode === "contact") {
+        return Math.PI / omegaMin + GRAPH.postSeparateTime;
+      }
+      return 2 * Math.PI / omegaMin;
+    }
+
+    function params() {
+      const mA = num(els.massA);
+      const mB = num(els.massB);
+      const v0 = num(els.initialSpeed);
+      const k = num(els.springK);
+      const total = mA + mB;
+      const mu = mA * mB / total;
+      const omega = Math.sqrt(k / mu);
+      const cmV = mA * v0 / total;
+      const amplitude = v0 / omega;
+      const separateTime = Math.PI / omega;
+      const period = 2 * Math.PI / omega;
+      const graphDuration = graphAxisDuration(mA, mB);
+      return { mA, mB, v0, k, total, mu, omega, cmV, amplitude, separateTime, period, graphDuration };
+    }
+
+    function valuesAt(t) {
+      const p = params();
+      const activeTime = state.mode === "contact" ? Math.min(t, p.separateTime) : t;
+      const cosTerm = Math.cos(p.omega * activeTime);
+      const sinTerm = Math.sin(p.omega * activeTime);
+      const vA = p.cmV + p.mB / p.total * p.v0 * cosTerm;
+      const vB = p.cmV - p.mA / p.total * p.v0 * cosTerm;
+      const deformation = p.amplitude * sinTerm;
+      const springX = state.mode === "contact" ? Math.max(0, deformation) : deformation;
+      const separated = state.mode === "contact" && t > p.separateTime;
+
+      return {
+        vA,
+        vB,
+        springX: separated ? 0 : springX,
+        kinetic: 0.5 * p.mA * vA * vA + 0.5 * p.mB * vB * vB,
+        springEnergy: separated ? 0 : 0.5 * p.k * springX * springX,
+        momentum: p.mA * vA + p.mB * vB,
+        centerTravel: p.cmV * t,
+        separated
+      };
+    }
+
+    function phaseLabel(t, value) {
+      const p = params();
+      if (state.mode === "contact" && value.separated) return "弹簧恢复原长：A 与弹簧分离，之后分别匀速";
+      const phase = (p.omega * Math.min(t, p.separateTime)) % (2 * Math.PI);
+      if (Math.abs(value.vA - value.vB) < 0.06) return "共速：相对速度为零，弹簧形变量最大";
+      if (Math.abs(value.springX) < 0.04) return "弹簧接近原长：系统动能较大";
+      if (phase < Math.PI / 2) return "压缩过程：A 减速，B 加速，弹簧能增加";
+      if (state.mode === "contact") return "恢复过程：弹簧能转回两物体动能";
+      return value.springX > 0 ? "压缩后恢复：弹簧能转回动能" : "连接模型：弹簧伸长，继续周期振动";
+    }
+
+    function springPath(x1, x2, y) {
+      const coils = 9;
+      const lead = 18;
+      const start = x1 + lead;
+      const end = x2 - lead;
+      const width = Math.max(18, end - start);
+      const step = width / (coils * 2);
+      const amp = 13;
+      const points = [`M ${x1.toFixed(1)} ${y.toFixed(1)}`, `L ${start.toFixed(1)} ${y.toFixed(1)}`];
+      for (let i = 0; i <= coils * 2; i += 1) {
+        const x = start + i * step;
+        const yy = i === 0 || i === coils * 2 ? y : y + (i % 2 === 0 ? -amp : amp);
+        points.push(`L ${x.toFixed(1)} ${yy.toFixed(1)}`);
+      }
+      points.push(`L ${x2.toFixed(1)} ${y.toFixed(1)}`);
+      return points.join(" ");
+    }
+
+    function setVelocityLabel(label, subscript, valueText) {
+      const svgNS = "http://www.w3.org/2000/svg";
+      label.replaceChildren();
+
+      const symbol = document.createElementNS(svgNS, "tspan");
+      symbol.textContent = "v";
+      label.appendChild(symbol);
+
+      const sub = document.createElementNS(svgNS, "tspan");
+      sub.textContent = subscript;
+      sub.setAttribute("baseline-shift", "sub");
+      sub.setAttribute("font-size", "9");
+      label.appendChild(sub);
+
+      const value = document.createElementNS(svgNS, "tspan");
+      value.textContent = valueText;
+      label.appendChild(value);
+    }
+
+    function drawVelocity(line, label, x, y, v, colorClass, labelText) {
+      const show = els.showVelocity.checked;
+      line.style.display = show && Math.abs(v) > 0.03 ? "" : "none";
+      label.style.display = show ? "" : "none";
+      if (!show) return;
+
+      if (Math.abs(v) <= 0.03) {
+        label.setAttribute("x", x - 24);
+        label.setAttribute("y", y - 10);
+        setVelocityLabel(label, labelText, "=0");
+        return;
+      }
+
+      const direction = Math.sign(v);
+      const len = Math.min(128, Math.max(36, Math.abs(v) * 30));
+      line.setAttribute("class", `velocity ${colorClass}`);
+      line.setAttribute("x1", x);
+      line.setAttribute("y1", y);
+      line.setAttribute("x2", x + direction * len);
+      line.setAttribute("y2", y);
+      label.setAttribute("x", x + direction * (len + 12) - (direction < 0 ? 38 : 0));
+      label.setAttribute("y", y - 10);
+      setVelocityLabel(label, labelText, `=${v.toFixed(2)} m/s`);
+    }
+
+    function positionsAt(t, current, p) {
+      const naturalGap = state.mode === "contact"
+        ? scene.blockW + scene.springNaturalPx
+        : scene.naturalCenterGapPx;
+      const scale = travelScale();
+
+      if (state.mode === "contact" && current.separated) {
+        const cmAtSeparate = scene.centerX0 + p.cmV * p.separateTime * scale;
+        const centerAAtSeparate = cmAtSeparate - p.mB / p.total * naturalGap;
+        const centerBAtSeparate = cmAtSeparate + p.mA / p.total * naturalGap;
+        const afterSeparate = t - p.separateTime;
+        const finalVA = p.cmV - p.mB / p.total * p.v0;
+        const finalVB = p.cmV + p.mA / p.total * p.v0;
+        return {
+          centerA: centerAAtSeparate + finalVA * afterSeparate * scale,
+          centerB: centerBAtSeparate + finalVB * afterSeparate * scale,
+          cmX: scene.centerX0 + p.cmV * t * scale
+        };
+      }
+
+      const cmX = scene.centerX0 + p.cmV * t * scale;
+      const deformationPx = current.springX * scale;
+      const gap = naturalGap - deformationPx;
+      return {
+        centerA: cmX - p.mB / p.total * gap,
+        centerB: cmX + p.mA / p.total * gap,
+        cmX
+      };
+    }
+
+    function graphScale() {
+      const p = params();
+      const values = [];
+      for (let i = 0; i <= 240; i += 1) {
+        const t = p.graphDuration * i / 240;
+        const v = valuesAt(t);
+        values.push(v.vA, v.vB);
+      }
+      const min = Math.min(0, ...values);
+      const max = Math.max(0, ...values);
+      const pad = Math.max(0.35, (max - min) * 0.12);
+      return { min: min - pad, max: max + pad };
+    }
+
+    function graphPoint(t, v, scale) {
+      const p = params();
+      const g = scene.graph;
+      const x = g.left + (t / p.graphDuration) * (g.right - g.left);
+      const y = g.bottom - ((v - scale.min) / (scale.max - scale.min)) * (g.bottom - g.top);
+      return { x, y };
+    }
+
+    function graphY(value, scale) {
+      const g = scene.graph;
+      return g.bottom - ((value - scale.min) / (scale.max - scale.min)) * (g.bottom - g.top);
+    }
+
+    function updateGraphAxis(scale) {
+      const tickValues = [
+        scale.max,
+        scale.max / 2,
+        0,
+        scale.min / 2,
+        scale.min
+      ];
+
+      els.graphGrids.forEach((line, index) => {
+        const y = graphY(tickValues[index], scale);
+        line.setAttribute("y1", y);
+        line.setAttribute("y2", y);
+      });
+
+      const zeroY = graphY(0, scale);
+      els.xAxis.setAttribute("y1", zeroY);
+      els.xAxis.setAttribute("y2", zeroY);
+      els.vMaxLabel.setAttribute("y", graphY(scale.max, scale) + 4);
+      els.vMidLabel.setAttribute("y", graphY(scale.max / 2, scale) + 4);
+      els.vZeroLabel.setAttribute("y", zeroY + 4);
+      els.vMinLabel.setAttribute("y", graphY(scale.min, scale) + 4);
+      els.vMaxLabel.textContent = scale.max.toFixed(1);
+      els.vMidLabel.textContent = (scale.max / 2).toFixed(1);
+      els.vZeroLabel.textContent = "0";
+      els.vMinLabel.textContent = scale.min.toFixed(1);
+      els.tMaxLabel.textContent = params().graphDuration.toFixed(1);
+    }
+
+    function updateSeparateMarker(p, scale) {
+      const show = state.mode === "contact" && els.showFullCurve.checked;
+      els.separateMarker.style.display = show ? "" : "none";
+      if (!show) return;
+      const x = scene.graph.left + (p.separateTime / p.graphDuration) * (scene.graph.right - scene.graph.left);
+      els.separateMarker.setAttribute("x1", x);
+      els.separateMarker.setAttribute("x2", x);
+      els.separateMarker.setAttribute("y1", scene.graph.top);
+      els.separateMarker.setAttribute("y2", scene.graph.bottom);
+    }
+
+    function graphPath(duration, which, scale, visibleDuration) {
+      const p = params();
+      const steps = 220;
+      const capped = Math.max(0, Math.min(duration, visibleDuration));
+      if (capped <= 0) return "";
+      const points = [];
+      for (let i = 0; i <= steps; i += 1) {
+        const t = capped * i / steps;
+        const v = valuesAt(t);
+        const point = graphPoint(t, which === "A" ? v.vA : v.vB, scale);
+        points.push(`${i === 0 ? "M" : "L"}${point.x.toFixed(1)},${point.y.toFixed(1)}`);
+      }
+      return points.join(" ");
+    }
+
+    function syncLabels() {
+      els.massAOut.textContent = `${num(els.massA).toFixed(2)} kg`;
+      els.massBOut.textContent = `${num(els.massB).toFixed(2)} kg`;
+      els.initialSpeedOut.textContent = `${num(els.initialSpeed).toFixed(2)} m/s`;
+      els.springKOut.textContent = `${num(els.springK).toFixed(0)} N/m`;
+      els.speedOut.textContent = `${num(els.speed).toFixed(2)}×`;
+    }
+
+    function timeAtProgress(progress) {
+      const p = params();
+      const clamped = Math.max(0, Math.min(1, progress));
+      return state.mode === "contact" ? clamped * p.separateTime : clamped * p.period;
+    }
+
+    function updateModeText() {
+      const contact = state.mode === "contact";
+      els.modeContact.setAttribute("aria-pressed", contact ? "true" : "false");
+      els.modeConnected.setAttribute("aria-pressed", contact ? "false" : "true");
+      els.modeTitle.textContent = contact ? "接触弹簧碰撞" : "弹簧连接振动";
+      els.modeDesc.textContent = contact
+        ? "对应第一道题：A 接触轻弹簧后压缩弹簧，压缩最大时两物体共速；弹簧恢复原长后 A 与弹簧分离，之后两物体各自匀速。"
+        : "对应第二道题：A、B 由轻弹簧连接，弹簧可压缩也可伸长。两物体速度按同一频率周期变化，v-t 图呈正余弦关系。";
+      els.jumpRestore.textContent = contact ? "恢复中" : "伸长中";
+      els.jumpEnd.textContent = contact ? "分离" : "一周期";
+    }
+
+    function render() {
+      const p = params();
+      const current = valuesAt(state.time);
+      const bodyPosition = positionsAt(state.time, current, p);
+      const centerA = bodyPosition.centerA;
+      const centerB = bodyPosition.centerB;
+      const cmX = bodyPosition.cmX;
+      const topY = scene.trackY - scene.blockH;
+      const leftA = centerA - scene.blockW / 2;
+      const leftB = centerB - scene.blockW / 2;
+      const springY = scene.trackY - 30;
+      const compressionPx = current.springX * travelScale();
+      const contactMode = state.mode === "contact";
+      const springEnd = leftB;
+      const springStart = contactMode
+        ? springEnd - scene.springNaturalPx + (current.separated ? 0 : compressionPx)
+        : leftA + scene.blockW;
+      const scale = graphScale();
+      const shownTime = Math.min(state.time, p.graphDuration);
+      const pointA = graphPoint(shownTime, current.vA, scale);
+      const pointB = graphPoint(shownTime, current.vB, scale);
+      const initialEnergy = 0.5 * p.mA * p.v0 * p.v0;
+      const totalEnergy = current.kinetic + current.springEnergy;
+      const energyErr = Math.abs((totalEnergy - initialEnergy) / initialEnergy);
+      const momentumErr = Math.abs((current.momentum - p.mA * p.v0) / Math.max(1, p.mA * p.v0));
+      const kineticA = 0.5 * p.mA * current.vA * current.vA;
+      const kineticB = 0.5 * p.mB * current.vB * current.vB;
+
+      els.blockA.setAttribute("x", leftA);
+      els.blockA.setAttribute("y", topY);
+      els.blockB.setAttribute("x", leftB);
+      els.blockB.setAttribute("y", topY);
+      els.labelA.setAttribute("x", centerA - 8);
+      els.labelA.setAttribute("y", topY + 38);
+      els.labelB.setAttribute("x", centerB - 8);
+      els.labelB.setAttribute("y", topY + 38);
+      els.cmLine.setAttribute("x1", cmX);
+      els.cmLine.setAttribute("x2", cmX);
+      els.cmText.setAttribute("x", cmX + 12);
+      els.springPath.setAttribute("d", springPath(springStart, springEnd, springY));
+      els.springGlow.setAttribute("d", springPath(springStart, springEnd, springY));
+      els.springFreeEnd.style.display = contactMode ? "" : "none";
+      els.springFreeEnd.setAttribute("cx", springStart);
+      els.springFreeEnd.setAttribute("cy", springY);
+      els.springLabel.setAttribute("x", Math.min(790, Math.max(88, (springStart + springEnd) / 2 - 62)));
+      if (contactMode && current.separated) {
+        els.springLabel.textContent = "弹簧恢复原长，A 已脱离弹簧";
+      } else {
+        els.springLabel.textContent = current.springX >= 0 ? `压缩 x = ${current.springX.toFixed(2)} m` : `伸长 x = ${Math.abs(current.springX).toFixed(2)} m`;
+      }
+
+      const gapVisible = contactMode && current.separated && springStart - (leftA + scene.blockW) > 12;
+      els.contactGap.style.display = gapVisible ? "" : "none";
+      els.contactGapLabel.style.display = gapVisible ? "" : "none";
+      if (gapVisible) {
+        const gapY = topY + 18;
+        const gapLeft = leftA + scene.blockW + 8;
+        const gapRight = springStart - 8;
+        els.contactGap.setAttribute("x1", gapLeft);
+        els.contactGap.setAttribute("x2", gapRight);
+        els.contactGap.setAttribute("y1", gapY);
+        els.contactGap.setAttribute("y2", gapY);
+        els.contactGapLabel.setAttribute("x", (gapLeft + gapRight) / 2 - 18);
+        els.contactGapLabel.setAttribute("y", gapY - 12);
+      }
+
+      drawVelocity(els.velA, els.velALabel, centerA, topY - 32, current.vA, "velocity-a", "A");
+      drawVelocity(els.velB, els.velBLabel, centerB, topY - 70, current.vB, "velocity-b", "B");
+
+      updateGraphAxis(scale);
+      updateSeparateMarker(p, scale);
+      els.curveAFuture.setAttribute("d", els.showFullCurve.checked ? graphPath(p.graphDuration, "A", scale, p.graphDuration) : "");
+      els.curveBFuture.setAttribute("d", els.showFullCurve.checked ? graphPath(p.graphDuration, "B", scale, p.graphDuration) : "");
+      els.curveA.setAttribute("d", graphPath(p.graphDuration, "A", scale, shownTime));
+      els.curveB.setAttribute("d", graphPath(p.graphDuration, "B", scale, shownTime));
+      els.graphCursor.setAttribute("x1", pointA.x);
+      els.graphCursor.setAttribute("x2", pointA.x);
+      els.pointA.setAttribute("cx", pointA.x);
+      els.pointA.setAttribute("cy", pointA.y);
+      els.pointB.setAttribute("cx", pointB.x);
+      els.pointB.setAttribute("cy", pointB.y);
+      els.phaseText.textContent = phaseLabel(state.time, current);
+
+      els.timeReadout.textContent = `t = ${state.time.toFixed(2)} s`;
+      els.vARead.textContent = current.vA.toFixed(2);
+      els.vBRead.textContent = current.vB.toFixed(2);
+      els.springEnergyRead.textContent = current.springEnergy.toFixed(2);
+      els.momentumRead.textContent = current.momentum.toFixed(2);
+      els.momentumError.textContent = `${(momentumErr * 100).toFixed(3)}%`;
+      els.energyError.textContent = `${(energyErr * 100).toFixed(3)}%`;
+      els.ampRead.textContent = `${p.amplitude.toFixed(2)} m`;
+      els.contactTimeRead.textContent = `${p.separateTime.toFixed(2)} s`;
+      const energyItems = [
+        [els.barKA, els.barKAText, kineticA],
+        [els.barKB, els.barKBText, kineticB],
+        [els.barSpring, els.barSpringText, current.springEnergy]
+      ];
+      for (const [bar, label, value] of energyItems) {
+        const percent = Math.max(0, Math.min(100, value / Math.max(1e-9, initialEnergy) * 100));
+        bar.style.width = `${percent.toFixed(1)}%`;
+        label.textContent = `${percent.toFixed(1)}%`;
+      }
+    }
+
+    function reset(keepRunning = state.running) {
+      state.time = 0;
+      state.lastFrame = null;
+      state.running = keepRunning;
+      els.playPause.textContent = state.running ? "暂停" : "播放";
+      syncLabels();
+      updateModeText();
+      render();
+    }
+
+    function advance(seconds) {
+      const p = params();
+      const next = state.time + seconds * num(els.speed);
+      state.time = state.mode === "contact" ? Math.min(next, p.graphDuration) : next % p.graphDuration;
+      if (state.mode === "contact" && state.time >= p.graphDuration) {
+        state.running = false;
+        els.playPause.textContent = "播放";
+      }
+    }
+
+    function frame(timestamp) {
+      if (state.lastFrame === null) state.lastFrame = timestamp;
+      const elapsed = Math.min(0.05, (timestamp - state.lastFrame) / 1000);
+      state.lastFrame = timestamp;
+      if (state.running) {
+        advance(elapsed);
+        render();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    els.playPause.addEventListener("click", () => {
+      state.running = !state.running;
+      state.lastFrame = null;
+      els.playPause.textContent = state.running ? "暂停" : "播放";
+    });
+
+    els.reset.addEventListener("click", () => reset(state.running));
+
+    els.step.addEventListener("click", () => {
+      state.running = false;
+      els.playPause.textContent = "播放";
+      advance(1 / 24);
+      render();
+    });
+
+    els.modeContact.addEventListener("click", () => {
+      state.mode = "contact";
+      reset(state.running);
+    });
+
+    els.modeConnected.addEventListener("click", () => {
+      state.mode = "connected";
+      reset(state.running);
+    });
+
+    document.querySelectorAll("[data-jump]").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.running = false;
+        els.playPause.textContent = "播放";
+        state.time = timeAtProgress(Number(button.dataset.jump));
+        state.lastFrame = null;
+        render();
+      });
+    });
+
+    [els.massA, els.massB, els.initialSpeed, els.springK].forEach((input) => {
+      input.addEventListener("input", () => reset(state.running));
+    });
+
+    els.speed.addEventListener("input", syncLabels);
+    els.showVelocity.addEventListener("change", render);
+    els.showFullCurve.addEventListener("change", render);
+
+    reset(false);
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

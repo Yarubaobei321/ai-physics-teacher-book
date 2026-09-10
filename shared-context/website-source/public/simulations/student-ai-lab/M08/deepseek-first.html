@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>数学立体图形 · 3D交互演示 | 高中生数学学习</title>
+  <!-- 引入 Three.js 核心库以及扩展 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    #info-panel {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(20, 20, 30, 0.85);
+      backdrop-filter: blur(12px);
+      color: #f0f0f0;
+      padding: 18px 22px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      max-width: 280px;
+      pointer-events: auto;
+      border: 1px solid rgba(255,255,255,0.15);
+      transition: all 0.3s ease;
+    }
+    #shape-name {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      color: #ffd966;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .data-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      font-size: 16px;
+      border-bottom: 1px dashed rgba(255,255,255,0.2);
+      padding-bottom: 4px;
+    }
+    .data-label {
+      color: #aaa;
+      font-weight: 400;
+    }
+    .data-value {
+      font-weight: 600;
+      color: #fff;
+      background: rgba(255,255,255,0.1);
+      padding: 2px 10px;
+      border-radius: 20px;
+      font-size: 15px;
+    }
+    .app-example {
+      margin-top: 15px;
+      background: rgba(255, 215, 0, 0.15);
+      border-left: 4px solid #ffd966;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #ddd;
+      line-height: 1.5;
+    }
+    .app-example strong {
+      color: #ffd966;
+      display: block;
+      margin-bottom: 4px;
+    }
+    #search-container {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(20,20,30,0.8);
+      backdrop-filter: blur(12px);
+      padding: 12px 18px;
+      border-radius: 30px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      z-index: 10;
+    }
+    #shape-select {
+      padding: 10px 20px;
+      border-radius: 25px;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+      cursor: pointer;
+      outline: none;
+      min-width: 160px;
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 15px center;
+      background-size: 18px;
+      background-color: rgba(30,30,40,0.9);
+      transition: 0.2s;
+    }
+    #shape-select:hover {
+      background-color: rgba(50,50,70,0.9);
+    }
+    #shape-select option {
+      background: #1e1e2a;
+      color: #fff;
+    }
+    .note {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.6);
+      background: rgba(0,0,0,0.6);
+      padding: 6px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      backdrop-filter: blur(5px);
+      white-space: nowrap;
+    }
+    @media (max-width: 700px) {
+      #info-panel {
+        top: 80px;
+        left: 15px;
+        max-width: 240px;
+        padding: 15px;
+      }
+      #search-container {
+        top: 15px;
+        right: 15px;
+        padding: 8px 15px;
+      }
+      #shape-select {
+        min-width: 130px;
+        padding: 8px 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="search-container">
+    <select id="shape-select">
+      <option value="cube">正方体</option>
+      <option value="sphere">球体</option>
+      <option value="cylinder">圆柱体</option>
+      <option value="cone">圆锥体</option>
+      <option value="cuboid" selected>长方体</option>
+      <option value="pyramid">四棱锥</option>
+      <option value="torus">圆环体</option>
+    </select>
+  </div>
+
+  <div id="info-panel">
+    <h2 id="shape-name">长方体</h2>
+    <div class="data-item"><span class="data-label">📐 边长/半径</span><span id="dimension-value" class="data-value">4×2×1.5</span></div>
+    <div class="data-item"><span class="data-label">📏 周长/棱长和</span><span id="perimeter-value" class="data-value">30.0</span></div>
+    <div class="data-item"><span class="data-label">🟦 表面积</span><span id="surface-value" class="data-value">34.0</span></div>
+    <div class="data-item"><span class="data-label">📦 体积</span><span id="volume-value" class="data-value">12.0</span></div>
+    <div class="app-example">
+      <strong>💡 生活应用</strong>
+      <span id="example-text">集装箱、快递纸箱、建筑中的房间，计算用料和容积。</span>
+    </div>
+  </div>
+  <div class="note">🖱️ 鼠标拖动旋转视角 | 📜 滚轮缩放 | ✨ 右键平移</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ---------- 初始化场景 ----------
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0f172a); // 深蓝灰背景，类似星空科技感
+        
+    // 添加一些星星效果(小点)
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsCount = 600;
+    const starsPositions = new Float32Array(starsCount * 3);
+    for (let i = 0; i < starsCount * 3; i += 3) {
+      starsPositions[i] = (Math.random() - 0.5) * 40;
+      starsPositions[i+1] = (Math.random() - 0.5) * 25;
+      starsPositions[i+2] = (Math.random() - 0.5) * 30;
+    }
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+    const starsMaterial = new THREE.PointsMaterial({color: 0xa5b4fc, size: 0.08});
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(stars);
+
+    // 灯光设置 (使图形立体感强)
+    const ambientLight = new THREE.AmbientLight(0x404066);
+    scene.add(ambientLight);
+    const dirLight1 = new THREE.DirectionalLight(0xffeedd, 1.2);
+    dirLight1.position.set(1, 2, 1.5);
+    scene.add(dirLight1);
+    const dirLight2 = new THREE.DirectionalLight(0xccddff, 0.9);
+    dirLight2.position.set(-1.5, -0.5, -1);
+    scene.add(dirLight2);
+    // 背光补充轮廓
+    const backLight = new THREE.DirectionalLight(0x4466aa, 0.7);
+    backLight.position.set(-0.5, 0.2, -1.8);
+    scene.add(backLight);
+    
+    // 辅助地面网格 (半透明，增加空间感)
+    const gridHelper = new THREE.GridHelper(6, 20, 0x334466, 0x1a2a3a);
+    gridHelper.position.y = -1.2;
+    scene.add(gridHelper);
+    
+    // 相机
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 50);
+    camera.position.set(4.5, 3.2, 5.5);
+    camera.lookAt(0, 0, 0);
+
+    // WebGL渲染器
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true,
+      alpha: false 
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制过高像素比以防性能问题
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setClearColor(0x0f172a);
+    document.body.appendChild(renderer.domElement);
+
+    // CSS2渲染器用于文字标签
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none'; // 让点击穿透到下拉框
+    document.body.appendChild(labelRenderer.domElement);
+
+    // 控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.rotateSpeed = 0.8;
+    controls.zoomSpeed = 1.2;
+    controls.panSpeed = 0.7;
+    controls.target.set(0, 0.1, 0);
+    controls.update();
+    
+    // 当前图形对象引用
+    let currentModel = null;
+    // 标签对象数组
+    let currentLabels = [];
+
+    // ---------- 工具函数：清除当前模型和标签 ----------
+    function clearScene() {
+      if (currentModel) {
+        scene.remove(currentModel);
+        // 简单处理：如果模型有几何体和材质，需要dispose，但这里我们直接移除group
+        if (currentModel.children) {
+          currentModel.children.forEach(child => {
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+              if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+              else child.material.dispose();
+            }
+          });
+        }
+        currentModel = null;
+      }
+      // 移除标签
+      currentLabels.forEach(label => scene.remove(label));
+      currentLabels = [];
+    }
+
+    // ---------- 创建顶点标签 (CSS2D) ----------
+    function createLabel(text, position, color = '#ffffff') {
+      const div = document.createElement('div');
+      div.textContent = text;
+      div.style.color = color;
+      div.style.fontWeight = 'bold';
+      div.style.fontSize = '16px';
+      div.style.textShadow = '1px 1px 3px black';
+      div.style.background = 'rgba(20,20,30,0.8)';
+      div.style.borderRadius = '12px';
+      div.style.padding = '2px 8px';
+      const label = new CSS2DObject(div);
+      label.position.copy(position);
+      return label;
+    }
+
+    // ---------- 根据选择更新图形、数据和UI ----------
+    function updateShape(shapeKey) {
+      clearScene();
+      
+      // 定义各种图形的参数 (为了视觉效果和实际计算，使用标准尺寸)
+      let geometry, material, mesh;
+      const group = new THREE.Group();
+      
+      // 颜色主题：半透明边缘光材质 + 线框
+      const mainColor = 0x4f9fcf; // 蓝色调
+      const edgeColor = 0xffaa33; // 金色边缘
+      
+      // 数据变量
+      let dimensionsText = '';
+      let perimeterText = '';
+      let surfaceText = '';
+      let volumeText = '';
+      let exampleText = '';
+      let shapeDisplayName = '';
+      
+      // 通用材质设置
+      const phongMaterial = new THREE.MeshPhongMaterial({ 
+        color: mainColor, 
+        shininess: 35,
+        transparent: true,
+        opacity: 0.75,
+        side: THREE.DoubleSide // 允许看到内部结构感
+      });
+      
+      // 根据形状创建
+      switch(shapeKey) {
+        case 'cube':
+          shapeDisplayName = '正方体';
+          const side = 2.2;
+          geometry = new THREE.BoxGeometry(side, side, side);
+          mesh = new THREE.Mesh(geometry, phongMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          group.add(mesh);
+          // 边缘线框
+          const cubeEdges = new THREE.EdgesGeometry(geometry);
+          const cubeLine = new THREE.LineSegments(cubeEdges, new THREE.LineBasicMaterial({ color: edgeColor, linewidth: 2 }));
+          group.add(cubeLine);
+          
+          // 顶点标签 (8个顶点)
+          const c = side/2;
+          const cubeVertices = [
+            { pos: [c, c, c], label: 'A' }, { pos: [c, c, -c], label: 'B' },
+            { pos: [c, -c, c], label: 'C' }, { pos: [c, -c, -c], label: 'D' },
+            { pos: [-c, c, c], label: 'E' }, { pos: [-c, c, -c], label: 'F' },
+            { pos: [-c, -c, c], label: 'G' }, { pos: [-c, -c, -c], label: 'H' }
+          ];
+          cubeVertices.forEach(v => {
+            const labelObj = createLabel(v.label, new THREE.Vector3(v.pos[0], v.pos[1], v.pos[2]), '#ffd966');
+            group.add(labelObj);
+            currentLabels.push(labelObj);
+          });
+          
+          dimensionsText = `边长 a = ${side}`;
+          const perimeterCube = 12 * side;
+          const surfaceCube = 6 * side * side;
+          const volumeCube = side * side * side;
+          perimeterText = `棱长和 = ${perimeterCube.toFixed(1)}`;
+          surfaceText = `6a² = ${surfaceCube.toFixed(2)}`;
+          volumeText = `a³ = ${volumeCube.toFixed(2)}`;
+          exampleText = '骰子、魔方、方形储物盒，计算包装纸面积或容量。';
+          break;
+          
+        case 'sphere':
+          shapeDisplayName = '球体';
+          const radius = 1.6;
+          geometry = new THREE.SphereGeometry(radius, 48, 32);
+          mesh = new THREE.Mesh(geometry, phongMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          group.add(mesh);
+          // 经纬线框加强结构
+          const sphereWireframe = new THREE.LineSegments(
+            new THREE.EdgesGeometry(geometry), 
+            new THREE.LineBasicMaterial({ color: edgeColor })
+          );
+          group.add(sphereWireframe);
+          
+          // 标签：上下左右前后点
+          const r = radius;
+          const spherePoints = [
+            { pos: [r,0,0], label: 'X' }, { pos: [-r,0,0], label: '-X' },
+            { pos: [0,r,0], label: 'Y' }, { pos: [0,-r,0], label: '-Y' },
+            { pos: [0,0,r], label: 'Z' }, { pos: [0,0,-r], label: '-Z' }
+          ];
+          spherePoints.forEach(p => {
+            const labelObj = createLabel(p.label, new THREE.Vector3(p.pos[0], p.pos[1], p.pos[2]), '#ffd966');
+            group.add(labelObj);
+            currentLabels.push(labelObj);
+          });
+          
+          dimensionsText = `半径 r = ${radius}`;
+          const perimeterSphere = 2 * Math.PI * radius;
+          const surfaceSphere = 4 * Math.PI * radius * radius;
+          const volumeSphere = (4/3) * Math.PI * Math.pow(radius, 3);
+          perimeterText = `大圆周长 ≈ ${perimeterSphere.toFixed(2)}`;
+          surfaceText = `4πr² ≈ ${surfaceSphere.toFixed(2)}`;
+          volumeText = `(4/3)πr³ ≈ ${volumeSphere.toFixed(2)}`;
+          exampleText = '篮球、地球仪、储水罐，计算涂料面积或内部容积。';
+          break;
+          
+        case 'cylinder':
+          shapeDisplayName = '圆柱体';
+          const cylRadius = 1.3;
+          const cylHeight = 2.4;
+          geometry = new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 40);
+          mesh = new THREE.Mesh(geometry, phongMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          group.add(mesh);
+          const cylEdges = new THREE.EdgesGeometry(geometry);
+          const cylLine = new THREE.LineSegments(cylEdges, new THREE.LineBasicMaterial({ color: edgeColor }));
+          group.add(cylLine);
+          
+          // 标签：上下底面圆心和侧面点
+          const hTop = cylHeight/2;
+          const hBottom = -cylHeight/2;
+          group.add(createLabel('O₁', new THREE.Vector3(0, hTop, 0), '#ffd966'));
+          group.add(createLabel('O₂', new THREE.Vector3(0, hBottom, 0), '#ffd966'));
+          currentLabels.push(createLabel('O₁', new THREE.Vector3(0, hTop, 0), '#ffd966'));
+          currentLabels.push(createLabel('O₂', new THREE.Vector3(0, hBottom, 0), '#ffd966'));
+          
+          dimensionsText = `半径 r=${cylRadius}, 高 h=${cylHeight}`;
+          const perimeterCyl = 2 * Math.PI * cylRadius;
+          const surfaceCyl = 2 * Math.PI * cylRadius * (cylRadius + cylHeight);
+          const volumeCyl = Math.PI * cylRadius * cylRadius * cylHeight;
+          perimeterText = `底面周长 ≈ ${perimeterCyl.toFixed(2)}`;
+          surfaceText = `2πr(r+h) ≈ ${surfaceCyl.toFixed(2)}`;
+          volumeText = `πr²h ≈ ${volumeCyl.toFixed(2)}`;
+          exampleText = '水杯、硬币、圆柱形桥墩，计算材料用量或容量。';
+          break;
+          
+        case 'cone':
+          shapeDisplayName = '圆锥体';
+          const coneRadius = 1.5;
+          const coneHeight = 2.5;
+          geometry = new THREE.ConeGeometry(coneRadius, coneHeight, 40);
+          mesh = new THREE.Mesh(geometry, phongMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          group.add(mesh);
+          const coneEdges = new THREE.EdgesGeometry(geometry);
+          const coneLine = new THREE.LineSegments(coneEdges, new THREE.LineBasicMaterial({ color: edgeColor }));
+          group.add(coneLine);
+          
+          group.add(createLabel('顶点', new THREE.Vector3(0, coneHeight/2, 0), '#ffaaaa'));
+          group.add(createLabel('圆心', new THREE.Vector3(0, -coneHeight/2, 0), '#ffd966'));
+          currentLabels.push(createLabel('顶点', new THREE.Vector3(0, coneHeight/2, 0), '#ffaaaa'));
+          currentLabels.push(createLabel('圆心', new THREE.Vector3(0, -coneHeight/2, 0), '#ffd966'));
+          
+          const slant = Math.sqrt(coneRadius*coneRadius + coneHeight*coneHeight);
+          dimensionsText = `半径 r=${coneRadius}, 高 h=${coneHeight}`;
+          perimeterText = `底面周长 ≈ ${(2*Math.PI*coneRadius).toFixed(2)}`;
+          surfaceText = `πr(r+l) ≈ ${(Math.PI*coneRadius*(coneRadius+slant)).toFixed(2)}`;
+          volumeText = `(1/3)πr²h ≈ ${((1/3)*Math.PI*coneRadius*coneRadius*coneHeight).toFixed(2)}`;
+          exampleText = '交通锥、漏斗、冰淇淋蛋筒，计算所需材料面积。';
+          break;
+          
+        case 'cuboid':
+          shapeDisplayName = '长方体';
+          const a = 2.2, b = 1.4, cDim = 1.0;
+          geometry = new THREE.BoxGeometry(a, cDim, b);
+          mesh = new THREE.Mesh(geometry, phongMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          group.add(mesh);
+          const cuboidEdges = new THREE.EdgesGeometry(geometry);
+          const cuboidLine = new THREE.LineSegments(cuboidEdges, new THREE.LineBasicMaterial({ color: edgeColor }));
+          group.add(cuboidLine);
+          
+          const ha = a/2, hb = b/2, hc = cDim/2;
+          const cuboidVerts = [
+            { pos: [ha, hc, hb], label: 'A' }, { pos: [ha, hc, -hb], label: 'B' },
+            { pos: [ha, -hc, hb], label: 'C' }, { pos: [ha, -hc, -hb], label: 'D' },
+            { pos: [-ha, hc, hb], label: 'E' }, { pos: [-ha, hc, -hb], label: 'F' },
+            { pos: [-ha, -hc, hb], label: 'G' }, { pos: [-ha, -hc, -hb], label: 'H' }
+          ];
+          cuboidVerts.forEach(v => {
+            const labelObj = createLabel(v.label, new THREE.Vector3(v.pos[0], v.pos[1], v.pos[2]), '#ffd966');
+            group.add(labelObj);
+            currentLabels.push(labelObj);
+          });
+          
+          dimensionsText = `长${a} × 宽${b} × 高${cDim}`;
+          const perimeterCuboid = 4 * (a + b + cDim);
+          const surfaceCuboid = 2 * (a*b + a*cDim + b*cDim);
+          const volumeCuboid = a * b * cDim;
+          perimeterText = `棱长和 = ${perimeterCuboid.toFixed(1)}`;
+          surfaceText = `2(ab+ah+bh) = ${surfaceCuboid.toFixed(2)}`;
+          volumeText = `长×宽×高 = ${volumeCuboid.toFixed(2)}`;
+          exampleText = '课本、集装箱、手机盒，计算包装纸面积或占用空间。';
+          break;
+          
+        case 'pyramid':
+          shapeDisplayName = '四棱锥';
+          const baseSize = 2.0;
+          const pyrHeight = 2.2;
+          geometry = new THREE.ConeGeometry(baseSize/Math.sqrt(2), pyrHeight, 4);
+          mesh = new THREE.Mesh(geometry, phongMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          group.add(mesh);
+          const pyrEdges = new THREE.EdgesGeometry(geometry);
+          const pyrLine = new THREE.LineSegments(pyrEdges, new THREE.LineBasicMaterial({ color: edgeColor }));
+          group.add(pyrLine);
+          
+          group.add(createLabel('顶点', new THREE.Vector3(0, pyrHeight/2, 0), '#ffaaaa'));
+          currentLabels.push(createLabel('顶点', new THREE.Vector3(0, pyrHeight/2, 0), '#ffaaaa'));
+          // 底面四个点
+          const halfBase = baseSize/2;
+          const baseY = -pyrHeight/2;
+          const basePoints = [
+            { pos: [halfBase, baseY, halfBase], label: 'A' },
+            { pos: [halfBase, baseY, -halfBase], label: 'B' },
+            { pos: [-halfBase, baseY, -halfBase], label: 'C' },
+            { pos: [-halfBase, baseY, halfBase], label: 'D' }
+          ];
+          basePoints.forEach(p => {
+            const lbl = createLabel(p.label, new THREE.Vector3(p.pos[0], p.pos[1], p.pos[2]), '#ffd966');
+            group.add(lbl);
+            currentLabels.push(lbl);
+          });
+          
+          const slantPyr = Math.sqrt((baseSize/2)*(baseSize/2) + pyrHeight*pyrHeight);
+          dimensionsText = `底边 ${baseSize}, 高 ${pyrHeight}`;
+          perimeterText = `底面周长 = ${(4*baseSize).toFixed(1)}`;
+          surfaceText = `底面积+4×侧面 ≈ ${(baseSize*baseSize + 2*baseSize*slantPyr).toFixed(2)}`;
+          volumeText = `(1/3)×底×高 ≈ ${((1/3)*baseSize*baseSize*pyrHeight).toFixed(2)}`;
+          exampleText = '金字塔、屋顶结构，计算建筑材料用量。';
+          break;
+          
+        case 'torus':
+          shapeDisplayName = '圆环体';
+          const majorRadius = 1.4;
+          const minorRadius = 0.55;
+          geometry = new THREE.TorusGeometry(majorRadius, minorRadius, 24, 48);
+          mesh = new THREE.Mesh(geometry, phongMaterial);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          group.add(mesh);
+          const torusEdges = new THREE.EdgesGeometry(geometry);
+          const torusLine = new THREE.LineSegments(torusEdges, new THREE.LineBasicMaterial({ color: edgeColor }));
+          group.add(torusLine);
+          
+          group.add(createLabel('R', new THREE.Vector3(majorRadius, 0, 0), '#ffd966'));
+          currentLabels.push(createLabel('R', new THREE.Vector3(majorRadius, 0, 0), '#ffd966'));
+          
+          dimensionsText = `大半径 R=${majorRadius}, 小半径 r=${minorRadius}`;
+          const perimeterTorus = 2 * Math.PI * majorRadius;
+          const surfaceTorus = 4 * Math.PI * Math.PI * majorRadius * minorRadius;
+          const volumeTorus = 2 * Math.PI * Math.PI * majorRadius * minorRadius * minorRadius;
+          perimeterText = `中心周长 ≈ ${perimeterTorus.toFixed(2)}`;
+          surfaceText = `4π²Rr ≈ ${surfaceTorus.toFixed(2)}`;
+          volumeText = `2π²Rr² ≈ ${volumeTorus.toFixed(2)}`;
+          exampleText = '甜甜圈、游泳圈、密封圈，计算橡胶体积或表面积。';
+          break;
+          
+        default: return;
+      }
+      
+      // 将模型组添加到场景
+      scene.add(group);
+      currentModel = group;
+      
+      // 更新UI面板
+      document.getElementById('shape-name').textContent = shapeDisplayName;
+      document.getElementById('dimension-value').textContent = dimensionsText;
+      document.getElementById('perimeter-value').textContent = perimeterText;
+      document.getElementById('surface-value').textContent = surfaceText;
+      document.getElementById('volume-value').textContent = volumeText;
+      document.getElementById('example-text').textContent = exampleText;
+    }
+
+    // ---------- 事件监听 ----------
+    document.getElementById('shape-select').addEventListener('change', (e) => {
+      updateShape(e.target.value);
+    });
+
+    // 窗口大小调整
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // ---------- 动画循环 ----------
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 星星缓慢旋转，增加动态感
+      stars.rotation.y += 0.0001;
+      stars.rotation.x += 0.00005;
+      
+      // 更新控制器
+      controls.update();
+      
+      // 渲染主场景
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+
+    // 启动：默认显示长方体
+    updateShape('cuboid');
+    animate();
+    
+    console.log('🌟 3D立体图形演示已启动！使用下拉菜单切换图形。');
+  </script>
+</body>
+</html>

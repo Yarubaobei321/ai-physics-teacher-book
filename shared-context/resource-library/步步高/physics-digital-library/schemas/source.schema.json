@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/source.schema.json",
+  "title": "步步高原始来源记录",
+  "type": "object",
+  "required": [
+    "id",
+    "relative_path",
+    "sha256",
+    "profile",
+    "title",
+    "status",
+    "output_paths",
+    "exceptions",
+    "tool_versions",
+    "metadata"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^src\\.bbg\\.[0-9a-f]{64}$"
+    },
+    "relative_path": {
+      "$ref": "#/$defs/rawRelativePath"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "profile": {
+      "enum": ["teacher", "gaokao", "textbook"]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "$ref": "#/$defs/status"
+    },
+    "output_paths": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9._-]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/outputRelativePath"
+      }
+    },
+    "exceptions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "tool_versions": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[a-z0-9][a-z0-9._-]*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["raw_collection", "series_year", "exam_year", "course", "chapter", "chapter_origin", "lesson_no", "version_hint", "source_bundle"],
+      "properties": {
+        "raw_collection": {"type": ["string", "null"]},
+        "series_year": {"type": ["integer", "null"]},
+        "exam_year": {"type": ["integer", "null"]},
+        "course": {"type": ["string", "null"]},
+        "chapter": {"type": ["string", "null"]},
+        "chapter_origin": {"enum": ["directory", "filename", null]},
+        "lesson_no": {"type": ["integer", "null"], "minimum": 1},
+        "version_hint": {"type": ["string", "null"]},
+        "source_bundle": {"type": ["string", "null"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "status": {
+      "enum": ["discovered", "raw_extracted", "ai_structured", "pending_manual_review", "reviewed", "published", "blocked"]
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "rawRelativePath": {
+      "allOf": [
+        {"$ref": "#/$defs/relativePath"},
+        {"pattern": "^raw/"}
+      ]
+    },
+    "outputRelativePath": {
+      "allOf": [
+        {"$ref": "#/$defs/relativePath"},
+        {"pattern": "^(?:records/documents|questions|knowledge|models|reviews|reports|assets/(?:original|derived))/"}
+      ]
+    }
+  }
+}

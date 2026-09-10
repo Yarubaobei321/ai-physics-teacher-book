@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>减数分裂 · 逐期图示与数目变化</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1c2733; --sub:#5b6b7a;
+    --line:#dbe4ee; --accent:#2563eb; --accent2:#ea580c;
+    --ok:#16a34a; --err:#dc2626;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:0.95rem; line-height:1.55;
+  }
+  header{
+    background:linear-gradient(120deg,#1e3a8a,#2563eb 55%,#7c3aed);
+    color:#fff; padding:16px 24px;
+  }
+  header h1{font-size:1.35rem;}
+  header p{font-size:.9rem; opacity:.92; margin-top:2px;}
+  .layout{
+    display:grid; grid-template-columns:1.2fr .9fr 1.1fr; gap:14px;
+    padding:14px 18px; max-width:1500px; margin:0 auto; align-items:start;
+  }
+  @media (max-width:1200px){ .layout{grid-template-columns:1fr;} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:0 1px 3px rgba(16,42,67,.06);}
+  .card h2{font-size:1.02rem; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:10px;}
+  button{
+    font-family:inherit; font-size:.9rem; border:1px solid var(--line); background:#fff;
+    color:var(--ink); border-radius:8px; padding:6px 10px; cursor:pointer; transition:all .15s;
+  }
+  button:hover:not(:disabled){border-color:var(--accent); color:var(--accent);}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button.primary:hover:not(:disabled){background:#1d4ed8; color:#fff;}
+  button.stage-on{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+  .row{display:flex; flex-wrap:wrap; gap:7px; margin:8px 0;}
+  .hint{font-size:.88rem; color:var(--sub); background:#eff6ff; border-radius:8px; padding:8px 10px; margin:6px 0;}
+  canvas{display:block; width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; max-width:680px;}
+  .counts{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px;}
+  .count{background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; text-align:center; padding:10px 6px;}
+  .count .num{font-size:1.25rem; font-weight:700; color:#1d4ed8;}
+  .count .lbl{font-size:.8rem; color:var(--sub);}
+  .event{background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:.9rem; margin-top:10px; min-height:60px;}
+  table{border-collapse:collapse; width:100%; font-size:.88rem; margin:8px 0;}
+  th,td{border:1px solid var(--line); padding:5px 7px; text-align:center;}
+  th{background:#eff6ff; color:#1e3a8a;}
+  .q{margin:10px 0; padding:9px; border:1px solid var(--line); border-radius:8px;}
+  .q .stem{font-size:.9rem; font-weight:600; margin-bottom:6px;}
+  .q .opts{display:flex; flex-direction:column; gap:5px;}
+  .q .opt{text-align:left; width:100%;}
+  .q .opt.correct{border-color:var(--ok); background:#f0fdf4; color:#14532d;}
+  .q .opt.wrong{border-color:var(--err); background:#fef2f2; color:#7f1d1d;}
+  .q .ans{display:none; background:#f0fdf4; border:1px solid #bbf7d0; color:#14532d; border-radius:8px; padding:8px 10px; margin-top:7px; font-size:.88rem;}
+  .badge{display:inline-block; background:#dbeafe; color:#1e40af; border-radius:20px; padding:1px 10px; font-size:.8rem;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🧬 减数分裂交互讲学</h1>
+  <p>从 2n 体细胞到 n 单倍体配子 · 减Ⅰ / 减Ⅱ 逐期图示 · 数目变化 · 对比表与情境题</p>
+</header>
+
+<div class="layout">
+
+  <!-- ============ 阶段动画/图示区 ============ -->
+  <section class="card" aria-label="减数分裂阶段图示区">
+    <h2>🎞 阶段图示（2n=4）</h2>
+    <div class="row" id="stageRow">
+      <button>S 期</button>
+      <button>减Ⅰ前期</button>
+      <button>减Ⅰ中期</button>
+      <button>减Ⅰ后期</button>
+      <button>减Ⅰ末期</button>
+      <button>减Ⅱ前期</button>
+      <button>减Ⅱ中期</button>
+      <button>减Ⅱ后期</button>
+      <button>减Ⅱ末期</button>
+    </div>
+    <canvas id="mei" width="680" height="360" aria-label="减数分裂阶段示意图：红色与蓝色为一对同源染色体，X 形表示含两条姐妹染色单体的染色体，着丝粒分裂后变为单条"></canvas>
+    <p class="hint">图示约定：同一颜色为一条染色体（X 形＝着丝粒未分裂、含 2 条姐妹染色单体）；一红一蓝构成一对同源染色体。</p>
+  </section>
+
+  <!-- ============ 数目读数区 ============ -->
+  <section class="card" aria-label="数目读数区">
+    <h2>🔢 数目读数（按每个细胞）</h2>
+    <div class="counts">
+      <div class="count"><div class="num" id="nChr">—</div><div class="lbl">染色体数</div></div>
+      <div class="count"><div class="num" id="nDna">—</div><div class="lbl">DNA 分子数</div></div>
+      <div class="count"><div class="num" id="nMono">—</div><div class="lbl">染色单体数</div></div>
+    </div>
+    <div class="event" id="eventBox" aria-live="polite">点击上方时期按钮查看该时期的染色体状态与数目变化。</div>
+    <p class="hint" style="margin-top:10px;">💡 要点：间期 S 期 DNA 已加倍为 8；减Ⅰ实现 2n→n；减Ⅱ后期着丝粒分裂、染色体数在该细胞内由 2 加倍为 4。</p>
+  </section>
+
+  <!-- ============ 对比表与习题区 ============ -->
+  <section class="card" aria-label="对比表与习题区">
+    <h2>⚖️ 有丝分裂（对照） vs 减Ⅱ</h2>
+    <table>
+      <thead><tr><th>比较项</th><th>有丝分裂（对照）</th><th>减Ⅱ</th></tr></thead>
+      <tbody>
+        <tr><td>起始细胞倍性</td><td>二倍体 2n（如 2n=4）</td><td>单倍体 n（如 n=2）</td></tr>
+        <tr><td>是否有同源染色体</td><td>有</td><td>无</td></tr>
+        <tr><td>着丝粒分裂时机</td><td>有丝分裂后期</td><td>减Ⅱ后期</td></tr>
+        <tr><td>子细胞数与倍性</td><td>2 个，各为 2n</td><td>4 个，各为 n</td></tr>
+        <tr><td>后期染色体数变化</td><td>2n=4 → 8（均分到两极各 4）</td><td>n=2 → 4（每细胞）</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin-top:12px;">📝 情境题（5 道）</h2>
+    <div id="qArea"></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  /* ===== 阶段数据 ===== */
+  const STAGES = [
+    {
+      name:"S 期（间期）", chr:4, dna:8, mono:8, tag:"间期（参考）",
+      event:"间期 S 期：DNA 复制完成，核 DNA 由 4 加倍为 8。染色体（按着丝粒计）仍为 4，每条含 2 条姐妹染色单体，为减数分裂做准备。"
+    },
+    {
+      name:"减Ⅰ前期", chr:4, dna:8, mono:8, tag:"减数第一次分裂",
+      event:"同源染色体联会形成四分体（2 对同源 → 2 个四分体），可发生交叉互换（非姐妹染色单体之间交换片段）。"
+    },
+    {
+      name:"减Ⅰ中期", chr:4, dna:8, mono:8, tag:"减数第一次分裂",
+      event:"同源染色体成对排列于赤道板两侧，着丝粒尚未分裂。"
+    },
+    {
+      name:"减Ⅰ后期", chr:4, dna:8, mono:8, tag:"减数第一次分裂",
+      event:"同源染色体分离、分别移向两极，着丝粒不分裂，染色体数仍为 4（着丝粒数不变）；非同源染色体自由组合。"
+    },
+    {
+      name:"减Ⅰ末期", chr:2, dna:4, mono:4, tag:"每个子细胞",
+      event:"细胞一分为二，形成 2 个子细胞，每个染色体数 n=2、每条仍含 2 条姐妹染色单体；实现 2n→n 染色体减半。"
+    },
+    {
+      name:"减Ⅱ前期", chr:2, dna:4, mono:4, tag:"每个子细胞",
+      event:"减数第二次分裂开始：染色体仍为 n=2，每条含 2 条姐妹染色单体，核 DNA=4。"
+    },
+    {
+      name:"减Ⅱ中期", chr:2, dna:4, mono:4, tag:"每个子细胞",
+      event:"着丝粒排列于赤道板，染色体 n=2、DNA=4、染色单体=4。"
+    },
+    {
+      name:"减Ⅱ后期", chr:4, dna:4, mono:0, tag:"每个细胞",
+      event:"着丝粒分裂、姐妹染色单体分离，染色体数由 2 加倍为 4（DNA 仍为 4、单体 0）。过程类似有丝分裂后期，但起始细胞已是 n。"
+    },
+    {
+      name:"减Ⅱ末期", chr:2, dna:2, mono:0, tag:"每个配子",
+      event:"细胞再一分为二，最终形成 4 个单倍体配子，每个核 DNA=2、染色体=2、染色单体=0。"
+    }
+  ];
+  const stageRow = document.getElementById("stageRow");
+  const stageBtns = stageRow.children;
+  let sel = -1;
+
+  const cv = document.getElementById("mei");
+  const ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  const RED = "#dc2626", BLUE = "#2563eb";
+
+  /* ---- 染色体画法 ---- */
+  function drawX(x, y, color, s){
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - s, y - s); ctx.lineTo(x + s*0.4, y + s*0.3);
+    ctx.moveTo(x + s, y - s); ctx.lineTo(x - s*0.4, y + s*0.3);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x - s, y + s); ctx.lineTo(x + s*0.4, y - s*0.3);
+    ctx.moveTo(x + s, y + s); ctx.lineTo(x - s*0.4, y - s*0.3);
+    ctx.stroke();
+    /* 着丝粒 */
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI*2); ctx.fill();
+  }
+  function drawSingle(x, y, color, s){
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x - s, y); ctx.lineTo(x + s, y);
+    ctx.stroke();
+    ctx.fillStyle = "#0f172a";
+    ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI*2); ctx.fill();
+  }
+  function cellRect(x, y, w, h, label){
+    ctx.strokeStyle = "#64748b";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+    if(label){
+      ctx.fillStyle = "#334155";
+      ctx.font = "bold 13px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(label, x + w/2, y + h + 16);
+    }
+  }
+  function drawPole(px, color){
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(px, 12, 6, 0, Math.PI*2); ctx.fill();
+  }
+  function equator(x, y1, y2){
+    ctx.strokeStyle = "#94a3b8";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function clearBg(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0,0,W,H);
+  }
+
+  function renderStage(i){
+    clearBg();
+    const CX = W/2;
+    switch(i){
+      case 0: /* S 期：一个细胞内 4 条 X 染色体 */
+        cellRect(120, 70, W-240, 210, "体细胞（2n=4，已复制）");
+        drawX(220, 175, RED, 34); drawX(340, 175, RED, 34);
+        drawX(460, 175, BLUE, 34); drawX(580, 175, BLUE, 34);
+        break;
+      case 1: /* 减Ⅰ前期：2 个四分体 */
+        cellRect(120, 70, W-240, 210, "联会：同源染色体形成四分体");
+        drawX(240, 175, RED, 30); drawX(300, 168, RED, 30); /* 红色四分体 */
+        drawX(440, 175, BLUE, 30); drawX(500, 168, BLUE, 30); /* 蓝色四分体 */
+        break;
+      case 2: /* 减Ⅰ中期：同源成对排列赤道板 */
+        cellRect(120, 70, W-240, 210, "同源成对排列于赤道板");
+        equator(CX, 80, 270);
+        drawX(CX-130, 175, RED, 30); drawX(CX+130, 175, RED, 30);
+        drawX(CX-90, 175, BLUE, 30); drawX(CX+90, 175, BLUE, 30);
+        break;
+      case 3: /* 减Ⅰ后期：同源分离，着丝粒不分裂 */
+        cellRect(120, 70, W-240, 210, "同源染色体分离（着丝粒不分裂）");
+        drawPole(140, "#334155"); drawPole(W-140, "#334155");
+        drawX(210, 175, RED, 32); drawX(470, 175, RED, 32);
+        drawX(290, 175, BLUE, 32); drawX(390, 175, BLUE, 32);
+        break;
+      case 4: /* 减Ⅰ末期：两个子细胞 */
+        cellRect(60, 70, 250, 200, "子细胞 1（n=2）");
+        cellRect(370, 70, 250, 200, "子细胞 2（n=2）");
+        drawX(130, 170, RED, 26); drawX(235, 170, BLUE, 26);
+        drawX(460, 170, RED, 26); drawX(565, 170, BLUE, 26);
+        break;
+      case 5: /* 减Ⅱ前期：一个子细胞，n=2，每条 2 单体 */
+        cellRect(150, 70, W-300, 210, "子细胞（n=2）");
+        drawX(250, 175, RED, 30); drawX(430, 175, BLUE, 30);
+        break;
+      case 6: /* 减Ⅱ中期 */
+        cellRect(150, 70, W-300, 210, "着丝粒排列于赤道板");
+        equator(CX, 80, 270);
+        drawX(260, 175, RED, 30); drawX(420, 175, BLUE, 30);
+        break;
+      case 7: /* 减Ⅱ后期：着丝粒分裂 */
+        cellRect(120, 70, W-240, 210, "着丝粒分裂、姐妹染色单体分离");
+        drawPole(140, "#334155"); drawPole(W-140, "#334155");
+        drawSingle(180, 175, RED, 22); drawSingle(270, 175, BLUE, 22);
+        drawSingle(410, 175, RED, 22); drawSingle(500, 175, BLUE, 22);
+        break;
+      case 8: /* 减Ⅱ末期：4 个配子 */
+        cellRect(30, 80, 140, 170, "配子 1");
+        cellRect(190, 80, 140, 170, "配子 2");
+        cellRect(350, 80, 140, 170, "配子 3");
+        cellRect(510, 80, 140, 170, "配子 4");
+        drawSingle(70, 165, RED, 16); drawSingle(130, 165, BLUE, 16);
+        drawSingle(230, 165, RED, 16); drawSingle(290, 165, BLUE, 16);
+        drawSingle(390, 165, RED, 16); drawSingle(450, 165, BLUE, 16);
+        drawSingle(550, 165, RED, 16); drawSingle(610, 165, BLUE, 16);
+        break;
+    }
+  }
+
+  function selectStage(i){
+    sel = i;
+    for(let k=0;k<stageBtns.length;k++){
+      stageBtns[k].classList.toggle("stage-on", k === i);
+    }
+    const s = STAGES[i];
+    document.getElementById("nChr").textContent = s.chr;
+    document.getElementById("nDna").textContent = s.dna;
+    document.getElementById("nMono").textContent = s.mono;
+    document.getElementById("eventBox").textContent = s.name + "（" + s.tag + "）：" + s.event;
+    renderStage(i);
+  }
+  for(let k=0;k<stageBtns.length;k++){
+    stageBtns[k].addEventListener("click", function(){ selectStage(k); });
+  }
+
+  /* ===== 情境题 5 道 ===== */
+  const QUESTIONS = [
+    {
+      stem:"① 交叉互换辨析：交叉互换发生在什么时期、发生在什么之间？",
+      opts:["减Ⅰ前期，同源染色体的非姐妹染色单体之间","减Ⅱ后期，姐妹染色单体之间","减Ⅰ后期，同源染色体之间","间期 S 期，DNA 之间"],
+      correct:0,
+      explain:"交叉互换发生在减Ⅰ前期（联会形成四分体时），在同源染色体的非姐妹染色单体之间交换片段，使配子产生更多的基因组合。"
+    },
+    {
+      stem:"② 减Ⅱ vs 有丝分裂（对照）：关于减Ⅱ后期与有丝分裂后期，下列说法正确的是？",
+      opts:["二者着丝粒都分裂、姐妹染色单体分离","减Ⅱ后期起始为二倍体，有丝分裂后期起始为单倍体","有丝分裂后期子细胞为单倍体","减Ⅱ后期不发生着丝粒分裂"],
+      correct:0,
+      explain:"共同点是着丝粒分裂、姐妹染色单体分离；区别在于起始倍性：有丝分裂（对照）起始为 2n，减Ⅱ起始为 n，且二者子细胞数与倍性不同。"
+    },
+    {
+      stem:"③ 染色体不分离的后果：若减Ⅰ后期一对同源染色体未分离、同时移向一极，最可能的结果是？",
+      opts:["产生的配子中某些染色体数目异常（多一条或少一条）","所有配子都正常","配子中染色体加倍为 4n","对配子没有影响"],
+      correct:0,
+      explain:"减Ⅰ后期同源染色体不分离会导致子细胞（进而配子）中染色体数目多一条或少一条，可能引起染色体数目异常，如 21 三体综合征等。"
+    },
+    {
+      stem:"④ 减Ⅰ后期事件：减Ⅰ后期同源染色体分离时，染色体数（按着丝粒计）为多少？",
+      opts:["4（着丝粒未分裂）","8（着丝粒分裂）","2","16"],
+      correct:0,
+      explain:"减Ⅰ后期同源染色体分离、着丝粒不分裂，所以染色体数仍为 4（2n=4 时），不变成 8；8 是减数分裂完成复制后的 DNA 分子数。"
+    },
+    {
+      stem:"⑤ 配子种类数：不考虑交叉互换时，2 对同源染色体（2n=4）可产生几种配子？若考虑交叉互换呢？",
+      opts:["2 种；考虑交叉互换种类更多","4 种；考虑交叉互换种类更多","8 种；考虑交叉互换仍 8 种","4 种；考虑交叉互换种类更少"],
+      correct:1,
+      explain:"不考虑交叉互换时，配子种类数 = 2² = 4 种（非同源染色体自由组合）；考虑交叉互换会使重组类型增加，配子种类更多。"
+    }
+  ];
+  const qArea = document.getElementById("qArea");
+  QUESTIONS.forEach(function(q, qi){
+    const d = document.createElement("div");
+    d.className = "q";
+    const stem = document.createElement("p");
+    stem.className = "stem";
+    stem.textContent = q.stem;
+    d.appendChild(stem);
+    const opts = document.createElement("div");
+    opts.className = "opts";
+    q.opts.forEach(function(t, oi){
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.textContent = "○ " + t;
+      b.addEventListener("click", function(){
+        const btns = d.querySelectorAll(".opt");
+        for(let k=0;k<btns.length;k++){
+          btns[k].disabled = true;
+          if(k === q.correct){
+            btns[k].classList.add("correct");
+            btns[k].textContent = "● " + q.opts[k] + "（正确答案）";
+          }else if(k === oi){
+            btns[k].classList.add("wrong");
+            btns[k].textContent = "● " + q.opts[k];
+          }else{
+            btns[k].textContent = "○ " + q.opts[k];
+          }
+        }
+        const verdict = oi === q.correct ? "✅ 判断正确" : "❌ 判断错误";
+        ans.textContent = verdict + "。解析：" + q.explain;
+        ans.style.display = "block";
+      });
+      opts.appendChild(b);
+    });
+    d.appendChild(opts);
+    const ans = document.createElement("div");
+    ans.className = "ans";
+    d.appendChild(ans);
+    const va = document.createElement("button");
+    va.textContent = "💡 查看答案";
+    va.addEventListener("click", function(){
+      const btns = d.querySelectorAll(".opt");
+      for(let k=0;k<btns.length;k++){
+        btns[k].disabled = true;
+        if(k === q.correct){
+          btns[k].classList.add("correct");
+          btns[k].textContent = "● " + q.opts[k] + "（正确答案）";
+        }
+      }
+      ans.textContent = "正确答案：" + q.opts[q.correct] + "。解析：" + q.explain;
+      ans.style.display = "block";
+    });
+    d.appendChild(va);
+    qArea.appendChild(d);
+  });
+
+  /* 初始 */
+  selectStage(3);
+})();
+</script>
+</body>
+</html>

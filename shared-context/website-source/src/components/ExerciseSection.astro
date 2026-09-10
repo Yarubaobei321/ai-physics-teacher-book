@@ -1,0 +1,624 @@
+---
+import type { Exercise, FillExercise } from '../data/exercises/types';
+
+interface Props {
+  exercises: Exercise[];
+  slug: string;
+  title?: string;
+  intro?: string;
+}
+
+const { exercises, slug, title = '配套习题', intro } = Astro.props;
+
+const renderFillStem = (ex: FillExercise) => {
+  let html = ex.stem;
+  for (const blank of ex.blanks) {
+    const input = `<input type="text" class="exercise-blank" data-blank-id="${blank.id}" autocomplete="off" inputmode="decimal" />`;
+    html = html.split(`{{${blank.id}}}`).join(input);
+  }
+  return html;
+};
+
+const totalCount = exercises.length;
+const choiceCount = exercises.filter((ex) => ex.kind === 'single' || ex.kind === 'multi').length;
+const fillCount = exercises.filter((ex) => ex.kind === 'fill').length;
+const openCount = exercises.filter((ex) => ex.kind === 'open').length;
+---
+
+<section class="bg-lab scroll-mt-24" id={`exercises-${slug}`} data-exercise-section={slug}>
+  <div class="page-shell py-12 sm:py-16">
+    <header class="mb-10">
+      <p class="eyebrow">EXERCISES · 配套练习</p>
+      <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">{title}</h2>
+      {intro ? (
+        <p class="mt-4 max-w-3xl leading-8 text-slate-700" set:html={intro} />
+      ) : (
+        <p class="mt-4 max-w-3xl leading-8 text-slate-700">
+          紧扣本实验的原理、操作与误差分析共 <strong>{totalCount}</strong> 题
+          （选择题 / 多选 {choiceCount} 题、填空题 {fillCount} 题、简答 / 计算题 {openCount} 题）。
+          选择题与填空题点选后立即给出对错反馈，所有题目都可以点击"查看详解"获得推导过程。
+        </p>
+      )}
+    </header>
+
+    <ol class="space-y-6">
+      {exercises.map((ex) => {
+        const dataAnswer =
+          ex.kind === 'single' ? ex.answer
+          : ex.kind === 'multi' ? ex.answer.join(',')
+          : '';
+        const stemHtml = ex.kind === 'fill' ? renderFillStem(ex) : ex.stem;
+
+        return (
+          <li
+            class="rounded-md border border-slate-200 bg-white p-5 shadow-soft sm:p-6"
+            data-exercise
+            data-kind={ex.kind}
+            data-answer={dataAnswer}
+          >
+            <header class="flex flex-wrap items-baseline gap-3">
+              <span class="rounded-md bg-yucai-700 px-3 py-1 text-xs font-black text-white">第 {ex.number} 题</span>
+              <span class="rounded-md border border-slate-200 px-2 py-1 text-xs font-bold text-slate-600">{ex.difficulty}</span>
+              <span class="ml-auto rounded-full bg-yucai-50 px-2.5 py-1 text-[11px] font-bold text-yucai-700">{ex.category}</span>
+            </header>
+
+            <div class="exercise-stem mt-4 leading-7 text-slate-800" set:html={stemHtml} />
+
+            {(ex.kind === 'single' || ex.kind === 'multi') && (
+              <div class="mt-5">
+                <ul class="space-y-2" data-choices role="list">
+                  {ex.choices.map((c) => (
+                    <li>
+                      <button
+                        type="button"
+                        class="exercise-choice focus-ring"
+                        data-choice={c.id}
+                      >
+                        <span class="exercise-choice__id">{c.id}</span>
+                        <span class="exercise-choice__label" set:html={c.label} />
+                        <span class="exercise-choice__mark" aria-hidden="true"></span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                <div class="mt-4 flex flex-wrap gap-3">
+                  <button type="button" data-action="submit" class="exercise-btn exercise-btn--primary focus-ring">提交答案</button>
+                  <button type="button" data-action="explain" class="exercise-btn exercise-btn--ghost focus-ring" hidden>查看详解</button>
+                  <button type="button" data-action="reset" class="exercise-btn exercise-btn--ghost focus-ring" hidden>重做</button>
+                </div>
+                <div class="exercise-feedback mt-3" data-feedback hidden></div>
+              </div>
+            )}
+
+            {ex.kind === 'fill' && (
+              <div class="mt-5">
+                <script is:inline type="application/json" data-blanks-json set:html={JSON.stringify(
+                  ex.blanks.map((b) => ({
+                    id: b.id,
+                    answers: [b.answer, ...(b.alternates ?? [])],
+                  })),
+                )} />
+                <div class="mt-1 flex flex-wrap gap-3">
+                  <button type="button" data-action="submit" class="exercise-btn exercise-btn--primary focus-ring">核对答案</button>
+                  <button type="button" data-action="reveal" class="exercise-btn exercise-btn--ghost focus-ring" hidden>填入参考答案</button>
+                  <button type="button" data-action="explain" class="exercise-btn exercise-btn--ghost focus-ring" hidden>查看详解</button>
+                  <button type="button" data-action="reset" class="exercise-btn exercise-btn--ghost focus-ring" hidden>重做</button>
+                </div>
+                <div class="exercise-feedback mt-3" data-feedback hidden></div>
+              </div>
+            )}
+
+            {ex.kind === 'open' && (
+              <div class="mt-5">
+                <button type="button" data-action="explain" class="exercise-btn exercise-btn--primary focus-ring">查看参考解答</button>
+              </div>
+            )}
+
+            <div
+              class="exercise-explanation mt-4 rounded-md border border-yucai-100 bg-yucai-50/60 p-4 leading-7 text-slate-700"
+              data-explanation
+              hidden
+            >
+              <p class="text-[11px] font-black uppercase tracking-[0.18em] text-yucai-700">参考解答 / 详解</p>
+              <div class="mt-2 text-sm" set:html={ex.explanation} />
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  </div>
+</section>
+
+<style>
+  .exercise-stem :global(p) {
+    margin: 0 0 0.6rem 0;
+  }
+  .exercise-stem :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .exercise-stem :global(table) {
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+  }
+  .exercise-stem :global(th),
+  .exercise-stem :global(td) {
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .exercise-explanation :global(p) {
+    margin: 0 0 0.6rem 0;
+  }
+  .exercise-explanation :global(p:last-child) {
+    margin-bottom: 0;
+  }
+  .exercise-explanation :global(table) {
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+  }
+  .exercise-explanation :global(th),
+  .exercise-explanation :global(td) {
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+  }
+
+  .exercise-choice {
+    display: flex;
+    width: 100%;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #fff;
+    text-align: left;
+    line-height: 1.6;
+    color: #1e293b;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    cursor: pointer;
+  }
+  .exercise-choice:hover:not([data-locked='true']) {
+    border-color: #4ba6ff;
+    background: #eef7ff;
+  }
+  .exercise-choice__id {
+    flex: 0 0 auto;
+    display: inline-flex;
+    width: 1.75rem;
+    height: 1.75rem;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 9999px;
+    font-weight: 800;
+    font-size: 0.75rem;
+    color: #334155;
+    background: #fff;
+  }
+  .exercise-choice__label {
+    flex: 1 1 auto;
+    font-size: 0.95rem;
+  }
+  .exercise-choice__label :global(sub),
+  .exercise-choice__label :global(sup) {
+    font-size: 0.7em;
+  }
+  .exercise-choice__mark {
+    flex: 0 0 auto;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1rem;
+    color: transparent;
+  }
+
+  .exercise-choice[data-selected='true'] {
+    border-color: #074f9f;
+    background: #eef7ff;
+  }
+  .exercise-choice[data-selected='true'] .exercise-choice__id {
+    border-color: #074f9f;
+    background: #074f9f;
+    color: #fff;
+  }
+  .exercise-choice[data-result='correct'] {
+    border-color: #10b981;
+    background: #ecfdf5;
+  }
+  .exercise-choice[data-result='correct'] .exercise-choice__id {
+    border-color: #10b981;
+    background: #10b981;
+    color: #fff;
+  }
+  .exercise-choice[data-result='correct'] .exercise-choice__mark {
+    color: #047857;
+  }
+  .exercise-choice[data-result='correct'] .exercise-choice__mark::before {
+    content: '✓';
+  }
+  .exercise-choice[data-result='wrong'] {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+  .exercise-choice[data-result='wrong'] .exercise-choice__id {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: #fff;
+  }
+  .exercise-choice[data-result='wrong'] .exercise-choice__mark {
+    color: #b91c1c;
+  }
+  .exercise-choice[data-result='wrong'] .exercise-choice__mark::before {
+    content: '✗';
+  }
+  .exercise-choice[data-result='missed'] {
+    border-color: #f59e0b;
+    background: #fffbeb;
+  }
+  .exercise-choice[data-result='missed'] .exercise-choice__id {
+    border-color: #f59e0b;
+    background: #f59e0b;
+    color: #fff;
+  }
+  .exercise-choice[data-result='missed'] .exercise-choice__mark {
+    color: #b45309;
+  }
+  .exercise-choice[data-result='missed'] .exercise-choice__mark::before {
+    content: '·';
+    font-size: 1.5rem;
+    line-height: 0.5;
+  }
+  .exercise-choice[data-locked='true'] {
+    cursor: default;
+  }
+
+  .exercise-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.5rem;
+    padding: 0 1.25rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+    cursor: pointer;
+  }
+  .exercise-btn--primary {
+    background: #074f9f;
+    color: #fff;
+    border: 1px solid #074f9f;
+  }
+  .exercise-btn--primary:hover {
+    background: #0a437f;
+    border-color: #0a437f;
+  }
+  .exercise-btn--ghost {
+    background: #fff;
+    color: #074f9f;
+    border: 1px solid #0b63c7;
+  }
+  .exercise-btn--ghost:hover {
+    background: #eef7ff;
+  }
+
+  .exercise-blank {
+    display: inline-block;
+    min-width: 6rem;
+    height: 2.25rem;
+    padding: 0 0.75rem;
+    margin: 0 0.25rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    background: #fff;
+    color: #102033;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700;
+    font-size: 0.95rem;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .exercise-blank:focus {
+    outline: 2px solid #85c6ff;
+    outline-offset: 1px;
+    border-color: #074f9f;
+  }
+  .exercise-blank[data-result='correct'] {
+    border-color: #10b981;
+    background: #ecfdf5;
+    color: #047857;
+  }
+  .exercise-blank[data-result='wrong'] {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+  .exercise-blank[disabled] {
+    cursor: default;
+  }
+
+  .exercise-feedback {
+    border-radius: 6px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+  .exercise-feedback[data-result='correct'] {
+    border: 1px solid #a7f3d0;
+    background: #ecfdf5;
+    color: #047857;
+  }
+  .exercise-feedback[data-result='partial'] {
+    border: 1px solid #fde68a;
+    background: #fffbeb;
+    color: #b45309;
+  }
+  .exercise-feedback[data-result='wrong'] {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+</style>
+
+<script>
+  type Kind = 'single' | 'multi' | 'fill' | 'open';
+
+  const normalize = (value: string) =>
+    value
+      .trim()
+      .replace(/\s+/g, '')
+      .replace(/，/g, ',')
+      .replace(/。$/, '')
+      .toLowerCase();
+
+  const initChoiceCard = (card: HTMLElement, kind: 'single' | 'multi') => {
+    const choices = Array.from(card.querySelectorAll<HTMLButtonElement>('[data-choice]'));
+    const submit = card.querySelector<HTMLButtonElement>('[data-action="submit"]');
+    const explainBtn = card.querySelector<HTMLButtonElement>('[data-action="explain"]');
+    const resetBtn = card.querySelector<HTMLButtonElement>('[data-action="reset"]');
+    const explanation = card.querySelector<HTMLElement>('[data-explanation]');
+    const feedback = card.querySelector<HTMLElement>('[data-feedback]');
+    const expected = (card.dataset.answer ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    let locked = false;
+
+    const setFeedback = (
+      result: 'correct' | 'partial' | 'wrong' | null,
+      message: string,
+    ) => {
+      if (!feedback) return;
+      if (result === null) {
+        feedback.hidden = true;
+        feedback.removeAttribute('data-result');
+        feedback.textContent = '';
+        return;
+      }
+      feedback.hidden = false;
+      feedback.dataset.result = result;
+      feedback.textContent = message;
+    };
+
+    choices.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (locked) return;
+        if (kind === 'single') {
+          choices.forEach((other) => other.removeAttribute('data-selected'));
+          btn.dataset.selected = 'true';
+        } else if (btn.dataset.selected === 'true') {
+          btn.removeAttribute('data-selected');
+        } else {
+          btn.dataset.selected = 'true';
+        }
+      });
+    });
+
+    submit?.addEventListener('click', () => {
+      const selected = choices
+        .filter((btn) => btn.dataset.selected === 'true')
+        .map((btn) => btn.dataset.choice ?? '');
+
+      if (selected.length === 0) {
+        setFeedback('wrong', '请先选择一个答案再提交。');
+        return;
+      }
+
+      locked = true;
+      choices.forEach((btn) => {
+        btn.dataset.locked = 'true';
+        const id = btn.dataset.choice ?? '';
+        const isExpected = expected.includes(id);
+        const isSelected = selected.includes(id);
+        if (isExpected && isSelected) {
+          btn.dataset.result = 'correct';
+        } else if (!isExpected && isSelected) {
+          btn.dataset.result = 'wrong';
+        } else if (isExpected && !isSelected) {
+          btn.dataset.result = 'missed';
+        } else {
+          btn.removeAttribute('data-result');
+        }
+      });
+
+      const sortedSelected = [...selected].sort().join(',');
+      const sortedExpected = [...expected].sort().join(',');
+      const correctText = expected.join('、');
+
+      if (sortedSelected === sortedExpected) {
+        setFeedback('correct', `回答正确！正确答案：${correctText}`);
+      } else {
+        const partialHit = selected.some((id) => expected.includes(id));
+        if (kind === 'multi' && partialHit) {
+          setFeedback('partial', `部分正确，正确答案：${correctText}`);
+        } else {
+          setFeedback('wrong', `答案不对，正确答案：${correctText}`);
+        }
+      }
+
+      submit.hidden = true;
+      if (explainBtn) explainBtn.hidden = false;
+      if (resetBtn) resetBtn.hidden = false;
+    });
+
+    explainBtn?.addEventListener('click', () => {
+      if (!explanation) return;
+      const hidden = explanation.hidden;
+      explanation.hidden = !hidden;
+      explainBtn.textContent = hidden ? '收起详解' : '查看详解';
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      locked = false;
+      choices.forEach((btn) => {
+        btn.removeAttribute('data-selected');
+        btn.removeAttribute('data-result');
+        btn.removeAttribute('data-locked');
+      });
+      setFeedback(null, '');
+      if (submit) submit.hidden = false;
+      if (explainBtn) {
+        explainBtn.hidden = true;
+        explainBtn.textContent = '查看详解';
+      }
+      if (resetBtn) resetBtn.hidden = true;
+      if (explanation) explanation.hidden = true;
+    });
+  };
+
+  const initFillCard = (card: HTMLElement) => {
+    const meta = card.querySelector<HTMLScriptElement>('[data-blanks-json]');
+    let blanks: Array<{ id: string; answers: string[] }> = [];
+    if (meta?.textContent) {
+      try {
+        blanks = JSON.parse(meta.textContent);
+      } catch (error) {
+        console.error('Failed to parse blanks data', error);
+      }
+    }
+    const inputs = blanks
+      .map((b) => card.querySelector<HTMLInputElement>(`[data-blank-id="${b.id}"]`))
+      .filter((el): el is HTMLInputElement => Boolean(el));
+
+    const submit = card.querySelector<HTMLButtonElement>('[data-action="submit"]');
+    const reveal = card.querySelector<HTMLButtonElement>('[data-action="reveal"]');
+    const explainBtn = card.querySelector<HTMLButtonElement>('[data-action="explain"]');
+    const resetBtn = card.querySelector<HTMLButtonElement>('[data-action="reset"]');
+    const explanation = card.querySelector<HTMLElement>('[data-explanation]');
+    const feedback = card.querySelector<HTMLElement>('[data-feedback]');
+
+    const setFeedback = (
+      result: 'correct' | 'partial' | 'wrong' | null,
+      message: string,
+    ) => {
+      if (!feedback) return;
+      if (result === null) {
+        feedback.hidden = true;
+        feedback.removeAttribute('data-result');
+        feedback.textContent = '';
+        return;
+      }
+      feedback.hidden = false;
+      feedback.dataset.result = result;
+      feedback.textContent = message;
+    };
+
+    submit?.addEventListener('click', () => {
+      let allCorrect = true;
+      let anyCorrect = false;
+      inputs.forEach((input, index) => {
+        const blank = blanks[index];
+        if (!blank) return;
+        const userValue = normalize(input.value ?? '');
+        const candidates = blank.answers.map((a) => normalize(a));
+        if (userValue.length === 0) {
+          input.dataset.result = 'wrong';
+          allCorrect = false;
+        } else if (candidates.includes(userValue)) {
+          input.dataset.result = 'correct';
+          anyCorrect = true;
+        } else {
+          input.dataset.result = 'wrong';
+          allCorrect = false;
+        }
+      });
+
+      const referenceText = blanks.map((b, index) => `第 ${index + 1} 空：${b.answers[0]}`).join('；');
+      if (allCorrect) {
+        setFeedback('correct', `完全正确！${referenceText}`);
+      } else if (anyCorrect) {
+        setFeedback('partial', `有空填错。参考答案：${referenceText}`);
+      } else {
+        setFeedback('wrong', `答案不对。参考答案：${referenceText}`);
+      }
+
+      if (reveal) reveal.hidden = false;
+      if (explainBtn) explainBtn.hidden = false;
+      if (resetBtn) resetBtn.hidden = false;
+    });
+
+    reveal?.addEventListener('click', () => {
+      inputs.forEach((input, index) => {
+        const blank = blanks[index];
+        if (!blank) return;
+        input.value = blank.answers[0] ?? '';
+        input.dataset.result = 'correct';
+        input.disabled = true;
+      });
+      setFeedback('correct', '已填入参考答案。可点"重做"清空。');
+    });
+
+    explainBtn?.addEventListener('click', () => {
+      if (!explanation) return;
+      const hidden = explanation.hidden;
+      explanation.hidden = !hidden;
+      explainBtn.textContent = hidden ? '收起详解' : '查看详解';
+    });
+
+    resetBtn?.addEventListener('click', () => {
+      inputs.forEach((input) => {
+        input.value = '';
+        input.removeAttribute('data-result');
+        input.disabled = false;
+      });
+      setFeedback(null, '');
+      if (reveal) reveal.hidden = true;
+      if (explainBtn) {
+        explainBtn.hidden = true;
+        explainBtn.textContent = '查看详解';
+      }
+      if (resetBtn) resetBtn.hidden = true;
+      if (explanation) explanation.hidden = true;
+    });
+  };
+
+  const initOpenCard = (card: HTMLElement) => {
+    const explainBtn = card.querySelector<HTMLButtonElement>('[data-action="explain"]');
+    const explanation = card.querySelector<HTMLElement>('[data-explanation]');
+
+    explainBtn?.addEventListener('click', () => {
+      if (!explanation) return;
+      const hidden = explanation.hidden;
+      explanation.hidden = !hidden;
+      explainBtn.textContent = hidden ? '收起参考解答' : '查看参考解答';
+    });
+  };
+
+  const init = () => {
+    document.querySelectorAll<HTMLElement>('[data-exercise]').forEach((card) => {
+      const kind = (card.dataset.kind ?? '') as Kind;
+      if (kind === 'single' || kind === 'multi') {
+        initChoiceCard(card, kind);
+      } else if (kind === 'fill') {
+        initFillCard(card);
+      } else if (kind === 'open') {
+        initOpenCard(card);
+      }
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

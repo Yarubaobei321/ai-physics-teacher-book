@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高一数学：立体几何 - 外接球与内切球 | 清晰演示与公式</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            overflow: hidden;
+        }
+
+        /* 整体布局：五五分，左侧知识区，右侧3D区 */
+        .layout {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 左侧知识区域 - 明亮温暖风格，占50%宽度 */
+        .knowledge-area {
+            width: 50%;
+            background: #fef8ed;
+            color: #2c3e2f;
+            padding: 28px 28px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 20;
+            box-shadow: 4px 0 20px rgba(0,0,0,0.05);
+            border-right: 1px solid #f0e2ce;
+            font-size: 16px;
+        }
+
+        .knowledge-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        .knowledge-area::-webkit-scrollbar-track {
+            background: #f0e8d8;
+            border-radius: 8px;
+        }
+        .knowledge-area::-webkit-scrollbar-thumb {
+            background: #c0a86a;
+            border-radius: 8px;
+        }
+
+        .knowledge-header {
+            margin-bottom: 18px;
+            border-bottom: 3px solid #ffb347;
+            padding-bottom: 12px;
+        }
+        .knowledge-header h1 {
+            font-size: 2rem;
+            margin: 0 0 6px 0;
+            color: #b45f2b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .knowledge-header p {
+            font-size: 1rem;
+            color: #7a6233;
+            opacity: 0.85;
+        }
+
+        .control-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0 24px;
+        }
+        button {
+            background: #ffedd5;
+            border: 1px solid #e2c9a7;
+            color: #7a5a3a;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            flex: 1 0 auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        button:hover {
+            background: #ffb347;
+            color: white;
+            border-color: #ffb347;
+            transform: translateY(-2px);
+        }
+        button.active {
+            background: #ff9f2e;
+            color: white;
+            border-color: #ff9f2e;
+            box-shadow: 0 2px 10px rgba(255,159,46,0.3);
+        }
+
+        /* 卡片样式 明亮舒适 */
+        .geom-card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 22px 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f5e6d2;
+        }
+        .geom-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            color: #c5651e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 6px solid #ffb347;
+            padding-left: 18px;
+        }
+        .formula-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .formula-item {
+            background: #fdf9f0;
+            padding: 12px 18px;
+            border-radius: 20px;
+            border-left: 4px solid #ffc489;
+        }
+        .formula-name {
+            font-weight: 700;
+            color: #b45a2a;
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+        .formula-exp {
+            font-family: 'Courier New', 'Fira Code', monospace;
+            font-size: 1rem;
+            color: #2c5530;
+            background: #fff6e6;
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 24px;
+            margin-top: 5px;
+        }
+        .note-light {
+            font-size: 0.85rem;
+            color: #8f7a5c;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px dashed #ecd9b4;
+            text-align: center;
+            background: #fffbf0;
+            border-radius: 24px;
+            padding: 10px;
+        }
+        
+        /* 右侧3D区域 占50% */
+        .canvas-area {
+            width: 50%;
+            position: relative;
+            background: #eef2f7;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.02);
+        }
+        .tip-overlay {
+            position: absolute;
+            bottom: 16px;
+            right: 20px;
+            background: rgba(255,250,225,0.9);
+            backdrop-filter: blur(4px);
+            padding: 6px 15px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            color: #7a5a3a;
+            pointer-events: none;
+            z-index: 25;
+            font-weight: 500;
+            font-family: monospace;
+            border: 1px solid #ffdfb3;
+        }
+        
+        @media (max-width: 850px) {
+            .knowledge-area { padding: 18px 16px; }
+            .geom-title { font-size: 1.4rem; }
+            .formula-exp { font-size: 0.85rem; }
+            button { font-size: 0.8rem; padding: 6px 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+    <!-- 左侧明亮知识面板 占50% -->
+    <div class="knowledge-area">
+        <div class="knowledge-header">
+            <h1>📐 外接球 & 内切球</h1>
+            <p>立体几何 · 高一数学 | 公式大全 + 全方位3D演示</p>
+        </div>
+        
+        <div class="control-buttons">
+            <button id="btnCylinder">圆柱</button>
+            <button id="btnCone">圆锥</button>
+            <button id="btnFrustum">圆台</button>
+            <button id="btnTetra">正四面体</button>
+            <button id="btnPyraFrustum">棱台</button>
+        </div>
+        
+        <div id="knowledgeDynamic" class="geom-card">
+            <!-- 动态内容会展示公式与讲解 -->
+            <div class="geom-title">🧴 圆柱 · 几何性质</div>
+            <div class="formula-grid">
+                <div class="formula-item"><div class="formula-name">📐 侧面积</div><div class="formula-exp">S<sub>侧</sub> = 2πrh</div></div>
+                <div class="formula-item"><div class="formula-name">🧮 表面积</div><div class="formula-exp">S = 2πr(r + h)</div></div>
+                <div class="formula-item"><div class="formula-name">⚖️ 体积</div><div class="formula-exp">V = πr²h</div></div>
+                <div class="formula-item"><div class="formula-name">🌍 外接球半径</div><div class="formula-exp">R = √[r² + (h/2)²]</div></div>
+                <div class="formula-item"><div class="formula-name">⚽ 内切球半径</div><div class="formula-exp">当 h = 2r 时，内切球半径 = r (绿色球)</div></div>
+            </div>
+            <div class="note-light">✨ 右侧3D模型：蓝色半透明 = 外接球，亮绿色半透明 = 内切球 | 可拖拽旋转/缩放，内切球从任何角度均清晰可见</div>
+        </div>
+    </div>
+    
+    <div class="canvas-area">
+        <div class="tip-overlay">🖱️ 鼠标拖拽旋转视角 | 右键平移 | 滚动缩放 | 内切球(绿色)高亮可见</div>
+    </div>
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    
+    const container = document.querySelector('.canvas-area');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xeef2f7);
+    scene.fog = new THREE.FogExp2(0xeef2f7, 0.006);
+    
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
+    camera.position.set(4.6, 3.8, 6.2);
+    camera.lookAt(0, 0, 0);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.setClearColor(0xeef2f7, 1);
+    container.appendChild(renderer.domElement);
+    
+    // 光照增强，使绿色内切球更醒目
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+    const mainLight = new THREE.DirectionalLight(0xfff5e0, 1.0);
+    mainLight.position.set(3, 5, 2);
+    mainLight.castShadow = true;
+    scene.add(mainLight);
+    const fillLight = new THREE.PointLight(0xcce6ff, 0.6);
+    fillLight.position.set(-2, 1.5, 3);
+    scene.add(fillLight);
+    const backLight = new THREE.DirectionalLight(0xccaa88, 0.5);
+    backLight.position.set(-1, 2, -3);
+    scene.add(backLight);
+    // 增加底部辅助光，让内切球底部不显得暗
+    const bottomLight = new THREE.PointLight(0xaaffaa, 0.4);
+    bottomLight.position.set(0, -1.2, 0);
+    scene.add(bottomLight);
+    
+    const gridHelper = new THREE.GridHelper(9, 20, 0xccbbaa, 0xddccbb);
+    gridHelper.position.y = -1.5;
+    gridHelper.material.transparent = true;
+    gridHelper.material.opacity = 0.25;
+    scene.add(gridHelper);
+    
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.rotateSpeed = 1.2;
+    controls.zoomSpeed = 1.2;
+    controls.enableZoom = true;
+    controls.autoRotate = false;
+    
+    let currentGroup = null;
+    
+    function clearScene() {
+        if (currentGroup) {
+            scene.remove(currentGroup);
+            if (currentGroup.children) {
+                currentGroup.children.forEach(child => {
+                    if (child.isMesh) {
+                        if (child.geometry) child.geometry.dispose();
+                        if (child.material) child.material.dispose();
+                    }
+                });
+            }
+        }
+    }
+    
+    // ========= 几何体构建 =========
+    // 外接球透明度0.16，内切球用亮绿色 (#44ff66) 高透明度+微弱自发光，确保完全可见
+    
+    // 1. 圆柱 (r=1.0, h=2.0)
+    function buildCylinder() {
+        const group = new THREE.Group();
+        const r = 1.0, h = 2.0;
+        const geometry = new THREE.CylinderGeometry(r, r, h, 80, 80);
+        const material = new THREE.MeshPhongMaterial({ color: 0x70a9ff, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+        const cylinder = new THREE.Mesh(geometry, material);
+        cylinder.castShadow = true;
+        group.add(cylinder);
+        const edges = new THREE.EdgesGeometry(geometry);
+        const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x3a6ea5 }));
+        group.add(wire);
+        
+        const outerR = Math.sqrt(r*r + (h/2)*(h/2));
+        const outerSphere = new THREE.Mesh(new THREE.SphereGeometry(outerR, 64, 64), new THREE.MeshPhongMaterial({ color: 0x3399ff, transparent: true, opacity: 0.16 }));
+        group.add(outerSphere);
+        
+        const innerR = r;
+        // 亮绿色内切球，提高透明度和 emissive 确保可见
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(innerR, 72, 72), new THREE.MeshPhongMaterial({ color: 0x44ff66, transparent: true, opacity: 0.68, emissive: 0x228833 }));
+        group.add(innerSphere);
+        return group;
+    }
+    
+    // 2. 圆锥 (外接球球心下移)
+    function buildCone() {
+        const group = new THREE.Group();
+        const r = 1.0, h = 2.2;
+        const geometry = new THREE.ConeGeometry(r, h, 80, 80);
+        const material = new THREE.MeshPhongMaterial({ color: 0x6e9eff, transparent: true, opacity: 0.45 });
+        const cone = new THREE.Mesh(geometry, material);
+        cone.castShadow = true;
+        group.add(cone);
+        group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x4f7eb3 })));
+        
+        const outerR = (h*h + r*r) / (2*h);
+        const outerSphere = new THREE.Mesh(new THREE.SphereGeometry(outerR, 64, 64), new THREE.MeshPhongMaterial({ color: 0x3399ff, transparent: true, opacity: 0.16 }));
+        const sphereCenterY = h/2 - outerR;
+        outerSphere.position.y = sphereCenterY;
+        group.add(outerSphere);
+        
+        const slant = Math.sqrt(r*r + h*h);
+        const innerR = (r * h) / (r + slant);
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(innerR, 72, 72), new THREE.MeshPhongMaterial({ color: 0x44ff66, transparent: true, opacity: 0.7, emissive: 0x228833 }));
+        const innerCenterY = -h/2 + innerR;
+        innerSphere.position.y = innerCenterY;
+        group.add(innerSphere);
+        return group;
+    }
+    
+    // 3. 圆台 (外接球精确，内切球绿色高亮)
+    function buildFrustum() {
+        const group = new THREE.Group();
+        const rTop = 0.7, rBottom = 1.35, height = 1.65;
+        const geometry = new THREE.CylinderGeometry(rTop, rBottom, height, 80, 80);
+        const material = new THREE.MeshPhongMaterial({ color: 0x7bb3ff, transparent: true, opacity: 0.45 });
+        const frustum = new THREE.Mesh(geometry, material);
+        frustum.castShadow = true;
+        group.add(frustum);
+        group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x5282b9 })));
+        
+        const halfH = height/2;
+        const distBottom = Math.sqrt(rBottom*rBottom + halfH*halfH);
+        const distTop = Math.sqrt(rTop*rTop + halfH*halfH);
+        const outerR = Math.max(distBottom, distTop);
+        const outerSphere = new THREE.Mesh(new THREE.SphereGeometry(outerR, 64, 64), new THREE.MeshPhongMaterial({ color: 0x3399ff, transparent: true, opacity: 0.16 }));
+        group.add(outerSphere);
+        
+        // 内切球明显绿色
+        const innerGuess = Math.min(height/2.2, (rTop + rBottom) / 2.5);
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(innerGuess * 0.92, 72, 72), new THREE.MeshPhongMaterial({ color: 0x44ff66, transparent: true, opacity: 0.7, emissive: 0x228833 }));
+        group.add(innerSphere);
+        return group;
+    }
+    
+    // 4. 正四面体 (精确外接内切，绿色内切球)
+    function buildTetrahedron() {
+        const group = new THREE.Group();
+        const a = 1.65;
+        const h_tetra = Math.sqrt(6)/3 * a;
+        const R_outer = Math.sqrt(6)/4 * a;
+        const r_inner = Math.sqrt(6)/12 * a;
+        
+        const bottomR = a / Math.sqrt(3);
+        const angles = [0, 120, 240].map(deg => deg * Math.PI/180);
+        const bottomVerts = angles.map(ang => new THREE.Vector3(bottomR * Math.cos(ang), -h_tetra/3, bottomR * Math.sin(ang)));
+        const topVert = new THREE.Vector3(0, 2*h_tetra/3, 0);
+        const vertices = [...bottomVerts, topVert];
+        const positions = vertices.flatMap(v => [v.x, v.y, v.z]);
+        const indices = [0,1,2, 0,1,3, 1,2,3, 2,0,3];
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+        geometry.setIndex(indices);
+        geometry.computeVertexNormals();
+        const material = new THREE.MeshPhongMaterial({ color: 0x7e9eff, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
+        const tetra = new THREE.Mesh(geometry, material);
+        group.add(tetra);
+        group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x4c6eb2 })));
+        
+        const outerSphere = new THREE.Mesh(new THREE.SphereGeometry(R_outer, 64, 64), new THREE.MeshPhongMaterial({ color: 0x3399ff, transparent: true, opacity: 0.16 }));
+        group.add(outerSphere);
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(r_inner, 72, 72), new THREE.MeshPhongMaterial({ color: 0x44ff66, transparent: true, opacity: 0.72, emissive: 0x228833 }));
+        group.add(innerSphere);
+        return group;
+    }
+    
+    // 5. 普通棱台 (正四棱台但标签改为棱台，绿色内切球明显)
+    function buildCommonFrustum() {
+        const group = new THREE.Group();
+        const bottomSize = 1.55, topSize = 0.85, height = 1.55;
+        const radiusBottom = bottomSize / Math.sqrt(2);
+        const radiusTop = topSize / Math.sqrt(2);
+        const geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 4, 1);
+        const material = new THREE.MeshPhongMaterial({ color: 0x8cadff, transparent: true, opacity: 0.5 });
+        const frustum = new THREE.Mesh(geometry, material);
+        frustum.castShadow = true;
+        group.add(frustum);
+        group.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x6583c2 })));
+        
+        const halfH = height/2;
+        const cornerBottomDist = Math.sqrt(radiusBottom*radiusBottom + halfH*halfH);
+        const cornerTopDist = Math.sqrt(radiusTop*radiusTop + halfH*halfH);
+        const outerR = Math.max(cornerBottomDist, cornerTopDist);
+        const outerSphere = new THREE.Mesh(new THREE.SphereGeometry(outerR, 64, 64), new THREE.MeshPhongMaterial({ color: 0x3399ff, transparent: true, opacity: 0.16 }));
+        group.add(outerSphere);
+        
+        // 绿色内切球高亮
+        const innerR_approx = Math.min(height/2.2, radiusBottom * 0.55);
+        const innerSphere = new THREE.Mesh(new THREE.SphereGeometry(innerR_approx * 0.9, 72, 72), new THREE.MeshPhongMaterial({ color: 0x44ff66, transparent: true, opacity: 0.7, emissive: 0x228833 }));
+        group.add(innerSphere);
+        return group;
+    }
+    
+    // 更新左侧知识面板 (公式详细，圆台体积用上下底面半径表示)
+    function updateKnowledgePanel(type) {
+        const containerDiv = document.getElementById('knowledgeDynamic');
+        if (!containerDiv) return;
+        
+        let html = '';
+        if (type === 'cylinder') {
+            html = `<div class="geom-title">🧴 圆柱 · 公式与球</div>
+            <div class="formula-grid">
+                <div class="formula-item"><div class="formula-name">📐 侧面积</div><div class="formula-exp">S<sub>侧</sub> = 2πrh</div></div>
+                <div class="formula-item"><div class="formula-name">🧮 表面积</div><div class="formula-exp">S = 2πr(r + h)</div></div>
+                <div class="formula-item"><div class="formula-name">⚖️ 体积</div><div class="formula-exp">V = πr²h</div></div>
+                <div class="formula-item"><div class="formula-name">🌍 外接球半径</div><div class="formula-exp">R = √[r² + (h/2)²]</div></div>
+                <div class="formula-item"><div class="formula-name">⚽ 内切球半径</div><div class="formula-exp">当 h = 2r 时，内切球半径 = r (亮绿色球)</div></div>
+            </div>
+            <div class="note-light">✨ 当前圆柱 r=1.0, h=2.0 → 恰好存在内切球，绿色球与上下底及侧面均相切</div>`;
+        } 
+        else if (type === 'cone') {
+            html = `<div class="geom-title">📐 圆锥 · 公式与球</div>
+            <div class="formula-grid">
+                <div class="formula-item"><div class="formula-name">📐 侧面积</div><div class="formula-exp">S<sub>侧</sub> = πrl (l为母线长)</div></div>
+                <div class="formula-item"><div class="formula-name">🧮 表面积</div><div class="formula-exp">S = πr(r + l)</div></div>
+                <div class="formula-item"><div class="formula-name">⚖️ 体积</div><div class="formula-exp">V = (1/3)πr²h</div></div>
+                <div class="formula-item"><div class="formula-name">🌍 外接球半径</div><div class="formula-exp">R = (h² + r²)/(2h)</div></div>
+                <div class="formula-item"><div class="formula-name">⚽ 内切球半径</div><div class="formula-exp">r<sub>内</sub> = (r·h)/(r+√(r²+h²)) (绿色球)</div></div>
+            </div>
+            <div class="note-light">✨ 外接球球心在轴线上偏下，内切球与底面及母线相切，亮绿色球清晰可辨</div>`;
+        }
+        else if (type === 'frustum') {
+            // 圆台体积明确用上下底面半径 r1, r2 表示
+            html = `<div class="geom-title">🥏 圆台 · 公式与球</div>
+            <div class="formula-grid">
+                <div class="formula-item"><div class="formula-name">📐 侧面积</div><div class="formula-exp">S<sub>侧</sub> = π(r₁ + r₂)l (l为母线长)</div></div>
+                <div class="formula-item"><div class="formula-name">🧮 表面积</div><div class="formula-exp">S = π(r₁² + r₂² + (r₁+r₂)l)</div></div>
+                <div class="formula-item"><div class="formula-name">⚖️ 体积</div><div class="formula-exp">V = (1/3)πh (r₁² + r₁r₂ + r₂²)</div></div>
+                <div class="formula-item"><div class="formula-name">🌍 外接球</div><div class="formula-exp">球心在轴线上，半径取到最远顶点距离</div></div>
+                <div class="formula-item"><div class="formula-name">⚽ 内切球</div><div class="formula-exp">与侧面和底面近似相切，亮绿色球高亮示意</div></div>
+            </div>
+            <div class="note-light">✨ 圆台外接球经过上下底面圆周，内切球采用亮绿色材质，任意角度均清晰可见</div>`;
+        }
+        else if (type === 'tetra') {
+            const a_val = 1.65;
+            const h_val = (Math.sqrt(6)/3 * a_val).toFixed(3);
+            const r_outer = (Math.sqrt(6)/4 * a_val).toFixed(3);
+            const r_inner = (Math.sqrt(6)/12 * a_val).toFixed(3);
+            html = `<div class="geom-title">🔷 正四面体 · 完美球关系</div>
+            <div class="formula-grid">
+                <div class="formula-item"><div class="formula-name">📐 表面积</div><div class="formula-exp">S = √3 · a²</div></div>
+                <div class="formula-item"><div class="formula-name">⚖️ 体积</div><div class="formula-exp">V = (√2/12) · a³</div></div>
+                <div class="formula-item"><div class="formula-name">📏 高</div><div class="formula-exp">h = √6/3 · a ≈ ${h_val}</div></div>
+                <div class="formula-item"><div class="formula-name">🌍 外接球半径</div><div class="formula-exp">R = √6/4 · a ≈ ${r_outer}</div></div>
+                <div class="formula-item"><div class="formula-name">⚽ 内切球半径</div><div class="formula-exp">r = √6/12 · a ≈ ${r_inner} (亮绿色球)</div></div>
+            </div>
+            <div class="note-light">✨ 正四面体外接球与内切球同心，R = 3r，高 h = R + r。绿色内切球亮度增强</div>`;
+        }
+        else if (type === 'frustumPyramid') {
+            html = `<div class="geom-title">🗻 棱台 · 公式与球</div>
+            <div class="formula-grid">
+                <div class="formula-item"><div class="formula-name">📐 侧面积</div><div class="formula-exp">S<sub>侧</sub> = ½ · (上底周长+下底周长) · 斜高</div></div>
+                <div class="formula-item"><div class="formula-name">🧮 表面积</div><div class="formula-exp">S = S<sub>上</sub> + S<sub>下</sub> + S<sub>侧</sub></div></div>
+                <div class="formula-item"><div class="formula-name">⚖️ 体积</div><div class="formula-exp">V = (1/3)h (S<sub>上</sub> + S<sub>下</sub> + √(S<sub>上</sub>S<sub>下</sub>))</div></div>
+                <div class="formula-item"><div class="formula-name">🌍 外接球</div><div class="formula-exp">球心在轴线上，半径取到最远顶点距离</div></div>
+                <div class="formula-item"><div class="formula-name">⚽ 内切球</div><div class="formula-exp">与各面相切，亮绿色球高亮示意</div></div>
+            </div>
+            <div class="note-light">✨ 棱台内切球经过亮绿色材质处理，从任何角度都能清晰观察</div>`;
+        }
+        containerDiv.innerHTML = html;
+    }
+    
+    function switchTo(type) {
+        clearScene();
+        let newGroup = null;
+        if (type === 'cylinder') newGroup = buildCylinder();
+        else if (type === 'cone') newGroup = buildCone();
+        else if (type === 'frustum') newGroup = buildFrustum();
+        else if (type === 'tetra') newGroup = buildTetrahedron();
+        else if (type === 'frustumPyramid') newGroup = buildCommonFrustum();
+        
+        if (newGroup) { currentGroup = newGroup; scene.add(currentGroup); }
+        updateKnowledgePanel(type);
+        
+        const btns = ['btnCylinder','btnCone','btnFrustum','btnTetra','btnPyraFrustum'];
+        btns.forEach(id => document.getElementById(id).classList.remove('active'));
+        if (type === 'cylinder') document.getElementById('btnCylinder').classList.add('active');
+        if (type === 'cone') document.getElementById('btnCone').classList.add('active');
+        if (type === 'frustum') document.getElementById('btnFrustum').classList.add('active');
+        if (type === 'tetra') document.getElementById('btnTetra').classList.add('active');
+        if (type === 'frustumPyramid') document.getElementById('btnPyraFrustum').classList.add('active');
+    }
+    
+    document.getElementById('btnCylinder').onclick = () => switchTo('cylinder');
+    document.getElementById('btnCone').onclick = () => switchTo('cone');
+    document.getElementById('btnFrustum').onclick = () => switchTo('frustum');
+    document.getElementById('btnTetra').onclick = () => switchTo('tetra');
+    document.getElementById('btnPyraFrustum').onclick = () => switchTo('frustumPyramid');
+    
+    switchTo('cylinder');
+    
+    // 背景柔和粒子
+    const starGeometry = new THREE.BufferGeometry();
+    const starCount = 600;
+    const starPositions = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+        starPositions[i*3] = (Math.random() - 0.5) * 160;
+        starPositions[i*3+1] = (Math.random() - 0.5) * 90;
+        starPositions[i*3+2] = (Math.random() - 0.5) * 80 - 30;
+    }
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const stars = new THREE.Points(starGeometry, new THREE.PointsMaterial({ color: 0xbbd4ff, size: 0.06, transparent: true, opacity: 0.35 }));
+    scene.add(stars);
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+    
+    window.addEventListener('resize', () => {
+        const w = container.clientWidth, h = container.clientHeight;
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w, h);
+    });
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+---
+import { site } from '../data/site';
+---
+
+<footer class="border-t border-slate-200 bg-white">
+  <div class="page-shell flex flex-col gap-4 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <strong class="block text-ink">{site.name}</strong>
+    </div>
+    <div>记录物理实验、创新教具与数字化实验探索的个人站点</div>
+    <div
+      class="flex items-center gap-1.5 self-start rounded-full border border-slate-200 bg-slate-50 px-4 py-2 sm:self-auto"
+    >
+      <span>累计访问</span>
+      <strong class="text-base font-semibold tabular-nums text-ink" data-visit-count>—</strong>
+      <span>人次</span>
+    </div>
+  </div>
+
+  {(site.icp || site.police) && (
+    <div class="page-shell flex flex-col items-center gap-1 border-t border-slate-100 pb-6 pt-4 text-xs text-slate-500 sm:flex-row sm:justify-center sm:gap-4">
+      {site.icp && (
+        <a
+          href="https://beian.miit.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="focus-ring rounded transition hover:text-slate-700"
+        >{site.icp}</a>
+      )}
+      {site.police && (
+        <a
+          href="https://beian.mps.gov.cn/"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="focus-ring inline-flex items-center gap-1 rounded transition hover:text-slate-700"
+        >{site.police}</a>
+      )}
+    </div>
+  )}
+</footer>
+
+<script>
+  const visitCountEl = document.querySelector('[data-visit-count]');
+  if (visitCountEl) {
+    const SESSION_KEY = 'szyc-visit-counted';
+    // 同一次浏览会话（含多页跳转）只计 1 人次；无法读取 sessionStorage 时只读不计数
+    let counted = true;
+    try {
+      counted = sessionStorage.getItem(SESSION_KEY) === '1';
+    } catch {
+      counted = true;
+    }
+    // 读数也用 POST：Cloudflare 边缘缓存不缓存 POST，保证数字实时
+    const request = counted
+      ? fetch('/api/visits', { method: 'POST' })
+      : fetch('/api/visits/hit', { method: 'POST' });
+    request
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+      .then((data) => {
+        const total = Number(data?.total);
+        if (!Number.isFinite(total)) throw new Error('bad payload');
+        visitCountEl.textContent = total.toLocaleString('zh-CN');
+        try {
+          sessionStorage.setItem(SESSION_KEY, '1');
+        } catch {
+          /* 忽略隐私模式下的存储失败 */
+        }
+      })
+      .catch(() => {
+        /* 计数服务不可用时保留占位符 */
+      });
+  }
+</script>

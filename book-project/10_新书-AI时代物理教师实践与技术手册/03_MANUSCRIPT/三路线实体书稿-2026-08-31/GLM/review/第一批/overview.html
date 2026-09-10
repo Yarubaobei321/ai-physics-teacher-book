@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GLM路线第一批完成审阅</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18312d;
+      --muted: #5b6e69;
+      --paper: #f4f1e9;
+      --panel: #fffdfa;
+      --line: #d6ded8;
+      --green: #176b5b;
+      --green-dark: #114e43;
+      --green-soft: #e0f0eb;
+      --amber: #945f1d;
+      --amber-soft: #f8ecd8;
+      --red: #9a473c;
+      --red-soft: #f7e5e1;
+      --shadow: 0 16px 44px rgba(30, 63, 56, .08);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(23, 107, 91, .035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 30px 30px;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      line-height: 1.72;
+    }
+
+    a { color: var(--green-dark); text-underline-offset: 4px; }
+
+    .shell {
+      width: min(1160px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 30px 0 72px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: .9rem;
+    }
+
+    .topbar a { font-weight: 760; text-decoration: none; }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(32px, 7vw, 74px);
+      border-radius: 26px;
+      background: var(--green-dark);
+      color: white;
+      box-shadow: 0 24px 70px rgba(17, 78, 67, .23);
+    }
+
+    .hero::after {
+      content: "12";
+      position: absolute;
+      right: -12px;
+      bottom: -86px;
+      color: rgba(255, 255, 255, .07);
+      font-family: Georgia, serif;
+      font-size: clamp(13rem, 33vw, 25rem);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .kicker {
+      margin: 0 0 12px;
+      color: #b8e0d5;
+      font-size: .82rem;
+      font-weight: 850;
+      letter-spacing: .13em;
+    }
+
+    h1, h2, h3 { color: inherit; }
+
+    h1 {
+      position: relative;
+      z-index: 1;
+      max-width: 830px;
+      margin: 0;
+      font-family: "Songti SC", "STSong", serif;
+      font-size: clamp(2.35rem, 6vw, 5rem);
+      line-height: 1.07;
+      letter-spacing: -.045em;
+    }
+
+    .hero p {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      margin: 22px 0 0;
+      color: #d7ebe5;
+      font-size: 1.08rem;
+    }
+
+    .metrics {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .metric {
+      padding: 15px;
+      border: 1px solid rgba(255, 255, 255, .18);
+      border-radius: 13px;
+      background: rgba(255, 255, 255, .07);
+    }
+
+    .metric strong { display: block; color: white; font-size: 1.25rem; }
+    .metric span { color: #c8e3dc; font-size: .85rem; }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: rgba(255, 253, 250, .88);
+      backdrop-filter: blur(8px);
+    }
+
+    nav a {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: .91rem;
+      font-weight: 750;
+      text-decoration: none;
+    }
+
+    nav a:hover { background: var(--green-soft); }
+
+    .section {
+      margin-top: 26px;
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .section h2 {
+      margin: 0;
+      font-family: "Songti SC", "STSong", serif;
+      font-size: clamp(1.7rem, 3.6vw, 2.65rem);
+      line-height: 1.2;
+    }
+
+    .section-head p { max-width: 560px; margin: 0; color: var(--muted); }
+
+    .before-after {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .state {
+      padding: 22px;
+      border-radius: 16px;
+    }
+
+    .state.before { background: #eeeae1; }
+    .state.after { background: var(--green-soft); }
+    .state h3 { margin: 0 0 10px; font-size: 1.08rem; }
+    .state ul { margin: 0; padding-left: 1.25rem; }
+    .state li + li { margin-top: 7px; }
+
+    .chain {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .chain span {
+      position: relative;
+      display: grid;
+      min-height: 92px;
+      place-items: center;
+      padding: 12px;
+      border: 1px solid #bed9d1;
+      border-radius: 12px;
+      background: #f1f8f6;
+      color: var(--green-dark);
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .chain span:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      right: -17px;
+      z-index: 2;
+      color: var(--green);
+      font-size: 1.25rem;
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .check-card {
+      padding: 19px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .check-card h3 { margin: 0 0 11px; font-size: 1.02rem; }
+    .check-card ul { margin: 0; padding: 0; list-style: none; }
+    .check-card li { display: flex; gap: 9px; align-items: start; }
+    .check-card li + li { margin-top: 8px; }
+    .ok::before { content: "✓"; color: var(--green); font-weight: 900; }
+    .pending::before { content: "○"; color: var(--amber); font-weight: 900; }
+
+    .risk-list {
+      display: grid;
+      gap: 11px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: risk;
+    }
+
+    .risk-list li {
+      counter-increment: risk;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 13px;
+      align-items: start;
+      padding: 16px;
+      border-left: 4px solid var(--amber);
+      border-radius: 10px;
+      background: var(--amber-soft);
+    }
+
+    .risk-list li::before {
+      content: counter(risk, decimal-leading-zero);
+      color: var(--amber);
+      font-weight: 900;
+    }
+
+    .figures {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .figure {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 17px;
+      background: white;
+    }
+
+    .figure-preview {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: contain;
+      padding: 8px;
+      background: #f7f7f3;
+    }
+
+    .figure-body { padding: 18px; }
+    .figure h3 { margin: 0 0 8px; font-size: 1.04rem; }
+    .figure p { margin: 0; color: var(--muted); font-size: .93rem; }
+    .figure .boundary { margin-top: 10px; color: var(--red); font-weight: 700; }
+    .file-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+    .file-links a { font-weight: 800; }
+
+    .review-steps {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      counter-reset: step;
+    }
+
+    .review-steps li {
+      counter-increment: step;
+      min-height: 190px;
+      padding: 19px;
+      border-top: 5px solid var(--green);
+      border-radius: 12px;
+      background: #f2f8f6;
+    }
+
+    .review-steps li::before {
+      content: "第 " counter(step) " 遍";
+      display: block;
+      margin-bottom: 10px;
+      color: var(--green);
+      font-size: .82rem;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .file-link {
+      display: block;
+      padding: 17px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: white;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .file-link small { display: block; margin-top: 5px; color: var(--muted); font-weight: 500; }
+
+    .final-note {
+      margin-top: 26px;
+      padding: 22px;
+      border: 1px solid #e3b9b2;
+      border-radius: 15px;
+      background: var(--red-soft);
+      color: #743a32;
+    }
+
+    footer { margin-top: 30px; color: var(--muted); font-size: .88rem; text-align: center; }
+
+    @media (max-width: 900px) {
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chain { grid-template-columns: 1fr; }
+      .chain span { min-height: 58px; }
+      .chain span:not(:last-child)::after { content: "↓"; right: 50%; bottom: -20px; transform: translateX(50%); }
+      .review-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 680px) {
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .metrics, .before-after, .check-grid, .figures, .review-steps, .file-grid { grid-template-columns: 1fr; }
+      .section-head { align-items: start; flex-direction: column; }
+      .review-steps li { min-height: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <span>GLM路线 · 第一批完成审阅 · 2026-08-31</span>
+      <a href="index.html">返回简明入口</a>
+    </div>
+
+    <header class="hero">
+      <p class="kicker">完整第一版 · 尚非出版定稿</p>
+      <h1>一条可连续阅读、可逐级交付的教师项目链</h1>
+      <p>从真实问题、数据规格和模型卡开始，经AI协作、物理验真、课堂版本、传感器、网站与资料工程，最后抵达学生作品评价、发布边界和可接手的项目包。</p>
+      <div class="metrics" aria-label="成果统计">
+        <div class="metric"><strong>4篇</strong><span>连续项目阶段</span></div>
+        <div class="metric"><strong>12章</strong><span>完整行动链</span></div>
+        <div class="metric"><strong>46,679</strong><span>字符，仅作进度统计</span></div>
+        <div class="metric"><strong>2幅</strong><span>已落实证据型图</span></div>
+      </div>
+    </header>
+
+    <nav aria-label="页内导航">
+      <a href="#change">形成前后</a>
+      <a href="#criteria">完成标准</a>
+      <a href="#risks">优先核对</a>
+      <a href="#figures">证据型图</a>
+      <a href="#how">审阅方法</a>
+      <a href="#files">全部入口</a>
+    </nav>
+
+    <section class="section" id="change">
+      <div class="section-head">
+        <h2>形成前后</h2>
+        <p>这次变化的核心不是增加目录，而是让读者能跟随同一项目，看到每一级责任怎样产生下一件可保存的交付物。</p>
+      </div>
+      <div class="before-after">
+        <article class="state before">
+          <h3>写作前</h3>
+          <ul>
+            <li>路线、章序与材料组合已经存在。</li>
+            <li>案例分散在材料卡、事实包和旧样章中。</li>
+            <li>章末工具有设计，尚未形成连续使用链。</li>
+            <li>读者还无法判断整本书读起来是什么样。</li>
+          </ul>
+        </article>
+        <article class="state after">
+          <h3>当前结果</h3>
+          <ul>
+            <li>四篇十二章可从头顺读到尾。</li>
+            <li>案例按项目升格顺序进入正文。</li>
+            <li>每章交付物成为下一章的输入。</li>
+            <li>证据边界、待核和图位均有独立入口。</li>
+          </ul>
+        </article>
+      </div>
+      <div class="chain" aria-label="GLM连续行动链">
+        <span>真实问题</span>
+        <span>规格形成</span>
+        <span>AI协作</span>
+        <span>物理验真</span>
+        <span>课堂交付与维护</span>
+      </div>
+    </section>
+
+    <section class="section" id="criteria">
+      <div class="section-head">
+        <h2>完成标准</h2>
+        <p>绿色项目已经在当前文件范围内验证；空心项目仍需作者判断、授权或后续制作。</p>
+      </div>
+      <div class="check-grid">
+        <article class="check-card">
+          <h3>连续正文</h3>
+          <ul>
+            <li class="ok">四篇十二章已经贯通。</li>
+            <li class="ok">各章围绕具体问题展开。</li>
+            <li class="ok">第12章回收第1章的首项目。</li>
+            <li class="ok">章末交付物可被下一章接用。</li>
+          </ul>
+        </article>
+        <article class="check-card">
+          <h3>事实与表达</h3>
+          <ul>
+            <li class="ok">采集、输入、计算、模拟与待核数据分开。</li>
+            <li class="ok">运行通过未写成物理、课堂或发布通过。</li>
+            <li class="ok">Markdown、公式与代码围栏可解析。</li>
+            <li class="ok">编务词与对称裁判句完成扫描。</li>
+          </ul>
+        </article>
+        <article class="check-card">
+          <h3>图文成果</h3>
+          <ul>
+            <li class="ok">11个必要图位均写明用途与边界。</li>
+            <li class="ok">图3、图4已有SVG与@2x PNG。</li>
+            <li class="ok">两图已通过解析、渲染与缩放检查。</li>
+            <li class="pending">其余9个图位仍待取图、授权或重绘。</li>
+          </ul>
+        </article>
+        <article class="check-card">
+          <h3>出版与使用</h3>
+          <ul>
+            <li class="pending">学生个案图文出版授权待确认。</li>
+            <li class="pending">部分作者贡献与装置版本待核。</li>
+            <li class="pending">尚未由目标读者实际试填整套工具。</li>
+            <li class="pending">跨版取舍、Word与统一排版未进行。</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="risks">
+      <div class="section-head">
+        <h2>作者优先核对的六处</h2>
+        <p>这些位置不阻碍阅读，却会直接影响事实上限、署名、权利状态或正式配图，应优先于文字润色处理。</p>
+      </div>
+      <ol class="risk-list">
+        <li><span><strong>第2章：</strong>法拉第两版时间线、单值提取、单位与“50次取5次”规则；单摆异常点原始记录。</span></li>
+        <li><span><strong>第6章：</strong>黄灿斌、严力耕、王硕在不同讲授与打磨环节的精确署名。</span></li>
+        <li><span><strong>第7章：</strong>Y02串口速率、压力采集、动态同步，以及H09与Y02的技术关系。</span></li>
+        <li><span><strong>第8章：</strong>网站本地文件状态与线上现状不能自动等同；出版时核定当前结构。</span></li>
+        <li><span><strong>第11章：</strong>四个代号个案的出版范围、授权与可配图内容。</span></li>
+        <li><span><strong>第12章：</strong>H11在2025-12-16后的权利状态、共同完成者、装置版本和图片授权。</span></li>
+      </ol>
+    </section>
+
+    <section class="section" id="figures">
+      <div class="section-head">
+        <h2>两幅已完成的证据型配图</h2>
+        <p>两图都只表达已核事实，并把不能证明的内容写在边界中。点击预览可打开可缩放SVG。</p>
+      </div>
+      <div class="figures">
+        <article class="figure">
+          <a href="../../diagram/图3-弹簧物块模型-物理时间与显示时间.svg" aria-label="打开图3 SVG">
+            <img class="figure-preview" src="../../diagram/图3-弹簧物块模型-物理时间与显示时间.svg" alt="弹簧—物块模型的物理时间与显示时间双时间轴">
+          </a>
+          <div class="figure-body">
+            <h3>图3　弹簧—物块模型的物理时间与显示时间</h3>
+            <p>同时标出最大压缩、第一次恢复原长、物理周期、固定显示窗口与取模跳回。</p>
+            <p class="boundary">边界：已定位；页面未修改／修改后浏览器复验未进行。</p>
+            <div class="file-links">
+              <a href="../../diagram/图3-弹簧物块模型-物理时间与显示时间.svg">打开SVG</a>
+              <a href="../../diagram/图3-弹簧物块模型-物理时间与显示时间@2x.png">打开@2x PNG</a>
+            </div>
+          </div>
+        </article>
+        <article class="figure">
+          <a href="../../diagram/图4-v1-v2-从实时排序故障到保序规则.svg" aria-label="打开图4 SVG">
+            <img class="figure-preview" src="../../diagram/图4-v1-v2-从实时排序故障到保序规则.svg" alt="v1和v2从实时排序故障到保序规则的四格流程">
+          </a>
+          <div class="figure-body">
+            <h3>图4　`v₁/v₂`从实时排序故障到保序规则</h3>
+            <p>四格呈现初始要求、逐字符排序故障、被否决的延迟排序和冻结副本保序复验。</p>
+            <p class="boundary">边界：冻结副本已复验；不能证明线上版本、真实设备或所有浏览器长期稳定。</p>
+            <div class="file-links">
+              <a href="../../diagram/图4-v1-v2-从实时排序故障到保序规则.svg">打开SVG</a>
+              <a href="../../diagram/图4-v1-v2-从实时排序故障到保序规则@2x.png">打开@2x PNG</a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" id="how">
+      <div class="section-head">
+        <h2>建议分四遍审阅</h2>
+        <p>每一遍只回答一种问题，可以避免在句子润色时错过路线、事实和工具可用性的判断。</p>
+      </div>
+      <ol class="review-steps">
+        <li><strong>只顺读正文。</strong><br>判断GLM声音、节奏和“一个项目逐级升格”的连续感是否成立。</li>
+        <li><strong>核事实与署名。</strong><br>对照进度文件，逐章确认版本、贡献者、课堂动作和主张上限。</li>
+        <li><strong>决定图位。</strong><br>对照配图说明，逐图选择保留、删除、授权、取原图或重绘。</li>
+        <li><strong>实际试填。</strong><br>拿一个自己的小项目填写章末交付物；卡住处就是精修优先点。</li>
+      </ol>
+    </section>
+
+    <section class="section" id="files">
+      <div class="section-head">
+        <h2>全部审阅入口</h2>
+        <p>以下链接均指向同一GLM目录中的本地文件，不依赖网络。</p>
+      </div>
+      <div class="file-grid">
+        <a class="file-link" href="../../正文-第一批.md">连续正文<small>四篇十二章，从问题卡到接手包</small></a>
+        <a class="file-link" href="../../进度与停笔位置.md">进度与停笔位置<small>逐章证据入口、边界、待核与续写点</small></a>
+        <a class="file-link" href="../../配图与审阅说明.md">配图与审阅说明<small>11个图位及其来源和证明边界</small></a>
+        <a class="file-link" href="review.md">完成审查原文<small>前后对比、验证结果和当前结论</small></a>
+        <a class="file-link" href="../../diagram/图3-弹簧物块模型-物理时间与显示时间.svg">图3 SVG<small>可缩放双时间轴</small></a>
+        <a class="file-link" href="../../diagram/图3-弹簧物块模型-物理时间与显示时间@2x.png">图3 @2x PNG<small>2640 × 1560</small></a>
+        <a class="file-link" href="../../diagram/图4-v1-v2-从实时排序故障到保序规则.svg">图4 SVG<small>可缩放四格状态流程</small></a>
+        <a class="file-link" href="../../diagram/图4-v1-v2-从实时排序故障到保序规则@2x.png">图4 @2x PNG<small>2880 × 1640</small></a>
+      </div>
+      <aside class="final-note"><strong>请勿把本页的“完成”理解为出版完成。</strong>当前达到的是“完整第一版连续书稿”标准；作者核定、其余图件、授权、目标读者试填、跨版取舍和统一排版仍未完成。</aside>
+    </section>
+
+    <footer>本页只完成文件结构与本地链接检查；依照项目规则未制作浏览器截图，也未进行移动端适配验收。</footer>
+  </main>
+</body>
+</html>

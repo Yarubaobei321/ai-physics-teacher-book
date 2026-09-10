@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高中物理实验：验证机械能守恒定律 | 交互式模拟</title>
+    <!-- Chart.js 轻量图表库 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+        }
+        body {
+            background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%);
+            margin: 0;
+            padding: 24px 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 40px -14px rgba(0,0,0,0.25);
+            padding: 24px 28px;
+        }
+        h1 {
+            font-size: 1.9rem;
+            margin: 0 0 0.2rem 0;
+            color: #0f2b4d;
+            border-left: 6px solid #3b82f6;
+            padding-left: 20px;
+        }
+        .sub {
+            color: #2c3e66;
+            margin-bottom: 1.8rem;
+            padding-left: 26px;
+            font-weight: 500;
+            border-bottom: 1px solid #cbd5e1;
+            display: inline-block;
+            padding-bottom: 6px;
+        }
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+            border: 1px solid rgba(59,130,246,0.2);
+            transition: 0.1s;
+        }
+        .card h2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.45rem;
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #1e3a8a;
+            border-bottom: 2px solid #bfdbfe;
+            padding-bottom: 0.5rem;
+        }
+        .grid-2col {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+        .left-panel {
+            flex: 1.2;
+            min-width: 270px;
+        }
+        .right-panel {
+            flex: 2;
+            min-width: 320px;
+        }
+        .step-list {
+            padding-left: 1.3rem;
+        }
+        .step-list li {
+            margin: 12px 0;
+            line-height: 1.45;
+        }
+        .exam-points {
+            background: #eef2ff;
+            border-radius: 20px;
+            padding: 12px 20px;
+            margin-top: 12px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0 12px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #cbd5e1;
+            padding: 10px 6px;
+            text-align: center;
+        }
+        .data-table th {
+            background: #e0e7ff;
+            color: #1e3a8a;
+            font-weight: 700;
+        }
+        .data-table td {
+            background-color: #ffffff;
+        }
+        .btn-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin: 15px 0 12px;
+        }
+        button {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 10px 24px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+        .btn-reset {
+            background: #475569;
+        }
+        .btn-reset:hover {
+            background: #334155;
+        }
+        .chart-container {
+            margin-top: 20px;
+            position: relative;
+            height: 330px;
+        }
+        .footnote {
+            font-size: 0.8rem;
+            text-align: center;
+            color: #4b5563;
+            margin-top: 20px;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 16px;
+        }
+        /* 问答样式 */
+        .qa-section {
+            margin-top: 30px;
+            background: #fefce8;
+            border-radius: 1.5rem;
+            padding: 0.2rem 1.2rem 1.2rem 1.2rem;
+            border-left: 6px solid #f59e0b;
+        }
+        .qa-item {
+            background: white;
+            border-radius: 1.2rem;
+            margin: 18px 0;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .qa-question {
+            background: #fffbeb;
+            padding: 14px 20px;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #b45309;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: 0.1s;
+            border-bottom: 1px solid #fde68a;
+        }
+        .qa-question:hover {
+            background: #fef3c7;
+        }
+        .qa-question .indicator {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .qa-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease-out, padding 0.2s ease;
+            background: #ffffff;
+            color: #1f2937;
+            line-height: 1.5;
+            border-top: 0px solid #e5e7eb;
+        }
+        .qa-answer.show {
+            max-height: 300px;   /* 足够显示答案 */
+            padding: 16px 20px;
+            border-top-width: 1px;
+        }
+        .qa-answer p {
+            margin: 0.6rem 0;
+        }
+        .qa-answer code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-family: monospace;
+        }
+        @media (max-width: 780px) {
+            .container { padding: 16px; }
+            .card h2 { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>⚖️ 验证机械能守恒实验</h1>
+    <div class="sub">🔬 基于自由落体运动模型 · 定量探究动能与重力势能的转化规律</div>
+
+    <div class="card">
+        <h2>📌 研究问题 & 实验器材</h2>
+        <p><strong>🎯 研究问题：</strong> 在自由落体运动中（仅重力做功），物体的机械能（动能+重力势能）是否保持不变？通过测量不同时刻的高度与速度，验证守恒定律。</p>
+        <p><strong>🧪 实验器材：</strong> 电磁打点计时器（或频闪相机）、纸带、重锤、刻度尺、铁架台、低压交流电源。<br>
+        <strong>⚙️ 模拟参数：</strong> 重锤质量 m = <strong>2.00 kg</strong>（使能量变化更明显），重力加速度 g = 9.8 m/s²。<br>
+        <strong>📐 零势能参考面：</strong> 选取释放点<strong>正上方 5.00 m 处</strong>为零势能面，即释放点初始高度 H₀ = 5.00 m，初始重力势能 Ep₀ = mgH₀ = 98.0 J，初始动能 Ek₀ = 0，初始机械能 98.0 J。</p>
+        <p class="tip" style="margin-top: 8px;">✨ 实验过程中，随重锤下落高度降低，重力势能减少，动能增加，总机械能应基本保持不变（本模拟允许微小随机误差，体现真实测量波动）。</p>
+    </div>
+
+    <div class="grid-2col">
+        <!-- 左侧：实验步骤+考点总结 -->
+        <div class="left-panel">
+            <div class="card">
+                <h2>📋 实验操作步骤</h2>
+                <ol class="step-list">
+                    <li><strong>安装固定</strong>：打点计时器竖直固定，纸带穿过限位孔下端连接重锤。</li>
+                    <li><strong>启动打点</strong>：先接通电源，待打点稳定后释放重锤，使其自由下落。</li>
+                    <li><strong>测量位移</strong>：选择清晰纸带，选取起始点 O（接近静止），再选取计数点 A、B、C… 用刻度尺测出各点到 O 点的距离 s（下落距离）。</li>
+                    <li><strong>计算速度</strong>：利用匀变速直线运动中间时刻速度公式 vₙ = (Δx)/Δt 计算各点瞬时速度。</li>
+                    <li><strong>能量计算</strong>：重力势能 Ep = mg(H₀ - s) ，动能 Ek = ½ mv²，机械能 E = Ep + Ek 。</li>
+                    <li><strong>分析结论</strong>：比较各点机械能 E 是否近似相等（误差范围内），若相等则验证守恒。</li>
+                </ol>
+            </div>
+            <div class="card">
+                <h2>📖 高一考点总结（高频）</h2>
+                <div class="exam-points">
+                    ✅ <strong>1. 实验原理</strong>：验证 ΔEp = ΔEk 或 E 总量不变，明确零势能参考面不影响结论。<br>
+                    ✅ <strong>2. 纸带数据处理</strong>：瞬时速度计算 (x₂-x₁)/2T ，下落高度用刻度尺测量（起始点O到计数点）。<br>
+                    ✅ <strong>3. 误差分析</strong>：阻力导致机械能减少，ΔEp 略大于 ΔEk ；图象法减小偶然误差。<br>
+                    ✅ <strong>4. 图像分析</strong>：Ek - h 图斜率 ≈ mg；v²/2 - h 图斜率 ≈ g 。<br>
+                    ✅ <strong>5. 参考平面选择</strong>：不影响验证结果，但计算时需统一。<br>
+                    ✅ <strong>6. 操作关键</strong>：先通电后释放纸带，刻度尺估读，重锤选质量大体积小。
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：数据表格 + 图表 + 问答区 -->
+        <div class="right-panel">
+            <div class="card">
+                <h2>📊 实验数据表格 (m=2.00kg, g=9.8m/s², H₀=5.00m)</h2>
+                <p style="font-size:0.85rem; color:#2c3e66;">🎲 点击下方按钮可随机生成“测量数据”，AI 在理想自由落体数据上叠加微小误差（模拟真实实验），机械能将在 98.0 J 附近微小浮动，体现守恒规律。</p>
+                <div class="btn-group">
+                    <button id="randomDataBtn">🎲 AI 智能随机生成新数据</button>
+                    <button id="resetDefaultBtn" class="btn-reset">⟳ 重置为理想实验数据</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="energyTable">
+                        <thead>
+                            <tr><th>测量时刻 (计数点)</th><th>下落距离 s (m)</th><th>瞬时速度 v (m/s)</th><th>重力势能 Ep (J)</th><th>动能 Ek (J)</th><th>机械能 E = Ep+Ek (J)</th></tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+                <div class="tip" style="margin-top: 4px;">
+                    🔍 零势面在释放点正上方 5.00 m 处，Ep = mg·(当前高度)，下落中 Ep 减小，Ek 增大，E 理想值恒为 98.0 J。随机数据仅±0.6%波动，符合实验合理误差。
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📈 能量变化折线图（质量增大 → 变化趋势显著）</h2>
+                <div class="chart-container">
+                    <canvas id="energyChart" width="500" height="280" style="max-width:100%; height:auto;"></canvas>
+                </div>
+                <p class="footnote">重力势能 <span style="color:#3b82f6;">🔵 下降曲线</span>，动能 <span style="color:#f97316;">🟠 上升曲线</span>，机械能 <span style="color:#10b981;">🟢 水平直线（守恒）</span>。</p>
+            </div>
+
+            <!-- 问答区域：注意事项以问答形式呈现，详细解释 -->
+            <div class="qa-section">
+                <h3 style="display: flex; align-items: center; gap: 8px; color: #b45309;">💡 实验思考与易错问答（点击问题展开详解）</h3>
+                <div class="qa-item">
+                    <div class="qa-question" data-target="ans1">
+                        <span>❓ 问题1：为什么必须先接通打点计时器电源，再释放纸带？</span>
+                        <span class="indicator">▼</span>
+                    </div>
+                    <div id="ans1" class="qa-answer">
+                        <p><strong>详细解答：</strong> 如果先释放纸带再接通电源，纸带在开始下落的前一段时间内没有打点，导致初始阶段的运动记录缺失，无法准确测量起始点速度（初速度可能不为零）。而本实验需要从静止释放开始研究，必须保证从释放瞬间起打点计时器就在纸带上留下清晰的点迹。因此顺序必须是“先通电，待打点稳定后释放纸带”，这样才能得到从静止开始下落的完整纸带，测得准确的下落距离和速度变化。</p>
+                    </div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question" data-target="ans2">
+                        <span>❓ 问题2：为什么不能用公式 v = g·t 来计算重锤的瞬时速度？</span>
+                        <span class="indicator">▼</span>
+                    </div>
+                    <div id="ans2" class="qa-answer">
+                        <p><strong>详细解答：</strong> 因为公式 v = gt 是基于自由落体运动“只受重力、初速度为零、加速度为g”推导出来的运动学公式。而这个运动规律本身正是机械能守恒定律的一种体现（重力做功全部转化为动能）。如果直接用 v = gt 来计算速度，再代入动能表达式去验证机械能守恒，就相当于先默认了物体机械能守恒（默认了加速度为g且无阻力），然后再去证明它，这属于<strong>循环论证</strong>，逻辑上是不成立的。正确的实验做法是利用纸带上测得的位移，使用匀变速直线运动中“中间时刻瞬时速度等于该段平均速度”的方法（vₙ = Δx/Δt）来计算，这种方法不依赖任何机械能守恒的假设，只依赖于打点周期和位移测量，因此是独立的、客观的。</p>
+                    </div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question" data-target="ans3">
+                        <span>❓ 问题3：为什么重锤要选择质量较大、体积较小的？</span>
+                        <span class="indicator">▼</span>
+                    </div>
+                    <div id="ans3" class="qa-answer">
+                        <p><strong>详细解答：</strong> 为了减小空气阻力对实验结果的影响。根据牛顿第二定律，阻力对加速度的影响程度与质量成反比：a = g - f/m。质量越大，空气阻力 f 产生的负加速度越小，重锤的运动越接近理想的自由落体（加速度越接近 g）。同时体积较小可以减小空气阻力 f 的大小。这样能有效降低因阻力导致的机械能损耗，使实验现象更接近理论守恒，误差分析时也更清晰。</p>
+                    </div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question" data-target="ans4">
+                        <span>❓ 问题4：测量下落距离时为什么要从起始点O量起？如何减小读数误差？</span>
+                        <span class="indicator">▼</span>
+                    </div>
+                    <div id="ans4" class="qa-answer">
+                        <p><strong>详细解答：</strong> 起始点O通常选取纸带上点迹清晰且靠近重锤静止释放位置的第一个点。从O点测量到各计数点的距离 s 就是重锤实际下落的高度。若不以O点为起点，会导致高度差计算错误。减小误差的方法：使用刻度尺测量时需估读到毫米下一位（例如1.45cm），并且对不同计数点多测几次取平均值；另外纸带应竖直拉直，避免倾斜导致测量值偏大。</p>
+                    </div>
+                </div>
+                <div class="qa-item">
+                    <div class="qa-question" data-target="ans5">
+                        <span>❓ 问题5：为什么实验中测量得到的机械能往往略小于初始机械能？</span>
+                        <span class="indicator">▼</span>
+                    </div>
+                    <div id="ans5" class="qa-answer">
+                        <p><strong>详细解答：</strong> 因为实际下落过程中存在空气阻力和打点计时器对纸带的摩擦力，这些阻力做负功，使重锤的一部分机械能转化为内能，因此总的机械能会略微减少。这是系统误差的主要来源。在实验结论中，只要机械能减少量较小，且在误差允许范围内可近似认为守恒，就验证了定律。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footnote">
+        🧪 理想数据基于自由落体运动学 (s = ½gt², v = gt) 生成；随机模式添加 ≤ ±1.2% 测量误差，机械能波动 ≤ ±0.6% ，真实反映实验偶然误差。
+    </div>
+</div>
+
+<script>
+    // ----- 物理常量与参考面 (质量改为2kg使变化更显著) -----
+    const g = 9.8;                // m/s²
+    const mass = 2.00;           // kg (质量增大，能量绝对值增大，曲线变化更明显)
+    const H0 = 5.00;             // 初始高度 (m) 零势面在释放点上方5m处
+    const E_total_ideal = mass * g * H0;  // 2*9.8*5 = 98.0 J
+    
+    // 四个典型测量时刻 (s)
+    const timePoints = [0.10, 0.15, 0.20, 0.25];
+    const pointLabels = timePoints.map(t => `t = ${t.toFixed(2)} s`);
+    
+    // 生成理想数据点 (理论无误差)
+    function getIdealDataPoints() {
+        return timePoints.map((t, idx) => {
+            const s = 0.5 * g * t * t;          // 下落距离 (m)
+            const v = g * t;                    // 瞬时速度 (m/s)
+            const currentHeight = H0 - s;       // 当前离零势面高度
+            const Ep = mass * g * currentHeight;
+            const Ek = 0.5 * mass * v * v;
+            const E = Ep + Ek;
+            return {
+                label: pointLabels[idx],
+                s: parseFloat(s.toFixed(4)),
+                v: parseFloat(v.toFixed(4)),
+                Ep: parseFloat(Ep.toFixed(3)),
+                Ek: parseFloat(Ek.toFixed(3)),
+                E: parseFloat(E.toFixed(3))
+            };
+        });
+    }
+    
+    // 随机生成带实验误差的数据（保持机械能近似守恒）
+    function generateRandomData() {
+        const ideals = getIdealDataPoints();
+        return ideals.map(ideal => {
+            // 对下落距离和速度引入独立小误差 (±1.2%)
+            const errS = 1 + (Math.random() - 0.5) * 0.024;
+            const errV = 1 + (Math.random() - 0.5) * 0.024;
+            let s = ideal.s * errS;
+            let v = ideal.v * errV;
+            s = Math.max(0.001, s);
+            v = Math.max(0.05, v);
+            
+            let currentHeight = H0 - s;
+            let Ep = mass * g * currentHeight;
+            let Ek = 0.5 * mass * v * v;
+            let E = Ep + Ek;
+            
+            // 保证机械能波动不超过理想总能量的 ±0.8% (更符合守恒规律)
+            const ratio = E / E_total_ideal;
+            if (Math.abs(ratio - 1) > 0.008) {
+                // 轻柔修正：将过大的偏差拉回，保留一定随机性
+                const correction = 1 + (E_total_ideal / E - 1) * 0.7;
+                Ek = Ek * correction;
+                Ep = Ep * correction;
+                E = Ep + Ek;
+            }
+            // 确保数值非负且显示规整
+            Ep = Math.max(0, Ep);
+            Ek = Math.max(0, Ek);
+            E = Ep + Ek;
+            return {
+                label: ideal.label,
+                s: parseFloat(s.toFixed(4)),
+                v: parseFloat(v.toFixed(4)),
+                Ep: parseFloat(Ep.toFixed(3)),
+                Ek: parseFloat(Ek.toFixed(3)),
+                E: parseFloat(E.toFixed(3))
+            };
+        });
+    }
+    
+    // ---------- DOM 元素与图表管理 ----------
+    let chartInstance = null;
+    
+    function renderTable(dataPoints) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        dataPoints.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.label}</td>
+                <td>${p.s.toFixed(4)}</td>
+                <td>${p.v.toFixed(4)}</td>
+                <td>${p.Ep.toFixed(3)}</td>
+                <td>${p.Ek.toFixed(3)}</td>
+                <td>${p.E.toFixed(3)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    
+    function updateChart(dataPoints) {
+        const ctx = document.getElementById('energyChart').getContext('2d');
+        const labels = dataPoints.map(p => p.label);
+        const epVals = dataPoints.map(p => p.Ep);
+        const ekVals = dataPoints.map(p => p.Ek);
+        const eVals = dataPoints.map(p => p.E);
+        
+        if (chartInstance) chartInstance.destroy();
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '重力势能 Ep (J)',
+                        data: epVals,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59,130,246,0.05)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#1e4bd2',
+                        tension: 0.2,
+                        fill: false,
+                    },
+                    {
+                        label: '动能 Ek (J)',
+                        data: ekVals,
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249,115,22,0.05)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#ea580c',
+                        tension: 0.2,
+                        fill: false,
+                    },
+                    {
+                        label: '机械能 E (Ep+Ek)',
+                        data: eVals,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16,185,129,0.05)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#059669',
+                        borderDash: [6, 8],
+                        tension: 0.2,
+                        fill: false,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: { mode: 'index', intersect: false },
+                    legend: { position: 'top', labels: { font: { size: 12, weight: 'bold' } } }
+                },
+                scales: {
+                    y: {
+                        title: { display: true, text: '能量 (焦耳 J)', font: { weight: 'bold' } },
+                        grid: { color: '#e2e8f0' },
+                        // 自动缩放，但为了突出变化，不强制最大最小值
+                    },
+                    x: {
+                        title: { display: true, text: '测量时刻 / 计数点', font: { weight: 'bold' } }
+                    }
+                }
+            }
+        });
+    }
+    
+    let currentData = [];
+    
+    function refreshUI(data) {
+        renderTable(data);
+        updateChart(data);
+    }
+    
+    function resetToIdeal() {
+        currentData = getIdealDataPoints();
+        refreshUI(currentData);
+    }
+    
+    function randomizeData() {
+        currentData = generateRandomData();
+        refreshUI(currentData);
+    }
+    
+    // 初始化 + 问答折叠交互
+    function init() {
+        currentData = getIdealDataPoints();
+        refreshUI(currentData);
+        
+        document.getElementById('randomDataBtn').addEventListener('click', randomizeData);
+        document.getElementById('resetDefaultBtn').addEventListener('click', resetToIdeal);
+        
+        // 问答折叠逻辑：点击 .qa-question 切换对应答案的 .show 类
+        const questions = document.querySelectorAll('.qa-question');
+        questions.forEach(q => {
+            q.addEventListener('click', (e) => {
+                const targetId = q.getAttribute('data-target');
+                const answerDiv = document.getElementById(targetId);
+                if (answerDiv) {
+                    answerDiv.classList.toggle('show');
+                    // 改变指示器符号
+                    const indicator = q.querySelector('.indicator');
+                    if (answerDiv.classList.contains('show')) {
+                        indicator.textContent = '▲';
+                    } else {
+                        indicator.textContent = '▼';
+                    }
+                }
+            });
+        });
+    }
+    
+    init();
+</script>
+</body>
+</html>

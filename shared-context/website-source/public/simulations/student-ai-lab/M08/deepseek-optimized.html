@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>立体模型 · 正方体 / 长方体交互学习页</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#2b3a4a; --sub:#64748b;
+    --accent:#0ea5e9; --accent-soft:#e0f2fe; --line:#e2e8f0;
+    --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-border:#fcd34d;
+    --solid:#3b82f6; --insc:#22c55e; --circ:#f43f5e; --cut:#a855f7;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink);}
+  header.app{background:linear-gradient(120deg,#0284c7,#0ea5e9); color:#fff; padding:18px 28px;}
+  header.app h1{font-size:22px; letter-spacing:1px;}
+  header.app p{font-size:13px; opacity:.92; margin-top:4px;}
+  .wrap{display:grid; grid-template-columns:300px 1fr 340px; gap:16px; padding:16px 20px; max-width:1440px; margin:0 auto; align-items:start;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(15,23,42,.05);}
+  .panel h2{font-size:15px; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:12px;}
+  .panel h3{font-size:13px; color:var(--ink); margin:12px 0 6px;}
+  .panel p, .panel li{font-size:13px; line-height:1.7;}
+  .panel ul{padding-left:18px;}
+  .formula{background:var(--accent-soft); border-radius:8px; padding:9px 12px; margin:7px 0; font-family:"Cambria Math",Georgia,serif; font-size:14px; color:#0c4a6e; text-align:center; word-break:break-all;}
+  .formula small{display:block; color:#64748b; font-size:11px; margin-top:2px; font-family:inherit;}
+  .warn{background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-ink); border-radius:8px; padding:10px 12px; margin-top:12px; font-size:12.5px; line-height:1.6;}
+  .warn b{display:block; margin-bottom:4px; font-size:13px;}
+  .legend{font-size:12px; margin-top:8px; display:flex; gap:12px; flex-wrap:wrap;}
+  .legend span{display:inline-flex; align-items:center; gap:4px;}
+  .dot{width:12px; height:12px; border-radius:3px; display:inline-block;}
+  .canvas-box{background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px; position:relative;}
+  canvas#view3d{display:block; width:100%; height:auto; border-radius:6px; cursor:grab; touch-action:none;}
+  canvas#view3d:active{cursor:grabbing;}
+  .canvas-cap{font-size:12px; color:var(--sub); margin-top:6px; line-height:1.5;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  button.btn{appearance:none; border:none; border-radius:8px; padding:9px 14px; font-size:13px; cursor:pointer; color:#fff; background:var(--accent); transition:filter .15s;}
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.active{background:#0369a1; box-shadow:0 0 0 2px #7dd3fc inset;}
+  button.btn.ghost{background:#fff; color:var(--accent); border:1px solid var(--accent);}
+  button.btn.ghost.active{background:var(--accent-soft);}
+  .field{margin-top:10px;}
+  .field label{display:block; font-size:12.5px; color:var(--sub); margin-bottom:4px;}
+  .field input[type=number]{width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#f8fafc;}
+  .field input[type=number]:focus{outline:2px solid var(--accent); background:#fff;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .readout{background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:12px;}
+  .readout table{width:100%; border-collapse:collapse;}
+  .readout td{padding:6px 4px; font-size:13px; border-bottom:1px dashed var(--line);}
+  .readout td:first-child{color:var(--sub);}
+  .readout td:last-child{text-align:right; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:14px; font-weight:600; color:#0369a1;}
+  .status-msg{margin-top:8px; font-size:13px; min-height:20px;}
+  .status-msg.err{color:#dc2626;}
+  .status-msg.ok{color:#16a34a;}
+  .cut-panel{margin-top:12px; border-top:1px dashed var(--line); padding-top:10px;}
+  .cut-panel h3{font-size:12.5px; color:var(--accent); margin:0 0 6px;}
+  .toggle-row{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-top:6px;}
+  .toggle-row button.btn{font-size:12px; padding:6px 10px;}
+  @media(max-width:1180px){ .wrap{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>🧊 立体模型 · 正方体 / 长方体</h1>
+  <p>输入棱长 → 实时观察体积 V、表面积 S、体对角线 d 与内切球 / 外接球 —— 支持 3D 拖拽旋转与坐标平面切割</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 讲解区 -->
+  <section class="panel" aria-label="讲解区">
+    <h2>一、公式与推导</h2>
+
+    <h3>正方体（棱长 a）</h3>
+    <div class="formula">V = a³<small>体积</small></div>
+    <div class="formula">S = 6a²<small>表面积（六个正方形面）</small></div>
+    <div class="formula">d = √3 · a<small>体对角线</small></div>
+    <div class="formula">R<sub>外</sub> = √3 · a / 2<small>外接球半径：体对角线的一半</small></div>
+    <div class="formula">r<sub>内</sub> = a / 2<small>内切球半径：棱长的一半</small></div>
+
+    <h3>长方体（a × b × c）</h3>
+    <div class="formula">V = a·b·c<small>体积</small></div>
+    <div class="formula">S = 2(ab + bc + ca)<small>表面积</small></div>
+    <div class="formula">d = √(a² + b² + c²)<small>体对角线</small></div>
+    <div class="formula">R<sub>外</sub> = √(a² + b² + c²) / 2<small>外接球半径</small></div>
+
+    <div class="warn">
+      <b>📐 术语规范</b>
+      立体几何中须使用<b>「内切球」</b>与<b>「外接球」</b>，不得沿用平面几何里描述图形的圆类术语。内切球与各面相切，外接球过所有顶点，两者球心重合于立体几何中心。
+    </div>
+
+    <h3>切割平面</h3>
+    <p>用坐标平面 x=k、y=k、z=k（k ∈ [−10,10]）沿坐标轴方向切割立体，可在 3D 视图中显隐查看截面。</p>
+  </section>
+
+  <!-- 3D 画布区 -->
+  <section class="panel" aria-label="3D 画布区">
+    <h2>二、3D 视图</h2>
+    <div class="canvas-box">
+      <canvas id="view3d" aria-label="三维立体视图：可拖拽旋转，显示立体与内切球、外接球及切割平面"></canvas>
+    </div>
+    <p class="canvas-cap"><b>鼠标拖拽</b>旋转多角度观察 · 空间坐标系 O-xyz（红色 x 轴、绿色 y 轴、蓝色 z 轴）· 长度单位统一为「单位长度」。</p>
+    <div class="legend">
+      <span><i class="dot" style="background:#3b82f6"></i>立体</span>
+      <span><i class="dot" style="background:#22c55e"></i>内切球</span>
+      <span><i class="dot" style="background:#f43f5e"></i>外接球</span>
+      <span><i class="dot" style="background:#a855f7"></i>切割平面</span>
+    </div>
+    <div class="status-msg" id="status" role="status"></div>
+  </section>
+
+  <!-- 控制与读数区 -->
+  <section class="panel" aria-label="控制与读数区">
+    <h2>三、控制与读数</h2>
+
+    <div class="field">
+      <label for="solidType">立体类型</label>
+      <div class="toggle-row">
+        <button type="button" class="btn active" id="btnCube">正方体</button>
+        <button type="button" class="btn ghost" id="btnCuboid">长方体</button>
+      </div>
+    </div>
+
+    <div id="lenFields">
+      <div class="field">
+        <label for="inpA">棱长 a（单位长度，0.5 ~ 10）</label>
+        <input type="number" id="inpA" min="0.5" max="10" step="0.5" value="2">
+      </div>
+      <div class="field" id="fieldB" style="display:none">
+        <label for="inpB">棱长 b（单位长度，0.5 ~ 10）</label>
+        <input type="number" id="inpB" min="0.5" max="10" step="0.5" value="3">
+      </div>
+      <div class="field" id="fieldC" style="display:none">
+        <label for="inpC">棱长 c（单位长度，0.5 ~ 10）</label>
+        <input type="number" id="inpC" min="0.5" max="10" step="0.5" value="5">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>球体显隐</label>
+      <div class="toggle-row">
+        <button type="button" class="btn ghost active" id="btnInsc">内切球：显示</button>
+        <button type="button" class="btn ghost active" id="btnCirc">外接球：显示</button>
+      </div>
+    </div>
+
+    <div class="cut-panel">
+      <h3>✂ 坐标平面切割（k ∈ [−10,10]）</h3>
+      <div class="row2">
+        <div class="field">
+          <label for="cutX">x = k（平面垂直于 x 轴）</label>
+          <input type="number" id="cutX" min="-10" max="10" step="0.5" value="1">
+        </div>
+        <div class="field">
+          <label for="cutY">y = k</label>
+          <input type="number" id="cutY" min="-10" max="10" step="0.5" value="0">
+        </div>
+        <div class="field">
+          <label for="cutZ">z = k</label>
+          <input type="number" id="cutZ" min="-10" max="10" step="0.5" value="0">
+        </div>
+        <div class="field" style="align-self:end">
+          <div class="toggle-row">
+            <button type="button" class="btn active" id="btnCutToggle">显示切割</button>
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px; color:#64748b; margin-top:6px;">输入坐标参数后点击「显示切割 / 隐藏切割」控制截面显隐。</p>
+    </div>
+
+    <div class="readout" aria-label="实时读数">
+      <table>
+        <tr><td>类型</td><td id="rType">正方体</td></tr>
+        <tr><td>体积 V</td><td id="rV">—</td></tr>
+        <tr><td>表面积 S</td><td id="rS">—</td></tr>
+        <tr><td>体对角线 d</td><td id="rD">—</td></tr>
+        <tr><td>外接球半径 R<sub>外</sub></td><td id="rRout">—</td></tr>
+        <tr><td>内切球半径 r<sub>内</sub></td><td id="rRin">—</td></tr>
+      </table>
+    </div>
+
+    <div class="panel" style="box-shadow:none; padding:0; margin-top:14px; border:none;">
+      <h3>🧭 观察与结论</h3>
+      <p>试试正方体棱长 a 从 1 增到 10：体积 a³ 增长最快，表面积 6a² 次之，体对角线 √3·a 最慢。体积与对角线的增长<b>不成比例</b>——这就是「维度」的差别。长宽高都翻倍时，体积变为 8 倍、表面积变为 4 倍。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var canvas = document.getElementById('view3d');
+  var ctx = canvas.getContext('2d');
+  var statusEl = document.getElementById('status');
+
+  var btnCube = document.getElementById('btnCube');
+  var btnCuboid = document.getElementById('btnCuboid');
+  var inpA = document.getElementById('inpA');
+  var inpB = document.getElementById('inpB');
+  var inpC = document.getElementById('inpC');
+  var fieldB = document.getElementById('fieldB');
+  var fieldC = document.getElementById('fieldC');
+  var btnInsc = document.getElementById('btnInsc');
+  var btnCirc = document.getElementById('btnCirc');
+  var cutX = document.getElementById('cutX');
+  var cutY = document.getElementById('cutY');
+  var cutZ = document.getElementById('cutZ');
+  var btnCutToggle = document.getElementById('btnCutToggle');
+  var rType = document.getElementById('rType');
+  var rV = document.getElementById('rV');
+  var rS = document.getElementById('rS');
+  var rD = document.getElementById('rD');
+  var rRout = document.getElementById('rRout');
+  var rRin = document.getElementById('rRin');
+
+  var CW = 820, CH = 640;
+  var state = {
+    type: 'cube',       // cube | cuboid
+    showInsc: true,
+    showCirc: true,
+    showCut: true,
+    rotY: 0.6, rotX: 0.35,
+    cutXv: 1, cutYv: 0, cutZv: 0
+  };
+
+  function setupCanvas(){
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = CW * dpr;
+    canvas.height = CH * dpr;
+    canvas.style.width = CW + 'px';
+    canvas.style.height = CH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  setupCanvas();
+  window.addEventListener('resize', setupCanvas);
+
+  function getDims(){
+    var a = parseFloat(inpA.value), b = parseFloat(inpB.value), c = parseFloat(inpC.value);
+    if (isNaN(a)) a = 2; if (isNaN(b)) b = 3; if (isNaN(c)) c = 5;
+    a = Math.min(10, Math.max(0.5, a));
+    b = Math.min(10, Math.max(0.5, b));
+    c = Math.min(10, Math.max(0.5, c));
+    if (state.type === 'cube'){ b = a; c = a; }
+    return {a:a, b:b, c:c};
+  }
+
+  // ---------- 3D 数学 ----------
+  var AXIS_X = [1,0,0], AXIS_Y = [0,1,0], AXIS_Z = [0,0,1];
+
+  function rotatePoint(p, ry, rx){
+    var cosY = Math.cos(ry), sinY = Math.sin(ry);
+    var x1 = p[0]*cosY + p[2]*sinY;
+    var z1 = -p[0]*sinY + p[2]*cosY;
+    var cosX = Math.cos(rx), sinX = Math.sin(rx);
+    var y2 = p[1]*cosX - z1*sinX;
+    var z2 = p[1]*sinX + z1*cosX;
+    return [x1, y2, z2];
+  }
+
+  function project(p, ry, rx){
+    var r = rotatePoint(p, ry, rx);
+    var scale = 150 / (150 + r[2]);
+    return {x: CW/2 + r[0]*scale*52, y: CH/2 - r[1]*scale*52, z: r[2], s: scale};
+  }
+
+  function edgesOf(half){
+    var hx = half[0], hy = half[1], hz = half[2];
+    var vs = [
+      [-hx,-hy,-hz],[ hx,-hy,-hz],[ hx, hy,-hz],[-hx, hy,-hz],
+      [-hx,-hy, hz],[ hx,-hy, hz],[ hx, hy, hz],[-hx, hy, hz]
+    ];
+    var edges = [
+      [0,1],[1,2],[2,3],[3,0],
+      [4,5],[5,6],[6,7],[7,4],
+      [0,4],[1,5],[2,6],[3,7]
+    ];
+    return {vs:vs, edges:edges};
+  }
+
+  function drawArrow(from, to, color){
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(to.x, to.y); ctx.stroke();
+    var ang = Math.atan2(to.y - from.y, to.x - from.x);
+    ctx.fillStyle = color;
+    var h = 10;
+    ctx.beginPath();
+    ctx.moveTo(to.x, to.y);
+    ctx.lineTo(to.x - h*Math.cos(ang-0.4), to.y - h*Math.sin(ang-0.4));
+    ctx.lineTo(to.x - h*Math.cos(ang+0.4), to.y - h*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawSolid(dims){
+    var hx = dims.a/2, hy = dims.b/2, hz = dims.c/2;
+    var E = edgesOf([hx,hy,hz]);
+    // 背面棱（先画，淡色）
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(59,130,246,.35)';
+    ctx.setLineDash([4,4]);
+    for (var i = 0; i < E.edges.length; i++){
+      var v0 = project(E.vs[E.edges[i][0]], state.rotY, state.rotX);
+      var v1 = project(E.vs[E.edges[i][1]], state.rotY, state.rotX);
+      ctx.beginPath(); ctx.moveTo(v0.x, v0.y); ctx.lineTo(v1.x, v1.y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    // 正面棱
+    ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3;
+    for (var j = 0; j < E.edges.length; j++){
+      var p0 = project(E.vs[E.edges[j][0]], state.rotY, state.rotX);
+      var p1 = project(E.vs[E.edges[j][1]], state.rotY, state.rotX);
+      ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y); ctx.stroke();
+    }
+    // 顶点
+    for (var k = 0; k < E.vs.length; k++){
+      var vp = project(E.vs[k], state.rotY, state.rotX);
+      ctx.fillStyle = '#1d4ed8';
+      ctx.beginPath(); ctx.arc(vp.x, vp.y, 4, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  function drawSphere(radius, color, label){
+    var center = project([0,0,0], state.rotY, state.rotX);
+    var rPx = radius * center.s * 52;
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(center.x, center.y, rPx, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([3,4]);
+    ctx.beginPath(); ctx.ellipse(center.x, center.y, rPx, rPx*0.35, 0, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    // 半径辅助线
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(center.x, center.y);
+    ctx.lineTo(center.x + rPx, center.y); ctx.stroke();
+    ctx.fillStyle = color; ctx.font = '12px sans-serif';
+    ctx.fillText(label, center.x + rPx + 6, center.y - 6);
+  }
+
+  function drawAxes(){
+    var o = project([0,0,0], state.rotY, state.rotX);
+    var ex = project([8,0,0], state.rotY, state.rotX);
+    var ey = project([0,8,0], state.rotY, state.rotX);
+    var ez = project([0,0,8], state.rotY, state.rotX);
+    drawArrow(o, ex, '#ef4444');
+    drawArrow(o, ey, '#22c55e');
+    drawArrow(o, ez, '#3b82f6');
+    ctx.fillStyle = '#ef4444'; ctx.fillText('x', ex.x + 6, ex.y - 6);
+    ctx.fillStyle = '#22c55e'; ctx.fillText('y', ey.x + 6, ey.y - 6);
+    ctx.fillStyle = '#3b82f6'; ctx.fillText('z', ez.x + 6, ez.y - 6);
+  }
+
+  // 切割平面
+  function drawCutPlane(dims){
+    var hx = dims.a/2, hy = dims.b/2, hz = dims.c/2;
+    // 找出立体在三个方向上的范围
+    var ranges = [[-hx, hx], [-hy, hy], [-hz, hz]];
+    var cuts = [state.cutXv, state.cutYv, state.cutZv];
+    var axesName = ['x','y','z'];
+    for (var axis = 0; axis < 3; axis++){
+      var k = cuts[axis];
+      if (k < ranges[axis][0] || k > ranges[axis][1]){
+        continue; // 平面不穿过立体
+      }
+      // 构造矩形：固定 axis 坐标 = k，另两轴取范围
+      var pts3d = [];
+      var a1 = (axis + 1) % 3, a2 = (axis + 2) % 3;
+      var combos = [
+        [ranges[a1][0], ranges[a2][0]],
+        [ranges[a1][1], ranges[a2][0]],
+        [ranges[a1][1], ranges[a2][1]],
+        [ranges[a1][0], ranges[a2][1]]
+      ];
+      for (var i = 0; i < 4; i++){
+        var p = [0,0,0];
+        p[axis] = k;
+        p[a1] = combos[i][0];
+        p[a2] = combos[i][1];
+        pts3d.push(project(p, state.rotY, state.rotX));
+      }
+      // 填充半透明面
+      ctx.fillStyle = 'rgba(168,85,247,.18)';
+      ctx.beginPath();
+      ctx.moveTo(pts3d[0].x, pts3d[0].y);
+      ctx.lineTo(pts3d[1].x, pts3d[1].y);
+      ctx.lineTo(pts3d[2].x, pts3d[2].y);
+      ctx.lineTo(pts3d[3].x, pts3d[3].y);
+      ctx.closePath(); ctx.fill();
+      // 边框
+      ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(pts3d[0].x, pts3d[0].y);
+      ctx.lineTo(pts3d[1].x, pts3d[1].y);
+      ctx.lineTo(pts3d[2].x, pts3d[2].y);
+      ctx.lineTo(pts3d[3].x, pts3d[3].y);
+      ctx.closePath(); ctx.stroke();
+      // 标签
+      var cx = (pts3d[0].x+pts3d[1].x+pts3d[2].x+pts3d[3].x)/4;
+      var cy = (pts3d[0].y+pts3d[1].y+pts3d[2].y+pts3d[3].y)/4;
+      ctx.fillStyle = '#7c3aed';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(axesName[axis]+'='+k, cx, cy);
+    }
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, CW, CH);
+    var dims = getDims();
+    drawAxes();
+    if (state.showCut) drawCutPlane(dims);
+    drawSolid(dims);
+    if (state.showInsc){
+      var rin = state.type === 'cube' ? dims.a/2 : Math.min(dims.a, dims.b, dims.c)/2;
+      drawSphere(rin, '#22c55e', 'r内');
+    }
+    if (state.showCirc){
+      var rout = Math.sqrt(dims.a*dims.a + dims.b*dims.b + dims.c*dims.c)/2;
+      drawSphere(rout, '#f43f5e', 'R外');
+    }
+    updateReadout(dims);
+    canvas.setAttribute('aria-label', '三维立体视图：' + (state.type==='cube'?'正方体棱长':'长方体') + ' a='+dims.a+', b='+dims.b+', c='+dims.c+', 体积 V='+fmt(volume(dims),2)+', 表面积 S='+fmt(surface(dims),2));
+  }
+
+  // ---------- 计算 ----------
+  function volume(dims){
+    return dims.a * dims.b * dims.c;
+  }
+  function surface(dims){
+    return 2 * (dims.a*dims.b + dims.b*dims.c + dims.c*dims.a);
+  }
+  function diag(dims){
+    return Math.sqrt(dims.a*dims.a + dims.b*dims.b + dims.c*dims.c);
+  }
+  function fmt(v, d){
+    if (typeof v !== 'number' || !isFinite(v)) return '—';
+    var s = v.toFixed(d);
+    if (Math.abs(v) < 1e-9) s = '0';
+    return s;
+  }
+
+  function updateReadout(dims){
+    rType.textContent = state.type === 'cube' ? '正方体' : '长方体';
+    rV.textContent = fmt(volume(dims), 3) + ' 单位³';
+    rS.textContent = fmt(surface(dims), 3) + ' 单位²';
+    rD.textContent = fmt(diag(dims), 3) + ' 单位';
+    rRout.textContent = fmt(diag(dims)/2, 3) + ' 单位';
+    rRin.textContent = fmt(state.type === 'cube' ? dims.a/2 : Math.min(dims.a,dims.b,dims.c)/2, 3) + ' 单位';
+  }
+
+  function validateInputs(){
+    var a = parseFloat(inpA.value), b = parseFloat(inpB.value), c = parseFloat(inpC.value);
+    var ok = true, msg = '';
+    if (isNaN(a) || a < 0.5 || a > 10){ ok = false; msg = '棱长 a 必须在 [0.5, 10] 之间'; }
+    if (state.type === 'cuboid'){
+      if (isNaN(b) || b < 0.5 || b > 10){ ok = false; msg = '棱长 b 必须在 [0.5, 10] 之间'; }
+      if (isNaN(c) || c < 0.5 || c > 10){ ok = false; msg = '棱长 c 必须在 [0.5, 10] 之间'; }
+    }
+    if (!ok){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = '⚠ ' + msg;
+      return false;
+    }
+    statusEl.className = 'status-msg ok';
+    statusEl.textContent = '✓ 读数已实时同步。';
+    return true;
+  }
+
+  // ---------- 事件 ----------
+  function setType(t){
+    state.type = t;
+    btnCube.classList.toggle('active', t === 'cube');
+    btnCube.classList.toggle('ghost', t !== 'cube');
+    btnCuboid.classList.toggle('active', t === 'cuboid');
+    btnCuboid.classList.toggle('ghost', t !== 'cuboid');
+    fieldB.style.display = t === 'cuboid' ? '' : 'none';
+    fieldC.style.display = t === 'cuboid' ? '' : 'none';
+    if (t === 'cube'){ inpB.value = inpA.value; inpC.value = inpA.value; }
+    validateInputs();
+    draw();
+  }
+  btnCube.addEventListener('click', function(){ setType('cube'); });
+  btnCuboid.addEventListener('click', function(){ setType('cuboid'); });
+
+  function onLenChange(){
+    if (validateInputs()){
+      if (state.type === 'cube'){ inpB.value = inpA.value; inpC.value = inpA.value; }
+      draw();
+    }
+  }
+  inpA.addEventListener('input', onLenChange);
+  inpB.addEventListener('input', onLenChange);
+  inpC.addEventListener('input', onLenChange);
+
+  btnInsc.addEventListener('click', function(){
+    state.showInsc = !state.showInsc;
+    btnInsc.textContent = '内切球：' + (state.showInsc ? '显示' : '隐藏');
+    btnInsc.classList.toggle('active', state.showInsc);
+    draw();
+  });
+  btnCirc.addEventListener('click', function(){
+    state.showCirc = !state.showCirc;
+    btnCirc.textContent = '外接球：' + (state.showCirc ? '显示' : '隐藏');
+    btnCirc.classList.toggle('active', state.showCirc);
+    draw();
+  });
+  btnCutToggle.addEventListener('click', function(){
+    state.showCut = !state.showCut;
+    btnCutToggle.textContent = state.showCut ? '显示切割' : '隐藏切割';
+    btnCutToggle.classList.toggle('active', state.showCut);
+    draw();
+  });
+  cutX.addEventListener('input', function(){ state.cutXv = parseFloat(cutX.value) || 0; if (state.showCut) draw(); });
+  cutY.addEventListener('input', function(){ state.cutYv = parseFloat(cutY.value) || 0; if (state.showCut) draw(); });
+  cutZ.addEventListener('input', function(){ state.cutZv = parseFloat(cutZ.value) || 0; if (state.showCut) draw(); });
+
+  // 3D 拖拽旋转
+  var dragging = false, lastX = 0, lastY = 0;
+  canvas.addEventListener('mousedown', function(evt){
+    dragging = true;
+    lastX = evt.clientX; lastY = evt.clientY;
+  });
+  window.addEventListener('mousemove', function(evt){
+    if (!dragging) return;
+    var dx = evt.clientX - lastX, dy = evt.clientY - lastY;
+    lastX = evt.clientX; lastY = evt.clientY;
+    state.rotY += dx * 0.01;
+    state.rotX += dy * 0.01;
+    if (state.rotX > 1.4) state.rotX = 1.4;
+    if (state.rotX < -1.4) state.rotX = -1.4;
+    draw();
+  });
+  window.addEventListener('mouseup', function(){ dragging = false; });
+  // 触屏支持
+  canvas.addEventListener('touchstart', function(evt){
+    if (evt.touches.length === 1){
+      dragging = true;
+      lastX = evt.touches[0].clientX; lastY = evt.touches[0].clientY;
+      evt.preventDefault();
+    }
+  }, {passive:false});
+  canvas.addEventListener('touchmove', function(evt){
+    if (!dragging || evt.touches.length !== 1) return;
+    var dx = evt.touches[0].clientX - lastX, dy = evt.touches[0].clientY - lastY;
+    lastX = evt.touches[0].clientX; lastY = evt.touches[0].clientY;
+    state.rotY += dx * 0.01;
+    state.rotX += dy * 0.01;
+    if (state.rotX > 1.4) state.rotX = 1.4;
+    if (state.rotX < -1.4) state.rotX = -1.4;
+    draw();
+    evt.preventDefault();
+  }, {passive:false});
+  canvas.addEventListener('touchend', function(){ dragging = false; });
+
+  // 初始化：正方体 a=2
+  setType('cube');
+  draw();
+})();
+</script>
+</body>
+</html>

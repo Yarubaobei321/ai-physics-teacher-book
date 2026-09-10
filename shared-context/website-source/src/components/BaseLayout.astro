@@ -1,0 +1,76 @@
+---
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import '../styles/global.css';
+
+type Props = {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  ogType?: 'website' | 'article';
+  canonical?: string;
+};
+
+const SITE_URL = Astro.site ?? new URL('https://shuzhiyucai.cn');
+const SITE_NAME = '育才物理创新实验室';
+
+const {
+  title = '育才物理创新实验室',
+  description = '育才物理创新实验室门户，提供在线编程、网页版 DIS、在线实验室与模拟实验室。',
+  ogImage = '/campus.jpeg',
+  ogType = 'website',
+  canonical
+} = Astro.props;
+
+const canonicalUrl = canonical
+  ? new URL(canonical, SITE_URL).href
+  : new URL(Astro.url.pathname, SITE_URL).href;
+const ogImageUrl = new URL(ogImage, SITE_URL).href;
+const toolNames: Record<string, string> = { '/dis/': '网页版 DIS', '/programming/': '在线编程', '/photogate-comparison/': '光电门对比' };
+const toolName = toolNames[Astro.url.pathname];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content={description} />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#102033" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="robots" content="index,follow" />
+
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/png" href="/logo-web.png" />
+    <link rel="apple-touch-icon" href="/logo-web.png" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:locale" content="zh_CN" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link focus-ring" href="#main-content">跳到主要内容</a>
+    <Header />
+    <main id="main-content" tabindex="-1">
+      {toolName && <nav class="page-shell flex gap-3 pt-5 text-sm text-slate-600" aria-label="当前位置"><a class="focus-ring text-yucai-700" href="/online-lab/">在线实验室</a><span aria-hidden="true">/</span><span aria-current="page">{toolName}</span></nav>}
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高中生物：孟德尔遗传定律模拟器 | 性状遗传交互演示</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动文字干扰，但保留复制核心内容 */
+        }
+        body {
+            background: linear-gradient(145deg, #e0f0e8 0%, #c8e0d4 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        /* 主卡片容器 */
+        .card {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255,255,240,0.95);
+            border-radius: 56px;
+            box-shadow: 0 25px 45px rgba(0, 20, 0, 0.25), inset 0 1px 2px rgba(255,255,200,0.8);
+            backdrop-filter: blur(0px);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+        /* 头部遗传学主题 */
+        .hero {
+            background: #2c5e2e;
+            padding: 20px 28px 18px 28px;
+            color: #f9f3cf;
+            text-align: center;
+            border-bottom: 6px solid #ffcd7e;
+        }
+        .hero h1 {
+            margin: 0;
+            font-size: 2.1rem;
+            letter-spacing: -0.5px;
+            font-weight: 700;
+            text-shadow: 2px 2px 0 #1e3a1e;
+        }
+        .hero p {
+            margin: 8px 0 0;
+            font-size: 1rem;
+            opacity: 0.9;
+            font-style: italic;
+        }
+        /* 主体两列响应式 */
+        .main-demo {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 24px 28px 32px;
+            gap: 30px;
+        }
+        .controls-panel {
+            flex: 1.2;
+            min-width: 260px;
+            background: #fef9e6;
+            border-radius: 40px;
+            padding: 20px 24px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border: 1px solid #ebd5a0;
+        }
+        .result-panel {
+            flex: 2;
+            min-width: 320px;
+            background: #ffffffea;
+            border-radius: 40px;
+            padding: 20px 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            backdrop-filter: blur(2px);
+            border: 1px solid #dfcca8;
+        }
+        /* 亲本选择样式 */
+        .parent-section {
+            margin-bottom: 28px;
+            border-bottom: 2px dashed #c7b57b;
+            padding-bottom: 20px;
+        }
+        .parent-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            color: #2c5e2e;
+        }
+        .parent-title span {
+            background: #2c5e2e20;
+            padding: 5px 12px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+        }
+        .trait-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: center;
+            margin: 15px 0 8px;
+        }
+        .trait-option {
+            flex: 1;
+            min-width: 110px;
+            background: #fff2df;
+            border-radius: 100px;
+            padding: 10px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid #dbc48b;
+            font-weight: 600;
+            color: #4a3b1c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        .trait-option.selected {
+            background: #ffdd99;
+            border-color: #c27e2e;
+            box-shadow: 0 4px 10px rgba(160,100,20,0.3);
+            color: #5a3e0a;
+            transform: scale(1.02);
+        }
+        .trait-emoji {
+            font-size: 2.2rem;
+        }
+        .trait-label {
+            font-size: 0.9rem;
+        }
+        .allele-badge {
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: #e9dfc3;
+            padding: 2px 8px;
+            border-radius: 30px;
+        }
+        .cross-btn {
+            background: #b8682e;
+            border: none;
+            width: 100%;
+            padding: 14px 0;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.15s linear;
+            margin: 16px 0 12px;
+            box-shadow: 0 4px 0 0 #6f3c14;
+            font-family: inherit;
+        }
+        .cross-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 0 #6f3c14;
+        }
+        .reset-btn {
+            background: #5e6b5c;
+            box-shadow: 0 4px 0 0 #3d473c;
+        }
+        .note {
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 20px;
+            color: #6c5e3e;
+            background: #f5efdb;
+            padding: 8px;
+            border-radius: 40px;
+        }
+        /* 结果区域 */
+        .genotype-info {
+            background: #ebf3e6;
+            border-radius: 32px;
+            padding: 12px 18px;
+            margin-bottom: 28px;
+            text-align: center;
+        }
+        .punnett-area h3 {
+            font-size: 1.4rem;
+            margin: 0 0 12px 0;
+            color: #2e6730;
+            border-left: 5px solid #ffb347;
+            padding-left: 15px;
+        }
+        .punnett-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(2, 1fr);
+            background: #fef3db;
+            border-radius: 28px;
+            overflow: hidden;
+            border: 2px solid #d6bc84;
+            margin: 12px 0;
+        }
+        .grid-header, .grid-cell {
+            padding: 14px 8px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #e6d4ae;
+            border-right: 1px solid #e6d4ae;
+            background-color: #fff6e8;
+        }
+        .grid-header {
+            background-color: #e1cf9e;
+            font-weight: 800;
+            color: #2c3e1f;
+        }
+        .grid-cell {
+            background-color: #fffff2;
+            font-size: 1rem;
+        }
+        .phenotype-stats {
+            display: flex;
+            gap: 18px;
+            justify-content: space-between;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            background: #faf2e2;
+            flex: 1;
+            border-radius: 28px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: inset 0 0 0 1px #ffe1aa, 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #b45f2b;
+            line-height: 1;
+        }
+        .pheno-color {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .dom-color { background-color: #a5682a; box-shadow: inset 0 0 0 1px #f3c26b; }
+        .rec-color { background-color: #f5e2b0; border:1px solid #c9a86b; }
+        hr {
+            border-color: #eedbaa;
+            margin: 16px 0;
+        }
+        .footer-text {
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 14px;
+            background: #e2d8be;
+            color: #3b4a2c;
+            font-weight: 500;
+        }
+        @media (max-width: 700px) {
+            .main-demo { padding: 16px; gap: 20px; }
+            .trait-emoji { font-size: 1.7rem; }
+            .stat-number { font-size: 1.5rem; }
+        }
+        button {
+            background: none;
+            border: none;
+        }
+        .highlight {
+            transition: all 0.1s;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="hero">
+        <h1>🌱 孟德尔遗传定律 · 模拟实验室</h1>
+        <p>豌豆性状：种子形状 (圆粒 vs 皱粒) | 完全显性遗传 | 自由组合交配</p>
+    </div>
+    <div class="main-demo">
+        <!-- 左侧控制区：选择亲本 -->
+        <div class="controls-panel">
+            <div class="parent-section">
+                <div class="parent-title">
+                    🌿 亲本 P 代
+                    <span>父本 ♂</span>
+                </div>
+                <div id="father-options" class="trait-buttons">
+                    <!-- 动态生成选项 -->
+                </div>
+            </div>
+            <div class="parent-section">
+                <div class="parent-title">
+                    🌸 亲本 P 代
+                    <span>母本 ♀</span>
+                </div>
+                <div id="mother-options" class="trait-buttons">
+                </div>
+            </div>
+            <button id="crossButton" class="cross-btn">🧬 杂交产生 F1 代 & 自交模拟 🧬</button>
+            <button id="resetButton" class="cross-btn reset-btn">🔄 重置为典型实验 (高茎 × 矮茎类比圆粒×皱粒)</button>
+            <div class="note">
+                💡 知识点：选择不同纯合亲本 (RR / rr)，F1 全为杂合子 (Rr)，F2 出现 3:1 性状分离比。<br>
+                单击上方选项改变亲本基因型，支持任意组合 (RR, Rr, rr) 演示遗传规律。
+            </div>
+        </div>
+
+        <!-- 右侧结果区：遗传分析 + 棋盘格 + 统计 -->
+        <div class="result-panel">
+            <div class="genotype-info" id="parentGenoDisplay">
+                <strong>🧬 当前亲本组合</strong><br>
+                父本: —— &nbsp;|&nbsp; 母本: ——
+            </div>
+            <div class="punnett-area">
+                <h3>🧫 子代遗传分析 (F2 代 · 孟德尔比例)</h3>
+                <div id="punnettGrid" class="punnett-grid">
+                    <!-- 动态棋盘格 -->
+                    <div class="grid-header">♂\♀</div>
+                    <div class="grid-header">配子 1</div>
+                    <div class="grid-header">配子 2</div>
+                </div>
+                <div id="phenotypeStats" class="phenotype-stats">
+                    <!-- 动态统计 -->
+                </div>
+                <hr>
+                <div style="font-size:0.85rem; text-align:center; background:#f9efdb; border-radius:20px; padding:8px;">
+                    📖 <strong>遗传解释</strong> ：控制种子形状的等位基因 R (圆粒显性) 和 r (皱粒隐性)。<br>
+                    杂合子 (Rr) 表现为圆粒。根据分离定律，F2 基因型比例 1 RR : 2 Rr : 1 rr，表型比例 3 圆粒 : 1 皱粒。
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-text">
+        🧬 高中生物必修二 · 性状分离比模拟 | 支持任意杂交组合，观察子代基因型与表型规律
+    </div>
+</div>
+
+<script>
+    // 定义等位基因：完全显性 R 圆粒, r 皱粒
+    const ALLELES = ['R', 'r'];
+    // 基因型映射表: 展示文字+表型+显隐性标识
+    const GENOTYPE_MAP = {
+        'RR': { phenotype: '圆粒', name: '纯合显性 (RR)', emoji: '🟤⚪', class: 'dom' },
+        'Rr': { phenotype: '圆粒', name: '杂合子 (Rr)', emoji: '🟤⚪', class: 'dom' },
+        'rr': { phenotype: '皱粒', name: '纯合隐性 (rr)', emoji: '🥜✨', class: 'rec' }
+    };
+
+    // 当前选中的亲本基因型 (字符串)
+    let fatherGenotype = 'RR';   // 父本
+    let motherGenotype = 'rr';   // 母本
+
+    // DOM 元素
+    const fatherContainer = document.getElementById('father-options');
+    const motherContainer = document.getElementById('mother-options');
+    const crossBtn = document.getElementById('crossButton');
+    const resetBtn = document.getElementById('resetButton');
+    const parentGenoDisplay = document.getElementById('parentGenoDisplay');
+    const punnettGridDiv = document.getElementById('punnettGrid');
+    const phenotypeStatsDiv = document.getElementById('phenotypeStats');
+
+    // 工具函数：根据基因型获取配子数组 (考虑分离，产生配子种类及比例)
+    function getGametes(genotype) {
+        // 例如 RR -> ['R','R'] ， Rr -> ['R','r'] ， rr -> ['r','r']
+        if (genotype === 'RR') return ['R', 'R'];
+        if (genotype === 'Rr') return ['R', 'r'];
+        if (genotype === 'rr') return ['r', 'r'];
+        return [];
+    }
+
+    // 根据配子组合产生子代基因型
+    function combineGametes(gameteF, gameteM) {
+        let allele1 = gameteF;
+        let allele2 = gameteM;
+        // 排序后统一规范为 RR/Rr/rr
+        let combined = [allele1, allele2].sort().join('');
+        if (combined === 'RR') return 'RR';
+        if (combined === 'Rr' || combined === 'rR') return 'Rr';
+        if (combined === 'rr') return 'rr';
+        return 'RR'; // fallback
+    }
+
+    // 计算杂交子代 (F1 其实是特定组合，但为了完全自由组合，这里我们做以下逻辑：
+    // 给定父母本基因型，模拟产生所有可能的配子组合 => 获得子代基因型频率分布 (F1代实际上就是直接杂交结果)
+    // 但为了让演示贴合高中课本的“F1自交得F2”，更直观展示3:1，遵循经典思路：
+    // 如果用户点击“杂交并产生子代”，我们展示的是：
+    // 步骤1：亲本杂交产生 F1 代(全部相同基因型，基于亲本组合计算可能的F1群体，如果纯合杂交则F1一致，如果其他杂交则显示F1比例)
+    // 步骤2：然后让 F1 自交得到 F2 代，显示 F2 的棋盘格和分离比例。
+    // 这样更符合孟德尔实验逻辑！也是高中核心内容: 从P→F1→F2。这样即使任意杂交组合，都会展示该组合下F2的理论比例。
+    // 实现方法:
+    // 给定父母本基因型 -> 产生F1代可能的基因型及其概率 (通过配子随机结合)
+    // 再从F1群体自交，求出F2代总体基因型比例 (考虑每个F1基因型自交后代的加权)
+    // 这样模拟任意亲本组合（包含杂合亲本）均展示符合遗传规律的F2理论比。
+    
+    function computeF2FromParents(father, mother) {
+        // 1. 获取父母本配子及概率
+        const fGametes = getGametes(father);
+        const mGametes = getGametes(mother);
+        // 统计F1基因型分布 (Map)
+        let f1Dist = new Map(); // key: genotype, value: 概率(计数归一化)
+        for (let gf of fGametes) {
+            for (let gm of mGametes) {
+                let child = combineGametes(gf, gm);
+                f1Dist.set(child, (f1Dist.get(child) || 0) + 1);
+            }
+        }
+        // 归一化总组合数 = 4 (总是4种组合因为两个亲本各2配子)
+        let totalComb = 4;
+        let f1Prob = new Map();
+        for (let [gen, cnt] of f1Dist.entries()) {
+            f1Prob.set(gen, cnt / totalComb);
+        }
+        
+        // 2. 对每种F1基因型，计算其自交产生的F2基因型分布
+        let finalF2Dist = new Map(); // 基因型 -> 概率
+        for (let [f1Geno, f1ProbValue] of f1Prob.entries()) {
+            // 某个F1个体自交: 产生配子比例
+            let gametesFromF1 = getGametes(f1Geno);
+            // 自交配子组合 4种
+            let selfDist = new Map();
+            for (let g1 of gametesFromF1) {
+                for (let g2 of gametesFromF1) {
+                    let offspring = combineGametes(g1, g2);
+                    selfDist.set(offspring, (selfDist.get(offspring) || 0) + 1);
+                }
+            }
+            let selfTotal = 4;
+            for (let [geno, cnt] of selfDist.entries()) {
+                let conditionalProb = cnt / selfTotal;
+                let addedProb = conditionalProb * f1ProbValue;
+                finalF2Dist.set(geno, (finalF2Dist.get(geno) || 0) + addedProb);
+            }
+        }
+        // 归一化由于浮点误差微调
+        let sum = 0;
+        for (let v of finalF2Dist.values()) sum += v;
+        if (Math.abs(sum - 1) > 0.0001) {
+            // 调整
+            for (let [k, v] of finalF2Dist.entries()) {
+                finalF2Dist.set(k, v / sum);
+            }
+        }
+        return finalF2Dist;
+    }
+
+    // 根据F2基因型分布计算表型比例
+    function getPhenotypeFromF2Dist(f2DistMap) {
+        let roundProb = 0; // 圆粒 RR + Rr
+        let wrinkledProb = 0;
+        for (let [gen, prob] of f2DistMap.entries()) {
+            if (gen === 'RR' || gen === 'Rr') roundProb += prob;
+            else wrinkledProb += prob;
+        }
+        return { round: roundProb, wrinkled: wrinkledProb, map: f2DistMap };
+    }
+
+    // 构建 Punnett 棋盘展示和可视化 (基于父母的配子组合展示F1配子，为了方便展示遗传逻辑，我们用父母配子交叉展示并给出F2的显示？更好的办法：展示F1自交时的配子棋盘，但这里用户更想看到F2的棋盘格)
+    // 为了让界面清晰，我们展示 F1 自交的配子棋盘（即经典的4x4棋盘？但更直观展示 2x2 配子组合）
+    // 不过由于F1可能不是单一基因型（当父母本任意组合时F1可能混合多种基因型），为简单美观，我们采用展示F2的理论棋盘说明，但不是所有情况都能用单一基因型自交棋盘。
+    // 为了教学直观：在非典型纯合杂交时，显示一个基于“理论F1混合群体”的说明 + 最终比例。对于演示RR×rr典型情况显示标准棋盘。
+    // 所有情况统一用文字显示配子组合遗传规律，我们设计一个动态生成式棋盘，以“代表性F1配子类型展示”通用简化: 由于F1可能是混合，我们展示主效配子类型。
+    // 为了更专业，我们展示核心等位基因配子的组合可能性以及最终F2统计，提供配子比例。
+    // 最佳：右侧展示“F2 代基因型比例圆饼风格”，并使用表格展示理论基因型频率。
+    
+    function updateSimulation() {
+        // 更新亲本显示
+        const fatherShow = GENOTYPE_MAP[fatherGenotype]?.name || fatherGenotype;
+        const motherShow = GENOTYPE_MAP[motherGenotype]?.name || motherGenotype;
+        parentGenoDisplay.innerHTML = `<strong>🧬 当前亲本组合</strong><br>
+        🌿 父本: ${fatherGenotype} (${fatherShow}) &nbsp;|&nbsp; 🌸 母本: ${motherGenotype} (${motherShow})<br>
+        <span style="font-size:0.8rem;">🔬 模拟流程：亲本杂交 → F1 代 → F1 自交 → F2 代遗传比例</span>`;
+        
+        // 计算F2分布
+        const f2Dist = computeF2FromParents(fatherGenotype, motherGenotype);
+        const { round, wrinkled, map: f2GenoProb } = getPhenotypeFromF2Dist(f2Dist);
+        
+        // 展示统计卡片
+        const roundPercent = (round * 100).toFixed(1);
+        const wrinkledPercent = (wrinkled * 100).toFixed(1);
+        const roundCountTheory = round;
+        const wrinkledCountTheory = wrinkled;
+        
+        phenotypeStatsDiv.innerHTML = `
+            <div class="stat-card"><div><span class="pheno-color dom-color"></span> 圆粒 (显性)</div>
+            <div class="stat-number">${roundPercent}%</div><div>理论比例 ${(round).toFixed(3)}</div>
+            <div style="font-size:0.7rem;">RR + Rr</div></div>
+            <div class="stat-card"><div><span class="pheno-color rec-color"></span> 皱粒 (隐性)</div>
+            <div class="stat-number">${wrinkledPercent}%</div><div>理论比例 ${(wrinkled).toFixed(3)}</div>
+            <div style="font-size:0.7rem;">rr</div></div>
+            <div class="stat-card"><div>🧬 分离比</div><div class="stat-number">${(round/wrinkled).toFixed(2)} : 1</div><div>圆粒 : 皱粒</div></div>
+        `;
+        
+        // 生成基因型详细表格 (频率展示)
+        let genTableHtml = `<div style="margin: 10px 0 6px; font-weight:600;">📊 F2 基因型频率：</div>
+        <div style="display: flex; gap: 12px; justify-content: space-around; background:#fff6e8; border-radius: 28px; padding: 10px; flex-wrap:wrap;">`;
+        for (let [gen, prob] of f2GenoProb.entries()) {
+            let percent = (prob * 100).toFixed(1);
+            let pheno = GENOTYPE_MAP[gen].phenotype;
+            genTableHtml += `<div style="background: #fff0d4; border-radius: 32px; padding: 6px 12px; min-width:80px; text-align:center;">
+                <strong>${gen}</strong><br>${pheno}<br><span style="font-size:0.8rem;">${percent}%</span>
+            </div>`;
+        }
+        genTableHtml += `</div>`;
+        
+        // 构建一个基于配子组合的交互棋盘格: 展示理论上的F1自交配子组合 (展示典型的配子类型比例)
+        // 为了教育意义，展示父源配子和母源配子(假设F1群体中配子总体频率，根据F1基因型频率推断 R 和 r 的配子频率)
+        // 计算F1的配子频率 (基于父母本杂交产生的F1群体中配子R和r比例)
+        function getF1GameteFreq() {
+            let fGam = getGametes(fatherGenotype);
+            let mGam = getGametes(motherGenotype);
+            let total = fGam.length * mGam.length;
+            let rCount = 0, totalCount = 0;
+            for (let gf of fGam) {
+                for (let gm of mGam) {
+                    let offspring = combineGametes(gf, gm);
+                    // 对于每个F1个体，其产生配子时: 统计该F1个体产生R/r概率，然后取平均
+                    let probR = (offspring === 'RR' ? 1 : (offspring === 'Rr' ? 0.5 : 0));
+                    let probr = 1 - probR;
+                    rCount += probR;
+                    totalCount += 1;
+                }
+            }
+            return { pR: rCount / totalCount, pr: 1 - rCount / totalCount };
+        }
+        const { pR, pr } = getF1GameteFreq();
+        // 构建动态棋盘（基于理论F1配子频率组合形成F2）
+        const rPercentDisplay = (pR * 100).toFixed(1);
+        const rRecDisplay = (pr * 100).toFixed(1);
+        const punnettTable = `
+            <div class="grid-header">♂配子 \ ♀配子</div>
+            <div class="grid-header">R (${rPercentDisplay}%)</div>
+            <div class="grid-header">r (${rRecDisplay}%)</div>
+            <div class="grid-header">R (${rPercentDisplay}%)</div>
+            <div class="grid-cell">RR <span style="font-size:0.7rem;">圆粒</span><br>${(pR * pR * 100).toFixed(1)}%</div>
+            <div class="grid-cell">Rr <span style="font-size:0.7rem;">圆粒</span><br>${(pR * pr * 100).toFixed(1)}%</div>
+            <div class="grid-header">r (${rRecDisplay}%)</div>
+            <div class="grid-cell">Rr <span style="font-size:0.7rem;">圆粒</span><br>${(pr * pR * 100).toFixed(1)}%</div>
+            <div class="grid-cell">rr <span style="font-size:0.7rem;">皱粒</span><br>${(pr * pr * 100).toFixed(1)}%</div>
+        `;
+        
+        punnettGridDiv.innerHTML = punnettTable;
+        // 附加说明基因型细节
+        let noteHtml = `<div style="margin-top: 16px; background: #f4ecdb; border-radius: 24px; padding: 8px 12px; font-size:0.8rem;">
+        ⚡ 棋盘格展示F1代群体产生的雌雄配子频率（R/r）随机结合产生的F2代比例。与左侧统计数据一致。<br>
+        🧬 当前亲本组合: ${fatherGenotype} × ${motherGenotype} → 根据孟德尔分离定律，F2呈现理论分离比。
+        </div>`;
+        // 把基因型详细表格和棋盘说明整合到punnett-area下面
+        const existingExtra = document.querySelector('.punnett-area .extra-detail');
+        if(!document.querySelector('.punnett-area .extra-detail')) {
+            const extraDiv = document.createElement('div');
+            extraDiv.className = 'extra-detail';
+            extraDiv.innerHTML = genTableHtml + noteHtml;
+            punnettGridDiv.insertAdjacentHTML('afterend', extraDiv.outerHTML);
+        } else {
+            document.querySelector('.punnett-area .extra-detail').innerHTML = genTableHtml + noteHtml;
+        }
+    }
+    
+    // 渲染选择按钮 (父本与母本)
+    function renderChoiceButtons() {
+        const genotypes = ['RR', 'Rr', 'rr'];
+        const renderGroup = (container, currentGen, onSelect) => {
+            container.innerHTML = '';
+            genotypes.forEach(gen => {
+                const info = GENOTYPE_MAP[gen];
+                const isSelected = (currentGen === gen);
+                const btn = document.createElement('div');
+                btn.className = `trait-option ${isSelected ? 'selected' : ''}`;
+                btn.innerHTML = `
+                    <div class="trait-emoji">${info.emoji}</div>
+                    <div class="trait-label">${info.name}</div>
+                    <div class="allele-badge">${gen}</div>
+                    <div style="font-size:0.7rem;">${info.phenotype}</div>
+                `;
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    onSelect(gen);
+                    renderChoiceButtons(); // 重新渲染高亮
+                    updateSimulation();
+                });
+                container.appendChild(btn);
+            });
+        };
+        renderGroup(fatherContainer, fatherGenotype, (newGen) => { fatherGenotype = newGen; });
+        renderGroup(motherContainer, motherGenotype, (newGen) => { motherGenotype = newGen; });
+    }
+    
+    // 重置为经典实验 (高茎圆粒纯合显性 × 皱粒纯合隐性)
+    function resetClassic() {
+        fatherGenotype = 'RR';
+        motherGenotype = 'rr';
+        renderChoiceButtons();
+        updateSimulation();
+    }
+    
+    // 杂交按钮 (实际上是刷新模拟，因为updateSimulation 已经根据当前父母本重新计算)
+    crossBtn.addEventListener('click', () => {
+        updateSimulation();
+        // 增加一个微妙的反馈
+        crossBtn.style.transform = 'scale(0.98)';
+        setTimeout(() => { crossBtn.style.transform = ''; }, 100);
+    });
+    
+    resetBtn.addEventListener('click', () => {
+        resetClassic();
+    });
+    
+    // 初始化
+    renderChoiceButtons();
+    updateSimulation();
+</script>
+</body>
+</html>

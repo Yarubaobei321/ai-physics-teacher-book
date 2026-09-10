@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0, minimum-scale=0.5, viewport-fit=cover">
+  <title>高中数学 · 三角函数 | iOS 26 风格</title>
+  <style>
+    /* iOS 26 设计令牌：玻璃、钝化边缘、柔和光影 */
+    :root {
+      --glass-bg: rgba(255, 255, 255, 0.12);
+      --glass-border: rgba(255, 255, 255, 0.25);
+      --glass-shadow: 0 25px 45px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+      --blur-amount: 28px;
+      --saturation: 180%;
+      --radius-xl: 36px;
+      --radius-lg: 28px;
+      --radius-md: 22px;
+      --radius-full: 50px;
+      --text-primary: #ffffff;
+      --text-secondary: #e0e0e0;
+      --accent-yellow: #ffcc00;
+      --accent-pink: #ff6b8b;
+      --accent-blue: #4dabf7;
+      --accent-amber: #ffd43b;
+      --bg-base: #0f0f1a;
+      --font-system: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Inter', system-ui, sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: radial-gradient(circle at 30% 20%, #2a2a4a, #0f0f1a 80%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: var(--font-system);
+      padding: 20px;
+      margin: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* 主容器：iOS 26 玻璃卡片 */
+    .app-container {
+      max-width: 1000px;
+      width: 100%;
+      background: var(--glass-bg);
+      backdrop-filter: blur(var(--blur-amount)) saturate(var(--saturation));
+      -webkit-backdrop-filter: blur(var(--blur-amount)) saturate(var(--saturation));
+      border-radius: var(--radius-xl);
+      padding: 28px 30px 32px;
+      box-shadow: var(--glass-shadow);
+      border: 1px solid var(--glass-border);
+      transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1);
+      color: var(--text-primary);
+    }
+
+    /* 标签导航：iOS 风格分段控制器 */
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      justify-content: center;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: var(--radius-full);
+      padding: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 590;
+      font-size: 0.9rem;
+      padding: 10px 20px;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      letter-spacing: -0.2px;
+      white-space: nowrap;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .tab-btn.active {
+      background: rgba(255, 255, 255, 0.28);
+      color: #ffffff;
+      font-weight: 620;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.3) inset;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+    .tab-btn:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.15);
+      color: #f0f0f0;
+    }
+
+    .panel {
+      display: none;
+    }
+    .panel.active {
+      display: block;
+    }
+
+    h2 {
+      text-align: center;
+      font-weight: 590;
+      font-size: 1.9rem;
+      margin-bottom: 12px;
+      color: #ffffff;
+      letter-spacing: -0.3px;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    /* 玻璃卡片内的内容块 */
+    .guide-content, .control-panel {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.25);
+      margin: 16px 0;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: rgba(10, 10, 18, 0.55);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 20px 35px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.15);
+      margin: 16px 0 20px;
+    }
+
+    .func-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .func-btn {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #eaeaea;
+      font-weight: 580;
+      font-size: 1.1rem;
+      padding: 12px 26px;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      box-shadow: 0 5px 14px rgba(0,0,0,0.3);
+    }
+    .func-btn.active {
+      background: var(--accent-yellow);
+      border-color: transparent;
+      color: #1a1a2e;
+      font-weight: 620;
+      box-shadow: 0 0 22px #ffcc00aa;
+    }
+
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .slider-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #ddd;
+    }
+    input[type="range"] {
+      width: 95px;
+      height: 6px;
+      -webkit-appearance: none;
+      background: rgba(255,255,255,0.25);
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 18px #ffcc00, 0 4px 10px black;
+      border: 2px solid white;
+    }
+    .value-display {
+      min-width: 52px;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(12px);
+      padding: 6px 12px;
+      border-radius: 30px;
+      font-weight: 600;
+      color: var(--accent-yellow);
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.25);
+    }
+
+    #customFunctionInput {
+      background: rgba(20,20,30,0.7);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 14px 22px;
+      border-radius: 40px;
+      width: 270px;
+      font-size: 1rem;
+      outline: none;
+      text-align: center;
+    }
+    .draw-custom-btn, .quiz-new-btn, .play-btn {
+      background: rgba(255,204,0,0.2);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+      font-weight: 600;
+      padding: 12px 28px;
+      border-radius: 40px;
+      cursor: pointer;
+      transition: 0.2s;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.4);
+    }
+    .play-btn.active {
+      background: var(--accent-yellow);
+      color: #1a1a2e;
+    }
+    .quiz-question {
+      font-size: 2.4rem;
+      font-weight: 630;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(18px);
+      padding: 12px 36px;
+      border-radius: 48px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .quiz-feedback {
+      background: rgba(0,0,0,0.4);
+      backdrop-filter: blur(18px);
+      border-radius: 40px;
+      padding: 12px 28px;
+      font-weight: 550;
+    }
+    .demo-layout {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .demo-unit-circle {
+      flex: 1;
+      min-width: 280px;
+    }
+    .demo-wave {
+      flex: 1.5;
+      min-width: 380px;
+    }
+    @media (max-width: 750px) {
+      .demo-layout {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <div class="tab-nav">
+    <button id="tabGuide" class="tab-btn">📘 指南</button>
+    <button id="tabDemo" class="tab-btn active">🌀 单位圆→波形</button>
+    <button id="tabBasic" class="tab-btn">📐 图像</button>
+    <button id="tabCustom" class="tab-btn">✏️ 自定义</button>
+    <button id="tabQuiz" class="tab-btn">🎯 测验</button>
+  </div>
+
+  <!-- 指南面板 -->
+  <div id="panelGuide" class="panel">
+    <h2>三角函数学习工具</h2>
+    <div class="guide-content">
+      <p style="font-weight:500;">📐 正弦、余弦、正切 · 单位圆 · 图像变换</p>
+      <p style="margin-top:12px;">拖动滑块观察 A·sin(ωx+φ) 变化，或输入表达式绘制任意函数。测验模式帮助记忆特殊角。</p>
+    </div>
+  </div>
+
+  <!-- 新增：单位圆到正弦波演示 -->
+  <div id="panelDemo" class="panel active">
+    <h2>三角函数：从单位圆到正弦波</h2>
+    <div class="demo-layout">
+      <div class="demo-unit-circle">
+        <canvas id="unitCircleCanvas" width="350" height="350" style="width:100%; height:auto; aspect-ratio:1/1;"></canvas>
+      </div>
+      <div class="demo-wave">
+        <canvas id="waveCanvas" width="500" height="350" style="width:100%; height:auto;"></canvas>
+      </div>
+    </div>
+    <div class="control-panel" style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div class="slider-group">
+        <div class="slider-item">
+          <span>角度 θ</span>
+          <input type="range" id="angleSlider" min="0" max="360" value="45" step="0.5">
+          <span class="value-display" id="angleValue">45°</span>
+        </div>
+      </div>
+      <div style="display:flex; gap:16px; align-items:center;">
+        <button id="playBtn" class="play-btn">▶ 播放</button>
+        <span style="color:#ccc;">sinθ = <span id="sinValue" style="color:#ff6b8b; font-weight:bold;">0.707</span></span>
+        <span style="color:#ccc;">cosθ = <span id="cosValue" style="color:#4dabf7; font-weight:bold;">0.707</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 基础图像面板 -->
+  <div id="panelBasic" class="panel">
+    <h2>函数图像</h2>
+    <canvas id="trigCanvas" width="800" height="450"></canvas>
+    <div class="control-panel">
+      <div class="func-buttons">
+        <button id="btnSin" class="func-btn active">sin</button>
+        <button id="btnCos" class="func-btn">cos</button>
+        <button id="btnTan" class="func-btn">tan</button>
+      </div>
+      <div class="slider-group">
+        <div class="slider-item"><span>A</span><input type="range" id="ampSlider" min="0.2" max="2.5" value="1" step="0.1"><span class="value-display" id="ampVal">1.0</span></div>
+        <div class="slider-item"><span>ω</span><input type="range" id="freqSlider" min="0.3" max="3" value="1" step="0.1"><span class="value-display" id="freqVal">1.0</span></div>
+        <div class="slider-item"><span>φ</span><input type="range" id="phaseSlider" min="-3.14" max="3.14" value="0" step="0.01"><span class="value-display" id="phaseVal">0.00</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自定义面板 -->
+  <div id="panelCustom" class="panel">
+    <h2>自定义函数</h2>
+    <canvas id="customCanvas" width="800" height="450"></canvas>
+    <div class="control-panel" style="display:flex; flex-direction:column; align-items:center;">
+      <div style="display:flex; gap:12px; align-items:center;"><input id="customInput" placeholder="sin(x)" value="sin(x)"><button id="drawCustomBtn" class="draw-custom-btn">绘制</button></div>
+      <div style="color:#aaa; margin-top:8px;">当前: <span id="customLabel" style="color:#ffcc00;">sin(x)</span></div>
+    </div>
+  </div>
+
+  <!-- 测验面板 -->
+  <div id="panelQuiz" class="panel">
+    <h2>单位圆找点</h2>
+    <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+      <div class="quiz-question" id="quizAngle">45°</div>
+      <canvas id="quizCanvas" width="500" height="500" style="border-radius:50%; width:300px; height:300px; margin:0 auto;"></canvas>
+      <div class="quiz-feedback" id="quizFeedback">👆 点击圆上位置</div>
+      <button id="newQuizBtn" class="quiz-new-btn">新题目</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ---------- 标签切换 ----------
+    const tabs = ['guide','demo','basic','custom','quiz'];
+    const panels = {
+      guide: document.getElementById('panelGuide'),
+      demo: document.getElementById('panelDemo'),
+      basic: document.getElementById('panelBasic'),
+      custom: document.getElementById('panelCustom'),
+      quiz: document.getElementById('panelQuiz')
+    };
+    const tabBtns = {
+      guide: document.getElementById('tabGuide'),
+      demo: document.getElementById('tabDemo'),
+      basic: document.getElementById('tabBasic'),
+      custom: document.getElementById('tabCustom'),
+      quiz: document.getElementById('tabQuiz')
+    };
+    
+    function switchTab(tabId) {
+      tabs.forEach(t => { tabBtns[t].classList.remove('active'); panels[t].classList.remove('active'); });
+      tabBtns[tabId].classList.add('active'); panels[tabId].classList.add('active');
+      if(tabId==='basic') drawTrig();
+      if(tabId==='custom') drawCustomFromInput();
+      if(tabId==='demo') drawDemo();
+      if(tabId==='quiz') drawQuiz();
+    }
+    tabBtns.guide.addEventListener('click',()=>switchTab('guide'));
+    tabBtns.demo.addEventListener('click',()=>switchTab('demo'));
+    tabBtns.basic.addEventListener('click',()=>switchTab('basic'));
+    tabBtns.custom.addEventListener('click',()=>switchTab('custom'));
+    tabBtns.quiz.addEventListener('click',()=>switchTab('quiz'));
+
+    // ========== 基础图像 (简化但保留核心) ==========
+    const ctxTrig = document.getElementById('trigCanvas').getContext('2d');
+    let currentFunc='sin', amp=1, freq=1, phase=0;
+    function drawTrig(){
+      ctxTrig.clearRect(0,0,800,450);
+      ctxTrig.strokeStyle='#aaa'; ctxTrig.lineWidth=1;
+      ctxTrig.beginPath(); ctxTrig.moveTo(70,225); ctxTrig.lineTo(730,225); ctxTrig.moveTo(400,30); ctxTrig.lineTo(400,420); ctxTrig.stroke();
+      ctxTrig.strokeStyle = currentFunc==='sin'?'#ff6b8b':(currentFunc==='cos'?'#4dabf7':'#ffd43b');
+      ctxTrig.lineWidth=2.5; ctxTrig.beginPath();
+      for(let x=0;x<800;x+=2){ let mx=(x-400)/60; let y=0; if(currentFunc==='sin')y=amp*Math.sin(freq*mx+phase); else if(currentFunc==='cos')y=amp*Math.cos(freq*mx+phase); else y=amp*Math.tan(freq*mx+phase); if(Math.abs(y)>4)continue; let py=225-y*45; if(x===0)ctxTrig.moveTo(x,py); else ctxTrig.lineTo(x,py); }
+      ctxTrig.stroke();
+    }
+    document.getElementById('btnSin').addEventListener('click',()=>{currentFunc='sin';drawTrig();});
+    document.getElementById('btnCos').addEventListener('click',()=>{currentFunc='cos';drawTrig();});
+    document.getElementById('btnTan').addEventListener('click',()=>{currentFunc='tan';drawTrig();});
+    document.getElementById('ampSlider').addEventListener('input',function(){amp=+this.value;document.getElementById('ampVal').textContent=amp.toFixed(1);drawTrig();});
+    document.getElementById('freqSlider').addEventListener('input',function(){freq=+this.value;document.getElementById('freqVal').textContent=freq.toFixed(1);drawTrig();});
+    document.getElementById('phaseSlider').addEventListener('input',function(){phase=+this.value;document.getElementById('phaseVal').textContent=phase.toFixed(2);drawTrig();});
+
+    // ========== 自定义函数 ==========
+    const ctxCustom = document.getElementById('customCanvas').getContext('2d');
+    function drawCustomFromInput(){ let expr=document.getElementById('customInput').value.trim(); document.getElementById('customLabel').textContent=expr; ctxCustom.clearRect(0,0,800,450); try{ let fn=new Function('x','return '+expr.replace(/\^/g,'**').replace(/sin/g,'Math.sin').replace(/cos/g,'Math.cos').replace(/tan/g,'Math.tan').replace(/pi/g,Math.PI).replace(/e/g,Math.E)); ctxCustom.strokeStyle='#ffcc00'; ctxCustom.lineWidth=2.5; ctxCustom.beginPath(); for(let x=0;x<800;x+=2){ let mx=(x-400)/60; let y=fn(mx); if(Math.abs(y)>5)continue; let py=225-y*45; if(x===0)ctxCustom.moveTo(x,py); else ctxCustom.lineTo(x,py); } ctxCustom.stroke(); }catch(e){}
+    }
+    document.getElementById('drawCustomBtn').addEventListener('click',drawCustomFromInput);
+
+    // ========== 测验 ==========
+    const specialAngles = [{deg:30,rad:Math.PI/6},{deg:45,rad:Math.PI/4},{deg:60,rad:Math.PI/3},{deg:90,rad:Math.PI/2},{deg:120,rad:2*Math.PI/3},{deg:135,rad:3*Math.PI/4},{deg:150,rad:5*Math.PI/6},{deg:180,rad:Math.PI},{deg:210,rad:7*Math.PI/6},{deg:225,rad:5*Math.PI/4},{deg:240,rad:4*Math.PI/3},{deg:270,rad:3*Math.PI/2},{deg:300,rad:5*Math.PI/3},{deg:330,rad:11*Math.PI/6}];
+    let quizAngle = specialAngles[0];
+    const ctxQuiz = document.getElementById('quizCanvas').getContext('2d');
+    function drawQuiz(){
+      ctxQuiz.clearRect(0,0,500,500);
+      ctxQuiz.strokeStyle='#fff'; ctxQuiz.lineWidth=2; ctxQuiz.beginPath(); ctxQuiz.arc(250,250,180,0,2*Math.PI); ctxQuiz.stroke();
+      if(quizAngle){ let x=250+180*Math.cos(quizAngle.rad), y=250-180*Math.sin(quizAngle.rad); ctxQuiz.fillStyle='#ffcc00'; ctxQuiz.beginPath(); ctxQuiz.arc(x,y,8,0,2*Math.PI); ctxQuiz.fill(); }
+    }
+    document.getElementById('newQuizBtn').addEventListener('click',()=>{ quizAngle=specialAngles[Math.floor(Math.random()*specialAngles.length)]; document.getElementById('quizAngle').textContent=quizAngle.deg+'°'; document.getElementById('quizFeedback').innerHTML='👆 点击圆上位置'; drawQuiz(); });
+    document.getElementById('quizCanvas').addEventListener('click',(e)=>{
+      const rect=e.target.getBoundingClientRect();
+      const scaleX=500/rect.width, scaleY=500/rect.height;
+      const mx=(e.clientX-rect.left)*scaleX, my=(e.clientY-rect.top)*scaleY;
+      let rad=Math.atan2(250-my, mx-250); if(rad<0)rad+=2*Math.PI;
+      let diff=Math.abs(rad-quizAngle.rad); if(diff>Math.PI)diff=2*Math.PI-diff;
+      if(diff<0.3){ document.getElementById('quizFeedback').innerHTML='✅ 正确！'; }
+      else{ document.getElementById('quizFeedback').innerHTML='❌ 再试试'; }
+    });
+
+    // ========== 单位圆到正弦波演示 (核心新增) ==========
+    const unitCanvas = document.getElementById('unitCircleCanvas');
+    const ctxUnit = unitCanvas.getContext('2d');
+    const waveCanvas = document.getElementById('waveCanvas');
+    const ctxWave = waveCanvas.getContext('2d');
+    
+    const angleSlider = document.getElementById('angleSlider');
+    const angleValue = document.getElementById('angleValue');
+    const sinValue = document.getElementById('sinValue');
+    const cosValue = document.getElementById('cosValue');
+    const playBtn = document.getElementById('playBtn');
+    
+    let currentAngle = 45; // 度数
+    let isPlaying = false;
+    let animationId = null;
+    
+    // 波形历史记录 (存储最近绘制的点)
+    let sinHistory = [];
+    let cosHistory = [];
+    const maxHistory = 500; // 对应画布宽度
+    
+    function drawDemo() {
+      if (!ctxUnit || !ctxWave) return;
+      
+      const rad = currentAngle * Math.PI / 180;
+      const sinVal = Math.sin(rad);
+      const cosVal = Math.cos(rad);
+      
+      // 更新显示
+      angleValue.textContent = currentAngle.toFixed(1) + '°';
+      sinValue.textContent = sinVal.toFixed(3);
+      cosValue.textContent = cosVal.toFixed(3);
+      
+      // ---- 绘制单位圆 (左侧) ----
+      const uSize = 350;
+      const uCx = uSize / 2;
+      const uCy = uSize / 2;
+      const uRadius = 130;
+      
+      ctxUnit.clearRect(0, 0, uSize, uSize);
+      
+      // 背景网格
+      ctxUnit.save();
+      ctxUnit.strokeStyle = 'rgba(255,255,255,0.2)';
+      ctxUnit.lineWidth = 1;
+      ctxUnit.beginPath();
+      ctxUnit.moveTo(uCx, 20); ctxUnit.lineTo(uCx, uSize-20);
+      ctxUnit.moveTo(20, uCy); ctxUnit.lineTo(uSize-20, uCy);
+      ctxUnit.stroke();
+      
+      // 单位圆
+      ctxUnit.beginPath();
+      ctxUnit.arc(uCx, uCy, uRadius, 0, 2 * Math.PI);
+      ctxUnit.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctxUnit.lineWidth = 2;
+      ctxUnit.stroke();
+      
+      // 角度射线
+      const pointX = uCx + uRadius * Math.cos(rad);
+      const pointY = uCy - uRadius * Math.sin(rad);
+      
+      ctxUnit.beginPath();
+      ctxUnit.moveTo(uCx, uCy);
+      ctxUnit.lineTo(pointX, pointY);
+      ctxUnit.strokeStyle = 'rgba(255,255,255,0.5)';
+      ctxUnit.lineWidth = 2;
+      ctxUnit.stroke();
+      
+      // 正弦线段 (垂直方向，红色)
+      ctxUnit.beginPath();
+      ctxUnit.moveTo(pointX, uCy);
+      ctxUnit.lineTo(pointX, pointY);
+      ctxUnit.strokeStyle = '#ff6b8b';
+      ctxUnit.lineWidth = 3;
+      ctxUnit.stroke();
+      
+      // 余弦线段 (水平方向，蓝色)
+      ctxUnit.beginPath();
+      ctxUnit.moveTo(uCx, pointY);
+      ctxUnit.lineTo(pointX, pointY);
+      ctxUnit.strokeStyle = '#4dabf7';
+      ctxUnit.lineWidth = 3;
+      ctxUnit.stroke();
+      
+      // 动态点 (红点)
+      ctxUnit.fillStyle = '#ff4444';
+      ctxUnit.shadowColor = '#ff0000';
+      ctxUnit.shadowBlur = 12;
+      ctxUnit.beginPath();
+      ctxUnit.arc(pointX, pointY, 8, 0, 2 * Math.PI);
+      ctxUnit.fill();
+      ctxUnit.shadowBlur = 0;
+      
+      // 标注
+      ctxUnit.fillStyle = '#ffffff';
+      ctxUnit.font = '14px system-ui';
+      ctxUnit.fillText('sinθ', pointX + 8, (uCy + pointY) / 2);
+      ctxUnit.fillText('cosθ', (uCx + pointX) / 2, pointY - 8);
+      
+      // ---- 绘制波形图 (右侧) ----
+      const wWidth = 500;
+      const wHeight = 350;
+      const wPadding = { left: 45, right: 20, top: 30, bottom: 35 };
+      const wGraphWidth = wWidth - wPadding.left - wPadding.right;
+      const wGraphHeight = wHeight - wPadding.top - wPadding.bottom;
+      const wCx = wPadding.left;
+      const wCy = wPadding.top + wGraphHeight / 2;
+      
+      ctxWave.clearRect(0, 0, wWidth, wHeight);
+      
+      // 坐标轴
+      ctxWave.save();
+      ctxWave.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctxWave.lineWidth = 1;
+      ctxWave.beginPath();
+      ctxWave.moveTo(wPadding.left, wPadding.top);
+      ctxWave.lineTo(wPadding.left, wHeight - wPadding.bottom);
+      ctxWave.lineTo(wWidth - wPadding.right, wHeight - wPadding.bottom);
+      ctxWave.stroke();
+      
+      // 更新历史记录 (将当前角度映射到x轴位置)
+      const xPos = wCx + (currentAngle / 360) * wGraphWidth;
+      sinHistory.push({ x: xPos, y: sinVal });
+      cosHistory.push({ x: xPos, y: cosVal });
+      
+      // 限制历史长度
+      if (sinHistory.length > maxHistory) sinHistory.shift();
+      if (cosHistory.length > maxHistory) cosHistory.shift();
+      
+      // 绘制正弦曲线 (红色)
+      ctxWave.beginPath();
+      ctxWave.strokeStyle = '#ff6b8b';
+      ctxWave.lineWidth = 2.5;
+      for (let i = 0; i < sinHistory.length; i++) {
+        const pt = sinHistory[i];
+        const drawX = pt.x;
+        const drawY = wCy - pt.y * (wGraphHeight / 2.2);
+        if (i === 0) ctxWave.moveTo(drawX, drawY);
+        else ctxWave.lineTo(drawX, drawY);
+      }
+      ctxWave.stroke();
+      
+      // 绘制余弦曲线 (蓝色)
+      ctxWave.beginPath();
+      ctxWave.strokeStyle = '#4dabf7';
+      ctxWave.lineWidth = 2.5;
+      for (let i = 0; i < cosHistory.length; i++) {
+        const pt = cosHistory[i];
+        const drawX = pt.x;
+        const drawY = wCy - pt.y * (wGraphHeight / 2.2);
+        if (i === 0) ctxWave.moveTo(drawX, drawY);
+        else ctxWave.lineTo(drawX, drawY);
+      }
+      ctxWave.stroke();
+      
+      // 当前扫描点
+      const currentDrawX = wCx + (currentAngle / 360) * wGraphWidth;
+      ctxWave.fillStyle = '#ff4444';
+      ctxWave.shadowColor = '#ff0000';
+      ctxWave.shadowBlur = 8;
+      ctxWave.beginPath();
+      ctxWave.arc(currentDrawX, wCy - sinVal * (wGraphHeight / 2.2), 5, 0, 2*Math.PI);
+      ctxWave.fill();
+      ctxWave.fillStyle = '#4488ff';
+      ctxWave.beginPath();
+      ctxWave.arc(currentDrawX, wCy - cosVal * (wGraphHeight / 2.2), 5, 0, 2*Math.PI);
+      ctxWave.fill();
+      ctxWave.shadowBlur = 0;
+      
+      ctxWave.fillStyle = '#ffffff';
+      ctxWave.font = '12px system-ui';
+      ctxWave.fillText('sin', wWidth-60, 40);
+      ctxWave.fillText('cos', wWidth-60, 70);
+      ctxWave.restore();
+    }
+    
+    // 滑块事件
+    angleSlider.addEventListener('input', () => {
+      currentAngle = parseFloat(angleSlider.value);
+      drawDemo();
+    });
+    
+    // 播放/暂停
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      if (isPlaying) {
+        playBtn.textContent = '⏸️ 暂停';
+        playBtn.classList.add('active');
+        animate();
+      } else {
+        playBtn.textContent = '▶ 播放';
+        playBtn.classList.remove('active');
+        if (animationId) cancelAnimationFrame(animationId);
+      }
+    }
+    
+    function animate() {
+      if (!isPlaying) return;
+      currentAngle = (currentAngle + 1.5) % 360;
+      angleSlider.value = currentAngle;
+      drawDemo();
+      animationId = requestAnimationFrame(animate);
+    }
+    
+    playBtn.addEventListener('click', togglePlay);
+    
+    // 初始化演示
+    drawDemo();
+    drawTrig();
+    drawCustomFromInput();
+    drawQuiz();
+    
+    // 窗口失去焦点时停止动画以节省资源
+    window.addEventListener('beforeunload', () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+  })();
+</script>
+</body>
+</html>

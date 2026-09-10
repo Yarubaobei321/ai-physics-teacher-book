@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DNA转录与翻译 - 交互式演示 | 高中生物必修二</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel-bg: #16213e;
+            --border: #2a3a5c;
+            --text: #e0e0e0;
+            --text-secondary: #b0b0c0;
+            --accent: #4da6ff;
+            --accent-glow: #4da6ff66;
+            --btn-bg: #1e3a5f;
+            --btn-hover: #2a5080;
+            --btn-active: #3a6ab0;
+            --color-A: #ff5e5b;
+            --color-T: #4ecdc4;
+            --color-G: #5b9bd5;
+            --color-C: #ffd166;
+            --color-U: #ff8c42;
+            --color-met: #ff6b9d;
+            --color-pro: #a29bfe;
+            --color-lys: #55efc4;
+            --color-stop: #ff4757;
+            --nucleus-bg: #1c2541c9;
+            --cytoplasm-bg: #1a2a1fcc;
+            --ribosome-color: #c9a87c;
+            --esite-color: #e8c8a0;
+            --psite-color: #d4a870;
+            --asite-color: #c08850;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0d1117 0%, #161b22 30%, #1a1a2e 60%, #0d1117 100%);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 1050px;
+            background: var(--panel-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border), 0 0 80px rgba(77, 166, 255, 0.08);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(180deg, #1a2740 0%, #16213e 100%);
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .header .title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .header .icon-dna {
+            font-size: 1.8rem;
+            animation: pulse-icon 2.5s ease-in-out infinite;
+        }
+        @keyframes pulse-icon {
+            0%, 100% { transform: scale(1); opacity: 0.9; }
+            50% { transform: scale(1.15); opacity: 1; }
+        }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #e0e8ff, #a0c4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header .badge {
+            background: var(--btn-bg);
+            border: 1px solid var(--border);
+            padding: 5px 12px;
+            border-radius: 18px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            background: #0a0f18;
+            border-bottom: 1px solid var(--border);
+            padding: 6px;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .info-panel {
+            padding: 10px 20px;
+            background: #111827;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-height: 48px;
+        }
+        .info-step {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--accent);
+            white-space: nowrap;
+            background: #1a3050;
+            padding: 4px 10px;
+            border-radius: 12px;
+        }
+        .info-desc {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            flex: 1;
+            min-width: 200px;
+            line-height: 1.5;
+        }
+        .info-highlight {
+            background: #2a3a5c44;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: #ffd166;
+            font-size: 0.82rem;
+            white-space: nowrap;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            padding: 14px 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            background: #111827;
+            border-bottom: 1px solid var(--border);
+        }
+        .btn {
+            padding: 9px 16px;
+            border-radius: 22px;
+            border: 1px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .btn:hover {
+            background: var(--btn-hover);
+            border-color: #4da6ff88;
+            box-shadow: 0 0 18px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            background: var(--btn-active);
+            transform: scale(0.96);
+        }
+        .btn.primary {
+            background: #1a4a7a;
+            border-color: #4da6ff;
+            color: #fff;
+            font-size: 0.95rem;
+            padding: 10px 24px;
+            box-shadow: 0 0 20px #4da6ff33;
+        }
+        .btn.primary:hover {
+            background: #1e5a9a;
+            box-shadow: 0 0 30px #4da6ff55;
+        }
+        .btn.secondary {
+            background: transparent;
+            border-color: #555;
+            color: #ccc;
+        }
+        .btn.secondary:hover {
+            border-color: #999;
+            box-shadow: 0 0 10px #ffffff15;
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .step-indicator {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            margin: 0 6px;
+        }
+        .step-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #3a3a5a;
+            transition: all 0.35s ease;
+        }
+        .step-dot.active {
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent-glow);
+            width: 9px;
+            height: 9px;
+        }
+        .step-dot.done {
+            background: #4da6ff66;
+        }
+
+        .legend-row {
+            display: flex;
+            gap: 10px;
+            padding: 8px 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            font-size: 0.73rem;
+            background: #0d1117;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            display: inline-block;
+        }
+
+        .codon-table-mini {
+            padding: 8px 20px;
+            background: #0d1117;
+            font-size: 0.72rem;
+            color: #999;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .codon-table-mini strong {
+            color: #ddd;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1rem; }
+            .btn { padding: 6px 10px; font-size: 0.7rem; }
+            .btn.primary { padding: 7px 14px; font-size: 0.8rem; }
+            .info-panel { padding: 6px 10px; }
+            .legend-row { font-size: 0.6rem; padding: 5px 10px; }
+            .step-dot { width: 5px; height: 5px; }
+            .step-dot.active { width: 7px; height: 7px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <div class="title-group">
+                <span class="icon-dna">🧬</span>
+                <h1>DNA → RNA → 蛋白质</h1>
+            </div>
+            <span class="badge">高中生物 · 必修二</span>
+        </div>
+
+        <div class="legend-row">
+            <span style="color:#aaa;">碱基：</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-A);"></span> A</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-T);"></span> T</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-G);"></span> G</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-C);"></span> C</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-U);"></span> U(RNA)</span>
+            <span style="margin-left:8px;color:#aaa;">|</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-met);"></span> Met</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-pro);"></span> Pro</span>
+            <span class="legend-item"><span class="legend-dot" style="background:var(--color-lys);"></span> Lys</span>
+            <span style="margin-left:8px;color:#aaa;">|</span>
+            <span class="legend-item"><span style="color:#ffdd57;">━</span> 肽键</span>
+            <span class="legend-item"><span style="color:#ff9999;">┅</span> 氢键</span>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="mainCanvas" width="1020" height="600" aria-label="DNA转录与翻译过程演示"></canvas>
+        </div>
+
+        <div class="codon-table-mini">
+            <span>📋 <strong>密码子表（本演示用）：</strong></span>
+            <span>AUG = <strong style="color:var(--color-met);">甲硫氨酸(Met)</strong> [起始]</span>
+            <span>CCU = <strong style="color:var(--color-pro);">脯氨酸(Pro)</strong></span>
+            <span>AAG = <strong style="color:var(--color-lys);">赖氨酸(Lys)</strong></span>
+            <span>UGA = <strong style="color:var(--color-stop);">终止密码子</strong></span>
+        </div>
+
+        <div class="info-panel" id="infoPanel">
+            <span class="info-step" id="infoStep">步骤 0/13</span>
+            <span class="info-desc" id="infoDesc">🧬 初始状态：DNA双链存在于细胞核中，准备进行转录。</span>
+            <span class="info-highlight" id="infoHighlight">DNA双链完整</span>
+        </div>
+
+        <div class="controls" id="controls">
+            <button class="btn secondary" id="btnReset">🔄 重置</button>
+            <button class="btn secondary" id="btnPrev">◀ 上一步</button>
+            <span class="step-indicator" id="stepIndicator"></span>
+            <button class="btn primary" id="btnNext">下一步 <span class="arrow">▶</span></button>
+            <button class="btn secondary" id="btnAuto">⏯ 自动演示</button>
+            <button class="btn secondary" id="btnJumpEnd">⏭ 查看结果</button>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+
+            // 配色
+            const COLOR_A = '#ff5e5b';
+            const COLOR_T = '#4ecdc4';
+            const COLOR_G = '#5b9bd5';
+            const COLOR_C = '#ffd166';
+            const COLOR_U = '#ff8c42';
+            const COLOR_MET = '#ff6b9d';
+            const COLOR_PRO = '#a29bfe';
+            const COLOR_LYS = '#55efc4';
+            const COLOR_STOP = '#ff4757';
+            const COLOR_BACKBONE_DNA = '#8899aa';
+            const COLOR_BACKBONE_RNA = '#b0b8c5';
+            const COLOR_RIBOSOME = '#c9a87c';
+            const COLOR_RIBOSOME_E = '#e8c8a0';
+            const COLOR_RIBOSOME_P = '#d4a870';
+            const COLOR_RIBOSOME_A = '#c08850';
+            const COLOR_TRNA = '#7ecba1';
+            const COLOR_TRNA_EMPTY = '#9eaab0';
+            const COLOR_NUCLEUS_BG = '#1c2535';
+            const COLOR_CYTOPLASM_BG = '#1a221f';
+            const COLOR_MEMBRANE = '#3a5070';
+
+            // 生物数据
+            const dnaTemplate = ['T', 'A', 'C', 'G', 'G', 'A', 'T', 'T', 'C', 'A', 'C', 'T'];
+            const dnaCoding = ['A', 'T', 'G', 'C', 'C', 'T', 'A', 'A', 'G', 'T', 'G', 'A'];
+            const mrnaSequence = ['A', 'U', 'G', 'C', 'C', 'U', 'A', 'A', 'G', 'U', 'G', 'A'];
+            const codonInfo = [
+                { codon: 'AUG', aa: 'Met', color: COLOR_MET, fullName: '甲硫氨酸', type: 'start', pos: [0,1,2], anticodon: 'UAC' },
+                { codon: 'CCU', aa: 'Pro', color: COLOR_PRO, fullName: '脯氨酸', type: 'coding', pos: [3,4,5], anticodon: 'GGA' },
+                { codon: 'AAG', aa: 'Lys', color: COLOR_LYS, fullName: '赖氨酸', type: 'coding', pos: [6,7,8], anticodon: 'UUC' },
+                { codon: 'UGA', aa: 'STOP', color: COLOR_STOP, fullName: '终止', type: 'stop', pos: [9,10,11], anticodon: null },
+            ];
+
+            // 状态变量
+            const TOTAL_STEPS = 13;
+            let currentStep = 0;
+            let animationId = null;
+            let animProgress = 0;
+            let animTarget = 0;
+            let isAnimating = false;
+            let autoPlayTimer = null;
+            let autoPlayActive = false;
+
+            // 动态图形数据
+            let rnaPolymeraseX = 0;
+            let mrnaVisibleLength = 0;
+            let mrnaInCytoplasm = false;
+            let ribosomeBound = false;
+            let ribosomePosition = 0;
+            let trnaSlots = [false, false, false, false];
+            let trnaEmpty = [false, false, false, false];
+            let peptideBonds = [false, false, false];
+            let peptideReleased = false;
+            let dnaUnwound = false;
+            let releaseFactorVisible = false;
+
+            // 坐标优化：细胞质内 mRNA + 核糖体整体下移40px，彻底避免遮挡
+            const mrnaYNucleus = 180;      // 核内mRNA Y坐标
+            const mrnaYCytoplasm = 450;     // 细胞质内mRNA Y坐标 (原380 → 450, 下移70px 更宽敞)
+            // tRNA 相对mRNA再向上偏移加大，与核糖体绝对不重叠
+            const trnaOffsetY = 78;          // 原52 → 78，让tRNA显著高于核糖体
+            const peptideChainOffsetY = 118; // 肽链高于核糖体顶部，无遮挡
+            const releaseFactorOffsetY = 38;  // 释放因子位置微调
+
+            function resetState() {
+                currentStep = 0;
+                animProgress = 0;
+                animTarget = 0;
+                isAnimating = false;
+                rnaPolymeraseX = 0;
+                mrnaVisibleLength = 0;
+                mrnaInCytoplasm = false;
+                ribosomeBound = false;
+                ribosomePosition = 0;
+                trnaSlots = [false, false, false, false];
+                trnaEmpty = [false, false, false, false];
+                peptideBonds = [false, false, false];
+                peptideReleased = false;
+                dnaUnwound = false;
+                releaseFactorVisible = false;
+                if (autoPlayTimer) clearTimeout(autoPlayTimer);
+                autoPlayActive = false;
+                const autoBtn = document.getElementById('btnAuto');
+                if (autoBtn) autoBtn.textContent = '⏯ 自动演示';
+            }
+
+            // DOM 元素
+            const infoStep = document.getElementById('infoStep');
+            const infoDesc = document.getElementById('infoDesc');
+            const infoHighlight = document.getElementById('infoHighlight');
+            const stepIndicator = document.getElementById('stepIndicator');
+            const btnNext = document.getElementById('btnNext');
+            const btnPrev = document.getElementById('btnPrev');
+            const btnReset = document.getElementById('btnReset');
+            const btnAuto = document.getElementById('btnAuto');
+            const btnJumpEnd = document.getElementById('btnJumpEnd');
+
+            const stepDescriptions = [
+                { step: '步骤 0/13', desc: '🧬 初始状态：DNA双链存在于细胞核中。下方为模板链（3\'→5\'），上方为编码链（5\'→3\'），氢键连接。', highlight: 'DNA双链完整' },
+                { step: '步骤 1/13', desc: '🔓 DNA解旋：RNA聚合酶识别启动子，局部解开双螺旋，暴露模板链，准备转录。', highlight: 'DNA局部解旋' },
+                { step: '步骤 2/13', desc: '📝 转录起始：RNA聚合酶以模板链为模板，按碱基互补配对(A→U, T→A, G→C, C→G)合成mRNA前端。', highlight: '转录起始，合成开始' },
+                { step: '步骤 3/13', desc: '📝 转录延伸：RNA聚合酶沿模板链移动，mRNA按5\'→3\'方向延长。已合成前半段：AUG CCU...', highlight: 'mRNA延伸中' },
+                { step: '步骤 4/13', desc: '✅ 转录完成：mRNA完整合成 5\'-AUG CCU AAG UGA-3\'，包含起始、编码及终止密码子。', highlight: 'mRNA完整: AUG CCU AAG UGA' },
+                { step: '步骤 5/13', desc: '🚀 mRNA出核：成熟mRNA通过核孔进入细胞质，准备与核糖体结合进行翻译。', highlight: 'mRNA进入细胞质' },
+                { step: '步骤 6/13', desc: '🔗 翻译起始：核糖体小亚基结合mRNA 5\'端，识别起始密码子AUG，大亚基结合，形成完整核糖体。', highlight: '核糖体组装完成' },
+                { step: '步骤 7/13', desc: '🧲 起始tRNA进入P位：携带Met的tRNA反密码子UAC与AUG配对，进入核糖体P位。', highlight: 'tRNAᴹᵉᵗ (UAC) 进入P位' },
+                { step: '步骤 8/13', desc: '🔗 第二个tRNA进入A位 & 肽键形成：携带Pro的tRNA(GGA)识别CCU进入A位。Met与Pro形成肽键，二肽在A位。', highlight: '肽键: Met-Pro，二肽在A位' },
+                { step: '步骤 9/13', desc: '🔄 核糖体移位（易位）：核糖体移动一个密码子。P位空载tRNA进入E位并离开；二肽-tRNA移至P位；A位暴露AAG。', highlight: '移位完成：P位=二肽-tRNA，A位空' },
+                { step: '步骤 10/13', desc: '🔗 第三个tRNA进入A位 & 肽键形成：携带Lys的tRNA(UUC)识别AAG进入A位。二肽转移形成三肽(Pro-Lys)，三肽连在A位。', highlight: '肽键: Met-Pro-Lys，三肽在A位' },
+                { step: '步骤 11/13', desc: '🔄 核糖体再次移位：核糖体再移一个密码子。P位空载tRNA离开；三肽-tRNA移至P位；A位暴露终止密码子UGA。', highlight: 'A位暴露终止密码子UGA' },
+                { step: '步骤 12/13', desc: '🛑 翻译终止：终止密码子UGA无对应tRNA。释放因子进入A位，水解P位肽链，多肽释放。核糖体亚基解离。', highlight: '释放因子结合，肽链释放' },
+                { step: '步骤 13/13', desc: '🎉 翻译完成！产物为三肽：甲硫氨酸-脯氨酸-赖氨酸（Met-Pro-Lys），将进一步折叠为功能蛋白。', highlight: '产物: Met-Pro-Lys 🎉' },
+            ];
+
+            function getBaseColor(base) {
+                switch(base) {
+                    case 'A': return COLOR_A;
+                    case 'T': return COLOR_T;
+                    case 'G': return COLOR_G;
+                    case 'C': return COLOR_C;
+                    case 'U': return COLOR_U;
+                    default: return '#ccc';
+                }
+            }
+
+            // 工具: roundRect
+            if (!ctx.roundRect) {
+                ctx.roundRect = function(x, y, w, h, r) {
+                    if (typeof r === 'number') r = { tl: r, tr: r, br: r, bl: r };
+                    ctx.beginPath();
+                    ctx.moveTo(x + r.tl, y);
+                    ctx.lineTo(x + w - r.tr, y);
+                    ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+                    ctx.lineTo(x + w, y + h - r.br);
+                    ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+                    ctx.lineTo(x + r.bl, y + h);
+                    ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+                    ctx.lineTo(x, y + r.tl);
+                    ctx.quadraticCurveTo(x, y, x + r.tl, y);
+                    ctx.closePath();
+                };
+            }
+
+            function drawBackground() {
+                // 细胞核区域 (Y范围12~292)
+                ctx.fillStyle = COLOR_NUCLEUS_BG;
+                ctx.beginPath();
+                ctx.roundRect(20, 12, W-40, 280, 16);
+                ctx.fill();
+                ctx.strokeStyle = COLOR_MEMBRANE;
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([6, 3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#5a7a9a';
+                ctx.font = 'bold 12px "PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
+                ctx.fillText('细胞核（转录场所）', 46, 40);
+                // 核孔
+                const poreX = W/2 + 155;
+                const poreY = 290;
+                ctx.fillStyle = '#1c2535';
+                ctx.beginPath();
+                ctx.roundRect(poreX-22, poreY-6, 44, 18, 9);
+                ctx.fill();
+                ctx.strokeStyle = COLOR_MEMBRANE;
+                ctx.stroke();
+                ctx.fillStyle = '#8899bb';
+                ctx.font = '10px "PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
+                ctx.fillText('核孔', poreX-12, poreY-10);
+                // 细胞质 (Y起始 312 → 扩大)
+                ctx.fillStyle = COLOR_CYTOPLASM_BG;
+                ctx.beginPath();
+                ctx.roundRect(20, 310, W-40, 278, 16);
+                ctx.fill();
+                ctx.strokeStyle = COLOR_MEMBRANE;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#5a8a6a';
+                ctx.font = 'bold 12px "PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
+                ctx.fillText('细胞质（翻译场所）', 46, 345);
+            }
+
+            function drawDNA() {
+                const startX = 100;
+                const startY = 88;
+                const spacing = 50;
+                const strandOffsetY = 50;
+                // 编码链骨架
+                ctx.strokeStyle = COLOR_BACKBONE_DNA;
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(startX-20, startY);
+                for(let i=0;i<dnaCoding.length;i++) ctx.lineTo(startX+i*spacing, startY);
+                ctx.lineTo(startX+dnaCoding.length*spacing+10, startY);
+                ctx.stroke();
+                // 模板链骨架
+                ctx.beginPath();
+                ctx.moveTo(startX-20, startY+strandOffsetY);
+                for(let i=0;i<dnaTemplate.length;i++) ctx.lineTo(startX+i*spacing, startY+strandOffsetY);
+                ctx.lineTo(startX+dnaTemplate.length*spacing+10, startY+strandOffsetY);
+                ctx.stroke();
+                for(let i=0;i<dnaCoding.length;i++) {
+                    const x = startX+i*spacing;
+                    const yTop = startY;
+                    const yBot = startY+strandOffsetY;
+                    const isAT = (dnaCoding[i]==='A' && dnaTemplate[i]==='T') || (dnaCoding[i]==='T' && dnaTemplate[i]==='A');
+                    const numBonds = isAT ? 2 : 3;
+                    ctx.strokeStyle = isAT ? '#ff9999' : '#99ccff';
+                    ctx.lineWidth = 1.2;
+                    ctx.setLineDash([3,4]);
+                    for(let b=0;b<numBonds;b++) {
+                        const bx = x+(b-(numBonds-1)/2)*8;
+                        ctx.beginPath();
+                        ctx.moveTo(bx, yTop+8);
+                        ctx.lineTo(bx, yBot-8);
+                        ctx.stroke();
+                    }
+                    ctx.setLineDash([]);
+                    const baseTop = dnaCoding[i];
+                    ctx.fillStyle = getBaseColor(baseTop);
+                    ctx.beginPath();
+                    ctx.arc(x, yTop+4, 12, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 11px "PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(baseTop, x, yTop+8);
+                    const baseBot = dnaTemplate[i];
+                    ctx.fillStyle = getBaseColor(baseBot);
+                    ctx.beginPath();
+                    ctx.arc(x, yBot-4, 12, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(baseBot, x, yBot+1);
+                }
+                ctx.fillStyle = '#8899aa';
+                ctx.font = '9px sans-serif';
+                ctx.textAlign = 'start';
+                ctx.fillText("5'", startX-28, startY+4);
+                ctx.fillText("3'", startX-28, startY+strandOffsetY+4);
+                ctx.fillText("3'", startX+dnaCoding.length*spacing+20, startY+4);
+                ctx.fillText("5'", startX+dnaTemplate.length*spacing+20, startY+strandOffsetY+4);
+                ctx.fillText('编码链', startX-52, startY-8);
+                ctx.fillText('模板链', startX-52, startY+strandOffsetY+18);
+            }
+
+            function drawRNAPolymerase(x) {
+                if(x<=0 && currentStep<2) return;
+                const px = 100+x;
+                const py = 108;
+                ctx.fillStyle = '#e89050';
+                ctx.beginPath();
+                ctx.ellipse(px, py, 26, 16, 0, 0, 2*Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('RNA聚合酶', px, py+4);
+                ctx.textAlign = 'start';
+            }
+
+            function drawMRNA(yOffset, visibleLen) {
+                if(visibleLen<=0 && currentStep<3) return;
+                const startX = 100;
+                const spacing = 50;
+                const actualLen = Math.min(visibleLen, mrnaSequence.length);
+                if(actualLen>0) {
+                    ctx.strokeStyle = COLOR_BACKBONE_RNA;
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(startX-15, yOffset);
+                    for(let i=0;i<actualLen;i++) ctx.lineTo(startX+i*spacing, yOffset);
+                    ctx.lineTo(startX+(actualLen-1)*spacing+15, yOffset);
+                    ctx.stroke();
+                    for(let i=0;i<actualLen;i++) {
+                        const x = startX+i*spacing;
+                        const base = mrnaSequence[i];
+                        ctx.fillStyle = getBaseColor(base);
+                        ctx.beginPath();
+                        ctx.arc(x, yOffset, 11, 0, 2*Math.PI);
+                        ctx.fill();
+                        ctx.fillStyle = '#fff';
+                        ctx.font = 'bold 10px sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(base, x, yOffset+4);
+                    }
+                    ctx.fillStyle = '#b0b8c5';
+                    ctx.font = '9px sans-serif';
+                    ctx.fillText("5'", startX-25, yOffset+4);
+                    if(actualLen>=12) ctx.fillText("3'", startX+11*spacing+20, yOffset+4);
+                }
+            }
+
+            function drawRibosome(mrnaY, codonIndex) {
+                if(!ribosomeBound && currentStep<6) return;
+                const startX = 100;
+                const spacing = 50;
+                const riboX = startX + codonIndex*spacing*3 + spacing;
+                const riboY = mrnaY;
+                ctx.fillStyle = COLOR_RIBOSOME;
+                ctx.beginPath();
+                ctx.roundRect(riboX-55, riboY-42, 110, 38, 11);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('核糖体大亚基', riboX, riboY-17);
+                ctx.fillStyle = '#d4b896';
+                ctx.beginPath();
+                ctx.roundRect(riboX-48, riboY+7, 96, 26, 9);
+                ctx.fill();
+                ctx.fillText('小亚基', riboX, riboY+25);
+                const siteLabels = ['E', 'P', 'A'];
+                const siteColors = [COLOR_RIBOSOME_E, COLOR_RIBOSOME_P, COLOR_RIBOSOME_A];
+                const offsets = [-28, 0, 28];
+                for(let s=0;s<3;s++) {
+                    ctx.fillStyle = siteColors[s];
+                    ctx.fillRect(riboX+offsets[s]-10, riboY-38, 20, 13);
+                    ctx.fillStyle = '#1a1a2e';
+                    ctx.font = 'bold 9px sans-serif';
+                    ctx.fillText(siteLabels[s]+'位', riboX+offsets[s], riboY-28);
+                }
+                ctx.textAlign = 'start';
+            }
+
+            function drawTRNA(mrnaY, codonIndex, slotIndex, hasAA, aaColor, aaLabel, anticodon, isEmpty) {
+                if(!trnaSlots[slotIndex] && !trnaEmpty[slotIndex] && currentStep<7) return;
+                if(isEmpty && !trnaEmpty[slotIndex]) return;
+                const startX = 100;
+                const spacing = 50;
+                const codonCenterX = startX + codonIndex*spacing*3 + spacing;
+                const trnaY = mrnaY - trnaOffsetY;
+                const trnaX = codonCenterX;
+                ctx.fillStyle = isEmpty ? COLOR_TRNA_EMPTY : COLOR_TRNA;
+                ctx.beginPath();
+                ctx.moveTo(trnaX, trnaY+22);
+                ctx.lineTo(trnaX-13, trnaY-4);
+                ctx.lineTo(trnaX-9, trnaY-20);
+                ctx.lineTo(trnaX, trnaY-8);
+                ctx.lineTo(trnaX+9, trnaY-20);
+                ctx.lineTo(trnaX+13, trnaY-4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.strokeStyle = isEmpty ? '#8899aa' : '#5a9a70';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                if(anticodon) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(anticodon, trnaX, trnaY+17);
+                    ctx.fillStyle = '#ffdd57';
+                    ctx.font = 'bold 8px sans-serif';
+                    ctx.fillText('反密码子', trnaX, trnaY+27);
+                }
+                if(hasAA && aaColor && aaLabel && !isEmpty) {
+                    const aaY = trnaY-30;
+                    ctx.fillStyle = aaColor;
+                    ctx.beginPath();
+                    ctx.arc(trnaX, aaY, 10, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText(aaLabel, trnaX, aaY+4);
+                } else if(isEmpty) {
+                    ctx.fillStyle = '#8899aa';
+                    ctx.font = 'bold 8px sans-serif';
+                    ctx.fillText('空载', trnaX, trnaY-26);
+                }
+                if(isEmpty && trnaEmpty[slotIndex]) {
+                    ctx.strokeStyle = '#ff8888';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4,3]);
+                    ctx.beginPath();
+                    ctx.moveTo(trnaX, trnaY-35);
+                    ctx.lineTo(trnaX+30, trnaY-55);
+                    ctx.stroke();
+                    ctx.fillStyle = '#ff8888';
+                    ctx.font = 'bold 9px sans-serif';
+                    ctx.fillText('离开', trnaX+35, trnaY-55);
+                    ctx.setLineDash([]);
+                }
+                ctx.textAlign = 'start';
+            }
+
+            function drawPeptideChain(mrnaY, bondsFormed) {
+                if(bondsFormed<=0 && currentStep<8) return;
+                const startX = 100;
+                const spacing = 50;
+                const aaY = mrnaY - peptideChainOffsetY;
+                const aaSpacing = spacing*3;
+                const aaData = [
+                    { color: COLOR_MET, label: 'Met', x: startX+spacing },
+                    { color: COLOR_PRO, label: 'Pro', x: startX+spacing+aaSpacing },
+                    { color: COLOR_LYS, label: 'Lys', x: startX+spacing+aaSpacing*2 },
+                ];
+                const count = Math.min(bondsFormed+1, aaData.length);
+                for(let i=0;i<count;i++) {
+                    ctx.fillStyle = aaData[i].color;
+                    ctx.beginPath();
+                    ctx.arc(aaData[i].x, aaY, 9, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 9px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(aaData[i].label, aaData[i].x, aaY+4);
+                }
+                for(let i=0;i<bondsFormed && i<aaData.length-1;i++) {
+                    ctx.strokeStyle = '#ffdd57';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(aaData[i].x+11, aaY);
+                    ctx.lineTo(aaData[i+1].x-11, aaY);
+                    ctx.stroke();
+                    const midX = (aaData[i].x+aaData[i+1].x)/2;
+                    ctx.fillStyle = '#ffdd57';
+                    ctx.font = 'bold 8px sans-serif';
+                    ctx.fillText('肽键', midX, aaY-10);
+                }
+                ctx.textAlign = 'start';
+            }
+
+            function drawReleasedPeptide() {
+                if(!peptideReleased && currentStep<12) return;
+                const px = 760, py = 500;
+                const aaData = [{color:COLOR_MET, label:'Met'},{color:COLOR_PRO, label:'Pro'},{color:COLOR_LYS, label:'Lys'}];
+                ctx.fillStyle = '#1a2a20';
+                ctx.beginPath();
+                ctx.roundRect(px-80, py-32, 160, 64, 14);
+                ctx.fill();
+                ctx.strokeStyle = '#55efc4aa';
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([5,3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#55efc4';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('蛋白质产物', px, py-20);
+                for(let i=0;i<aaData.length;i++) {
+                    const ax = px - 36 + i*36;
+                    ctx.fillStyle = aaData[i].color;
+                    ctx.beginPath();
+                    ctx.arc(ax, py+6, 12, 0, 2*Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText(aaData[i].label, ax, py+10);
+                }
+                for(let i=0;i<aaData.length-1;i++) {
+                    const x1 = px-36+i*36+13;
+                    const x2 = px-36+(i+1)*36-13;
+                    ctx.strokeStyle = '#ffdd57';
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, py+6);
+                    ctx.lineTo(x2, py+6);
+                    ctx.stroke();
+                }
+                ctx.fillStyle = '#55efc4';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText('✅ Met-Pro-Lys 三肽', px, py+40);
+                ctx.textAlign = 'start';
+            }
+
+            function drawReleaseFactor(mrnaY, codonIndex) {
+                if(!releaseFactorVisible && currentStep<12) return;
+                const startX=100, spacing=50;
+                const rfx = startX + codonIndex*spacing*3 + spacing + 28;
+                const rfy = mrnaY - releaseFactorOffsetY;
+                ctx.fillStyle = '#ff6b6b';
+                ctx.beginPath();
+                ctx.roundRect(rfx-14, rfy-10, 28, 20, 8);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 8px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('RF', rfx, rfy+5);
+                ctx.textAlign = 'start';
+            }
+
+            function drawProgressBar() {
+                const barY = H-12;
+                const barX = 30, barW = W-60, barH = 5;
+                ctx.fillStyle = '#2a2a4a';
+                ctx.roundRect(barX, barY, barW, barH, 2);
+                ctx.fill();
+                const progress = currentStep/TOTAL_STEPS;
+                ctx.fillStyle = '#4da6ff';
+                ctx.beginPath();
+                ctx.roundRect(barX, barY, barW*progress, barH, 2);
+                ctx.fill();
+                ctx.fillStyle = '#8899aa';
+                ctx.font = '9px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`进度: ${Math.round(progress*100)}%`, W/2, barY-5);
+                ctx.textAlign = 'start';
+            }
+
+            function drawAll() {
+                ctx.clearRect(0,0,W,H);
+                drawBackground();
+                drawDNA();
+                if(currentStep>=1) drawRNAPolymerase(rnaPolymeraseX);
+                const mrnaY = (mrnaInCytoplasm || currentStep>=5) ? mrnaYCytoplasm : mrnaYNucleus;
+                let visibleLen = mrnaInCytoplasm || currentStep>=5 ? mrnaSequence.length : mrnaVisibleLength;
+                if(currentStep>=3 && visibleLen>0) drawMRNA(mrnaY, visibleLen);
+                if(currentStep>=6) drawRibosome(mrnaYCytoplasm, Math.min(ribosomePosition,3));
+                if(currentStep>=12) drawReleaseFactor(mrnaYCytoplasm, Math.min(ribosomePosition,3));
+                if(currentStep>=7) {
+                    const anticodons = ['UAC','GGA','UUC',null];
+                    const aaColors = [COLOR_MET,COLOR_PRO,COLOR_LYS,null];
+                    const aaLabels = ['Met','Pro','Lys',null];
+                    for(let s=0;s<4;s++) {
+                        if(trnaSlots[s] || trnaEmpty[s])
+                            drawTRNA(mrnaYCytoplasm, s, s, !trnaEmpty[s], aaColors[s], aaLabels[s], anticodons[s], trnaEmpty[s]);
+                    }
+                }
+                if(currentStep>=8) {
+                    const bonds = peptideBonds.filter(b=>b).length;
+                    drawPeptideChain(mrnaYCytoplasm, bonds);
+                }
+                if(currentStep>=12 || peptideReleased) drawReleasedPeptide();
+                drawProgressBar();
+            }
+
+            // 动画插值逻辑 (简洁高效)
+            function animateStep(targetProgress) { animTarget = targetProgress; if(!isAnimating) { isAnimating=true; requestAnimationFrame(animationLoop); } }
+            function animationLoop() {
+                const diff = animTarget - animProgress;
+                if(Math.abs(diff)<0.003) { animProgress=animTarget; isAnimating=false; updateStepState(); drawAll(); return; }
+                animProgress += diff*0.045;
+                updateStepState();
+                drawAll();
+                if(isAnimating) requestAnimationFrame(animationLoop);
+            }
+            function updateStepState() {
+                const p = animProgress;
+                const step = currentStep;
+                if(step===0) { rnaPolymeraseX=0; mrnaVisibleLength=0; mrnaInCytoplasm=false; ribosomeBound=false; ribosomePosition=0; trnaSlots=[false,false,false,false]; trnaEmpty=[false,false,false,false]; peptideBonds=[false,false,false]; peptideReleased=false; releaseFactorVisible=false; }
+                else if(step===1) { rnaPolymeraseX=p*25; mrnaVisibleLength=0; trnaSlots=[false,false,false,false]; trnaEmpty.fill(false); peptideBonds.fill(false); peptideReleased=false; releaseFactorVisible=false; mrnaInCytoplasm=false; }
+                else if(step===2) { rnaPolymeraseX=25+p*25; mrnaVisibleLength=Math.floor(p*3); }
+                else if(step===3) { rnaPolymeraseX=50+p*120; mrnaVisibleLength=3+Math.floor(p*3); }
+                else if(step===4) { rnaPolymeraseX=170+p*380; mrnaVisibleLength=6+Math.floor(p*6); }
+                else if(step===5) { rnaPolymeraseX=550; mrnaVisibleLength=12; mrnaInCytoplasm=p>0.5; }
+                else if(step===6) { rnaPolymeraseX=550; mrnaVisibleLength=12; mrnaInCytoplasm=true; ribosomeBound=p>0.4; ribosomePosition=0; }
+                else if(step===7) { rnaPolymeraseX=550; mrnaVisibleLength=12; mrnaInCytoplasm=true; ribosomeBound=true; ribosomePosition=0; trnaSlots=[p>0.3,false,false,false]; trnaEmpty.fill(false); peptideBonds.fill(false); }
+                else if(step===8) { trnaSlots=[true,p>0.3,false,false]; peptideBonds=[p>0.6,false,false]; ribosomePosition=0; }
+                else if(step===9) { ribosomePosition=p>0.4?1:0; trnaSlots=[false,p>0.5,false,false]; trnaEmpty=[p>0.35&&p<0.85,false,false,false]; peptideBonds=[true,false,false]; }
+                else if(step===10) { ribosomePosition=1; trnaSlots=[false,true,p>0.4,false]; trnaEmpty.fill(false); peptideBonds=[true,p>0.7,false]; }
+                else if(step===11) { ribosomePosition=p>0.4?2:1; trnaSlots=[false,false,p>0.5,false]; trnaEmpty=[false,p>0.35&&p<0.85,false,false]; peptideBonds=[true,true,false]; }
+                else if(step===12) { ribosomePosition=2; trnaSlots=[false,false,true,false]; trnaEmpty.fill(false); peptideReleased=p>0.6; releaseFactorVisible=p>0.3; peptideBonds=[true,true,false]; }
+                else if(step===13) { ribosomeBound=false; ribosomePosition=3; trnaSlots.fill(false); trnaEmpty.fill(false); peptideReleased=true; releaseFactorVisible=false; }
+            }
+            function goToStep(step) { 
+                currentStep = Math.max(0,Math.min(TOTAL_STEPS,step)); 
+                animProgress=0; animTarget=0; isAnimating=false; 
+                updateStepState(); updateUI(); drawAll(); 
+                animProgress=0; animTarget=1; isAnimating=true; 
+                requestAnimationFrame(animationLoop);
+            }
+            function updateUI() {
+                infoStep.textContent = stepDescriptions[currentStep].step;
+                infoDesc.textContent = stepDescriptions[currentStep].desc;
+                infoHighlight.textContent = stepDescriptions[currentStep].highlight;
+                let dots='';
+                for(let i=0;i<=TOTAL_STEPS;i++) dots+=`<span class="step-dot ${i===currentStep?'active':i<currentStep?'done':''}"></span>`;
+                stepIndicator.innerHTML=dots;
+                btnPrev.disabled=currentStep===0;
+                btnNext.disabled=currentStep===TOTAL_STEPS;
+                if(currentStep===TOTAL_STEPS) btnNext.innerHTML='✅ 完成';
+                else btnNext.innerHTML='下一步 <span class="arrow">▶</span>';
+            }
+            function nextStep() { if(currentStep<TOTAL_STEPS) goToStep(currentStep+1); }
+            function prevStep() { if(currentStep>0) goToStep(currentStep-1); }
+            function resetAll() { if(autoPlayTimer) clearTimeout(autoPlayTimer); autoPlayActive=false; btnAuto.textContent='⏯ 自动演示'; resetState(); currentStep=0; animProgress=0; animTarget=0; isAnimating=false; updateStepState(); updateUI(); drawAll(); }
+            function jumpToEnd() { if(autoPlayTimer) clearTimeout(autoPlayTimer); autoPlayActive=false; btnAuto.textContent='⏯ 自动演示'; resetState(); currentStep=TOTAL_STEPS; animProgress=1; animTarget=1; isAnimating=false; updateStepState(); updateUI(); drawAll(); }
+            function toggleAutoPlay() {
+                if(autoPlayActive) { if(autoPlayTimer) clearTimeout(autoPlayTimer); autoPlayActive=false; btnAuto.textContent='⏯ 自动演示'; }
+                else { autoPlayActive=true; btnAuto.textContent='⏸ 停止自动'; if(currentStep>=TOTAL_STEPS) resetAll(); autoPlayNext(); }
+            }
+            function autoPlayNext() { if(!autoPlayActive) return; if(currentStep<TOTAL_STEPS) { nextStep(); autoPlayTimer=setTimeout(autoPlayNext,2000); } else { autoPlayActive=false; btnAuto.textContent='⏯ 自动演示'; } }
+            btnNext.addEventListener('click',nextStep); btnPrev.addEventListener('click',prevStep); btnReset.addEventListener('click',resetAll); btnJumpEnd.addEventListener('click',jumpToEnd); btnAuto.addEventListener('click',toggleAutoPlay);
+            document.addEventListener('keydown',(e)=>{ if(e.key==='ArrowRight') { e.preventDefault(); nextStep(); } else if(e.key==='ArrowLeft') { e.preventDefault(); prevStep(); } else if(e.key==='r'||e.key==='R') { e.preventDefault(); resetAll(); } else if(e.key==='a'||e.key==='A') { e.preventDefault(); toggleAutoPlay(); } });
+            canvas.addEventListener('click',(e)=>{ const rect=canvas.getBoundingClientRect(); const clickX=(e.clientX-rect.left)*(W/rect.width); if(clickX>W*0.55 && currentStep<TOTAL_STEPS) nextStep(); else if(clickX<W*0.45 && currentStep>0) prevStep(); });
+            let touchX=0; canvas.addEventListener('touchstart',(e)=>{ touchX=e.touches[0].clientX; }); canvas.addEventListener('touchend',(e)=>{ const dx=e.changedTouches[0].clientX-touchX; if(Math.abs(dx)>40) dx<-30?nextStep():dx>30?prevStep():null; });
+            init();
+            function init() { resetState(); currentStep=0; animProgress=0; animTarget=0; updateStepState(); updateUI(); drawAll(); animTarget=1; isAnimating=true; requestAnimationFrame(animationLoop); setTimeout(()=>{ if(currentStep===0){ animProgress=0; animTarget=0; isAnimating=false; updateStepState(); drawAll(); } },400); }
+        })();
+    </script>
+</body>
+</html>

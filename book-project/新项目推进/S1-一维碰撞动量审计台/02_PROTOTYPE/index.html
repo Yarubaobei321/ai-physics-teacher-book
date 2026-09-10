@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="一维弹性碰撞与完全非弹性碰撞的本地解析模型、预测、比较和复算审计台。"
+    />
+    <title>S1 一维碰撞动量审计台</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">S1 · 预审原型 v0.3</p>
+        <h1>一维碰撞动量审计台</h1>
+        <p class="lede">
+          先预测方向，再揭示解析结果；同时检查个体动量、系统总动量和总动能。
+        </p>
+      </div>
+      <div class="identity-card" aria-label="数据身份">
+        <strong>解析模型输出</strong>
+        <span>非实测数据 · 非真实碰撞力曲线</span>
+        <span>AI预审通过 · 物理教师终审待完成</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel setup-panel" aria-labelledby="setup-title">
+        <div class="section-heading">
+          <div>
+            <p class="step">01 · 设定与预测</p>
+            <h2 id="setup-title">先说明你预期碰后向哪里运动</h2>
+          </div>
+          <button id="reset-button" class="button secondary" type="button">
+            恢复默认
+          </button>
+        </div>
+
+        <div class="preset-row" aria-label="典型情形">
+          <button class="chip" type="button" data-preset="exchange">
+            等质量速度交换
+          </button>
+          <button class="chip" type="button" data-preset="zero-momentum">
+            总动量为零
+          </button>
+          <button class="chip" type="button" data-preset="stick">
+            粘合并损失动能
+          </button>
+          <button class="chip" type="button" data-preset="no-collision">
+            当前不会追碰
+          </button>
+        </div>
+
+        <div class="control-grid">
+          <label>
+            碰撞类型
+            <select id="collision-type">
+              <option value="elastic">弹性碰撞</option>
+              <option value="perfectly-inelastic">完全非弹性碰撞</option>
+            </select>
+          </label>
+          <label>
+            物体1质量 m₁（kg）
+            <input id="m1" type="number" min="0.1" max="10" step="0.1" value="1" />
+          </label>
+          <label>
+            物体2质量 m₂（kg）
+            <input id="m2" type="number" min="0.1" max="10" step="0.1" value="1" />
+          </label>
+          <label>
+            物体1碰前速度 u₁（m/s）
+            <input id="u1" type="number" min="-10" max="10" step="0.1" value="4" />
+          </label>
+          <label>
+            物体2碰前速度 u₂（m/s）
+            <input id="u2" type="number" min="-10" max="10" step="0.1" value="0" />
+          </label>
+        </div>
+
+        <div class="prediction-grid">
+          <label>
+            我预测物体1碰后
+            <select id="prediction-v1">
+              <option value="">请选择</option>
+              <option value="positive">向右（正）</option>
+              <option value="zero">静止（零）</option>
+              <option value="negative">向左（负）</option>
+            </select>
+          </label>
+          <label>
+            我预测物体2碰后
+            <select id="prediction-v2">
+              <option value="">请选择</option>
+              <option value="positive">向右（正）</option>
+              <option value="zero">静止（零）</option>
+              <option value="negative">向左（负）</option>
+            </select>
+          </label>
+          <button id="reveal-button" class="button primary" type="button">
+            揭示并比较
+          </button>
+        </div>
+        <p id="input-error" class="message error" role="alert" hidden></p>
+      </section>
+
+      <section class="panel scene-panel" aria-labelledby="scene-title">
+        <div class="section-heading">
+          <div>
+            <p class="step">02 · 事件与状态</p>
+            <h2 id="scene-title">三个状态共用同一组解析数</h2>
+          </div>
+          <button id="play-button" class="button secondary" type="button">
+            播放三状态
+          </button>
+        </div>
+
+        <div class="direction-key">
+          <span class="axis-arrow" aria-hidden="true">→</span>
+          <strong>向右为正</strong>
+          <span>系统边界：物体1＋物体2</span>
+        </div>
+
+        <div class="phase-tabs" role="tablist" aria-label="碰撞状态">
+          <button class="phase-tab active" type="button" data-phase="before">
+            碰前
+          </button>
+          <button class="phase-tab" type="button" data-phase="event">
+            碰撞事件
+          </button>
+          <button class="phase-tab" type="button" data-phase="after">
+            碰后
+          </button>
+        </div>
+
+        <div class="track" id="track" aria-live="polite">
+          <div class="boundary-label">研究系统</div>
+          <div class="object object-one" id="object-one">
+            <span>1</span>
+            <small id="object-one-mass">1 kg</small>
+          </div>
+          <div class="object object-two" id="object-two">
+            <span>2</span>
+            <small id="object-two-mass">1 kg</small>
+          </div>
+          <div class="velocity velocity-one" id="velocity-one"></div>
+          <div class="velocity velocity-two" id="velocity-two"></div>
+          <div class="collision-mark" id="collision-mark" hidden>短时碰撞事件</div>
+        </div>
+        <p id="event-message" class="message neutral"></p>
+        <p id="prediction-result" class="message prediction" hidden></p>
+      </section>
+
+      <section class="panel evidence-panel" aria-labelledby="evidence-title">
+        <div class="section-heading">
+          <div>
+            <p class="step">03 · 比较证据</p>
+            <h2 id="evidence-title">个体会变，系统总量要分别检查</h2>
+          </div>
+          <span class="status-badge" id="audit-badge">等待揭示</span>
+        </div>
+
+        <div id="locked-results" class="locked-results">
+          结果暂时隐藏。完成方向预测后点击“揭示并比较”。
+        </div>
+
+        <div id="results-content" hidden>
+          <div class="data-table-wrap">
+            <table>
+              <caption>解析模型原始数值（显示值仅作抄写，计算保留完整精度）</caption>
+              <thead>
+                <tr>
+                  <th>状态</th>
+                  <th>v₁（m/s）</th>
+                  <th>v₂（m/s）</th>
+                  <th>p₁（kg·m/s）</th>
+                  <th>p₂（kg·m/s）</th>
+                  <th>P总（kg·m/s）</th>
+                  <th>K总（J）</th>
+                </tr>
+              </thead>
+              <tbody id="data-table-body"></tbody>
+            </table>
+          </div>
+
+          <div class="chart-grid">
+            <article class="mini-panel">
+              <h3>有正负的动量条</h3>
+              <p>零轴左侧为负，右侧为正；不要只比较条形长度。</p>
+              <div id="momentum-chart"></div>
+            </article>
+            <article class="mini-panel">
+              <h3>总动能比较</h3>
+              <p>动量守恒不自动推出动能守恒。</p>
+              <div id="energy-chart"></div>
+            </article>
+          </div>
+
+          <div class="audit-grid">
+            <article class="audit-item">
+              <span>总动量残差</span>
+              <strong id="momentum-residual">—</strong>
+              <small>由碰后总动量减碰前总动量</small>
+            </article>
+            <article class="audit-item">
+              <span>总动能变化</span>
+              <strong id="energy-change">—</strong>
+              <small>弹性应接近0；完全非弹性通常减少</small>
+            </article>
+            <article class="audit-item">
+              <span>第二求解器差异</span>
+              <strong id="solver-difference">—</strong>
+              <small>通式与质心系反射法相互检查</small>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel recalc-panel" aria-labelledby="recalc-title">
+        <div class="section-heading">
+          <div>
+            <p class="step">04 · 独立复算</p>
+            <h2 id="recalc-title">不要只相信页面徽章</h2>
+          </div>
+        </div>
+        <p class="section-copy">
+          用表格中的原始数自己计算，再把四个结果填入。此区只核对数值，不判断你为什么出错。
+        </p>
+        <div class="control-grid recalc-grid">
+          <label>
+            我算得碰前 P总（kg·m/s）
+            <input id="manual-p-before" type="number" step="any" />
+          </label>
+          <label>
+            我算得碰后 P总（kg·m/s）
+            <input id="manual-p-after" type="number" step="any" />
+          </label>
+          <label>
+            我算得碰前 K总（J）
+            <input id="manual-k-before" type="number" step="any" />
+          </label>
+          <label>
+            我算得碰后 K总（J）
+            <input id="manual-k-after" type="number" step="any" />
+          </label>
+        </div>
+        <button id="check-manual-button" class="button primary" type="button">
+          核对我的复算
+        </button>
+        <div id="manual-result" class="manual-result" hidden></div>
+      </section>
+
+      <section class="panel boundary-panel" aria-labelledby="boundary-title">
+        <p class="step">05 · 使用边界</p>
+        <h2 id="boundary-title">这个页面能说明什么</h2>
+        <div class="boundary-grid">
+          <div>
+            <h3>可以检查</h3>
+            <ul>
+              <li>给定模型条件下的解析末速度；</li>
+              <li>速度符号、箭头、动量条和表格是否同源；</li>
+              <li>总动量、总动能与碰撞类型的关系；</li>
+              <li>故意错误末速度能否被第二回路发现。</li>
+            </ul>
+          </div>
+          <div>
+            <h3>不能推出</h3>
+            <ul>
+              <li>自然实验已经验证了动量守恒；</li>
+              <li>真实碰撞的形变、声、热或力—时间曲线；</li>
+              <li>学生理解、成绩或能力已经改变；</li>
+              <li>本版本已经通过物理教师和课堂终审。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>S1本地预审原型 · 不联网 · 不保存输入 · 刷新即复位</p>
+    </footer>
+
+    <script src="./dist/app.bundle.js"></script>
+  </body>
+</html>

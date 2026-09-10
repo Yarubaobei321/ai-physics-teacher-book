@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>细胞分裂与分化 · 学习页</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #140f26; color: #e8e0f5; overflow: hidden;
+  }
+  header {
+    height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    background: linear-gradient(90deg,#1e1638,#2a1f4a); border-bottom: 2px solid #463a6e;
+  }
+  header h1 { font-size: 1.2rem; color: #c4b5fd; }
+  .tabs { display: flex; gap: 6px; }
+  .tab {
+    font-size: 0.9rem; padding: 8px 18px; border-radius: 18px; border: 1px solid #463a6e;
+    background: #241b42; color: #b7a7e8; cursor: pointer; font-weight: 700;
+  }
+  .tab.active { background: #7c5cbf; color: #fff; border-color: #7c5cbf; }
+  main { height: calc(100vh - 56px); padding: 12px; overflow-y: auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== 流程图页 ===== */
+  .flow { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+  .flow-card {
+    flex: 1 1 150px; max-width: 190px; background: #1e1736; border: 1px solid #463a6e;
+    border-radius: 12px; padding: 12px; position: relative;
+  }
+  .flow-card h3 { font-size: 0.95rem; color: #c4b5fd; margin-bottom: 6px; }
+  .flow-card .k { font-size: 0.8rem; color: #a78bfa; font-weight: 700; }
+  .flow-card p { font-size: 0.8rem; color: #cfc3ea; line-height: 1.55; margin-top: 4px; }
+  .flow-arrow {
+    align-self: center; color: #7c5cbf; font-size: 1.3rem; font-weight: 700; flex: none;
+  }
+  .keyline { margin-top: 14px; padding: 10px 14px; background: #241b42; border-radius: 10px; font-size: 0.85rem; color: #cfc3ea; line-height: 1.7; }
+  .keyline b { color: #f0a7ff; }
+
+  /* ===== 思维导图页 ===== */
+  .mindmap { display: flex; flex-direction: column; align-items: center; margin-top: 12px; }
+  .center-node {
+    padding: 12px 24px; border-radius: 30px; background: #7c5cbf; color: #fff;
+    font-size: 1rem; font-weight: 700; text-align: center; border: 2px solid #9d83e0;
+  }
+  .center-node .sub { display: block; font-size: 0.78rem; font-weight: 400; margin-top: 3px; color: #e9e2ff; }
+  .branch-line { width: 2px; height: 22px; background: #7c5cbf; }
+  .branches { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .cell-btn {
+    width: 210px; background: #1e1736; border: 1px solid #463a6e; border-radius: 12px;
+    padding: 10px 12px; cursor: pointer; text-align: left; color: #e8e0f5;
+  }
+  .cell-btn:hover, .cell-btn:focus { border-color: #c4b5fd; outline: none; background: #261d45; }
+  .cell-btn h4 { font-size: 0.9rem; color: #f0a7ff; margin: 6px 0 3px; }
+  .cell-btn .tag { font-size: 0.74rem; color: #9d83e0; }
+  .feat-box {
+    margin-top: 14px; min-height: 60px; padding: 12px 16px; background: #241b42;
+    border: 1px solid #463a6e; border-radius: 10px; font-size: 0.88rem; line-height: 1.7; color: #e9e2ff;
+  }
+  .feat-box b { color: #f0a7ff; }
+  .feat-hint { font-size: 0.78rem; color: #9d83e0; margin-top: 6px; text-align: center; }
+
+  /* ===== 交互演示页 ===== */
+  .demo-grid { display: grid; grid-template-columns: 1fr 330px; gap: 12px; margin-top: 10px; }
+  .demo-canvas {
+    background: #171231; border: 1px solid #463a6e; border-radius: 12px; padding: 8px; display: flex; flex-direction: column;
+  }
+  canvas#cell {
+    width: 100%; max-height: 560px; background: radial-gradient(circle at 50% 40%, #1c1440 0%, #120d28 100%);
+    border-radius: 10px; display: block;
+  }
+  .demo-side { background: #1e1736; border: 1px solid #463a6e; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .demo-side h3 { font-size: 0.95rem; color: #c4b5fd; }
+  .stage-dots { display: flex; gap: 8px; justify-content: center; }
+  .dot {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid #463a6e; background: #241b42;
+    color: #b7a7e8; font-size: 0.8rem; cursor: pointer; font-weight: 700;
+  }
+  .dot.active { background: #7c5cbf; color: #fff; border-color: #c4b5fd; }
+  .ctl-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.ctl {
+    font-size: 0.85rem; padding: 8px 14px; border-radius: 8px; border: 1px solid #463a6e;
+    background: #2a2150; color: #e8e0f5; cursor: pointer; font-weight: 600;
+  }
+  button.ctl:hover { background: #3a2e6b; }
+  button.ctl.playing { background: #7a1f1f; border-color: #d64545; }
+  .speed-row { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #cfc3ea; }
+  input[type="range"] { flex: 1; accent-color: #7c5cbf; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td { border: 1px solid #463a6e; padding: 4px 6px; text-align: center; }
+  th { background: #241b42; color: #c4b5fd; }
+  td.hi { color: #f0a7ff; font-weight: 700; }
+  .desc-box { font-size: 0.84rem; color: #cfc3ea; line-height: 1.65; background: #171231; border-radius: 8px; padding: 10px; }
+  .desc-box b { color: #f0a7ff; }
+  .legend { font-size: 0.76rem; color: #9d83e0; margin-top: 4px; line-height: 1.6; }
+  @media (max-width: 900px) {
+    .demo-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔬 细胞分裂与分化 · 学习页</h1>
+  <div class="tabs" role="tablist">
+    <button class="tab active" data-p="flow" role="tab" aria-selected="true">🗺 流程图</button>
+    <button class="tab" data-p="mind" role="tab" aria-selected="false">🧠 思维导图</button>
+    <button class="tab" data-p="demo" role="tab" aria-selected="false">🎬 交互演示</button>
+  </div>
+</header>
+
+<main>
+  <!-- ========== 页一 · 流程图 ========== -->
+  <section class="page active" id="page-flow" aria-label="流程图页">
+    <h2 style="color:#c4b5fd; font-size:1.05rem;">有丝分裂流程图（间期 → 前期 → 中期 → 后期 → 末期）</h2>
+    <div class="flow">
+      <div class="flow-card">
+        <h3>间期</h3>
+        <span class="k">关键点</span>
+        <p>DNA 复制、中心体复制；染色体数目不变（2n）。复制后每条染色体含两条姐妹染色单体（0→4n）。</p>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-card">
+        <h3>前期</h3>
+        <span class="k">关键点</span>
+        <p>染色质螺旋化为染色体；核膜核仁逐渐解体；中心体移向两极（动物细胞）发出星射线。</p>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-card">
+        <h3>中期</h3>
+        <span class="k">关键点</span>
+        <p>着丝粒排列在赤道板上；染色体形态数目最清晰，是观察染色体的最佳时期。</p>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-card">
+        <h3>后期</h3>
+        <span class="k">关键点</span>
+        <p>着丝粒分裂，姐妹染色单体分开，分别移向两极（不是同源染色体分离）。染色体加倍为 4n。</p>
+      </div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-card">
+        <h3>末期</h3>
+        <span class="k">关键点</span>
+        <p>核膜核仁重建；染色体解螺旋；胞质分裂形成两个子细胞，染色体数目不变（2n→2n）。</p>
+      </div>
+    </div>
+    <div class="keyline">
+      <b>记忆主线：</b>染色体 2n →（前期/中期）2n →（后期）4n →（末期）2n，即 <b>2n→4n→2n</b>；染色单体 <b>0→4n→0</b>。子细胞与母细胞遗传组成一致、染色体数目不变。
+    </div>
+  </section>
+
+  <!-- ========== 页二 · 思维导图 ========== -->
+  <section class="page" id="page-mind" aria-label="思维导图页">
+    <div class="mindmap">
+      <div class="center-node">细胞分化 = 基因的选择性表达
+        <span class="sub">所有体细胞含相同遗传信息 · 遗传物质不变</span>
+      </div>
+      <div class="branch-line"></div>
+      <div class="branches">
+        <button class="cell-btn" data-cell="rbc" aria-describedby="featBox">
+          <svg width="80" height="44" viewBox="0 0 80 44" aria-hidden="true">
+            <path d="M40 6 A34 16 0 0 1 74 22 A34 16 0 0 1 40 38 A34 16 0 0 1 6 22 A34 16 0 0 1 40 6 Z" fill="#c0392b" stroke="#e74c3c" stroke-width="2"/>
+            <ellipse cx="40" cy="22" rx="34" ry="9" fill="#a93226" opacity="0.6"/>
+            <text x="40" y="24" font-size="10" fill="#fff" text-anchor="middle">O₂</text>
+          </svg>
+          <h4>红细胞</h4>
+          <span class="tag">双凹圆盘状 · 无核</span>
+        </button>
+        <button class="cell-btn" data-cell="neu" aria-describedby="featBox">
+          <svg width="80" height="44" viewBox="0 0 80 44" aria-hidden="true">
+            <circle cx="30" cy="22" r="9" fill="#8e44ad" stroke="#a569bd" stroke-width="2"/>
+            <path d="M39 22 L70 22 M30 13 L18 4 M30 13 L20 6 M30 31 L16 40 M30 31 L22 40 M30 20 L18 20" stroke="#8e44ad" stroke-width="2" fill="none"/>
+            <circle cx="70" cy="22" r="3" fill="#a569bd"/>
+          </svg>
+          <h4>神经细胞</h4>
+          <span class="tag">轴突树突 · 传递电信号</span>
+        </button>
+        <button class="cell-btn" data-cell="mus" aria-describedby="featBox">
+          <svg width="80" height="44" viewBox="0 0 80 44" aria-hidden="true">
+            <path d="M8 12 Q40 4 72 12 L72 32 Q40 40 8 32 Z" fill="#d35400" stroke="#e67e22" stroke-width="2"/>
+            <path d="M8 14 L72 14 M8 30 L72 30" stroke="#a04000" stroke-width="1.5"/>
+            <path d="M16 12 L16 32 M28 10 L28 34 M40 8 L40 36 M52 10 L52 34 M64 12 L64 32" stroke="#f39c12" stroke-width="1.5"/>
+          </svg>
+          <h4>肌肉细胞</h4>
+          <span class="tag">肌原纤维 · 收缩</span>
+        </button>
+        <button class="cell-btn" data-cell="lym" aria-describedby="featBox">
+          <svg width="80" height="44" viewBox="0 0 80 44" aria-hidden="true">
+            <circle cx="40" cy="22" r="14" fill="#2980b9" stroke="#5dade2" stroke-width="2"/>
+            <circle cx="40" cy="22" r="7" fill="#1a5276"/>
+            <circle cx="40" cy="22" r="3" fill="#85c1e9"/>
+            <path d="M54 8 L62 16 M26 8 L18 16" stroke="#5dade2" stroke-width="2"/>
+          </svg>
+          <h4>淋巴细胞</h4>
+          <span class="tag">免疫防御</span>
+        </button>
+      </div>
+    </div>
+    <div class="feat-box" id="featBox" role="status">
+      <b>特点说明：</b>把鼠标悬停（或 Tab 聚焦）到上方细胞图标上，这里会显示对应细胞的特点。
+    </div>
+    <p class="feat-hint">💡 四种细胞形态与功能各不相同，但它们都由同一受精卵分化而来，遗传物质相同——差异来自基因的选择性表达。</p>
+  </section>
+
+  <!-- ========== 页三 · 交互演示 ========== -->
+  <section class="page" id="page-demo" aria-label="交互演示页">
+    <div class="demo-grid">
+      <div class="demo-canvas">
+        <canvas id="cell" width="700" height="600"
+          aria-label="有丝分裂交互画布：动物细胞，间期染色质、前期染色体螺旋化核膜核仁解体、中期染色体着丝粒排列赤道板、后期着丝粒分裂姐妹染色单体移向两极、末期核膜核仁重建。图中标注染色体、姐妹染色单体、着丝粒、赤道板、中心体、星射线、核膜核仁等结构。"></canvas>
+        <div class="legend">图中为<b>动物细胞</b>：中心体发出<b>星射线</b>形成纺锤体（植物细胞则由两极发出<b>纺锤丝</b>，二者不可混用）。</div>
+      </div>
+      <div class="demo-side">
+        <h3 id="phaseTitle">间期</h3>
+        <div class="stage-dots" role="tablist" aria-label="时期选择">
+          <button class="dot active" data-i="0" aria-label="间期">间</button>
+          <button class="dot" data-i="1" aria-label="前期">前</button>
+          <button class="dot" data-i="2" aria-label="中期">中</button>
+          <button class="dot" data-i="3" aria-label="后期">后</button>
+          <button class="dot" data-i="4" aria-label="末期">末</button>
+        </div>
+        <div class="ctl-row">
+          <button class="ctl" id="playBtn" aria-label="播放暂停">▶ 播放 / 暂停</button>
+          <button class="ctl" id="prevBtn" aria-label="上一个时期">← 上一步</button>
+          <button class="ctl" id="nextBtn" aria-label="下一个时期">下一步 →</button>
+        </div>
+        <div class="speed-row">
+          <span>调速：</span>
+          <input type="range" id="speed" min="50" max="300" step="10" value="100" aria-label="动画速度">
+          <span id="speedVal">1.0×</span>
+        </div>
+        <h3 style="margin-top:4px;">染色体 / DNA / 染色单体数目表（体细胞 2n=4）</h3>
+        <table id="countTable">
+          <thead><tr><th>时期</th><th>染色体</th><th>DNA</th><th>染色单体</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="desc-box" id="phaseDesc"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var cv = document.getElementById('cell');
+  var ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+
+  // ---------- 有丝分裂数据 ----------
+  var PHASES = [
+    {
+      name: '间期', chr: '2n', dna: '2n→4n', chm: '0→4n',
+      nums: ['2n（4）', '2n→4n（4→8）', '0→4n（0→8）'],
+      desc: 'DNA 复制、中心体复制，染色体数目不变（2n→2n）。复制后每条染色体含两条姐妹染色单体（0→4n），但呈染色质形态不可见。'
+    },
+    {
+      name: '前期', chr: '2n', dna: '4n', chm: '4n',
+      nums: ['2n（4）', '4n（8）', '4n（8）'],
+      desc: '染色质螺旋化变为染色体（每条含两条姐妹染色单体）；核膜核仁逐渐解体；动物细胞中心体移向两极并发出星射线。'
+    },
+    {
+      name: '中期', chr: '2n', dna: '4n', chm: '4n',
+      nums: ['2n（4）', '4n（8）', '4n（8）'],
+      desc: '染色体的着丝粒排列在赤道板上；染色体形态数目最清晰，是观察染色体的最佳时期。'
+    },
+    {
+      name: '后期', chr: '4n', dna: '4n', chm: '0',
+      nums: ['4n（8）', '4n（8）', '0（0）'],
+      desc: '<b>着丝粒分裂，姐妹染色单体分开</b>，分别移向两极（不是同源染色体分离——那是减数分裂的特征）。'
+    },
+    {
+      name: '末期', chr: '2n', dna: '2n', chm: '0',
+      nums: ['2n（4）', '2n（4）', '0（0）'],
+      desc: '核膜核仁重建，染色体解螺旋为染色质；细胞质分裂形成两个子细胞，染色体数目不变（2n→2n），遗传组成与母细胞一致。'
+    }
+  ];
+  var idx = 0;
+  var playing = false, timer = null;
+  var speedX = 1;
+
+  function buildTable() {
+    var tbody = document.querySelector('#countTable tbody');
+    var html = '';
+    for (var i = 0; i < 5; i++) {
+      var p = PHASES[i];
+      html += '<tr' + (i === idx ? ' style="background:#2a2150;"' : '') + '><td>' + p.name + '</td><td>' + p.nums[0] + '</td><td>' + p.nums[1] + '</td><td>' + p.nums[2] + '</td></tr>';
+    }
+    tbody.innerHTML = html;
+  }
+
+  // ---------- 绘图 ----------
+  function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+  function label(txt, x, y, color, size) {
+    ctx.fillStyle = color || '#d8c9f5'; ctx.font = (size || 13) + 'px "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, x, y);
+  }
+  function tag(x, y, tx, ty, txt, color) {
+    ctx.strokeStyle = 'rgba(210,200,240,.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(tx, ty); ctx.stroke();
+    label(txt, tx, ty, color, 11);
+  }
+  function cellBody(cx, cy, rx, ry) {
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(124,92,191,.16)'; ctx.fill();
+    ctx.strokeStyle = '#c4b5fd'; ctx.lineWidth = 2; ctx.stroke();
+    label('细胞膜 / 细胞质', cx, cy + ry + 16, '#9d83e0', 11);
+  }
+  function drawChrom(x, y, s, color, single) {
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round';
+    if (single) {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.5, y);
+      ctx.lineTo(x, y - s * 0.7);
+      ctx.lineTo(x + s * 0.5, y);
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(x - s * 0.55, y - s * 0.7);
+      ctx.lineTo(x + s * 0.55, y + s * 0.7);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + s * 0.55, y - s * 0.7);
+      ctx.lineTo(x - s * 0.55, y + s * 0.7);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  function drawNucleus(cx, cy, rx, ry, dashed) {
+    ctx.setLineDash(dashed ? [6, 5] : []);
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(160,120,230,.12)'; ctx.fill();
+    ctx.strokeStyle = '#c4b5fd'; ctx.lineWidth = 2.5; ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  function centrosome(x, y, spokes) {
+    ctx.fillStyle = '#f0a7ff';
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f0a7ff'; ctx.lineWidth = 1.5;
+    for (var i = 0; i < 8; i++) {
+      var a = Math.PI / 4 * i;
+      ctx.beginPath(); ctx.moveTo(x + 6 * Math.cos(a), y + 6 * Math.sin(a));
+      ctx.lineTo(x + (6 + spokes) * Math.cos(a), y + (6 + spokes) * Math.sin(a));
+      ctx.stroke();
+    }
+  }
+  function spindle(topY, botY, cx) {
+    ctx.strokeStyle = 'rgba(240,167,255,.7)'; ctx.lineWidth = 1.5;
+    for (var x = cx - 120; x <= cx + 120; x += 40) {
+      ctx.beginPath(); ctx.moveTo(cx, topY); ctx.lineTo(x, H / 2); ctx.lineTo(cx, botY); ctx.stroke();
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var cx = W / 2, cy = H / 2 + 20;
+    var p = PHASES[idx];
+
+    if (idx === 0) { // 间期
+      cellBody(cx, cy, 250, 210);
+      drawNucleus(cx, cy, 130, 105, false);
+      label('核膜', cx + 120, cy - 80, '#c4b5fd', 12);
+      // 核仁
+      ctx.fillStyle = '#9d83e0';
+      ctx.beginPath(); ctx.arc(cx - 40, cy - 20, 14, 0, Math.PI * 2); ctx.fill();
+      tag(cx - 40, cy - 20, cx - 40, cy - 46, '核仁', '#c4b5fd');
+      // 染色质（DNA 已复制的细线）
+      ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2;
+      for (var i = 0; i < 6; i++) {
+        ctx.beginPath();
+        var sx = cx - 90 + i * 30, sy = cy - 40 + (i % 3) * 30;
+        ctx.moveTo(sx, sy);
+        ctx.quadraticCurveTo(sx + 25, sy - 20, sx + 45, sy + 5);
+        ctx.stroke();
+      }
+      tag(cx + 20, cy + 60, cx + 20, cy + 96, '染色质（复制后 DNA 加倍）', '#a78bfa');
+      centrosome(cx - 40, cy - 60, 0);
+      tag(cx - 40, cy - 60, cx - 40, cy - 96, '中心体', '#f0a7ff');
+      label('DNA 复制 · 中心体复制 · 染色体数目不变（2n）', cx, 34, '#f0a7ff', 14);
+    } else if (idx === 1) { // 前期
+      cellBody(cx, cy, 250, 210);
+      drawNucleus(cx, cy, 130, 105, true);
+      label('核膜（正在解体）', cx + 120, cy - 78, '#c4b5fd', 11);
+      centrosome(cx, 120, 34); tag(cx, 120, cx, 84, '中心体', '#f0a7ff');
+      centrosome(cx, H - 120, 34); tag(cx, H - 120, cx, H - 84, '中心体', '#f0a7ff');
+      // 星射线
+      ctx.strokeStyle = 'rgba(240,167,255,.6)'; ctx.lineWidth = 1.5;
+      for (var i = -3; i <= 3; i++) {
+        ctx.beginPath(); ctx.moveTo(cx, 130); ctx.lineTo(cx + i * 55, cy - 20); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, H - 130); ctx.lineTo(cx + i * 55, cy + 20); ctx.stroke();
+      }
+      tag(cx + 90, 150, cx + 110, 120, '星射线', '#f0a7ff');
+      // 染色体（4 条 X）
+      drawChrom(cx - 90, cy - 40, 20, '#a78bfa', false);
+      drawChrom(cx + 95, cy - 55, 20, '#a78bfa', false);
+      drawChrom(cx - 70, cy + 60, 20, '#a78bfa', false);
+      drawChrom(cx + 80, cy + 45, 20, '#a78bfa', false);
+      tag(cx - 90, cy - 40, cx - 150, cy - 70, '染色体（两条姐妹染色单体）', '#a78bfa');
+      tag(cx - 90, cy - 40, cx - 40, cy - 100, '着丝粒', '#f0a7ff');
+      tag(cx + 80, cy + 45, cx + 150, cy + 90, '染色质→染色体（螺旋化）', '#a78bfa');
+      label('染色质螺旋化 · 核膜核仁解体', cx, 34, '#f0a7ff', 14);
+    } else if (idx === 2) { // 中期
+      cellBody(cx, cy, 250, 210);
+      centrosome(cx, 120, 34); centrosome(cx, H - 120, 34);
+      spindle(132, H - 132, cx);
+      tag(cx, 120, cx - 60, 120, '中心体（星射线）', '#f0a7ff');
+      // 赤道板
+      ctx.setLineDash([7, 5]);
+      ctx.strokeStyle = '#9d83e0'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(cx - 150, cy); ctx.lineTo(cx + 150, cy); ctx.stroke();
+      ctx.setLineDash([]);
+      tag(cx + 150, cy, cx + 170, cy - 24, '赤道板', '#c4b5fd');
+      // 染色体排列在赤道板上
+      var xs = [cx - 100, cx - 35, cx + 35, cx + 100];
+      for (var j = 0; j < 4; j++) {
+        drawChrom(xs[j], cy, 18, '#a78bfa', false);
+        tag(xs[j], cy, xs[j], cy - 34, '着丝粒', '#f0a7ff');
+      }
+      tag(cx + 100, cy, cx + 165, cy + 34, '染色体', '#a78bfa');
+      label('着丝粒排列在赤道板 · 数目最清晰', cx, 34, '#f0a7ff', 14);
+    } else if (idx === 3) { // 后期
+      cellBody(cx, cy, 250, 210);
+      centrosome(cx, 110, 30); centrosome(cx, H - 110, 30);
+      // 姐妹染色单体分开移向两极（8 条 V 形）
+      var upXs = [cx - 120, cx - 60, cx + 20, cx + 90];
+      for (var u = 0; u < 4; u++) drawChrom(upXs[u], cy - 130, 16, '#a78bfa', true);
+      var dnXs = [cx - 90, cx - 20, cx + 60, cx + 120];
+      for (var d = 0; d < 4; d++) drawChrom(dnXs[d], cy + 130, 16, '#a78bfa', true);
+      // 分裂中的着丝粒
+      ctx.fillStyle = '#f0a7ff';
+      ctx.beginPath(); ctx.arc(cx - 40, cy - 40, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx + 30, cy + 40, 4, 0, Math.PI * 2); ctx.fill();
+      tag(cx - 120, cy - 130, cx - 190, cy - 160, '姐妹染色单体分开，移向两极', '#a78bfa');
+      tag(cx - 40, cy - 40, cx - 100, cy - 60, '着丝粒分裂', '#f0a7ff');
+      tag(cx + 120, cy + 130, cx + 190, cy + 160, '各自成为一条染色体（4n）', '#a78bfa');
+      label('着丝粒分裂 · 姐妹染色单体移向两极（非同源染色体分离）', cx, 34, '#f0a7ff', 14);
+    } else { // 末期
+      cellBody(cx, cy, 250, 210);
+      // 胞质分裂（缢裂）
+      ctx.strokeStyle = '#e67e22'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#e67e22';
+      ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill();
+      // 两个新核
+      drawNucleus(cx, cy - 90, 95, 55, true);
+      drawNucleus(cx, cy + 90, 95, 55, true);
+      label('核膜重建', cx + 100, cy - 90, '#c4b5fd', 11);
+      label('核仁重建', cx - 80, cy + 90, '#c4b5fd', 11);
+      // 解螺旋的染色质
+      ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 2;
+      for (var k = 0; k < 4; k++) {
+        ctx.beginPath();
+        ctx.moveTo(cx - 60 + k * 30, cy - 95 + (k % 2) * 12);
+        ctx.lineTo(cx - 40 + k * 30, cy - 80 + (k % 2) * 12);
+        ctx.stroke();
+      }
+      tag(cx - 40, cy - 90, cx - 130, cy - 120, '染色体解螺旋为染色质', '#a78bfa');
+      tag(cx, cy, cx + 120, cy, '胞质分裂', '#f0a7ff');
+      label('核膜核仁重建 · 胞质分裂 · 2n→2n', cx, 34, '#f0a7ff', 14);
+    }
+  }
+
+  // ---------- 控制 ----------
+  function goto(i, force) {
+    idx = ((i % 5) + 5) % 5;
+    buildTable();
+    draw();
+    document.getElementById('phaseTitle').textContent = PHASES[idx].name;
+    document.getElementById('phaseDesc').innerHTML = '<b>' + PHASES[idx].name + '：</b>' + PHASES[idx].desc;
+    document.querySelectorAll('.dot').forEach(function (d, di) {
+      d.classList.toggle('active', di === idx);
+    });
+  }
+  document.getElementById('nextBtn').addEventListener('click', function () { goto(idx + 1); });
+  document.getElementById('prevBtn').addEventListener('click', function () { goto(idx - 1); });
+  document.querySelectorAll('.dot').forEach(function (d) {
+    d.addEventListener('click', function () { goto(parseInt(d.getAttribute('data-i'), 10)); });
+  });
+  var playBtn = document.getElementById('playBtn');
+  playBtn.addEventListener('click', function () {
+    playing = !playing;
+    playBtn.textContent = playing ? '⏸ 暂停' : '▶ 播放';
+    playBtn.classList.toggle('playing', playing);
+    if (playing) {
+      timer = setInterval(function () {
+        goto(idx + 1);
+      }, Math.round(2200 / speedX));
+    } else if (timer) { clearInterval(timer); timer = null; }
+  });
+  var speedEl = document.getElementById('speed');
+  speedEl.addEventListener('input', function () {
+    speedX = parseFloat(speedEl.value) / 100;
+    document.getElementById('speedVal').textContent = speedX.toFixed(1) + '×';
+    if (playing && timer) {
+      clearInterval(timer);
+      timer = setInterval(function () { goto(idx + 1); }, Math.round(2200 / speedX));
+    }
+  });
+
+  // ---------- Tab 切换 ----------
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
+      t.classList.add('active'); t.setAttribute('aria-selected', 'true');
+      document.querySelectorAll('.page').forEach(function (pg) { pg.classList.remove('active'); });
+      document.getElementById('page-' + t.getAttribute('data-p')).classList.add('active');
+    });
+  });
+
+  // ---------- 思维导图悬停 ----------
+  var FEAT = {
+    rbc: '红细胞：<b>双凹圆盘状、无核</b>，内含血红蛋白，主要功能是<b>运输氧气</b>（也运输部分二氧化碳）。',
+    neu: '神经细胞（神经元）：具有<b>轴突与树突</b>，能接受刺激并<b>传导电信号</b>，是神经系统的基本单位。',
+    mus: '肌肉细胞：含大量<b>肌原纤维</b>，能<b>收缩</b>产生运动，根据类型分为骨骼肌、平滑肌、心肌等。',
+    lym: '淋巴细胞：参与<b>免疫防御</b>，能识别并清除病原体，包括 T 细胞与 B 细胞等。'
+  };
+  var featBox = document.getElementById('featBox');
+  function showFeat(key, name) {
+    featBox.innerHTML = '<b>' + name + '：</b>' + (FEAT[key] || '');
+  }
+  document.querySelectorAll('.cell-btn').forEach(function (btn) {
+    var key = btn.getAttribute('data-cell');
+    var name = btn.querySelector('h4').textContent;
+    btn.addEventListener('mouseenter', function () { showFeat(key, name); });
+    btn.addEventListener('mouseleave', function () {
+      featBox.innerHTML = '<b>特点说明：</b>把鼠标悬停（或 Tab 聚焦）到上方细胞图标上，这里会显示对应细胞的特点。';
+    });
+    btn.addEventListener('focus', function () { showFeat(key, name); });
+    btn.addEventListener('blur', function () {
+      featBox.innerHTML = '<b>特点说明：</b>把鼠标悬停（或 Tab 聚焦）到上方细胞图标上，这里会显示对应细胞的特点。';
+    });
+  });
+
+  // ---------- 初始化 ----------
+  buildTable();
+  goto(0);
+
+  console.log('[B07 自检] 数目表主线：染色体 2n→4n→2n，染色单体 0→4n→0');
+  console.log('[B07 自检] 后期=着丝粒分裂姐妹染色单体分离（非同源染色体分离）');
+  console.log('[B07 自检] 动物细胞中心体/星射线，植物细胞纺锤丝，不混用');
+})();
+</script>
+</body>
+</html>

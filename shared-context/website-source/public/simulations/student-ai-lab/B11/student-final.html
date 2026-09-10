@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高中生物：遗传学综合模拟器 | 杂交实验 + 减数分裂数目变化表</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(145deg, #e0f0e8 0%, #c8e0d4 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .master-container {
+            max-width: 1600px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        /* 选项卡 */
+        .tab-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            background: #fef3e0;
+            padding: 12px 20px;
+            border-radius: 60px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .tab-btn {
+            background: #e9dec5;
+            border: none;
+            padding: 10px 32px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #3a4a2c;
+            font-family: inherit;
+        }
+        .tab-btn.active {
+            background: #ffcd7e;
+            color: #2b4a1e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        /* 杂交板块卡片 */
+        .genetics-card, .meiosis-card {
+            background: rgba(255,255,240,0.96);
+            border-radius: 48px;
+            box-shadow: 0 20px 35px rgba(0, 20, 0, 0.2);
+            overflow: hidden;
+        }
+        .card-header {
+            background: #2c5e2e;
+            padding: 16px 24px;
+            color: #f9f3cf;
+            border-bottom: 4px solid #ffcd7e;
+        }
+        .card-header h2 {
+            margin: 0;
+            font-size: 1.6rem;
+        }
+        .card-header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+        }
+        .main-demo {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 24px 28px 32px;
+            gap: 30px;
+        }
+        .controls-panel {
+            flex: 1.3;
+            min-width: 280px;
+            background: #fef9e6;
+            border-radius: 40px;
+            padding: 20px 24px;
+            border: 1px solid #ebd5a0;
+        }
+        .result-panel {
+            flex: 2.5;
+            min-width: 380px;
+            background: #ffffffea;
+            border-radius: 40px;
+            padding: 20px 24px;
+            border: 1px solid #dfcca8;
+        }
+        .parent-section {
+            margin-bottom: 28px;
+            border-bottom: 2px dashed #c7b57b;
+            padding-bottom: 18px;
+        }
+        .parent-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            color: #2c5e2e;
+        }
+        .trait-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: flex-start;
+            margin: 8px 0;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .trait-option {
+            background: #fff2df;
+            border-radius: 48px;
+            padding: 6px 12px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid #dbc48b;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .trait-option.selected {
+            background: #ffdd99;
+            border-color: #c27e2e;
+        }
+        .cross-btn {
+            background: #b8682e;
+            border: none;
+            width: 100%;
+            padding: 12px 0;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            border-radius: 60px;
+            cursor: pointer;
+            margin: 16px 0 10px;
+        }
+        .reset-btn {
+            background: #5e6b5c;
+        }
+        .generation-card {
+            background: #fff9ef;
+            border-radius: 32px;
+            margin-bottom: 24px;
+            padding: 12px 16px;
+            border-left: 8px solid #ffb347;
+        }
+        .pheno-stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 12px 0;
+        }
+        .mini-stat {
+            background: #f2e8d4;
+            border-radius: 28px;
+            padding: 8px 12px;
+            text-align: center;
+            flex: 1;
+        }
+        .fraction {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #b45f2b;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 12px;
+            background: #fef3db;
+            border-radius: 28px;
+            padding: 8px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .pheno-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        .pheno-table th, .pheno-table td {
+            border: 1px solid #e2cf9e;
+            padding: 6px;
+            text-align: center;
+            background-color: #fffcf0;
+        }
+        .note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 16px;
+            background: #f5efdb;
+            padding: 8px;
+            border-radius: 40px;
+        }
+        /* 减数分裂数目表格样式 */
+        .meiosis-container {
+            padding: 20px 28px;
+        }
+        .meiosis-stage-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+        .stage-btn {
+            background: #e9dec5;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.1s;
+            font-size: 0.85rem;
+        }
+        .stage-btn.active {
+            background: #ffcd7e;
+            color: #2b4a1e;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .number-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fffcf0;
+            border-radius: 32px;
+            overflow: hidden;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .number-table th, .number-table td {
+            border: 1px solid #e2cf9e;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 1rem;
+        }
+        .number-table th {
+            background-color: #e1cf9e;
+            font-weight: bold;
+            color: #2c5e2e;
+        }
+        .highlight-row {
+            background-color: #fff3df;
+            font-weight: bold;
+        }
+        .meiosis-desc {
+            background: #e9e0c7;
+            border-radius: 28px;
+            padding: 16px;
+            line-height: 1.5;
+            font-size: 0.95rem;
+            margin-top: 20px;
+        }
+        .footer-text {
+            text-align: center;
+            padding: 12px;
+            background: #e2d8be;
+            font-size: 0.75rem;
+        }
+        @media (max-width: 800px) {
+            .main-demo { padding: 16px; }
+            .stage-btn { padding: 5px 10px; font-size: 0.7rem; }
+            .number-table th, .number-table td { padding: 6px 4px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="master-container">
+    <div class="tab-bar">
+        <button id="tabGeneticsBtn" class="tab-btn active">🧬 孟德尔杂交实验 (P/F1/F2)</button>
+        <button id="tabMeiosisBtn" class="tab-btn">🔬 减数分裂过程 (数目变化表)</button>
+    </div>
+    
+    <!-- 板块1: 遗传杂交实验 -->
+    <div id="geneticsModule" class="genetics-card">
+        <div class="card-header">
+            <h2>🌱 自由组合定律 · 多对等位基因杂交模拟</h2>
+            <p>独立分配 | 每对基因不同字母 (A/a, B/b, C/c) | F2 精确分数比例</p>
+        </div>
+        <div class="gene-count-selector" style="display: flex; justify-content: center; gap: 20px; background: #faf1df; padding: 10px; margin: 12px 20px 0; border-radius: 60px;">
+            <label>🎛️ 等位基因对数: </label>
+            <select id="geneCountSelect" style="background:#fff8ed; border-radius:40px; padding:4px 12px;">
+                <option value="1">1 对 (A/a · 3:1)</option>
+                <option value="2" selected>2 对 (A/a, B/b · 9:3:3:1)</option>
+                <option value="3">3 对 (A/a, B/b, C/c · 27:9:9:9:3:3:3:1)</option>
+            </select>
+        </div>
+        <div class="main-demo">
+            <div class="controls-panel">
+                <div id="parentsPanel"></div>
+                <button id="crossBtn" class="cross-btn">🧬 模拟杂交 (F1 & F2 精确分数)</button>
+                <button id="resetClassicBtn" class="cross-btn reset-btn">🔄 重置纯合显性 × 纯合隐性</button>
+                <div class="note">💡 选择亲本基因型后点击杂交，展示F1代及F2代完整分数比例，符合孟德尔定律。</div>
+            </div>
+            <div class="result-panel">
+                <div class="gen-info" id="parentDisplay" style="background:#ebf3e6; border-radius:28px; padding:8px; margin-bottom:16px; text-align:center;"></div>
+                <div class="generation-card"><div class="generation-title">🌱 F1 代</div><div id="f1Content">— 点击杂交 —</div></div>
+                <div class="generation-card"><div class="generation-title">🌿 F2 代 (自交分离)</div><div id="f2StatsContainer" class="pheno-stats-row"></div><div class="table-wrapper" id="f2TableWrapper"></div></div>
+                <div id="geneticExplain" style="font-size:0.75rem; background:#f9efdb; border-radius:20px; padding:8px; text-align:center;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 板块2: 减数分裂数目变化表 (无图片，清晰列出各时期的核DNA、染色体、染色单体数) -->
+    <div id="meiosisModule" class="meiosis-card" style="display: none;">
+        <div class="card-header">
+            <h2>🔬 减数分裂过程中染色体、DNA、染色单体数目变化</h2>
+            <p>以二倍体生物 (2n=4) 为例，展示各时期核内数量变化规律</p>
+        </div>
+        <div class="meiosis-container">
+            <div class="meiosis-stage-selector" id="stageSelector">
+                <button data-stage="interphase" class="stage-btn">📌 间期 (G1)</button>
+                <button data-stage="sphase" class="stage-btn">⚡ S期 (复制)</button>
+                <button data-stage="g2" class="stage-btn">🌿 G2期</button>
+                <button data-stage="prophase1" class="stage-btn active">🔄 前期I</button>
+                <button data-stage="metaphase1" class="stage-btn">📐 中期I</button>
+                <button data-stage="anaphase1" class="stage-btn">⚡ 后期I</button>
+                <button data-stage="telophase1" class="stage-btn">🍃 末期I</button>
+                <button data-stage="prophase2" class="stage-btn">🌱 前期II</button>
+                <button data-stage="metaphase2" class="stage-btn">📏 中期II</button>
+                <button data-stage="anaphase2" class="stage-btn">💥 后期II</button>
+                <button data-stage="telophase2" class="stage-btn">✅ 末期II</button>
+            </div>
+            
+            <!-- 核心表格：每个时期的DNA/染色体/染色单体数量 -->
+            <table class="number-table" id="numberTable">
+                <thead>
+                    <tr>
+                        <th>时期</th>
+                        <th>核DNA数</th>
+                        <th>染色体数</th>
+                        <th>染色单体数</th>
+                        <th>备注</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 动态高亮当前所选时期 -->
+                </tbody>
+            </table>
+            
+            <div class="meiosis-desc" id="meiosisDesc">
+                💡 点击上方的时期按钮，表格会自动高亮当前阶段。此处以二倍体(2n=4)为例，假设两对同源染色体。注意DNA复制、同源分离、姐妹单体分离过程中的数量变化。
+            </div>
+        </div>
+    </div>
+    <div class="footer-text">
+        🧬 左侧杂交实验模拟孟德尔遗传，右侧减数分裂模块以数据表格形式清晰展示各时期染色体、DNA、染色单体数目变化规律。
+    </div>
+</div>
+
+<script>
+    // ======================== 杂交模块 (完整分数逻辑，1~3对基因) ========================
+    let geneCount = 2;
+    let fatherGenotype = "", motherGenotype = "";
+    const GENE_LETTERS = ['A', 'B', 'C'];
+    
+    function gcd(a,b) { return b === 0 ? a : gcd(b, a % b); }
+    function getAllGenotypes(count) {
+        let result = [];
+        let perGeneOptions = [];
+        for (let i = 0; i < count; i++) {
+            let letter = GENE_LETTERS[i];
+            perGeneOptions.push([`${letter}${letter}`, `${letter}${letter.toLowerCase()}`, `${letter.toLowerCase()}${letter.toLowerCase()}`]);
+        }
+        function dfs(idx, current) {
+            if (idx === count) { result.push(current); return; }
+            for (let opt of perGeneOptions[idx]) dfs(idx+1, current + opt);
+        }
+        dfs(0, "");
+        return result;
+    }
+    function parseGenotype(genStr, count) { let pairs = []; for(let i=0;i<count;i++) pairs.push({ a1: genStr[2*i], a2: genStr[2*i+1] }); return pairs; }
+    function getGameteForLocus(pair) { return pair.a1 === pair.a2 ? [pair.a1, pair.a1] : [pair.a1, pair.a2]; }
+    function getAllGametes(genStr, count) {
+        let pairs = parseGenotype(genStr, count);
+        let lociGametes = pairs.map(p => getGameteForLocus(p));
+        let result = [];
+        function dfs(idx, current) { if(idx===count) { result.push(current); return; } for(let g of lociGametes[idx]) dfs(idx+1, current+g); }
+        dfs(0, ""); return result;
+    }
+    function combineGametes(gameteF, gameteM, count) { let child = ""; for(let i=0;i<count;i++) { let sorted = [gameteF[i], gameteM[i]].sort().join(''); child += sorted; } return child; }
+    function computeF1DistFraction(father, mother, count) {
+        let fGam = getAllGametes(father, count), mGam = getAllGametes(mother, count);
+        let dist = new Map();
+        for(let gf of fGam) for(let gm of mGam) { let child = combineGametes(gf, gm, count); dist.set(child, (dist.get(child)||0)+1); }
+        let total = fGam.length * mGam.length;
+        let result = new Map();
+        for(let [gen,cnt] of dist) result.set(gen, { count: cnt, total });
+        return result;
+    }
+    function computeF2FromF1DistFraction(f1CountMap, count) {
+        let totalF1Comb = 0; for(let {count} of f1CountMap.values()) totalF1Comb += count;
+        let f2Numerator = new Map();
+        for(let [f1Gen, {count: cnt}] of f1CountMap.entries()) {
+            let f1Gametes = getAllGametes(f1Gen, count);
+            let selfDist = new Map();
+            for(let g1 of f1Gametes) for(let g2 of f1Gametes) { let child = combineGametes(g1, g2, count); selfDist.set(child, (selfDist.get(child)||0)+1); }
+            for(let [childGen, scnt] of selfDist) f2Numerator.set(childGen, (f2Numerator.get(childGen)||0) + cnt * scnt);
+        }
+        let finalDen = totalF1Comb * Math.pow(4, count);
+        let result = new Map();
+        for(let [gen, num] of f2Numerator) { let g = gcd(num, finalDen); result.set(gen, { num: num/g, den: finalDen/g }); }
+        return result;
+    }
+    function getPhenotypeFromGenotype(genStr, count) {
+        let traits = [];
+        for(let i=0;i<count;i++) {
+            let a1=genStr[2*i], a2=genStr[2*i+1];
+            let isDom = (a1===a1.toUpperCase() && a1===a1) || (a2===a2.toUpperCase());
+            traits.push(isDom ? `${GENE_LETTERS[i]}显性` : `${GENE_LETTERS[i].toLowerCase()}隐性`);
+        }
+        return traits.join(' · ');
+    }
+    function aggregatePhenotypeFraction(genoMap, count) {
+        let items = []; let commonDen = 1;
+        for(let [gen,{num,den}] of genoMap) { let pheno = getPhenotypeFromGenotype(gen, count); items.push({pheno, num, den}); commonDen = commonDen * den / gcd(commonDen, den); }
+        let sumMap = new Map();
+        for(let {pheno,num,den} of items) { let scaled = num * (commonDen / den); sumMap.set(pheno, (sumMap.get(pheno)||0) + scaled); }
+        let result = new Map();
+        for(let [pheno, sumNum] of sumMap) { let g = gcd(sumNum, commonDen); result.set(pheno, { num: sumNum/g, den: commonDen/g }); }
+        return result;
+    }
+    function toFractionSimple(prob) { if(prob===0) return "0"; for(let d=1;d<=64;d++) { let n = Math.round(prob*d); if(Math.abs(prob - n/d)<1e-6) { let g=gcd(n,d); return `${n/g}/${d/g}`; } } return "?"; }
+    
+    let fatherCache="", motherCache="";
+    function renderParentsPanel() {
+        const container = document.getElementById('parentsPanel');
+        const allGenos = getAllGenotypes(geneCount);
+        let defaultFather = allGenos.find(g => { for(let i=0;i<geneCount;i++) if(!(g[2*i]===GENE_LETTERS[i] && g[2*i+1]===GENE_LETTERS[i])) return false; return true; });
+        let defaultMother = allGenos.find(g => { for(let i=0;i<geneCount;i++) if(!(g[2*i]===GENE_LETTERS[i].toLowerCase() && g[2*i+1]===GENE_LETTERS[i].toLowerCase())) return false; return true; });
+        if(!defaultFather) defaultFather=allGenos[0];
+        if(!defaultMother) defaultMother=allGenos[allGenos.length-1];
+        if(fatherCache && allGenos.includes(fatherCache)) fatherGenotype = fatherCache; else fatherGenotype = defaultFather;
+        if(motherCache && allGenos.includes(motherCache)) motherGenotype = motherCache; else motherGenotype = defaultMother;
+        let html = `<div class="parent-section"><div class="parent-title">🌿 父本 ♂ · 基因型</div><div id="fatherGenoList" class="trait-buttons"></div></div><div class="parent-section"><div class="parent-title">🌸 母本 ♀ · 基因型</div><div id="motherGenoList" class="trait-buttons"></div></div>`;
+        container.innerHTML = html;
+        const fatherDiv = document.getElementById('fatherGenoList'), motherDiv = document.getElementById('motherGenoList');
+        function renderGroup(div, current, setter) {
+            div.innerHTML = '';
+            allGenos.forEach(gen => {
+                let btn = document.createElement('div');
+                btn.className = `trait-option ${current===gen?'selected':''}`;
+                btn.innerHTML = `<strong style="font-family:monospace;">${gen}</strong><div class="allele-badge">${gen.split('').join('')}</div>`;
+                btn.addEventListener('click', () => { setter(gen); renderParentsPanel(); updateGenetics(); });
+                div.appendChild(btn);
+            });
+        }
+        renderGroup(fatherDiv, fatherGenotype, (v) => { fatherGenotype=v; fatherCache=v; });
+        renderGroup(motherDiv, motherGenotype, (v) => { motherGenotype=v; motherCache=v; });
+    }
+    function updateGenetics() {
+        if(!fatherGenotype || !motherGenotype) return;
+        let count = geneCount;
+        document.getElementById('parentDisplay').innerHTML = `<strong>P代:</strong> 父本 ${fatherGenotype} (${getPhenotypeFromGenotype(fatherGenotype,count)}) &nbsp;|&nbsp; 母本 ${motherGenotype} (${getPhenotypeFromGenotype(motherGenotype,count)})`;
+        let f1Dist = computeF1DistFraction(fatherGenotype, motherGenotype, count);
+        let f1Pheno = new Map();
+        for(let [gen,{count:cnt,total}] of f1Dist) { let pheno = getPhenotypeFromGenotype(gen,count); let prob = cnt/total; f1Pheno.set(pheno, (f1Pheno.get(pheno)||0)+prob); }
+        let f1Html = `<div class="pheno-stats-row">`;
+        for(let [pheno, prob] of f1Pheno) f1Html += `<div class="mini-stat">🌱 ${pheno}<div class="fraction">${toFractionSimple(prob)}</div></div>`;
+        f1Html += `</div><div style="font-size:0.7rem;">F1基因型: ${Array.from(f1Dist.entries()).slice(0,3).map(([g,{count:c,total:t}])=>`${g} ${c}/${t}`).join(', ')}</div>`;
+        document.getElementById('f1Content').innerHTML = f1Html;
+        let f2Frac = computeF2FromF1DistFraction(f1Dist, count);
+        let f2Pheno = aggregatePhenotypeFraction(f2Frac, count);
+        let statsHtml = '';
+        for(let [pheno, {num,den}] of f2Pheno) statsHtml += `<div class="mini-stat">🌿 ${pheno}<div class="fraction">${num}/${den}</div></div>`;
+        document.getElementById('f2StatsContainer').innerHTML = statsHtml;
+        let tableHtml = `<table class="pheno-table"><tr><th>基因型</th><th>频率</th></tr>`;
+        for(let [gen,{num,den}] of Array.from(f2Frac.entries()).slice(0,12)) tableHtml += `<tr><td style="font-family:monospace;">${gen}</td><td>${num}/${den}</td></tr>`;
+        if(f2Frac.size>12) tableHtml += `<tr><td colspan="2">...等${f2Frac.size}种基因型</td></tr>`;
+        tableHtml += `</table>`;
+        document.getElementById('f2TableWrapper').innerHTML = tableHtml;
+        document.getElementById('geneticExplain').innerHTML = `📖 ${count}对独立基因 (${GENE_LETTERS.slice(0,count).join('/')})，F2表型比例 (3:1)^${count}，精确分数展示。`;
+    }
+    document.getElementById('crossBtn').addEventListener('click', updateGenetics);
+    document.getElementById('resetClassicBtn').addEventListener('click', () => { fatherCache=""; motherCache=""; renderParentsPanel(); updateGenetics(); });
+    const geneSelect = document.getElementById('geneCountSelect');
+    geneSelect.addEventListener('change', (e) => { geneCount = parseInt(e.target.value); fatherCache=""; motherCache=""; renderParentsPanel(); updateGenetics(); });
+    
+    // ======================== 减数分裂数目变化表（静态数据+高亮） ========================
+    // 定义各时期数据 (以二倍体生物 2n=4 为例，染色体数n=2)
+    const stageData = {
+        interphase: { name: "间期 (G1期)", dna: "4", chrom: "4", chromatid: "0", note: "染色体未复制，每条含1个DNA分子，无染色单体" },
+        sphase:     { name: "S期 (DNA复制)", dna: "4→8", chrom: "4", chromatid: "0→8", note: "DNA复制，染色单体形成但着丝粒未分裂" },
+        g2:         { name: "G2期 (复制后)", dna: "8", chrom: "4", chromatid: "8", note: "每条染色体由两条姐妹染色单体组成" },
+        prophase1:  { name: "前期I", dna: "8", chrom: "4", chromatid: "8", note: "同源染色体联会，交叉互换，数量不变" },
+        metaphase1: { name: "中期I", dna: "8", chrom: "4", chromatid: "8", note: "同源染色体排列赤道板" },
+        anaphase1:  { name: "后期I", dna: "8", chrom: "4→8? (注意计数)", chromatid: "8", note: "同源染色体分离，但细胞未分裂，染色体数暂时加倍(着丝粒未分裂)，每极4条染色单体" },
+        telophase1: { name: "末期I (形成2个子细胞)", dna: "4 (每个子细胞)", chrom: "2 (每个子细胞)", chromatid: "4 (每个子细胞)", note: "细胞分裂成两个，染色体数目减半，每条仍由两条姐妹染色单体组成" },
+        prophase2:  { name: "前期II", dna: "4", chrom: "2", chromatid: "4", note: "每个子细胞中染色体不再复制" },
+        metaphase2: { name: "中期II", dna: "4", chrom: "2", chromatid: "4", note: "染色体排列赤道板" },
+        anaphase2:  { name: "后期II", dna: "4", chrom: "2→4", chromatid: "4→0", note: "着丝粒分裂，姐妹染色单体分离，染色体数暂时加倍" },
+        telophase2: { name: "末期II (形成配子)", dna: "2", chrom: "2", chromatid: "0", note: "每个配子获得单倍体染色体组，无染色单体" }
+    };
+    
+    function buildTable(highlightStage) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+        const stages = ['interphase','sphase','g2','prophase1','metaphase1','anaphase1','telophase1','prophase2','metaphase2','anaphase2','telophase2'];
+        for (let key of stages) {
+            const data = stageData[key];
+            const row = document.createElement('tr');
+            if (highlightStage === key) {
+                row.style.backgroundColor = '#ffdd99';
+                row.style.fontWeight = 'bold';
+            }
+            row.innerHTML = `
+                <td>${data.name}</td>
+                <td>${data.dna}</td>
+                <td>${data.chrom}</td>
+                <td>${data.chromatid}</td>
+                <td style="font-size:0.8rem;">${data.note}</td>
+            `;
+            tbody.appendChild(row);
+        }
+    }
+    
+    let currentMeiosisStage = "prophase1";
+    function highlightStage(stage) {
+        currentMeiosisStage = stage;
+        buildTable(stage);
+        // 更新描述文字
+        let extraDesc = "";
+        if (stage === 'anaphase1') extraDesc = "后期I：同源染色体分离，细胞两极各有4条染色单体，但细胞仍为一个，计数时总染色体数可视为8（但通常考试强调着丝粒未分裂仍计为4条染色体，此处以常见教材说明：染色体数以着丝粒数为准，后期I同源分离但着丝粒未分裂，因此仍为4条染色体，但DNA为8。表格已作清晰展示。";
+        else if (stage === 'anaphase2') extraDesc = "后期II：着丝粒分裂，姐妹单体成为独立染色体，染色体数暂时加倍，随后进入末期II分配到两个细胞。";
+        else extraDesc = stageData[stage]?.note || "";
+        document.getElementById('meiosisDesc').innerHTML = `<strong>${stageData[stage]?.name || stage}</strong><br>${extraDesc}<br><br>💡 表中数据以二倍体(2n=4)为例。注意：间期G1→S→G2 DNA复制；减数第一次分裂同源染色体分离导致染色体数目减半；减数第二次分裂姐妹染色单体分离。`;
+        // 高亮按钮
+        document.querySelectorAll('.stage-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.querySelector(`.stage-btn[data-stage="${stage}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
+    
+    function bindMeiosisEvents() {
+        document.querySelectorAll('.stage-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const stage = btn.getAttribute('data-stage');
+                if (stage && stageData[stage]) highlightStage(stage);
+            });
+        });
+    }
+    
+    // 模块切换
+    const geneticsModule = document.getElementById('geneticsModule');
+    const meiosisModule = document.getElementById('meiosisModule');
+    const tabGen = document.getElementById('tabGeneticsBtn');
+    const tabMei = document.getElementById('tabMeiosisBtn');
+    tabGen.addEventListener('click', () => { geneticsModule.style.display = 'block'; meiosisModule.style.display = 'none'; tabGen.classList.add('active'); tabMei.classList.remove('active'); });
+    tabMei.addEventListener('click', () => { geneticsModule.style.display = 'none'; meiosisModule.style.display = 'block'; tabMei.classList.add('active'); tabGen.classList.remove('active'); highlightStage(currentMeiosisStage); });
+    
+    // 初始化
+    renderParentsPanel();
+    updateGenetics();
+    buildTable('prophase1');
+    highlightStage('prophase1');
+    bindMeiosisEvents();
+</script>
+</body>
+</html>

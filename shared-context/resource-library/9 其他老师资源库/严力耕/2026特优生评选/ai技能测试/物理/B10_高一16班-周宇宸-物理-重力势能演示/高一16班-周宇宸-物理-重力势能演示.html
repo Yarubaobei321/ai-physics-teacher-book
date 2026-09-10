@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中物理：重力势能双物块对比 | 可选零势能面 | E=mgh</title>
+    <style>
+        * {
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f4fa 0%, #e2e8f0 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .demo-container {
+            max-width: 1500px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 56px;
+            box-shadow: 0 25px 45px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.6);
+            padding: 24px 28px 32px 28px;
+            transition: all 0.2s;
+        }
+
+        .title-section {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin: 0;
+            color: #1e2f4e;
+            letter-spacing: -0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        h1 small {
+            font-size: 0.9rem;
+            background: #2c3e66;
+            color: white;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-weight: normal;
+        }
+        .sub {
+            color: #2c3e66;
+            margin-top: 10px;
+            font-size: 1rem;
+            background: #eef2fa;
+            display: inline-block;
+            padding: 5px 22px;
+            border-radius: 32px;
+        }
+
+        /* 核心两列布局 */
+        .main-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            margin-top: 15px;
+        }
+
+        /* 左侧画布区 - 更饱满，包含画布和下方扩展区域 */
+        .canvas-area {
+            flex: 2.2;
+            min-width: 320px;
+            background: #d9e2ef52;
+            border-radius: 52px;
+            backdrop-filter: blur(4px);
+            padding: 20px;
+            box-shadow: inset 0 1px 4px #0001, 0 12px 24px rgba(0,0,0,0.12);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .canvas-wrapper {
+            background: #fef9e8;
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 0 0 2px white, 0 8px 18px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fffef7;
+            border-radius: 32px;
+            cursor: grab;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            transition: cursor 0.05s;
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+        
+        /* 左侧底部扩展区域：整合工具栏 + 相对性说明卡片 */
+        .left-extended {
+            background: #eef2f9ee;
+            backdrop-filter: blur(4px);
+            border-radius: 42px;
+            padding: 18px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+        .toolbar-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .drag-hint {
+            font-size: 0.8rem;
+            background: #cddfe7;
+            display: inline-block;
+            border-radius: 28px;
+            padding: 6px 16px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .ref-selector-compact {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #ffffffcc;
+            padding: 4px 16px;
+            border-radius: 60px;
+            box-shadow: inset 0 0 0 1px #e2e8f0, 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .ref-label {
+            font-weight: bold;
+            font-size: 0.8rem;
+            color: #2c4c6e;
+        }
+        .ref-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .ref-btn {
+            background: #f0f4fa;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #2c4c6e;
+        }
+        .ref-btn.active {
+            background: #ffb347;
+            color: white;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .ref-btn:hover:not(.active) {
+            background: #dee6f0;
+            transform: scale(0.96);
+        }
+        .zero-btn {
+            background: #ffd966;
+            border: none;
+            border-radius: 48px;
+            padding: 6px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.8rem;
+            color: #3b2a1f;
+            white-space: nowrap;
+        }
+        .zero-btn:hover {
+            background: #ffc107;
+            transform: scale(0.98);
+        }
+        /* 左侧下方的相对性说明卡片（原右侧移过来） */
+        .relative-card {
+            background: #ffe6d5;
+            border-radius: 36px;
+            padding: 16px 20px;
+            margin-top: 6px;
+            text-align: center;
+            color: #a25100;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .relative-card p {
+            margin: 4px 0;
+            font-size: 0.88rem;
+        }
+        .formula-mini {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            background: #f0e0c0;
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            margin-top: 6px;
+        }
+
+        /* 右侧信息卡 - 只保留数据卡片和公式 */
+        .info-area {
+            flex: 1;
+            min-width: 290px;
+            background: #ffffffdd;
+            backdrop-filter: blur(8px);
+            border-radius: 52px;
+            padding: 24px 22px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* 两个物块独立卡片 */
+        .block-card {
+            background: #ffffff;
+            border-radius: 36px;
+            padding: 18px 20px;
+            transition: all 0.2s;
+            border-left: 10px solid;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        }
+        .block-card.blue-card {
+            border-left-color: #3c8dbc;
+        }
+        .block-card.orange-card {
+            border-left-color: #e67e22;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+            font-weight: bold;
+            font-size: 1.3rem;
+            color: #1a2c3f;
+        }
+        .card-header span:first-child {
+            font-size: 2rem;
+        }
+        .energy-row {
+            background: #f9fcff;
+            border-radius: 32px;
+            padding: 12px 16px;
+            text-align: center;
+            margin: 12px 0;
+            box-shadow: inset 0 0 0 1px #eef2ff, 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .energy-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c5a7a;
+            letter-spacing: 1px;
+        }
+        .energy-value {
+            font-size: 2.4rem;
+            font-weight: 800;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            line-height: 1.2;
+        }
+        .blue-value {
+            color: #2c7cb6;
+        }
+        .orange-value {
+            color: #e67e22;
+        }
+        .energy-unit {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            padding: 8px 0;
+            border-bottom: 1px dashed #cddfe7;
+        }
+        .param-label {
+            font-weight: 600;
+            color: #2c4c6e;
+        }
+        .param-value {
+            font-weight: 700;
+            font-family: monospace;
+            font-size: 1.1rem;
+            background: #f0f4fa;
+            padding: 0 8px;
+            border-radius: 20px;
+        }
+        /* 右侧公式栏 */
+        .formula-row {
+            background: #1e2f3e;
+            color: #ffde9c;
+            padding: 10px 18px;
+            border-radius: 48px;
+            text-align: center;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            font-weight: bold;
+            font-size: 1.25rem;
+            letter-spacing: 1px;
+            box-shadow: inset 0 0 0 1px #ffde9c66, 0 6px 12px rgba(0,0,0,0.1);
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow-x: auto;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .formula-row span {
+            font-size: 1.3rem;
+        }
+        .formula-row .small-meta {
+            font-size: 0.85rem;
+            color: #ffd966;
+            font-weight: normal;
+        }
+        /* 底部结论区单独保留 */
+        .experiment-conclusion {
+            margin-top: 28px;
+            background: linear-gradient(120deg, #eef2f9, #e6edf6);
+            border-radius: 48px;
+            padding: 16px 24px;
+            text-align: center;
+            font-size: 1.12rem;
+            font-weight: 600;
+            color: #1f4160;
+            border-left: 6px solid #ffb347;
+            border-right: 6px solid #ffb347;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            backdrop-filter: blur(2px);
+            letter-spacing: 0.3px;
+        }
+        .experiment-conclusion p {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .conclusion-icon {
+            font-size: 1.5rem;
+        }
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.73rem;
+            color: #5a6e85;
+        }
+        canvas {
+            text-rendering: geometricPrecision;
+        }
+        @media (max-width: 860px) {
+            .formula-row { font-size: 0.9rem; white-space: normal; }
+            .formula-row span { font-size: 1rem; }
+            .energy-value { font-size: 1.9rem; }
+            .demo-container { padding: 16px; }
+            .toolbar-row { flex-direction: column; align-items: stretch; }
+            .drag-hint { text-align: center; white-space: normal; }
+            .ref-selector-compact { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="demo-container">
+    <div class="title-section">
+        <h1>
+            📦 重力势能 · 双物块对比实验
+            <small>E<sub>p</sub> = m·g·h</small>
+        </h1>
+        <div class="sub">⚡ 拖拽物块改变高度 | 切换零势能面感受相对性 | 质量越大势能越大</div>
+    </div>
+
+    <div class="main-panel">
+        <!-- 左侧canvas区域：画布 + 底部整合区域（含工具条和相对性卡片） -->
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="gravityCanvas" width="860" height="540" style="width:100%; height:auto; max-width:860px; aspect-ratio:860/540"></canvas>
+            </div>
+            <!-- 左侧扩展区域：包含控制工具和原右侧下方的相对性说明 -->
+            <div class="left-extended">
+                <div class="toolbar-row">
+                    <span class="drag-hint">🖱️ 按住蓝色/橙色物块上下拖拽</span>
+                    <button id="resetZeroBtn" class="zero-btn">⚖️ 重置物块至低处 (h≈0.2m)</button>
+                    <div class="ref-selector-compact">
+                        <span class="ref-label">🎯 零势能面：</span>
+                        <div class="ref-buttons">
+                            <button data-ref="ground" class="ref-btn active">🌍 地面</button>
+                            <button data-ref="desk" class="ref-btn">📦 桌面 (1.2m)</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 从右侧移过来的重力势能相对性解释卡片，使左侧更饱满 -->
+                <div class="relative-card" id="relativeNoteCard">
+                    <p>💡 <strong>重力势能的相对性 & 质量影响</strong></p>
+                    <p>切换零势能面，高度h重新定义，势能数值改变；质量越大的物块势能越大。</p>
+                    <div class="formula-mini">Eₚ = m·g·h_rel</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧信息区：仅保留数据卡片和核心公式 -->
+        <div class="info-area">
+            <!-- 物块A (轻) 蓝色 -->
+            <div class="block-card blue-card">
+                <div class="card-header">
+                    <span>🔵</span> <span>物块 A (轻)</span>
+                </div>
+                <div class="energy-row">
+                    <div class="energy-label">重力势能 Eₚ</div>
+                    <div class="energy-value blue-value" id="epBlock1">0.00</div>
+                    <div class="energy-unit">焦耳 (J)</div>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">🎲 质量 (m₁)</span>
+                    <span class="param-value" id="mass1Display">2.00 kg</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">📏 当前高度 (h₁)</span>
+                    <span class="param-value" id="height1Display">0.00 m</span>
+                </div>
+            </div>
+
+            <!-- 物块B (重) 橙色 -->
+            <div class="block-card orange-card">
+                <div class="card-header">
+                    <span>🟠</span> <span>物块 B (重)</span>
+                </div>
+                <div class="energy-row">
+                    <div class="energy-label">重力势能 Eₚ</div>
+                    <div class="energy-value orange-value" id="epBlock2">0.00</div>
+                    <div class="energy-unit">焦耳 (J)</div>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">🎲 质量 (m₂)</span>
+                    <span class="param-value" id="mass2Display">4.00 kg</span>
+                </div>
+                <div class="param-row">
+                    <span class="param-label">📏 当前高度 (h₂)</span>
+                    <span class="param-value" id="height2Display">0.00 m</span>
+                </div>
+            </div>
+
+            <!-- 核心公式展示 -->
+            <div class="formula-row">
+                <span>📐 E<sub>p</sub> = m · g · h</span>
+                <span class="small-meta">( g = 9.8 N/kg )</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 实验总结语，保留原位置美观 -->
+    <div class="experiment-conclusion">
+        <p>
+            <span class="conclusion-icon">✨</span> 
+            <strong>实验结论：</strong> 由此实验可知，物体的重力势能与物体本身的质量和距离零势能面的高度有关。
+            <span class="conclusion-icon">📚</span>
+        </p>
+    </div>
+    
+    <footer>
+        ※ 重力势能 Eₚ = mgh | 零势能面可选择，相对性明显 | 拖拽物块，对比势能随高度、质量的变化
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // 物理参数
+        const g = 9.8;
+        const massLight = 2.0;
+        const massHeavy = 4.0;
+        
+        // 零势能面
+        let currentRef = 'ground';
+        const deskHeightMeters = 1.2;
+        
+        const canvas = document.getElementById('gravityCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let canvasWidth = 860;
+        let canvasHeight = 540;
+        let groundY = 0;
+        
+        let blocks = [
+            {
+                id: 'light',
+                mass: massLight,
+                x: 0, y: 0,
+                width: 78, height: 58,
+                isDragging: false, dragOffsetY: 0,
+                color: '#3c8dbc', lightColor: '#6ab0de',
+                emoji: '🔵'
+            },
+            {
+                id: 'heavy',
+                mass: massHeavy,
+                x: 0, y: 0,
+                width: 82, height: 62,
+                isDragging: false, dragOffsetY: 0,
+                color: '#e67e22', lightColor: '#f39c12',
+                emoji: '🟠'
+            }
+        ];
+        
+        let pxPerMeter = 1;
+        
+        function getBlockAbsoluteHeightMeters(block) {
+            const bottomY = block.y + block.height/2;
+            let heightPx = groundY - bottomY;
+            if(heightPx < 0) heightPx = 0;
+            let heightM = heightPx / pxPerMeter;
+            return Math.max(0, heightM);
+        }
+        
+        function getRelativeHeightForBlock(block) {
+            const absH = getBlockAbsoluteHeightMeters(block);
+            if(currentRef === 'ground') return absH;
+            else return absH - deskHeightMeters;
+        }
+        
+        function computeEpForBlock(block) {
+            const hRel = getRelativeHeightForBlock(block);
+            return block.mass * g * hRel;
+        }
+        
+        function setBlockAbsoluteHeight(block, absHeightM) {
+            if(absHeightM < 0) absHeightM = 0;
+            let targetBottomPx = groundY - (absHeightM * pxPerMeter);
+            const minCenterY = block.height/2;
+            const maxCenterY = groundY - block.height/2;
+            let desiredCenterY = targetBottomPx - block.height/2;
+            desiredCenterY = Math.min(maxCenterY, Math.max(minCenterY, desiredCenterY));
+            block.y = desiredCenterY;
+            if(block.y < minCenterY) block.y = minCenterY;
+            if(block.y > maxCenterY) block.y = maxCenterY;
+        }
+        
+        function resetToLowAbsolute() {
+            const lowAbs = 0.2;
+            for(let block of blocks) setBlockAbsoluteHeight(block, lowAbs);
+            drawCanvas();
+            updateUI();
+        }
+        
+        function updateUI() {
+            const hRel1 = getRelativeHeightForBlock(blocks[0]);
+            const ep1 = computeEpForBlock(blocks[0]);
+            document.getElementById('height1Display').innerHTML = `${hRel1.toFixed(2)} m`;
+            document.getElementById('epBlock1').innerHTML = `${ep1.toFixed(2)}`;
+            
+            const hRel2 = getRelativeHeightForBlock(blocks[1]);
+            const ep2 = computeEpForBlock(blocks[1]);
+            document.getElementById('height2Display').innerHTML = `${hRel2.toFixed(2)} m`;
+            document.getElementById('epBlock2').innerHTML = `${ep2.toFixed(2)}`;
+            
+            // 更新左侧相对性卡片内容 (动态显示当前参考面)
+            const refName = (currentRef === 'ground') ? '地面 (y=0)' : `桌面 (高度 ${deskHeightMeters.toFixed(1)}m)`;
+            const noteCard = document.getElementById('relativeNoteCard');
+            if(noteCard) {
+                noteCard.innerHTML = `<p>💡 <strong>重力势能的相对性 & 质量影响</strong></p>
+                <p>当前零势能面: ${refName}。势能 Eₚ = m·g·h<sub>相对</sub>，相同物块不同参考面势能数值不同。<br>
+                拖拽物块改变高度，切换参考面观察势能变化。</p>
+                <div class="formula-mini">Eₚ = m·g·h_rel</div>`;
+            }
+        }
+        
+        // 绘制画布，无阴影效果（已移除阴影设置）
+        function drawCanvas() {
+            if(!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            const grad = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+            grad.addColorStop(0, '#cfe3ff');
+            grad.addColorStop(1, '#eef2e6');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // 地面
+            ctx.fillStyle = '#7c4d2a';
+            ctx.fillRect(0, groundY - 5, canvasWidth, 10);
+            ctx.fillStyle = '#b87c3a';
+            ctx.fillRect(0, groundY - 2, canvasWidth, 6);
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(canvasWidth, groundY);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#4e2f12';
+            ctx.stroke();
+            for(let i=0; i<14; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i*70, groundY-2);
+                ctx.lineTo(i*70+35, groundY-7);
+                ctx.stroke();
+            }
+            
+            // 参考面虚线
+            if(currentRef === 'desk') {
+                const deskYPx = groundY - (deskHeightMeters * pxPerMeter);
+                if(deskYPx > 10 && deskYPx < groundY) {
+                    ctx.beginPath();
+                    ctx.setLineDash([12, 10]);
+                    ctx.moveTo(20, deskYPx);
+                    ctx.lineTo(canvasWidth-20, deskYPx);
+                    ctx.strokeStyle = '#e67e22';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.font = 'bold 14px "Segoe UI"';
+                    ctx.fillStyle = '#c95f1a';
+                    ctx.fillText("📌 零势能参考面 (桌面)", canvasWidth-190, deskYPx-6);
+                }
+            } else {
+                ctx.font = 'bold 14px "Segoe UI"';
+                ctx.fillStyle = '#2b5a2e';
+                ctx.fillText("🔻 零势能参考面 (地面)", canvasWidth-190, groundY-8);
+            }
+            
+            // 高度标尺
+            ctx.font = 'bold 15px "Segoe UI"';
+            ctx.fillStyle = '#2c3e4e';
+            const rulerX = 38;
+            ctx.beginPath();
+            ctx.moveTo(rulerX, 12);
+            ctx.lineTo(rulerX, groundY-10);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#446688';
+            ctx.stroke();
+            const maxHeightMeters = 5.0;
+            for(let hM = 0; hM <= maxHeightMeters+0.1; hM+=0.5) {
+                let heightPx = hM * pxPerMeter;
+                let yPos = groundY - heightPx;
+                if(yPos >= 12 && yPos <= groundY-4) {
+                    ctx.beginPath();
+                    ctx.moveTo(rulerX-8, yPos);
+                    ctx.lineTo(rulerX, yPos);
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.fillStyle = '#1f4d6e';
+                    ctx.font = '13px monospace';
+                    ctx.fillText(`${hM.toFixed(1)}m`, rulerX-36, yPos+5);
+                }
+            }
+            ctx.fillStyle = '#2a5f7a';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.fillText("绝对高度标尺", rulerX-22, 28);
+            
+            // 绘制物块 (无阴影，无额外质量文字)
+            for(let idx = 0; idx < blocks.length; idx++) {
+                const block = blocks[idx];
+                const blockX = block.x - block.width/2;
+                const blockY = block.y - block.height/2;
+                // 无阴影，直接填充
+                ctx.fillStyle = block.color;
+                ctx.beginPath();
+                ctx.roundRect(blockX, blockY, block.width, block.height, 14);
+                ctx.fill();
+                ctx.fillStyle = block.lightColor;
+                ctx.beginPath();
+                ctx.roundRect(blockX+4, blockY+3, block.width-8, 10, 6);
+                ctx.fill();
+                ctx.font = `bold 28px "Segoe UI Emoji"`;
+                ctx.fillStyle = '#ffffffdd';
+                ctx.fillText(block.emoji, blockX + block.width/2 - 14, blockY + block.height/2 + 8);
+                ctx.strokeStyle = '#1e4663';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.roundRect(blockX, blockY, block.width, block.height, 14);
+                ctx.stroke();
+                
+                const bottomX = block.x;
+                const bottomYBlock = block.y + block.height/2;
+                ctx.beginPath();
+                ctx.setLineDash([7, 9]);
+                ctx.moveTo(bottomX, bottomYBlock);
+                ctx.lineTo(bottomX, groundY);
+                ctx.strokeStyle = '#888c9e';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                const hRel = getRelativeHeightForBlock(block);
+                ctx.font = 'bold 15px "Segoe UI"';
+                ctx.fillStyle = (idx === 0) ? '#1f6392' : '#b85e1a';
+                ctx.fillText(`h_rel = ${hRel.toFixed(2)}m`, bottomX+12, (bottomYBlock+groundY)/2 - 6);
+            }
+            ctx.font = 'italic 15px "Segoe UI"';
+            ctx.fillStyle = '#2c5170';
+            ctx.fillText(`参考面: ${currentRef === 'ground' ? '地面' : '桌面(1.2m)'}`, canvasWidth-180, 55);
+        }
+        
+        // 拖拽逻辑
+        let activeBlockIndex = -1;
+        function onMouseDown(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if(e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            const hitIdx = (()=>{
+                for(let i=0;i<blocks.length;i++){
+                    const b=blocks[i];
+                    const left = b.x - b.width/2, right = b.x + b.width/2;
+                    const top = b.y - b.height/2, bottom = b.y + b.height/2;
+                    if(canvasX>=left && canvasX<=right && canvasY>=top && canvasY<=bottom) return i;
+                }
+                return -1;
+            })();
+            if(hitIdx !== -1){
+                activeBlockIndex = hitIdx;
+                const block = blocks[activeBlockIndex];
+                block.isDragging = true;
+                block.dragOffsetY = block.y - canvasY;
+                canvas.style.cursor = 'grabbing';
+            } else activeBlockIndex = -1;
+        }
+        function onMouseMove(e) {
+            if(activeBlockIndex === -1) return;
+            const block = blocks[activeBlockIndex];
+            if(!block.isDragging) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const scaleY = canvas.height / rect.height;
+            let clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            let mouseCanvasY = (clientY - rect.top) * scaleY;
+            let newY = mouseCanvasY + block.dragOffsetY;
+            const minY = block.height/2, maxY = groundY - block.height/2;
+            block.y = Math.min(maxY, Math.max(minY, newY));
+            drawCanvas();
+            updateUI();
+        }
+        function onMouseUp(e) {
+            if(activeBlockIndex !== -1){
+                blocks[activeBlockIndex].isDragging = false;
+                canvas.style.cursor = 'grab';
+                activeBlockIndex = -1;
+                e.preventDefault();
+            }
+        }
+        
+        function setReference(refType) {
+            currentRef = refType;
+            document.querySelectorAll('.ref-btn').forEach(btn => {
+                if(btn.getAttribute('data-ref') === refType) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            drawCanvas();
+            updateUI();
+        }
+        
+        function resizeAndInit() {
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            groundY = canvasHeight - 48;
+            const maxHeightPx = groundY - 18;
+            pxPerMeter = maxHeightPx / 5.0;
+            blocks[0].x = canvasWidth * 0.28;
+            blocks[1].x = canvasWidth * 0.72;
+            setBlockAbsoluteHeight(blocks[0], 1.6);
+            setBlockAbsoluteHeight(blocks[1], 1.2);
+            drawCanvas();
+            updateUI();
+        }
+        
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (w < 2 * r) r = w / 2;
+                if (h < 2 * r) r = h / 2;
+                this.moveTo(x+r, y);
+                this.lineTo(x+w-r, y);
+                this.quadraticCurveTo(x+w, y, x+w, y+r);
+                this.lineTo(x+w, y+h-r);
+                this.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+                this.lineTo(x+r, y+h);
+                this.quadraticCurveTo(x, y+h, x, y+h-r);
+                this.lineTo(x, y+r);
+                this.quadraticCurveTo(x, y, x+r, y);
+                return this;
+            };
+        }
+        
+        function bindEvents() {
+            canvas.addEventListener('mousedown', onMouseDown);
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+            canvas.addEventListener('touchstart', onMouseDown, {passive: false});
+            window.addEventListener('touchmove', onMouseMove, {passive: false});
+            window.addEventListener('touchend', onMouseUp);
+            canvas.addEventListener('dragstart', (e)=>e.preventDefault());
+            canvas.style.cursor = 'grab';
+            document.getElementById('resetZeroBtn').addEventListener('click', resetToLowAbsolute);
+            document.querySelectorAll('.ref-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    setReference(btn.getAttribute('data-ref'));
+                });
+            });
+        }
+        
+        resizeAndInit();
+        bindEvents();
+        window.addEventListener('resize', () => resizeAndInit());
+        updateUI();
+    })();
+</script>
+</body>
+</html>

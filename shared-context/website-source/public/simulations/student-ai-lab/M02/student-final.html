@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>复数模块化实验室 | 模长最值·四则运算·辐角几何 | 完整修复版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef2f9 0%, #dce3ef 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans', system-ui, sans-serif;
+            padding: 1rem;
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .hero-section {
+            background: linear-gradient(110deg, #0a2e3b, #18596b);
+            color: white;
+            padding: 1rem 2rem;
+            text-align: center;
+        }
+        .hero-section h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .math-tag {
+            background: #f5a623;
+            padding: 0.2rem 1rem;
+            border-radius: 60px;
+            font-size: 1rem;
+            font-family: monospace;
+            color: #1e3b44;
+        }
+        .sub {
+            opacity: 0.9;
+            margin-top: 0.3rem;
+            font-size: 0.85rem;
+        }
+
+        .module-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem 1.5rem 0 1.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(4px);
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #eef2f7;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: bold;
+            font-size: 1rem;
+            color: #145e74;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .tab-btn.active {
+            background: #e67e22;
+            color: white;
+            box-shadow: 0 4px 12px rgba(230,126,34,0.3);
+        }
+        .tab-btn:hover:not(.active) {
+            background: #cbd5e0;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            padding: 1.5rem;
+        }
+        .control-panel {
+            flex: 1.2;
+            min-width: 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border-radius: 1.5rem;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+        }
+        .canvas-panel {
+            flex: 1.8;
+            min-width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(4px);
+            border-radius: 1.5rem;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+        }
+        .canvas-wrapper {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            cursor: crosshair;
+            aspect-ratio: 1/1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            flex-wrap: wrap;
+            min-height: 2rem;
+        }
+        .slider-group {
+            margin-bottom: 1rem;
+        }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #145e74;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: linear-gradient(90deg, #2c7da0, #6db4cf);
+            border-radius: 5px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #f39c12;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+        }
+        .coord-badge {
+            background: #eef2f7;
+            border-radius: 30px;
+            padding: 0.2rem 0.6rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 8px 0;
+        }
+        .result-card {
+            background: #1e2f3c;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            color: #ffefcf;
+            margin: 0.8rem 0;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+        .insight-card {
+            background: #fef7e0;
+            border-left: 5px solid #f39c12;
+            padding: 0.6rem;
+            border-radius: 1rem;
+            font-size: 0.8rem;
+            margin-top: 0.8rem;
+        }
+        button.small-btn {
+            background: white;
+            border: 1px solid #cbdbe0;
+            padding: 0.2rem 0.8rem;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-top: 6px;
+            transition: 0.1s;
+            font-weight: 500;
+        }
+        button.small-btn:hover {
+            background: #e0e8f0;
+        }
+        .op-btn {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        .op-btn.active {
+            background: #e67e22;
+            box-shadow: 0 2px 6px rgba(230,126,34,0.4);
+        }
+        .op-group {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 0.5rem 0;
+        }
+        .extreme-highlight {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #e67e22;
+        }
+        .module-content {
+            display: none;
+        }
+        .module-content.active-module {
+            display: block;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            background: #e0eaf1;
+            padding: 0.6rem;
+            color: #2f6b7c;
+        }
+        @media (max-width: 900px) {
+            .main-layout { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="hero-section">
+        <h1>🧩 复数模块化实验室 <span class="math-tag">模长最值 · 四则运算 · 辐角几何</span></h1>
+        <div class="sub">⚡ 点击下方按钮切换模块 | 独立演示核心概念 | 随机/滑块/画布点击 全部正常工作</div>
+    </div>
+
+    <div class="module-tabs">
+        <button class="tab-btn active" data-module="extreme">📐 模长最值问题</button>
+        <button class="tab-btn" data-module="ops">➕ 复数四则运算</button>
+        <button class="tab-btn" data-module="arg">🎯 辐角几何专题</button>
+    </div>
+
+    <div class="main-layout">
+        <div class="control-panel" id="controlPanel">
+            <!-- 模长最值模块 -->
+            <div id="module-extreme" class="module-content active-module">
+                <h3 style="color:#c4450c;">📐 条件 |Z| = r 到定点 Q 的最值</h3>
+                <div class="slider-group">
+                    <div class="slider-header"><span>📏 模长 r = |Z|</span><span id="rValueLabel">3.20</span></div>
+                    <input type="range" id="rSlider" min="0.5" max="6" step="0.02" value="3.2">
+                </div>
+                <div class="coord-badge">🔵 轨迹: 以原点为圆心、半径 r 的圆</div>
+                <div class="slider-group">
+                    <div class="slider-header"><span>📍 定点 Q (x₀, y₀)</span><span id="qxLabel">2.50</span></div>
+                    <input type="range" id="qxSlider" min="-5.5" max="5.5" step="0.05" value="2.5">
+                    <div class="slider-header"><span>虚部 y₀</span><span id="qyLabel">1.80</span></div>
+                    <input type="range" id="qySlider" min="-5.5" max="5.5" step="0.05" value="1.8">
+                </div>
+                <div class="result-card">
+                    <div>🎯 圆上动点 Z 到定点 Q 的距离最值：</div>
+                    <div>✅ 最短 dₘᵢₙ = <span id="minDist" class="extreme-highlight">—</span></div>
+                    <div>❌ 最长 dₘₐₓ = <span id="maxDist" class="extreme-highlight">—</span></div>
+                    <div style="font-size:0.7rem;">📐 几何原理: ||Q| - r| ≤ |Z-Q| ≤ |Q| + r</div>
+                </div>
+                <div class="insight-card">
+                    💡 <strong>最值几何解释</strong><br>
+                    • 当 Z 在 OQ 连线与圆的交点处取到最值。<br>
+                    • 画布中 <span style="color:#9b59b6;">紫色虚线</span> 为当前 |Z-Q|。
+                </div>
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 6px;">
+                    <button id="snapToMin" class="small-btn">📍 最短距点</button>
+                    <button id="snapToMax" class="small-btn">📍 最长距点</button>
+                    <button id="randomZonCircle" class="small-btn">🎲 随机圆上点</button>
+                </div>
+            </div>
+
+            <!-- 四则运算模块（随机功能已完全修复） -->
+            <div id="module-ops" class="module-content">
+                <h3 style="color:#2c6e9e;">⚙️ 复数 Z₁ ◯ Z₂ 运算几何</h3>
+                <div class="slider-group">
+                    <div class="slider-header"><span>🔴 Z₁ = a + bi</span><span id="z1ReLabel">2.50</span></div>
+                    <input type="range" id="z1Re" min="-5" max="5" step="0.02" value="2.5">
+                    <div class="slider-header"><span>虚部 b</span><span id="z1ImLabel">1.80</span></div>
+                    <input type="range" id="z1Im" min="-5" max="5" step="0.02" value="1.8">
+                </div>
+                <div class="coord-badge">Z₁ = <span id="z1Formula">2.50 + 1.80i</span></div>
+                <div class="slider-group" style="margin-top: 0.5rem;">
+                    <div class="slider-header"><span>🔵 Z₂ = c + di</span><span id="z2ReLabel">1.20</span></div>
+                    <input type="range" id="z2Re" min="-5" max="5" step="0.02" value="1.2">
+                    <div class="slider-header"><span>虚部 d</span><span id="z2ImLabel">0.90</span></div>
+                    <input type="range" id="z2Im" min="-5" max="5" step="0.02" value="0.9">
+                </div>
+                <div class="coord-badge">Z₂ = <span id="z2Formula">1.20 + 0.90i</span></div>
+                <div class="op-group" id="opGroup">
+                    <button data-op="add" class="op-btn active">➕ Z₁+Z₂</button>
+                    <button data-op="sub" class="op-btn">➖ Z₁−Z₂</button>
+                    <button data-op="mul" class="op-btn">✖️ Z₁×Z₂</button>
+                </div>
+                <div class="result-card" id="opResult">
+                    <p>📌 结果 R = <strong id="resultFormula">3.70 + 2.70i</strong></p>
+                    <p>📏 |R| = <span id="resultMod">4.67</span> &nbsp; 🎯 辐角 φ = <span id="resultArg">0.63</span> rad</p>
+                    <p>🧩 <span id="geoMeaning">平行四边形法则 (加法)</span></p>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button id="randomZ1" class="small-btn" style="flex:1;">🎲 随机 Z₁</button>
+                    <button id="randomZ2" class="small-btn" style="flex:1;">🎲 随机 Z₂</button>
+                </div>
+            </div>
+
+            <!-- 辐角几何模块 -->
+            <div id="module-arg" class="module-content">
+                <h3 style="color:#16a085;">🎯 辐角 θ = atan2(b, a)</h3>
+                <div class="slider-group">
+                    <div class="slider-header"><span>🔴 复数 Z = a + bi</span><span id="argZReLabel">2.50</span></div>
+                    <input type="range" id="argZRe" min="-5" max="5" step="0.02" value="2.5">
+                    <div class="slider-header"><span>虚部 b</span><span id="argZImLabel">1.80</span></div>
+                    <input type="range" id="argZIm" min="-5" max="5" step="0.02" value="1.8">
+                </div>
+                <div class="coord-badge">Z = <span id="argZFormula">2.50 + 1.80i</span></div>
+                <div class="result-card">
+                    <div>📐 辐角 θ = <strong id="argRadDisplay">0.62</strong> rad  ·  <strong id="argDegDisplay">35.5°</strong></div>
+                    <div>📏 模长 |Z| = <span id="modZDisplay">3.08</span></div>
+                    <div style="font-size:0.7rem;">🎨 绿色扇形区域 = Z 的辐角范围</div>
+                </div>
+                <div class="insight-card">
+                    💡 <strong>辐角几何意义</strong><br>
+                    • 辐角是从实轴正方向逆时针旋转到向量的角度。<br>
+                    • 旋转 Z 的辐角，观察向量方向变化。
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 6px;">
+                    <button id="rotateZAdd15" class="small-btn" style="flex:1;">↻ 辐角 +15°</button>
+                    <button id="randomArgZ" class="small-btn" style="flex:1;">🎲 随机复数</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="canvas-panel">
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas" width="700" height="700" style="width:100%; height:auto; max-width:700px; margin:0 auto; display:block; aspect-ratio:1/1"></canvas>
+            </div>
+            <div class="legend" id="legendArea"></div>
+            <div style="text-align:center; font-size:0.75rem; margin-top: 8px;">
+                🖱️ <strong>点击画布</strong> → 移动当前模块的核心复数 | 所有滑块实时联动
+            </div>
+        </div>
+    </div>
+    <footer>
+        🌟 模块化设计 | 随机按钮/滑块/画布点击均独立工作 | 模长最值 · 四则运算 · 辐角几何 一次学透
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // ---------- 独立模块数据 ----------
+        // 1. 模长最值模块
+        let r = 3.2;
+        let q = { re: 2.5, im: 1.8 };
+        let zCircle = { re: r * Math.cos(Math.PI/4), im: r * Math.sin(Math.PI/4) }; // 初始一个圆上点
+        
+        // 2. 四则运算模块
+        let z1 = { re: 2.5, im: 1.8 };
+        let z2 = { re: 1.2, im: 0.9 };
+        let currentOp = "add";
+        
+        // 3. 辐角模块
+        let argZ = { re: 2.5, im: 1.8 };
+        
+        // 当前激活模块
+        let currentModule = "extreme";
+        
+        // 坐标系范围
+        const X_MIN = -6.2, X_MAX = 6.2, Y_MIN = -6.2, Y_MAX = 6.2;
+        let canvas = document.getElementById('mainCanvas');
+        let ctx = canvas.getContext('2d');
+        let canvasWidth = 700, canvasHeight = 700;
+        
+        // ---------- 通用工具 ----------
+        function mod(v) { return Math.hypot(v.re, v.im); }
+        function getArg(v) { return Math.atan2(v.im, v.re); }
+        
+        // 将圆上点约束到半径 r
+        function clampCirclePoint() {
+            let cur = mod(zCircle);
+            if (cur < 1e-6) { zCircle.re = r; zCircle.im = 0; }
+            else { let ratio = r / cur; zCircle.re *= ratio; zCircle.im *= ratio; }
+        }
+        
+        // 最值模块文本更新
+        function updateExtremeText() {
+            let dq = mod(q);
+            let minV = Math.abs(dq - r), maxV = dq + r;
+            document.getElementById('minDist').innerText = minV.toFixed(4);
+            document.getElementById('maxDist').innerText = maxV.toFixed(4);
+        }
+        
+        function getMinCirclePoint() {
+            let dq = mod(q);
+            if (dq < 1e-6) return { re: r, im: 0 };
+            let ratio = r / dq;
+            return { re: q.re * ratio, im: q.im * ratio };
+        }
+        function getMaxCirclePoint() {
+            let dq = mod(q);
+            if (dq < 1e-6) return { re: -r, im: 0 };
+            let ratio = -r / dq;
+            return { re: q.re * ratio, im: q.im * ratio };
+        }
+        
+        // 运算模块核心
+        function computeResult() {
+            if (currentOp === "add") return { re: z1.re + z2.re, im: z1.im + z2.im };
+            if (currentOp === "sub") return { re: z1.re - z2.re, im: z1.im - z2.im };
+            return { re: z1.re * z2.re - z1.im * z2.im, im: z1.re * z2.im + z1.im * z2.re };
+        }
+        
+        function updateOpsUI() {
+            let res = computeResult();
+            let m = mod(res), a = getArg(res);
+            let sign = res.im >= 0 ? '+' : '-';
+            document.getElementById('resultFormula').innerHTML = `${res.re.toFixed(3)} ${sign} ${Math.abs(res.im).toFixed(3)}i`;
+            document.getElementById('resultMod').innerText = m.toFixed(4);
+            document.getElementById('resultArg').innerText = a.toFixed(4) + " rad";
+            let msg = (currentOp === "add") ? "平行四边形法则 (Z₁ + Z₂)" :
+                      (currentOp === "sub") ? "向量减法: Z₁ - Z₂ = Z₁ + (-Z₂)" :
+                      `模长相乘: ${mod(z1).toFixed(2)} × ${mod(z2).toFixed(2)}，辐角相加 → 旋转缩放`;
+            document.getElementById('geoMeaning').innerText = msg;
+            // 更新公式显示
+            let s1 = z1.im >= 0 ? '+' : '-', s2 = z2.im >= 0 ? '+' : '-';
+            document.getElementById('z1Formula').innerText = `${z1.re.toFixed(2)} ${s1} ${Math.abs(z1.im).toFixed(2)}i`;
+            document.getElementById('z2Formula').innerText = `${z2.re.toFixed(2)} ${s2} ${Math.abs(z2.im).toFixed(2)}i`;
+            document.getElementById('z1ReLabel').innerText = z1.re.toFixed(2);
+            document.getElementById('z1ImLabel').innerText = z1.im.toFixed(2);
+            document.getElementById('z2ReLabel').innerText = z2.re.toFixed(2);
+            document.getElementById('z2ImLabel').innerText = z2.im.toFixed(2);
+            // 同步滑块值（避免滑块显示滞后）
+            document.getElementById('z1Re').value = z1.re;
+            document.getElementById('z1Im').value = z1.im;
+            document.getElementById('z2Re').value = z2.re;
+            document.getElementById('z2Im').value = z2.im;
+        }
+        
+        // 辐角模块UI
+        function updateArgUI() {
+            let m = mod(argZ), a = getArg(argZ), deg = a * 180 / Math.PI;
+            document.getElementById('argRadDisplay').innerText = a.toFixed(4) + " rad";
+            document.getElementById('argDegDisplay').innerText = deg.toFixed(2) + "°";
+            document.getElementById('modZDisplay').innerText = m.toFixed(4);
+            let s = argZ.im >= 0 ? '+' : '-';
+            document.getElementById('argZFormula').innerText = `${argZ.re.toFixed(3)} ${s} ${Math.abs(argZ.im).toFixed(3)}i`;
+            document.getElementById('argZReLabel').innerText = argZ.re.toFixed(2);
+            document.getElementById('argZImLabel').innerText = argZ.im.toFixed(2);
+            document.getElementById('argZRe').value = argZ.re;
+            document.getElementById('argZIm').value = argZ.im;
+        }
+        
+        // 从滑块同步最值模块
+        function syncExtremeFromSliders() {
+            r = parseFloat(document.getElementById('rSlider').value);
+            document.getElementById('rValueLabel').innerText = r.toFixed(3);
+            q.re = parseFloat(document.getElementById('qxSlider').value);
+            q.im = parseFloat(document.getElementById('qySlider').value);
+            document.getElementById('qxLabel').innerText = q.re.toFixed(2);
+            document.getElementById('qyLabel').innerText = q.im.toFixed(2);
+            clampCirclePoint();
+            updateExtremeText();
+        }
+        
+        // 从滑块同步运算模块
+        function syncOpsFromSliders() {
+            z1.re = parseFloat(document.getElementById('z1Re').value);
+            z1.im = parseFloat(document.getElementById('z1Im').value);
+            z2.re = parseFloat(document.getElementById('z2Re').value);
+            z2.im = parseFloat(document.getElementById('z2Im').value);
+            updateOpsUI();
+        }
+        
+        // 从滑块同步辐角模块
+        function syncArgFromSliders() {
+            argZ.re = parseFloat(document.getElementById('argZRe').value);
+            argZ.im = parseFloat(document.getElementById('argZIm').value);
+            updateArgUI();
+        }
+        
+        // ---------- 绘图核心 (完全按模块独立绘制) ----------
+        function drawCanvas() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            function toPx(x, y) {
+                let px = ((x - X_MIN) / (X_MAX - X_MIN)) * canvasWidth;
+                let py = canvasHeight - ((y - Y_MIN) / (Y_MAX - Y_MIN)) * canvasHeight;
+                return { px, py };
+            }
+            // 通用网格&坐标轴
+            ctx.save();
+            ctx.strokeStyle = "#cbd5e6";
+            ctx.lineWidth = 0.6;
+            for (let x = -6; x <= 6; x++) { if(Math.abs(x)>0.05){ let p1=toPx(x,Y_MIN), p2=toPx(x,Y_MAX); ctx.beginPath(); ctx.moveTo(p1.px,p1.py); ctx.lineTo(p2.px,p2.py); ctx.stroke(); } }
+            for (let y = -6; y <= 6; y++) { if(Math.abs(y)>0.05){ let p1=toPx(X_MIN,y), p2=toPx(X_MAX,y); ctx.beginPath(); ctx.moveTo(p1.px,p1.py); ctx.lineTo(p2.px,p2.py); ctx.stroke(); } }
+            ctx.beginPath(); ctx.lineWidth = 2.2; ctx.strokeStyle = "#2c6b7c";
+            let orig = toPx(0,0), right=toPx(X_MAX,0), left=toPx(X_MIN,0), top=toPx(0,Y_MAX), bottom=toPx(0,Y_MIN);
+            ctx.moveTo(left.px,left.py); ctx.lineTo(right.px,right.py); ctx.stroke();
+            ctx.moveTo(bottom.px,bottom.py); ctx.lineTo(top.px,top.py); ctx.stroke();
+            ctx.fillStyle = "#1f6d84"; ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillText("Re", toPx(X_MAX-0.5,-0.2).px, toPx(X_MAX-0.5,-0.2).py);
+            ctx.fillText("Im", toPx(0.2,Y_MAX-0.5).px, toPx(0.2,Y_MAX-0.5).py);
+            ctx.fillStyle = "#f39c12"; ctx.beginPath(); ctx.arc(orig.px, orig.py, 4, 0, 2*Math.PI); ctx.fill();
+            
+            if (currentModule === "extreme") {
+                let radiusPx = r * (canvasWidth / (X_MAX - X_MIN));
+                ctx.beginPath(); ctx.arc(orig.px, orig.py, radiusPx, 0, 2*Math.PI);
+                ctx.strokeStyle = "#3498db"; ctx.setLineDash([8, 6]); ctx.lineWidth = 2.2; ctx.stroke();
+                ctx.setLineDash([]);
+                let qPix = toPx(q.re, q.im);
+                ctx.beginPath(); ctx.arc(qPix.px, qPix.py, 7, 0, 2*Math.PI);
+                ctx.fillStyle = "#e74c3c"; ctx.fill(); ctx.fillStyle = "white"; ctx.fillText("Q", qPix.px-4, qPix.py-3);
+                let zcPix = toPx(zCircle.re, zCircle.im);
+                ctx.beginPath(); ctx.arc(zcPix.px, zcPix.py, 8, 0, 2*Math.PI);
+                ctx.fillStyle = "#e67e22"; ctx.fill(); ctx.beginPath(); ctx.arc(zcPix.px, zcPix.py, 4, 0, 2*Math.PI); ctx.fillStyle = "#f39c12"; ctx.fill();
+                ctx.fillStyle = "#c4450c"; ctx.fillText("Z", zcPix.px+5, zcPix.py-4);
+                ctx.beginPath(); ctx.moveTo(qPix.px, qPix.py); ctx.lineTo(zcPix.px, zcPix.py);
+                ctx.strokeStyle = "#9b59b6"; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.stroke();
+                let curDist = Math.hypot(zCircle.re - q.re, zCircle.im - q.im);
+                let midX = (qPix.px + zcPix.px)/2, midY = (qPix.py + zcPix.py)/2;
+                ctx.fillStyle = "#8e44ad"; ctx.font = "bold 10px monospace"; ctx.fillText(`d=${curDist.toFixed(3)}`, midX-20, midY-5);
+                ctx.setLineDash([]);
+                document.getElementById('legendArea').innerHTML = `<span>🔵 蓝色虚线圆: 轨迹 |Z| = r</span> <span>🟠 橙色点: 动点 Z</span> <span>🔴 定点 Q</span> <span>🟣 紫色: 当前距离</span>`;
+            } 
+            else if (currentModule === "ops") {
+                function drawVec(v, color, w, label) {
+                    let end = toPx(v.re, v.im), start = toPx(0,0);
+                    ctx.beginPath(); ctx.moveTo(start.px, start.py); ctx.lineTo(end.px, end.py);
+                    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.stroke();
+                    let ang = Math.atan2(v.im, v.re);
+                    let sz = 8, a1 = ang + Math.PI - 0.5, a2 = ang + Math.PI + 0.5;
+                    ctx.beginPath(); ctx.moveTo(end.px, end.py);
+                    ctx.lineTo(end.px + Math.cos(a1)*sz, end.py + Math.sin(a1)*sz);
+                    ctx.lineTo(end.px + Math.cos(a2)*sz, end.py + Math.sin(a2)*sz); ctx.fillStyle = color; ctx.fill();
+                    ctx.fillStyle = color; ctx.font = "bold 10px"; ctx.fillText(label, end.px+6, end.py-6);
+                }
+                drawVec(z1, "#e67e22", 2.5, "Z₁");
+                drawVec(z2, "#2c7da0", 2.5, "Z₂");
+                let res = computeResult();
+                drawVec(res, "#9b59b6", 2.8, "R");
+                if(currentOp === "add"){
+                    let p1=toPx(z1.re,z1.im), p2=toPx(z2.re,z2.im), pR=toPx(res.re,res.im);
+                    ctx.beginPath(); ctx.setLineDash([4,5]); ctx.strokeStyle = "#a5c1d4";
+                    ctx.moveTo(p1.px,p1.py); ctx.lineTo(pR.px,pR.py); ctx.stroke();
+                    ctx.moveTo(p2.px,p2.py); ctx.lineTo(pR.px,pR.py); ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+                if(currentOp === "sub"){
+                    let neg = { re: -z2.re, im: -z2.im };
+                    let endN = toPx(neg.re, neg.im);
+                    ctx.beginPath(); ctx.setLineDash([5,6]); ctx.moveTo(orig.px, orig.py); ctx.lineTo(endN.px, endN.py);
+                    ctx.strokeStyle = "#88aacc"; ctx.stroke(); ctx.setLineDash([]);
+                }
+                document.getElementById('legendArea').innerHTML = `<span>🟤 向量 Z₁ / Z₂ / 结果 R</span> <span>🔹 虚线辅助线</span>`;
+            } 
+            else if (currentModule === "arg") {
+                let m = mod(argZ);
+                if (m > 0.05) {
+                    let ang = getArg(argZ);
+                    let posAng = ang < 0 ? ang + 2*Math.PI : ang;
+                    let rArc = Math.min(70, 25 + m * 6);
+                    ctx.beginPath(); ctx.moveTo(orig.px, orig.py); ctx.arc(orig.px, orig.py, rArc, 0, posAng, false);
+                    ctx.fillStyle = "rgba(46, 204, 113, 0.25)"; ctx.fill();
+                    ctx.beginPath(); ctx.arc(orig.px, orig.py, rArc, 0, posAng, false);
+                    ctx.strokeStyle = "#2ecc71"; ctx.lineWidth = 2; ctx.stroke();
+                    let mid = posAng/2;
+                    let tx = orig.px + Math.cos(mid)*(rArc+12), ty = orig.py + Math.sin(mid)*(rArc+8);
+                    ctx.fillStyle = "#27ae60"; ctx.font = "italic 10px"; ctx.fillText(`θ=${(ang*180/Math.PI).toFixed(1)}°`, tx-12, ty-4);
+                }
+                let end = toPx(argZ.re, argZ.im);
+                ctx.beginPath(); ctx.moveTo(orig.px, orig.py); ctx.lineTo(end.px, end.py);
+                ctx.strokeStyle = "#e67e22"; ctx.lineWidth = 3; ctx.stroke();
+                let angV = Math.atan2(argZ.im, argZ.re);
+                let sz=8, a1=angV+Math.PI-0.5, a2=angV+Math.PI+0.5;
+                ctx.beginPath(); ctx.moveTo(end.px, end.py);
+                ctx.lineTo(end.px+Math.cos(a1)*sz, end.py+Math.sin(a1)*sz);
+                ctx.lineTo(end.px+Math.cos(a2)*sz, end.py+Math.sin(a2)*sz); ctx.fillStyle = "#e67e22"; ctx.fill();
+                ctx.fillStyle = "#c4450c"; ctx.fillText("Z", end.px+6, end.py-6);
+                document.getElementById('legendArea').innerHTML = `<span>🟢 绿色扇形: 辐角范围</span> <span>🟠 橙色向量: 复数 Z</span>`;
+            }
+            ctx.restore();
+        }
+        
+        function fullRefresh() {
+            if (currentModule === "extreme") syncExtremeFromSliders();
+            else if (currentModule === "ops") syncOpsFromSliders();
+            else if (currentModule === "arg") syncArgFromSliders();
+            drawCanvas();
+        }
+        
+        // 随机函数独立实现，避免被滑块覆盖
+        function randomZ1Func() {
+            z1.re = (Math.random() * 10) - 5;
+            z1.im = (Math.random() * 10) - 5;
+            updateOpsUI();
+            drawCanvas();
+        }
+        function randomZ2Func() {
+            z2.re = (Math.random() * 10) - 5;
+            z2.im = (Math.random() * 10) - 5;
+            updateOpsUI();
+            drawCanvas();
+        }
+        
+        // 画布点击交互
+        function onCanvasClick(e) {
+            let rect = canvas.getBoundingClientRect();
+            let sx = canvas.width / rect.width, sy = canvas.height / rect.height;
+            let mx = (e.clientX - rect.left) * sx, my = (e.clientY - rect.top) * sy;
+            mx = Math.min(canvasWidth, Math.max(0, mx)); my = Math.min(canvasHeight, Math.max(0, my));
+            let x = X_MIN + (mx / canvasWidth) * (X_MAX - X_MIN);
+            let y = Y_MAX - (my / canvasHeight) * (Y_MAX - Y_MIN);
+            if (currentModule === "extreme") {
+                let angle = Math.atan2(y, x);
+                zCircle.re = r * Math.cos(angle);
+                zCircle.im = r * Math.sin(angle);
+                fullRefresh();
+            } else if (currentModule === "ops") {
+                z1.re = x; z1.im = y;
+                updateOpsUI();
+                drawCanvas();
+            } else if (currentModule === "arg") {
+                argZ.re = x; argZ.im = y;
+                updateArgUI();
+                drawCanvas();
+            }
+        }
+        
+        function switchModule(moduleId) {
+            currentModule = moduleId;
+            document.querySelectorAll('.module-content').forEach(el => el.classList.remove('active-module'));
+            document.getElementById(`module-${moduleId}`).classList.add('active-module');
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-module="${moduleId}"]`).classList.add('active');
+            fullRefresh();
+        }
+        
+        function bindEvents() {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchModule(btn.getAttribute('data-module'))));
+            // 最值控件
+            document.getElementById('rSlider').addEventListener('input', () => fullRefresh());
+            document.getElementById('qxSlider').addEventListener('input', () => fullRefresh());
+            document.getElementById('qySlider').addEventListener('input', () => fullRefresh());
+            document.getElementById('snapToMin').addEventListener('click', () => { Object.assign(zCircle, getMinCirclePoint()); clampCirclePoint(); fullRefresh(); });
+            document.getElementById('snapToMax').addEventListener('click', () => { Object.assign(zCircle, getMaxCirclePoint()); clampCirclePoint(); fullRefresh(); });
+            document.getElementById('randomZonCircle').addEventListener('click', () => { let ang = Math.random()*2*Math.PI; zCircle.re = r*Math.cos(ang); zCircle.im = r*Math.sin(ang); fullRefresh(); });
+            // 运算控件
+            document.getElementById('z1Re').addEventListener('input', () => fullRefresh());
+            document.getElementById('z1Im').addEventListener('input', () => fullRefresh());
+            document.getElementById('z2Re').addEventListener('input', () => fullRefresh());
+            document.getElementById('z2Im').addEventListener('input', () => fullRefresh());
+            document.getElementById('randomZ1').addEventListener('click', randomZ1Func);
+            document.getElementById('randomZ2').addEventListener('click', randomZ2Func);
+            document.querySelectorAll('.op-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentOp = btn.getAttribute('data-op');
+                    document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateOpsUI();
+                    drawCanvas();
+                });
+            });
+            // 辐角控件
+            document.getElementById('argZRe').addEventListener('input', () => fullRefresh());
+            document.getElementById('argZIm').addEventListener('input', () => fullRefresh());
+            document.getElementById('rotateZAdd15').addEventListener('click', () => {
+                let m = mod(argZ);
+                let newArg = getArg(argZ) + 15 * Math.PI/180;
+                argZ.re = m * Math.cos(newArg);
+                argZ.im = m * Math.sin(newArg);
+                updateArgUI();
+                drawCanvas();
+            });
+            document.getElementById('randomArgZ').addEventListener('click', () => { argZ.re = (Math.random()*10)-5; argZ.im = (Math.random()*10)-5; updateArgUI(); drawCanvas(); });
+            canvas.addEventListener('click', onCanvasClick);
+        }
+        
+        function init() {
+            canvas.width = 700; canvas.height = 700;
+            canvasWidth = 700; canvasHeight = 700;
+            clampCirclePoint();
+            bindEvents();
+            fullRefresh();
+        }
+        init();
+    })();
+</script>
+</body>
+</html>

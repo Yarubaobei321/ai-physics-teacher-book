@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>开普勒三大定律 · 天体运动演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0b0f1c 0%, #1a1f2f 100%);
+      font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1300px;
+      width: 100%;
+      background: rgba(18, 22, 35, 0.8);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 2.5rem;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      padding: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #e0e5f0;
+    }
+
+    h1 {
+      text-align: center;
+      font-weight: 500;
+      font-size: 2.2rem;
+      letter-spacing: 2px;
+      margin-bottom: 0.25rem;
+      background: linear-gradient(180deg, #ffffff 0%, #b0c6ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 1rem;
+      color: #8892b0;
+      margin-bottom: 2rem;
+      font-weight: 300;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 1.2rem;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .canvas-panel {
+      flex: 2;
+      min-width: 500px;
+      background: rgba(10, 14, 23, 0.6);
+      border-radius: 1.8rem;
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 1.2rem;
+      background: radial-gradient(circle at 20% 30%, #1a2332, #03050a);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.8);
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: #b9c6da;
+    }
+
+    .legend span::before {
+      content: "●";
+      margin-right: 0.4rem;
+      font-size: 1.2rem;
+      vertical-align: middle;
+    }
+
+    .legend .star::before {
+      content: "★";
+      color: #ffd966;
+      font-size: 1.2rem;
+    }
+
+    .legend .planet::before {
+      content: "●";
+      color: #6ab0f5;
+    }
+
+    .control-panel {
+      flex: 1.2;
+      min-width: 280px;
+      background: rgba(22, 27, 42, 0.7);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 1.8rem;
+      padding: 1.8rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+    }
+
+    .law-card {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 1.2rem;
+      padding: 1.2rem 1rem;
+      transition: all 0.2s ease;
+      border-left: 4px solid #5f7bbf;
+    }
+
+    .law-card h3 {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 0.8rem;
+      color: #cfdbff;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .law-card p {
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #b0bedd;
+      margin-bottom: 0.8rem;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #a0adcc;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      cursor: pointer;
+      background: #2a3147;
+      height: 5px;
+      border-radius: 5px;
+      accent-color: #6a8cff;
+    }
+
+    .value-display {
+      background: #1e2537;
+      padding: 0.2rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      color: #cbd5ff;
+    }
+
+    button {
+      background: rgba(74, 108, 200, 0.2);
+      border: 1px solid rgba(106, 140, 255, 0.5);
+      color: #d4e0ff;
+      padding: 0.7rem 1.2rem;
+      border-radius: 2rem;
+      font-weight: 500;
+      font-size: 0.95rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: 0.25s;
+      letter-spacing: 0.5px;
+      margin-top: 0.3rem;
+    }
+
+    button:hover {
+      background: rgba(74, 108, 200, 0.4);
+      border-color: #8aa4ff;
+      box-shadow: 0 0 15px rgba(90, 130, 255, 0.5);
+      color: white;
+    }
+
+    .reset-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #ccc;
+    }
+
+    .footer-note {
+      margin-top: auto;
+      font-size: 0.75rem;
+      color: #6b7a99;
+      text-align: center;
+    }
+
+    @media (max-width: 950px) {
+      .main-layout {
+        flex-direction: column;
+      }
+      .canvas-panel {
+        min-width: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>开普勒三大定律</h1>
+  <div class="subtitle">椭圆轨道 · 面积速度 · 周期和谐</div>
+
+  <div class="main-layout">
+    <div class="canvas-panel">
+      <canvas id="orbitCanvas" width="700" height="500" aria-label="开普勒轨道动画演示"></canvas>
+      <div class="legend">
+        <span class="star">恒星 (焦点)</span>
+        <span class="planet">行星</span>
+        <span style="color:#8899cc;">—— 轨道</span>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <div class="law-card">
+        <h3>📐 第一定律 (椭圆轨道)</h3>
+        <p>行星沿椭圆轨道运行，太阳位于椭圆的一个<strong style="color:#ffd966;">焦点</strong>上。</p>
+        <div class="slider-group">
+          <label>离心率 <span id="eccValue" class="value-display">0.60</span></label>
+          <input type="range" id="eccentricitySlider" min="0.05" max="0.9" step="0.01" value="0.60">
+          <p style="font-size:0.75rem; color:#8896b5;">↔ 拖动改变椭圆扁度 (0=圆, 接近1=极扁)</p>
+        </div>
+      </div>
+
+      <div class="law-card">
+        <h3>⏱️ 第二定律 (面积速度恒定)</h3>
+        <p>行星与太阳连线在相等时间内扫过<strong style="color:#ffd966;">相等面积</strong>。近日点速度快，远日点速度慢。</p>
+        <div class="slider-group">
+          <label>动画速度 <span id="speedValue" class="value-display">1.0x</span></label>
+          <input type="range" id="speedSlider" min="0.3" max="2.5" step="0.1" value="1.0">
+        </div>
+        <p style="font-size:0.8rem; margin-top:0.3rem;">✨ 观察行星在左侧(近日点)移动更快</p>
+      </div>
+
+      <div class="law-card">
+        <h3>🔷 第三定律 (周期定律)</h3>
+        <p>半长轴 <em>a</em> 越大，周期 <em>T</em> 越长：<strong>T² ∝ a³</strong></p>
+        <div class="slider-group">
+          <label>半长轴 (相对) <span id="semiValue" class="value-display">1.00</span></label>
+          <input type="range" id="semiMajorSlider" min="0.6" max="1.8" step="0.01" value="1.0">
+        </div>
+        <p style="font-size:0.8rem;">当前周期 ≈ <span id="periodDisplay">1.00</span> 时间单位</p>
+      </div>
+
+      <button id="resetButton" class="reset-btn">⟳ 重置参数</button>
+      <div class="footer-note">
+        开普勒定律 · 交互演示<br>高中生AI技能测试
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- 获取DOM元素 -----
+    const canvas = document.getElementById('orbitCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 滑块
+    const eccSlider = document.getElementById('eccentricitySlider');
+    const speedSlider = document.getElementById('speedSlider');
+    const semiSlider = document.getElementById('semiMajorSlider');
+
+    // 显示值
+    const eccValue = document.getElementById('eccValue');
+    const speedValue = document.getElementById('speedValue');
+    const semiValue = document.getElementById('semiValue');
+    const periodDisplay = document.getElementById('periodDisplay');
+
+    // 按钮
+    const resetBtn = document.getElementById('resetButton');
+
+    // ----- 物理参数 -----
+    // 基础缩放：半长轴 a 的基础像素长度 (对应半长轴=1.0时)
+    const BASE_SEMI_MAJOR_PX = 180; 
+
+    // 当前参数
+    let eccentricity = 0.6;        // 离心率 e
+    let semiMajorFactor = 1.0;    // 半长轴缩放因子 (相对于基础值)
+    let animationSpeed = 1.0;
+
+    // 动态状态
+    let angle = 0;                // 当前真近点角 (弧度) , 从近日点开始测量 (近日点方向为0度)
+    let lastTimestamp = 0;
+    let animationId = null;
+
+    // 固定恒星位置 (画布中心偏左，为了更好展示椭圆焦点)
+    const cx = 350, cy = 250;     // 画布中心 (700x500)
+
+    // ----- 辅助函数：根据参数计算轨道特性 -----
+    function getOrbitParams() {
+      const a = BASE_SEMI_MAJOR_PX * semiMajorFactor;   // 半长轴(像素)
+      const e = eccentricity;
+      const c = a * e;            // 焦距 (中心到焦点距离)
+      // 半短轴 b = a * sqrt(1 - e^2)
+      const b = a * Math.sqrt(1 - e * e);
+      
+      // 恒星位于右侧焦点？ 按照惯例，太阳在椭圆的一个焦点上。
+      // 为了使近日点在左侧（靠近太阳）还是右侧？通常近日点离太阳最近。
+      // 设定：椭圆中心在画布中心(cx, cy)。太阳(恒星)位于右侧焦点：(cx + c, cy)
+      // 那么近日点方向为从左焦点指向右焦点方向？ 椭圆长轴沿x轴。
+      // 若太阳在右侧焦点(cx+c, cy)，则近日点位于椭圆最右侧点：(cx + a, cy) —— 那距离为 a - c，确实最近。
+      // 远日点位于最左侧：(cx - a, cy) 距离 a + c。
+      // 这样视觉上行星在右侧时离太阳很近，速度很快。
+      const sunX = cx + c;
+      const sunY = cy;
+      
+      return { a, b, c, sunX, sunY, e };
+    }
+
+    // 根据真近点角 (true anomaly) 计算行星位置 (极坐标方程)
+    // 椭圆极坐标方程 (焦点在原点，近日点方向为0度): r(θ) = a*(1-e²) / (1 + e*cosθ)
+    // 其中θ从近日点方向量起。我们定义角度angle为真近点角θ。
+    // 行星在轨道平面坐标 (以太阳为原点): 
+    // x_orb = r * cos(θ), y_orb = r * sin(θ)
+    // 但需要注意方向：我们让太阳在右侧焦点，近日点位于太阳右侧(正x方向)。
+    function getPlanetPosition(theta, params) {
+      const { a, e, sunX, sunY } = params;
+      // 半通径 p = a*(1 - e²)
+      const p = a * (1 - e * e);
+      const r = p / (1 + e * Math.cos(theta));
+      
+      // 以太阳为原点的坐标：x轴向右，近日点方向为角度0 (向右)
+      const planetX_rel = r * Math.cos(theta);
+      const planetY_rel = r * Math.sin(theta);
+      
+      return {
+        x: sunX + planetX_rel,
+        y: sunY + planetY_rel,
+        r: r
+      };
+    }
+
+    // 计算角速度 (基于第二定律：面积速度恒定)
+    // 面积速度 dA/dt = (1/2) r² dθ/dt = 常数。
+    // 因此 dθ/dt ∝ 1 / r² 。 我们通过基准角速度来调整。
+    function getAngularVelocity(r, params) {
+      const { a, e } = params;
+      // 基准：在半径为 a (半长轴) 时的角速度设为 baseOmega
+      // 使得动画速度可调。 baseOmega 与周期相关。
+      // 周期 T = 2π * sqrt(a³/GM)  (开普勒第三定律)，我们忽略GM，直接用a³关系。
+      // 设置基础角速度系数：使得在a=180px, e=0.6时动画合适。
+      const baseOmega = 0.025;  // 基准角速度(弧度/帧步进基准)
+      // 根据第三定律，周期与a^(3/2)成正比，所以平均角速度与 a^(-3/2) 成正比。
+      // 但我们用瞬时角速度与1/r²成正比，同时整体缩放与半长轴相关。
+      // 为了符合第三定律：平均运动 n = 2π/T ∝ a^(-3/2)
+      const aFactor = Math.pow(a / BASE_SEMI_MAJOR_PX, -1.5);
+      // 瞬时角速度 = baseOmega * aFactor * (a² / r²)   (使得在r=a时角速度约为baseOmega*aFactor)
+      const rClamp = Math.max(r, 2.0); // 防止除零
+      return baseOmega * aFactor * (a * a) / (rClamp * rClamp);
+    }
+
+    // 计算当前周期 (用于显示)
+    function computePeriod(a) {
+      // 周期与 a^(3/2) 成正比。 基准周期：当a = BASE_SEMI_MAJOR_PX (180px) 时，设周期为 1.0 时间单位。
+      const baseA = BASE_SEMI_MAJOR_PX;
+      const ratio = a / baseA;
+      return Math.pow(ratio, 1.5);
+    }
+
+    // ----- 绘制画布 -----
+    function drawScene() {
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const params = getOrbitParams();
+      const { a, b, c, sunX, sunY, e } = params;
+      
+      // 绘制椭圆轨道 (中心在cx, cy)
+      ctx.save();
+      ctx.strokeStyle = "rgba(140, 170, 230, 0.7)";
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = "#3f5b9b";
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, a, b, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      // 绘制中心点(几何中心) 微弱标记
+      ctx.fillStyle = "rgba(255,255,255,0.25)";
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3, 0, 2*Math.PI);
+      ctx.fill();
+      
+      // 绘制焦点标记 (另一个焦点，仅示意)
+      const otherFocusX = cx - c;
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.beginPath();
+      ctx.arc(otherFocusX, cy, 3.5, 0, 2*Math.PI);
+      ctx.fill();
+      
+      // 绘制恒星 (太阳)
+      ctx.shadowColor = "#ffbb2e";
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = "#ffd966";
+      ctx.beginPath();
+      ctx.arc(sunX, sunY, 9, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = "#ffb82e";
+      ctx.arc(sunX, sunY, 6, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "transparent";
+      
+      // 绘制行星当前位置
+      const planetPos = getPlanetPosition(angle, params);
+      
+      // 绘制行星
+      ctx.shadowColor = "#4d7cff";
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = "#6ab0f5";
+      ctx.beginPath();
+      ctx.arc(planetPos.x, planetPos.y, 7.5, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.fillStyle = "#addbff";
+      ctx.arc(planetPos.x, planetPos.y, 5, 0, 2*Math.PI);
+      ctx.fill();
+      
+      // 绘制连线 (太阳到行星)
+      ctx.shadowBlur = 6;
+      ctx.strokeStyle = "rgba(255, 245, 200, 0.55)";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(sunX, sunY);
+      ctx.lineTo(planetPos.x, planetPos.y);
+      ctx.stroke();
+      
+      // 标注近日点和远日点方向 (小标记)
+      ctx.fillStyle = "#cccccc";
+      ctx.font = "11px 'Segoe UI'";
+      ctx.fillText("近日点", cx + a + 6, cy - 8);
+      ctx.fillText("远日点", cx - a - 40, cy - 8);
+      
+      // 显示离心率等文字
+      ctx.fillStyle = "#e0e8ff";
+      ctx.font = "12px 'Inter'";
+      ctx.fillText(`e = ${e.toFixed(2)}`, cx - a + 15, cy - b - 8);
+      
+      ctx.restore();
+      
+      // 更新UI中的周期显示
+      const periodVal = computePeriod(a);
+      periodDisplay.textContent = periodVal.toFixed(2);
+    }
+
+    // ----- 动画循环 -----
+    function animationFrame(ts) {
+      if (lastTimestamp === 0) {
+        lastTimestamp = ts;
+        animationId = requestAnimationFrame(animationFrame);
+        drawScene();
+        return;
+      }
+      
+      const deltaTime = Math.min(100, ts - lastTimestamp); // 限制最大步长
+      lastTimestamp = ts;
+      
+      // 根据速度滑块调整步进因子
+      const speedFactor = animationSpeed * (deltaTime / 16.6); // 约60fps基准
+      
+      const params = getOrbitParams();
+      const planetPos = getPlanetPosition(angle, params);
+      const r = planetPos.r;
+      
+      // 计算角速度增量
+      const omega = getAngularVelocity(r, params);
+      angle += omega * speedFactor;
+      
+      // 角度归一化
+      if (angle > Math.PI * 2) angle -= Math.PI * 2;
+      if (angle < 0) angle += Math.PI * 2;
+      
+      drawScene();
+      
+      animationId = requestAnimationFrame(animationFrame);
+    }
+
+    // ----- 同步UI与状态 -----
+    function updateUI() {
+      eccValue.textContent = eccentricity.toFixed(2);
+      speedValue.textContent = animationSpeed.toFixed(1) + 'x';
+      semiValue.textContent = semiMajorFactor.toFixed(2);
+      
+      const a = BASE_SEMI_MAJOR_PX * semiMajorFactor;
+      const periodVal = computePeriod(a);
+      periodDisplay.textContent = periodVal.toFixed(2);
+    }
+
+    function resetParameters() {
+      eccentricity = 0.6;
+      semiMajorFactor = 1.0;
+      animationSpeed = 1.0;
+      
+      eccSlider.value = eccentricity;
+      speedSlider.value = animationSpeed;
+      semiSlider.value = semiMajorFactor;
+      
+      // 重置角度到近日点 (0弧度)
+      angle = 0.0;
+      
+      updateUI();
+      drawScene();
+    }
+
+    // ----- 事件绑定 -----
+    function bindEvents() {
+      eccSlider.addEventListener('input', (e) => {
+        eccentricity = parseFloat(e.target.value);
+        updateUI();
+        // 立即重绘，但不重置角度
+        drawScene();
+      });
+      
+      speedSlider.addEventListener('input', (e) => {
+        animationSpeed = parseFloat(e.target.value);
+        updateUI();
+      });
+      
+      semiSlider.addEventListener('input', (e) => {
+        semiMajorFactor = parseFloat(e.target.value);
+        updateUI();
+        // 改变半长轴时，为保持一致性，可以重置角度或保留。保留角度。
+        drawScene();
+      });
+      
+      resetBtn.addEventListener('click', resetParameters);
+      
+      // 窗口失去焦点时不做特殊处理，保持动画。
+    }
+
+    // ----- 初始化启动 -----
+    function startAnimation() {
+      if (animationId) cancelAnimationFrame(animationId);
+      lastTimestamp = 0;
+      animationId = requestAnimationFrame(animationFrame);
+    }
+
+    // 初始调用
+    updateUI();
+    drawScene();
+    bindEvents();
+    startAnimation();
+
+    // 清理动画 (非必须，但良好实践)
+    window.addEventListener('beforeunload', () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+  })();
+</script>
+</body>
+</html>

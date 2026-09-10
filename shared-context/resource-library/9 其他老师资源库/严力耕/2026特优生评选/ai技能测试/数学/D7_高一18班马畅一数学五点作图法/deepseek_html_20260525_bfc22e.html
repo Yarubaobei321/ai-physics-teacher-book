@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>正弦型函数·五点作图法 | 数形结合 + 数学拟人插画</title>
+    <!-- 引入Three.js核心库及扩展组件 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #dceaff 0%, #f0f5fe 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+            min-height: 100vh;
+            padding: 28px 24px;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        /* 装饰性背景纹理 */
+        body::before {
+            content: "📐 ∫ ∮ π √ ∞ ∑ sin cos tan";
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 70px;
+            font-weight: normal;
+            color: rgba(100, 140, 180, 0.08);
+            pointer-events: none;
+            white-space: pre;
+            z-index: 0;
+            font-family: monospace;
+            transform: rotate(-5deg);
+        }
+
+        body::after {
+            content: "✧ 五点定形 ✧";
+            position: fixed;
+            top: 12%;
+            left: -30px;
+            font-size: 55px;
+            font-weight: 800;
+            color: rgba(70, 130, 200, 0.07);
+            pointer-events: none;
+            transform: rotate(90deg);
+            letter-spacing: 8px;
+            font-family: 'Segoe UI', cursive;
+            z-index: 0;
+        }
+
+        .demo-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(2px);
+            border-radius: 2.2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            position: relative;
+            z-index: 2;
+            transition: all 0.2s;
+        }
+
+        .header {
+            background: linear-gradient(115deg, #113946, #1e5a6f);
+            color: white;
+            padding: 1.2rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid #ffb74d;
+        }
+        .header h1 {
+            font-size: 1.9rem;
+            letter-spacing: -0.3px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .header p {
+            opacity: 0.9;
+            margin-top: 6px;
+            font-size: 0.95rem;
+        }
+
+        .main-dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 1.8rem 2rem 0.8rem 2rem;
+            gap: 2rem;
+        }
+
+        .canvas-area {
+            flex: 3.2;
+            min-width: 360px;
+            background: #ffffff;
+            border-radius: 1.8rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            padding: 1rem;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            background: #fefefe;
+            border-radius: 1.2rem;
+            text-align: center;
+        }
+
+        #sineCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+            cursor: crosshair;
+            border: 1px solid #e2edf2;
+        }
+
+        .formula-card {
+            background: #eef4fc;
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            border-radius: 1.6rem;
+            text-align: center;
+            border-left: 8px solid #ff984f;
+        }
+        .general-formula {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+            background: #fff0e0;
+            display: inline-block;
+            padding: 0.2rem 1.2rem;
+            border-radius: 3rem;
+            color: #1f5e7a;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 1.8rem;
+            margin-top: 0.8rem;
+            font-size: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .controls-panel {
+            flex: 1.5;
+            min-width: 290px;
+            background: #ffffffec;
+            border-radius: 1.8rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+            padding: 1.2rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .method-card {
+            background: linear-gradient(105deg, #fff7e8, #fffaec);
+            border-radius: 1.6rem;
+            padding: 1rem 1.2rem;
+            border: 1px solid #ffda9e;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.03);
+        }
+        .method-card h3 {
+            font-size: 1.25rem;
+            color: #bb6b1e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+        .method-steps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-between;
+            margin-top: 5px;
+        }
+        .step {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 6px 10px;
+            flex: 1;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #2c5a6e;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+            border-top: 3px solid #f4a261;
+        }
+        .step strong {
+            font-size: 0.9rem;
+            color: #c3512f;
+            display: block;
+        }
+
+        .control-group {
+            margin-bottom: 0.6rem;
+        }
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            color: #1f5a72;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .param-value {
+            background: #eef2f7;
+            padding: 0.2rem 0.7rem;
+            border-radius: 2rem;
+            font-family: monospace;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            background: #cbdbe6;
+            border-radius: 5px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            width: 18px;
+            height: 18px;
+            background: #f39c12;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        .reset-btn {
+            background: #1f6e8c;
+            border: none;
+            color: white;
+            width: 100%;
+            padding: 8px 0;
+            border-radius: 2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        .reset-btn:hover {
+            background: #0f4f67;
+            transform: translateY(-2px);
+        }
+
+        .points-table {
+            background: #f9fbfe;
+            border-radius: 1.4rem;
+            padding: 0.7rem;
+            margin-top: 0.2rem;
+        }
+        .points-table h4 {
+            font-size: 0.85rem;
+            color: #155e75;
+            margin-bottom: 8px;
+        }
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+        }
+        .point-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 5px 2px;
+            text-align: center;
+            border-top: 2px solid #f4a261;
+        }
+        .point-card strong {
+            font-size: 0.68rem;
+        }
+        .point-coord {
+            font-family: monospace;
+            font-size: 0.62rem;
+            font-weight: 500;
+        }
+
+        .params-info {
+            background: #eef3fa;
+            border-radius: 1.4rem;
+            padding: 0.7rem 0.9rem;
+            margin-top: 0rem;
+        }
+        .param-desc {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+            font-size: 0.7rem;
+        }
+        .param-desc-item {
+            background: white;
+            border-radius: 1rem;
+            padding: 5px 8px;
+        }
+
+        /* ===== 数学拟人插图区域 ===== */
+        .mascots-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            background: #fef7e0;
+            border-radius: 1.4rem;
+            padding: 10px 12px;
+            border: 1px solid #ffe1a0;
+        }
+        .mascot-item {
+            flex: 1;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        .mascot-item:hover {
+            transform: translateY(-4px);
+        }
+        .mascot-svg {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto;
+        }
+        .mascot-name {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #fff0d6;
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 20px;
+            margin-top: 5px;
+            color: #b45f1b;
+        }
+        .floating-mascot {
+            position: absolute;
+            bottom: 20px;
+            left: -15px;
+            width: 90px;
+            opacity: 0.75;
+            pointer-events: none;
+            z-index: 3;
+            transition: all 0.3s;
+        }
+        /* 三维区域右上角小插图 */
+        .three-deco {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 80px;
+            height: 80px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.8;
+        }
+        .three-container {
+            position: relative;
+            overflow: visible;
+        }
+        @media (max-width: 850px) {
+            .mascots-area { flex-direction: column; align-items: stretch; }
+            .mascot-svg { width: 50px; height: 50px; }
+            .floating-mascot { display: none; }
+        }
+        /* 三维画布容器 */
+        .three-section {
+            padding: 0rem 2rem 1.8rem 2rem;
+        }
+        .three-container {
+            background: #ffffff;
+            border-radius: 1.8rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+        .three-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding-left: 8px;
+            position: relative;
+        }
+        .three-header h3 {
+            color: #1f6e8c;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        #threeCanvas {
+            display: block;
+            width: 100%;
+            height: 380px;
+            border-radius: 1rem;
+            background: #0a1a2a;
+            cursor: grab;
+        }
+        .three-note {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #366277;
+            margin-top: 8px;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 0.9rem;
+            background: #f4f8fe;
+            border-top: 1px solid #d4e2f0;
+            color: #366277;
+        }
+    </style>
+</head>
+<body>
+<div class="demo-container">
+    <div class="header">
+        <h1>
+            <span>📈 正弦型函数 · 五点作图法</span>
+            <span style="font-size: 1.5rem;">✏️ 动态数形结合</span>
+        </h1>
+        <p>振幅 · 角频率 · 初相 · 纵向平移 | 五点定形 + 空间直角坐标系 + 数学拟人小精灵</p>
+    </div>
+
+    <div class="main-dashboard">
+        <!-- 左侧：二维五点作图区域 -->
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="sineCanvas" width="1150" height="600" style="width:100%; height:auto; aspect-ratio:1150/600; max-width:100%"></canvas>
+            </div>
+            <div class="formula-card">
+                <div class="general-formula" id="fullFormulaDisplay">y = A·sin(ωx + φ) + b</div>
+                <div id="currentFunc" style="margin-top: 8px; font-weight: 500; font-size: 1rem;">当前函数: y = sin(x)</div>
+            </div>
+            <div class="legend">
+                <span><span style="background:#2c7da0; width:14px;height:14px;display:inline-block;border-radius:3px;"></span> 函数曲线</span>
+                <span><span style="background:#e53e3e; width:14px;height:14px;display:inline-block;border-radius:50%;"></span> 五点关键点</span>
+                <span><span style="background:#f59e0b; width:14px;height:14px;display:inline-block;"></span> 坐标网格</span>
+                <span>📐 周期 T = 2π/|ω|</span>
+            </div>
+        </div>
+
+        <!-- 右侧：控制区+五点法+拟人插画 -->
+        <div class="controls-panel">
+            <div class="method-card">
+                <h3>🎯 五点作图法 · 核心方法</h3>
+                <div class="method-steps">
+                    <div class="step"><strong>❶ 定相位点</strong>标准正弦五点相位: <br>0, π/2, π, 3π/2, 2π</div>
+                    <div class="step"><strong>❷ 坐标变换</strong>x = (相位 - φ)/ω <br> y = A·sin(相位) + b</div>
+                    <div class="step"><strong>❸ 描点连线</strong> 依次描出五点 → 光滑曲线 → 得一个周期图像</div>
+                </div>
+                <div style="font-size:0.7rem; margin-top:8px; text-align:center; background:#fff0db; border-radius:2rem; padding:4px;">💡 五点决定波形轮廓，平移伸缩后依然精准定位！</div>
+            </div>
+
+            <div class="control-group">
+                <label><span>🎚️ 振幅 <em>A</em> (改变最值)</span><span id="A_val" class="param-value">1.00</span></label>
+                <input type="range" id="A_slider" min="0.2" max="2.8" step="0.01" value="1">
+            </div>
+            <div class="control-group">
+                <label><span>📐 角频率 <em>ω</em> (周期T=2π/ω)</span><span id="ω_val" class="param-value">1.00</span></label>
+                <input type="range" id="ω_slider" min="0.5" max="3.2" step="0.02" value="1">
+            </div>
+            <div class="control-group">
+                <label><span>🌀 初相 <em>φ</em> (左右平移)</span><span id="φ_val" class="param-value">0.00</span></label>
+                <input type="range" id="φ_slider" min="-3.1416" max="3.1416" step="0.01" value="0">
+            </div>
+            <div class="control-group">
+                <label><span>⬆️ 纵向平移 <em>b</em> (上下移动)</span><span id="b_val" class="param-value">0.00</span></label>
+                <input type="range" id="b_slider" min="-1.8" max="1.8" step="0.05" value="0">
+            </div>
+            <button class="reset-btn" id="resetBtn">⟳ 重置参数 (A=1, ω=1, φ=0, b=0)</button>
+
+            <div class="points-table">
+                <h4>📌 当前周期「五点」真实坐标 (相位顺序)</h4>
+                <div class="points-grid" id="fivePointsGrid"></div>
+                <div style="font-size:0.65rem; text-align:center; margin-top:5px;">起点 → 峰点 → 零点 → 谷点 → 终点 → 光滑连接</div>
+            </div>
+
+            <div class="params-info">
+                <h4>📖 参数变化规律 | 正弦型函数 y = A·sin(ωx+φ)+b</h4>
+                <div class="param-desc">
+                    <div class="param-desc-item"><strong>A·振幅</strong> : 改变最值范围，|A|越大，波峰越高，极值越大。</div>
+                    <div class="param-desc-item"><strong>ω·角频率</strong> : 周期 T=2π/|ω|，ω越大图像横向压缩，波形越密集。</div>
+                    <div class="param-desc-item"><strong>φ·初相</strong> : 图像整体左右平移，φ>0 左移 (x替换为x-φ/ω规则)。</div>
+                    <div class="param-desc-item"><strong>b·纵移</strong> : 平衡位置上下移动，b>0图像上移，最值同步改变。</div>
+                </div>
+            </div>
+
+            <!-- ✨ 数学拟人插图区 ✨ -->
+            <div class="mascots-area">
+                <div class="mascot-item">
+                    <div class="mascot-svg">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="45" r="22" fill="#FFDD99" stroke="#CC8844" stroke-width="2"/>
+                            <circle cx="40" cy="40" r="2.5" fill="#333"/>
+                            <circle cx="60" cy="40" r="2.5" fill="#333"/>
+                            <path d="M45 52 Q50 58, 55 52" stroke="#884400" stroke-width="2" fill="none" stroke-linecap="round"/>
+                            <rect x="44" y="62" width="12" height="18" rx="3" fill="#66BBAA" stroke="#227766" stroke-width="1.5"/>
+                            <path d="M32 68 L44 68 M68 68 L56 68" stroke="#AA8866" stroke-width="2"/>
+                            <text x="50" y="88" text-anchor="middle" font-size="8" fill="#AA6644">正弦君</text>
+                        </svg>
+                    </div>
+                    <div class="mascot-name">📐 正弦君</div>
+                </div>
+                <div class="mascot-item">
+                    <div class="mascot-svg">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="45" r="22" fill="#C5E0D4" stroke="#4F8A6B" stroke-width="2"/>
+                            <circle cx="41" cy="40" r="2" fill="#333"/>
+                            <circle cx="59" cy="40" r="2" fill="#333"/>
+                            <path d="M46 50 L54 50 M50 46 L50 54" stroke="#4F8A6B" stroke-width="2"/>
+                            <path d="M33 70 L67 70 L55 82 L45 82 L33 70Z" fill="#FFB882" stroke="#CC8844" stroke-width="1.5"/>
+                            <text x="50" y="94" text-anchor="middle" font-size="8" fill="#AA6644">五点仙子</text>
+                        </svg>
+                    </div>
+                    <div class="mascot-name">⭐ 五点仙子</div>
+                </div>
+                <div class="mascot-item">
+                    <div class="mascot-svg">
+                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="45" r="20" fill="#F9C7A2" stroke="#D98F4C" stroke-width="2"/>
+                            <circle cx="41" cy="41" r="2.2" fill="#2C2C2C"/>
+                            <circle cx="59" cy="41" r="2.2" fill="#2C2C2C"/>
+                            <path d="M46 50 Q50 55, 54 50" stroke="#B45F2B" stroke-width="2" fill="none"/>
+                            <rect x="42" y="58" width="16" height="22" rx="4" fill="#8DA9C9" stroke="#3A5E7E" stroke-width="1.5"/>
+                            <path d="M30 68 L40 68 M70 68 L60 68" stroke="#BB8866" stroke-width="2"/>
+                            <text x="50" y="90" text-anchor="middle" font-size="7" fill="#885533">振幅精灵</text>
+                        </svg>
+                    </div>
+                    <div class="mascot-name">🎨 振幅精灵</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 三维侧面图区域 + 漂浮拟人小插图 -->
+    <div class="three-section">
+        <div class="three-container">
+            <div class="three-header">
+                <h3>🌐 空间直角坐标系 · 正弦曲线侧面图</h3>
+                <span style="font-size:0.75rem; background:#eef2fa; padding:4px 10px; border-radius:20px;">🖱️ 鼠标拖拽旋转视角 | 右键平移 | 滚动缩放</span>
+                <!-- 三维区域右上角装饰插画 -->
+                <div class="three-deco">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="32" fill="#D8F0FF" stroke="#2C7DA0" stroke-width="2" opacity="0.85"/>
+                        <path d="M32 52 L50 32 L68 52 L50 72 Z" fill="#FFD966" stroke="#E6A017" stroke-width="1.8"/>
+                        <text x="50" y="58" text-anchor="middle" font-size="12" fill="#A65D2A" font-weight="bold">π</text>
+                        <circle cx="34" cy="44" r="2" fill="#113946"/>
+                        <circle cx="66" cy="44" r="2" fill="#113946"/>
+                        <path d="M44 55 Q50 62, 56 55" stroke="#B45F2B" stroke-width="1.8" fill="none"/>
+                    </svg>
+                </div>
+            </div>
+            <canvas id="threeCanvas"></canvas>
+            <div class="three-note">
+                💡 三维曲线展示 y = A·sin(ωx+φ)+b 沿 X 轴延伸，Z轴深度固定为0，从侧面可清晰观察波形起伏与周期变化。
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        🧪 五点法核心：基于标准正弦五个特征点，通过伸缩平移得到新坐标 → 精准绘制一个完整周期图像。 下方三维视图提供空间直角坐标系，支持自由视角，直观感受函数“侧面”形态。<br>
+        🌟 数学拟人小助手：正弦君、五点仙子和振幅精灵陪你探索正弦函数的奥秘！
+    </footer>
+</div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ---------- 获取参数元素 (与2D共用) ----------
+    const A_slider = document.getElementById('A_slider');
+    const ω_slider = document.getElementById('ω_slider');
+    const φ_slider = document.getElementById('φ_slider');
+    const b_slider = document.getElementById('b_slider');
+    const resetBtn = document.getElementById('resetBtn');
+    
+    let A = 1.0, omega = 1.0, phi = 0.0, b = 0.0;
+    
+    // 三维场景相关变量
+    let scene, camera, renderer, labelRenderer, controls, curveLine;
+    let pointsGroup;
+    let xStart = -1.2;
+    let xEnd = 2 * Math.PI + 1.2;
+    
+    function getY(xWorld) {
+        return A * Math.sin(omega * xWorld + phi) + b;
+    }
+    
+    function update3DCurve() {
+        if (!scene) return;
+        const T = (2 * Math.PI) / omega;
+        const padding = T * 0.3;
+        xStart = -padding;
+        xEnd = T + padding;
+        
+        const segments = 300;
+        const points = [];
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const x = xStart + t * (xEnd - xStart);
+            const y = getY(x);
+            points.push(new THREE.Vector3(x, y, 0));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        if (curveLine) scene.remove(curveLine);
+        const material = new THREE.LineBasicMaterial({ color: 0x2c7da0, linewidth: 2 });
+        curveLine = new THREE.Line(geometry, material);
+        scene.add(curveLine);
+        updateFivePoints3D();
+    }
+    
+    function computeFivePoints() {
+        const phases = [0, Math.PI/2, Math.PI, 3*Math.PI/2, 2*Math.PI];
+        return phases.map(phase => {
+            let x = (phase - phi) / omega;
+            let y = A * Math.sin(phase) + b;
+            return { x, y };
+        });
+    }
+    
+    function updateFivePoints3D() {
+        if (!pointsGroup) return;
+        while(pointsGroup.children.length > 0) pointsGroup.remove(pointsGroup.children[0]);
+        const points = computeFivePoints();
+        const sphereMat = new THREE.MeshStandardMaterial({ color: 0xe53e3e, emissive: 0x441111 });
+        points.forEach(pt => {
+            const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.12, 24, 16), sphereMat);
+            sphere.position.set(pt.x, pt.y, 0);
+            pointsGroup.add(sphere);
+        });
+    }
+    
+    function setupScene() {
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a1a2a);
+        scene.fog = new THREE.FogExp2(0x0a1a2a, 0.008);
+        
+        camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        camera.position.set(6, 4, 7);
+        camera.lookAt(3, 0, 0);
+        
+        renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('threeCanvas'), antialias: true });
+        labelRenderer = new CSS2DRenderer();
+        
+        const container = document.querySelector('.three-container');
+        const width = container.clientWidth;
+        const height = 380;
+        renderer.setSize(width, height);
+        labelRenderer.setSize(width, height);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        container.style.position = 'relative';
+        container.appendChild(renderer.domElement);
+        container.appendChild(labelRenderer.domElement);
+        
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        
+        const axesHelperObj = new THREE.AxesHelper(5);
+        scene.add(axesHelperObj);
+        const gridHelperXZ = new THREE.GridHelper(20, 20, 0x88aaff, 0x335588);
+        gridHelperXZ.position.y = -1.5;
+        scene.add(gridHelperXZ);
+        
+        function makeLabel(text, color, position) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.style.color = color;
+            div.style.fontSize = '18px';
+            div.style.fontWeight = 'bold';
+            div.style.textShadow = '1px 1px 0px black';
+            div.style.background = 'rgba(0,0,0,0.5)';
+            div.style.padding = '2px 6px';
+            div.style.borderRadius = '12px';
+            const label = new CSS2DObject(div);
+            label.position.copy(position);
+            scene.add(label);
+        }
+        makeLabel('X', '#ffaa66', new THREE.Vector3(5.2, -0.2, 0));
+        makeLabel('Y', '#66ffaa', new THREE.Vector3(0, 3.8, 0));
+        makeLabel('Z', '#66aaff', new THREE.Vector3(0, -0.2, 4.2));
+        
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+        dirLight.position.set(2, 5, 3);
+        scene.add(dirLight);
+        const backLight = new THREE.PointLight(0x4466cc, 0.5);
+        backLight.position.set(-2, 1, -3);
+        scene.add(backLight);
+        
+        pointsGroup = new THREE.Group();
+        scene.add(pointsGroup);
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+            if (labelRenderer) labelRenderer.render(scene, camera);
+        }
+        animate();
+        
+        window.addEventListener('resize', onWindowResize);
+        function onWindowResize() {
+            const newWidth = container.clientWidth;
+            const newHeight = 380;
+            camera.aspect = newWidth / newHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(newWidth, newHeight);
+            labelRenderer.setSize(newWidth, newHeight);
+        }
+    }
+    
+    function syncParametersAndUpdate() {
+        A = parseFloat(A_slider.value);
+        omega = parseFloat(ω_slider.value);
+        phi = parseFloat(φ_slider.value);
+        b = parseFloat(b_slider.value);
+        if (window.update2DParams) window.update2DParams(A, omega, phi, b);
+        if (scene) update3DCurve();
+    }
+    
+    window.update2DParams = function(A, omega, phi, b) {
+        if (window._2DUpdateHandler) window._2DUpdateHandler(A, omega, phi, b);
+    };
+    
+    A_slider.addEventListener('input', syncParametersAndUpdate);
+    ω_slider.addEventListener('input', syncParametersAndUpdate);
+    φ_slider.addEventListener('input', syncParametersAndUpdate);
+    b_slider.addEventListener('input', syncParametersAndUpdate);
+    resetBtn.addEventListener('click', () => {
+        A_slider.value = '1';
+        ω_slider.value = '1';
+        φ_slider.value = '0';
+        b_slider.value = '0';
+        syncParametersAndUpdate();
+    });
+    
+    setupScene();
+    setTimeout(() => { syncParametersAndUpdate(); }, 100);
+</script>
+
+<script type="text/javascript">
+    (function(){
+        const canvas = document.getElementById('sineCanvas');
+        const ctx = canvas.getContext('2d');
+        const A_slider = document.getElementById('A_slider');
+        const ω_slider = document.getElementById('ω_slider');
+        const φ_slider = document.getElementById('φ_slider');
+        const b_slider = document.getElementById('b_slider');
+        const A_val = document.getElementById('A_val');
+        const ω_val = document.getElementById('ω_val');
+        const φ_val = document.getElementById('φ_val');
+        const b_val = document.getElementById('b_val');
+        const currentFuncSpan = document.getElementById('currentFunc');
+        const fivePointsGrid = document.getElementById('fivePointsGrid');
+        
+        let A = 1.0, omega = 1.0, phi = 0.0, b = 0.0;
+        let canvasWidth = 1150, canvasHeight = 600;
+        let displayStartX = 0, displayEndX = 0, T = 2 * Math.PI;
+        
+        function formatParam(val) {
+            let rounded = parseFloat(val.toFixed(4));
+            if (Math.abs(rounded) < 0.0001) return 0;
+            return rounded;
+        }
+        
+        function computeFivePoints() {
+            const phases = [0, Math.PI/2, Math.PI, 3*Math.PI/2, 2*Math.PI];
+            return phases.map((phase, idx) => {
+                let x = (phase - phi) / omega;
+                let y = A * Math.sin(phase) + b;
+                let names = ["起点 (0)", "峰值点 (π/2)", "零点 (π)", "谷值点 (3π/2)", "终点 (2π)"];
+                return { x, y, name: names[idx] };
+            });
+        }
+        
+        function updateFivePointsGrid() {
+            const points = computeFivePoints();
+            fivePointsGrid.innerHTML = '';
+            points.forEach(pt => {
+                const card = document.createElement('div');
+                card.className = 'point-card';
+                card.innerHTML = `<strong>${pt.name}</strong><div class="point-coord">(${pt.x.toFixed(3)}, ${pt.y.toFixed(3)})</div>`;
+                fivePointsGrid.appendChild(card);
+            });
+        }
+        
+        function updateFunctionDisplay() {
+            let aStr = (Math.abs(A - 1) < 0.001) ? '' : A.toFixed(2);
+            let omegaShow = (Math.abs(omega - 1) < 0.001) ? '' : omega.toFixed(2);
+            let phiAbs = Math.abs(phi).toFixed(2);
+            let phiSign = (phi >= 0) ? '+' : '-';
+            let phiPart = (Math.abs(phi) < 0.001) ? '' : `${phiSign} ${phiAbs}`;
+            let inner = "";
+            if (Math.abs(omega - 1) < 0.001 && Math.abs(phi) < 0.001) inner = 'sin(x)';
+            else if (Math.abs(omega - 1) > 0.001 && Math.abs(phi) < 0.001) inner = `sin(${omegaShow}x)`;
+            else if (Math.abs(omega - 1) < 0.001 && Math.abs(phi) > 0.001) inner = `sin(x ${phiSign} ${phiAbs})`;
+            else inner = `sin(${omegaShow}x ${phiSign} ${phiAbs})`;
+            let finalExpr = `y = ${(aStr === '' ? '1' : aStr)}·${inner}`;
+            if (Math.abs(b) > 0.001) {
+                let bSign = b > 0 ? '+' : '-';
+                finalExpr += ` ${bSign} ${Math.abs(b).toFixed(2)}`;
+            }
+            currentFuncSpan.innerText = finalExpr;
+        }
+        
+        function updateParamsFromSliders() {
+            A = parseFloat(A_slider.value);
+            omega = parseFloat(ω_slider.value);
+            phi = parseFloat(φ_slider.value);
+            b = parseFloat(b_slider.value);
+            A_val.innerText = formatParam(A).toFixed(2);
+            ω_val.innerText = formatParam(omega).toFixed(2);
+            φ_val.innerText = formatParam(phi).toFixed(2);
+            b_val.innerText = formatParam(b).toFixed(2);
+            T = (2 * Math.PI) / Math.abs(omega);
+            let padding = T * 0.28;
+            displayStartX = -padding;
+            displayEndX = T + padding;
+            updateFunctionDisplay();
+            updateFivePointsGrid();
+            drawCanvas();
+        }
+        
+        function drawCanvas() {
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            const margin = { left: 70, right: 40, top: 40, bottom: 58 };
+            const drawW = canvasWidth - margin.left - margin.right;
+            const drawH = canvasHeight - margin.top - margin.bottom;
+            let yMaxLimit = Math.max(Math.abs(A) * 1.3 + Math.abs(b) + 0.6, 2.4);
+            let yMinWorld = -yMaxLimit, yMaxWorld = yMaxLimit;
+            function worldToCanvas(xWorld, yWorld) {
+                let tx = (xWorld - displayStartX) / (displayEndX - displayStartX);
+                let canvasX = margin.left + tx * drawW;
+                let ty = (yWorld - yMinWorld) / (yMaxWorld - yMinWorld);
+                let canvasY = canvasHeight - margin.bottom - ty * drawH;
+                return { x: canvasX, y: canvasY };
+            }
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            ctx.save();
+            ctx.strokeStyle = "#cbd5e6";
+            ctx.lineWidth = 0.5;
+            for(let i=0;i<=12;i++) {
+                let xWorld = displayStartX + (i/12)*(displayEndX-displayStartX);
+                let {x:cx} = worldToCanvas(xWorld,0);
+                if(cx>=margin.left && cx<=canvasWidth-margin.right){
+                    ctx.beginPath(); ctx.moveTo(cx,margin.top); ctx.lineTo(cx,canvasHeight-margin.bottom); ctx.stroke();
+                }
+            }
+            for(let i=0;i<=8;i++){
+                let yWorld = yMinWorld + (i/8)*(yMaxWorld-yMinWorld);
+                let {y:cy} = worldToCanvas(0,yWorld);
+                if(cy>=margin.top && cy<=canvasHeight-margin.bottom){
+                    ctx.beginPath(); ctx.moveTo(margin.left,cy); ctx.lineTo(canvasWidth-margin.right,cy); ctx.stroke();
+                }
+            }
+            let {x:axisX, y:axisY} = worldToCanvas(0,0);
+            ctx.beginPath(); ctx.moveTo(margin.left,axisY); ctx.lineTo(canvasWidth-margin.right,axisY);
+            ctx.moveTo(axisX,margin.top); ctx.lineTo(axisX,canvasHeight-margin.bottom);
+            ctx.strokeStyle="#2c3e50"; ctx.lineWidth=1.8; ctx.stroke();
+            ctx.fillStyle="#1f4e6e"; ctx.font="11px monospace";
+            for(let i=0;i<=8;i++){
+                let xWorld = displayStartX + (i/8)*(displayEndX-displayStartX);
+                let {x:cx}=worldToCanvas(xWorld,0);
+                if(cx>=margin.left && cx<=canvasWidth-margin.right) ctx.fillText(xWorld.toFixed(2),cx-12,axisY+(axisY>canvasHeight/2?-12:18));
+            }
+            for(let yVal=Math.ceil(yMinWorld); yVal<=yMaxWorld; yVal+=0.5){
+                if(Math.abs(yVal)<0.05) continue;
+                let {y:cy}=worldToCanvas(0,yVal);
+                if(cy>=margin.top && cy<=canvasHeight-margin.bottom) ctx.fillText(yVal.toFixed(1),axisX-28,cy+3);
+            }
+            ctx.beginPath();
+            let first=true;
+            for(let i=0;i<=500;i++){
+                let t=i/500;
+                let xWorld=displayStartX + t*(displayEndX-displayStartX);
+                let yWorld=A*Math.sin(omega*xWorld+phi)+b;
+                let {x:cx,y:cy}=worldToCanvas(xWorld,yWorld);
+                if(cx<margin.left-5||cx>canvasWidth-margin.right+5||cy<margin.top-5||cy>canvasHeight-margin.bottom+5){ first=true; continue; }
+                if(first){ ctx.moveTo(cx,cy); first=false; }
+                else ctx.lineTo(cx,cy);
+            }
+            ctx.strokeStyle="#2c7da0"; ctx.lineWidth=2.8; ctx.stroke();
+            const points=computeFivePoints();
+            points.forEach(pt=>{
+                let {x:wx,y:wy}=pt;
+                let {x:cx,y:cy}=worldToCanvas(wx,wy);
+                if(cx>=margin.left-10&&cx<=canvasWidth-margin.right+10&&cy>=margin.top-10&&cy<=canvasHeight-margin.bottom+10){
+                    ctx.beginPath(); ctx.fillStyle="#e53e3e"; ctx.arc(cx,cy,7,0,2*Math.PI); ctx.fill();
+                    ctx.fillStyle="white"; ctx.beginPath(); ctx.arc(cx,cy,2.8,0,2*Math.PI); ctx.fill();
+                    ctx.fillStyle="#b13e3e"; ctx.font="bold 10px Segoe UI"; ctx.fillText(`(${wx.toFixed(2)}, ${wy.toFixed(2)})`,cx+7,cy-5);
+                }
+            });
+            ctx.fillStyle="#2c6e7e"; ctx.font="500 11px Segoe UI"; ctx.fillText(`周期 T = ${(2*Math.PI/omega).toFixed(3)}`,canvasWidth-145,margin.top-5);
+            ctx.restore();
+        }
+        
+        A_slider.addEventListener('input', updateParamsFromSliders);
+        ω_slider.addEventListener('input', updateParamsFromSliders);
+        φ_slider.addEventListener('input', updateParamsFromSliders);
+        b_slider.addEventListener('input', updateParamsFromSliders);
+        resetBtn.addEventListener('click', ()=>{
+            A_slider.value='1'; ω_slider.value='1'; φ_slider.value='0'; b_slider.value='0';
+            updateParamsFromSliders();
+        });
+        window._2DUpdateHandler = (newA, newOmega, newPhi, newB) => {
+            A_slider.value = newA; ω_slider.value = newOmega; φ_slider.value = newPhi; b_slider.value = newB;
+            updateParamsFromSliders();
+        };
+        updateParamsFromSliders();
+        window.addEventListener('resize',()=>drawCanvas());
+    })();
+</script>
+</body>
+</html>

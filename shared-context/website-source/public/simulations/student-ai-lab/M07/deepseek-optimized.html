@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>线性回归 · 最小二乘法交互学习页</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#2b3a4a; --sub:#64748b;
+    --accent:#3b82f6; --accent-soft:#dbeafe; --line:#e2e8f0;
+    --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-border:#fcd34d;
+    --point:#1e40af; --reg:#2563eb; --resid:#f59e0b; --center:#dc2626;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink);}
+  header.app{background:linear-gradient(120deg,#2563eb,#3b82f6); color:#fff; padding:18px 28px;}
+  header.app h1{font-size:22px; letter-spacing:1px;}
+  header.app p{font-size:13px; opacity:.9; margin-top:4px;}
+  .wrap{display:grid; grid-template-columns:300px 1fr 320px; gap:16px; padding:16px 20px; max-width:1440px; margin:0 auto; align-items:start;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(15,23,42,.05);}
+  .panel h2{font-size:15px; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:12px;}
+  .panel h3{font-size:13px; color:var(--ink); margin:12px 0 6px;}
+  .panel p, .panel li{font-size:13px; line-height:1.7; color:var(--ink);}
+  .panel ul{padding-left:18px;}
+  .formula{background:var(--accent-soft); border-radius:8px; padding:10px 12px; margin:8px 0; font-family:"Cambria Math",Georgia,serif; font-size:15px; color:#1e3a8a; text-align:center; word-break:break-all;}
+  .warn{background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-ink); border-radius:8px; padding:10px 12px; margin-top:12px; font-size:12.5px; line-height:1.6;}
+  .warn b{display:block; margin-bottom:4px; font-size:13px;}
+  .tips-btn{display:block; width:100%; background:var(--accent-soft); color:#1e3a8a; border:1px solid var(--accent); border-radius:8px; padding:9px 10px; font-size:13px; cursor:pointer; margin-top:10px; text-align:left;}
+  .tips-btn:hover{background:#bfdbfe;}
+  .tips-body{display:none; margin-top:10px; background:#f8fafc; border:1px solid var(--line); border-radius:8px; padding:10px 12px;}
+  .tips-body.open{display:block;}
+  .tips-body li{font-size:12.5px; line-height:1.7;}
+  .tag{display:inline-block; background:#eef2ff; color:#4338ca; border-radius:999px; font-size:11px; padding:2px 8px; margin:2px;}
+  .canvas-box{position:relative; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px;}
+  canvas#scatter{display:block; width:100%; height:auto; border-radius:6px; cursor:crosshair; touch-action:none;}
+  .canvas-cap{font-size:12px; color:var(--sub); margin-top:6px; line-height:1.5;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  button.btn{appearance:none; border:none; border-radius:8px; padding:9px 14px; font-size:13px; cursor:pointer; color:#fff; background:var(--accent); transition:filter .15s;}
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.secondary{background:#64748b;}
+  button.btn.ghost{background:#fff; color:var(--accent); border:1px solid var(--accent);}
+  button.btn.danger{background:#dc2626;}
+  .readout{background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:10px;}
+  .readout table{width:100%; border-collapse:collapse;}
+  .readout td{padding:6px 4px; font-size:13px; border-bottom:1px dashed var(--line);}
+  .readout td:first-child{color:var(--sub);}
+  .readout td:last-child{text-align:right; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:14px; font-weight:600; color:#1d4ed8;}
+  .readout .unit{font-size:11px; color:var(--sub); font-weight:400;}
+  .status-msg{margin-top:8px; font-size:13px; min-height:20px;}
+  .status-msg.err{color:#dc2626;}
+  .status-msg.ok{color:#16a34a;}
+  .ai-card{margin-top:10px; border:1px dashed var(--accent); border-radius:8px; padding:10px; background:#f0f9ff;}
+  .ai-card b{font-size:12.5px; color:#075985;}
+  .ai-card p{font-size:12px; color:#334155; margin-top:4px;}
+  @media(max-width:1180px){
+    .wrap{grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>📈 线性回归 · 最小二乘法（OLS）</h1>
+  <p>拖拽/点击加点 → 观察拟合直线、样本中心 (x̄,ȳ) 与决定系数 R² —— 高中数学互动课堂</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 讲解区 -->
+  <section class="panel" aria-label="讲解区">
+    <h2>一、原理讲解</h2>
+    <p><b>最小二乘法</b>：寻找一条直线 y=a·x+b，使所有样本点到该直线<b>竖直距离的平方和</b>（残差平方和 SSE）最小。它是描述两个变量之间<b>相关关系</b>的经典方法——注意是「相关关系」，不是「因果关系」。</p>
+
+    <h3>解析式</h3>
+    <div class="formula">y = a·x + b</div>
+    <ul>
+      <li>斜率：a = Σ(x−x̄)(y−ȳ) / Σ(x−x̄)²</li>
+      <li>截距：b = ȳ − a·x̄</li>
+      <li>样本中心：(x̄, ȳ) —— 回归线必过此点</li>
+      <li>残差平方和：SSE = Σ(y − ŷ)²</li>
+      <li>总平方和：SST = Σ(y − ȳ)²</li>
+      <li>决定系数：R² = 1 − SSE/SST ∈ [0,1]</li>
+    </ul>
+
+    <h3>R² 的含义</h3>
+    <p>R² 衡量回归线对数据的解释程度：<b>R²=1</b> 表示所有点恰好落在直线上（完全拟合）；<b>R²=0</b> 表示直线毫无解释力（等价于直接用 ȳ 预测）。数值越接近 1，拟合越好。</p>
+
+    <h3>AI 原理卡片</h3>
+    <div class="ai-card">
+      <b>🤖 符号主义 × 连接主义 联想</b>
+      <p><b>符号主义</b>：最小二乘给出封闭解析式 y=a·x+b，如同符号推理给出「规则」。</p>
+      <p><b>连接主义</b>：从数据中逐步调整参数使误差最小，类似神经网络靠数据「学习权重」。</p>
+      <p>——以上仅作联想启发，<b>不替代</b>本页的回归数学本身。</p>
+    </div>
+
+    <div class="warn">
+      <b>⚠️ 使用边界（重要）</b>
+      回归线仅在<b>样本 X 区间内</b>有效，<b>不应外推</b>到样本区间之外。样本外的数据可能完全偏离该直线关系。
+    </div>
+  </section>
+
+  <!-- 画布区 -->
+  <section class="panel" aria-label="画布区">
+    <h2>二、散点画布</h2>
+    <div class="canvas-box">
+      <canvas id="scatter" aria-label="散点回归画布，显示回归方程 y=a·x+b、决定系数 R² 与样本中心 (x̄,ȳ)"></canvas>
+    </div>
+    <p class="canvas-cap">操作：<b>点击空白</b>添加点 · <b>拖拽</b>移动已有 · 坐标范围 X,Y∈[0,10] · 最多 30 点 · 红色十字为样本中心 (x̄,ȳ)，橙色虚线为残差。</p>
+
+    <div class="controls">
+      <button type="button" class="btn" id="btnRandom">🎲 随机生成</button>
+      <button type="button" class="btn ghost" id="btnClear">🗑 清空</button>
+      <button type="button" class="btn secondary" id="btnSample">📂 加载示例（10 点）</button>
+    </div>
+
+    <div class="status-msg" id="status" role="status"></div>
+
+    <div class="readout" aria-label="实时读数">
+      <table>
+        <tr><td>样本量 n</td><td id="rN">0</td></tr>
+        <tr><td>斜率 a（slope）</td><td id="rA">—</td></tr>
+        <tr><td>截距 b（intercept）</td><td id="rB">—</td></tr>
+        <tr><td>决定系数 R²</td><td id="rR2">—</td></tr>
+        <tr><td>残差平方和 SSE</td><td id="rSSE">—</td></tr>
+        <tr><td>样本中心 x̄</td><td id="rXb">—</td></tr>
+        <tr><td>样本中心 ȳ</td><td id="rYb">—</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 控制与读数区 -->
+  <section class="panel" aria-label="控制与读数区">
+    <h2>三、学习助手</h2>
+    <p>五步操作闭环：<b>讲解 → 解析式 → 实时读数 → 归纳</b>。建议尝试顺序：</p>
+    <ol style="padding-left:18px; font-size:13px; line-height:1.9;">
+      <li>点击「加载示例」观察接近直线的数据；</li>
+      <li>对照左侧解析式手算 OLS 值；</li>
+      <li>确认回归线穿过样本中心 (x̄,ȳ)；</li>
+      <li>把所有点拖成一条完美直线，观察 R² → 1；</li>
+      <li>把所有点拖到同一竖直线，观察优雅提示。</li>
+    </ol>
+
+    <button type="button" class="tips-btn" id="btnTips" aria-expanded="false">💡 静态学习助手 Tips（点击展开/折叠）</button>
+    <div class="tips-body" id="tipsBody">
+      <ul>
+        <li><b>斜率 a &gt; 0</b>：x 增大时 y 总体增大（正相关）；<b>a &lt; 0</b>：负相关；<b>a≈0</b>：接近无关。</li>
+        <li>回归线<b>必过样本中心</b> (x̄,ȳ)，这是由 b=ȳ−a·x̄ 保证的几何性质。</li>
+        <li>R² 越接近 1，说明自变量对因变量的解释能力越强；但<b>强相关 ≠ 因果</b>。</li>
+        <li>样本中有一个点离群时，最小二乘对离群点敏感，可对比拖动前后的 a 变化。</li>
+        <li>至少需要 2 个点，且<b>不能全部位于同一条竖直线上</b>（否则 Σ(x−x̄)²=0，斜率无定义）。</li>
+        <li>注意外推风险：回归线只在样本 X 区间内有统计学意义。</li>
+      </ul>
+    </div>
+
+    <div class="warn" style="margin-top:14px;">
+      <b>🧭 本页即练即测</b>
+      示例数据手算参考：a≈0.7577、b≈1.5723、R²≈0.9992、SSE≈0.0303、中心 (4.92, 5.30)。请在右栏点「加载示例」后逐项核对。
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---------- 常量 ----------
+  var MAX_POINTS = 30;
+  var X_MIN = 0, X_MAX = 10, Y_MIN = 0, Y_MAX = 10;
+  var SAMPLE = [
+    {x:0.9,  y:2.1857},
+    {x:1.79, y:2.9883},
+    {x:2.69, y:3.5693},
+    {x:3.58, y:4.3145},
+    {x:4.47, y:5.0455},
+    {x:5.37, y:5.5692},
+    {x:6.26, y:6.3717},
+    {x:7.15, y:6.9452},
+    {x:8.05, y:7.6980},
+    {x:8.94, y:8.3144}
+  ];
+
+  // ---------- DOM ----------
+  var canvas = document.getElementById('scatter');
+  var ctx = canvas.getContext('2d');
+  var statusEl = document.getElementById('status');
+  var rN = document.getElementById('rN');
+  var rA = document.getElementById('rA');
+  var rB = document.getElementById('rB');
+  var rR2 = document.getElementById('rR2');
+  var rSSE = document.getElementById('rSSE');
+  var rXb = document.getElementById('rXb');
+  var rYb = document.getElementById('rYb');
+  var btnRandom = document.getElementById('btnRandom');
+  var btnClear = document.getElementById('btnClear');
+  var btnSample = document.getElementById('btnSample');
+  var btnTips = document.getElementById('btnTips');
+  var tipsBody = document.getElementById('tipsBody');
+
+  // ---------- 画布物理尺寸 ----------
+  var CW = 860, CH = 620;            // 逻辑坐标尺寸
+  var PAD = {left:48, right:24, top:24, bottom:44};
+  var PW = CW - PAD.left - PAD.right;
+  var PH = CH - PAD.top - PAD.bottom;
+
+  function setupCanvas(){
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = CW * dpr;
+    canvas.height = CH * dpr;
+    canvas.style.width = CW + 'px';
+    canvas.style.height = CH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  setupCanvas();
+  window.addEventListener('resize', setupCanvas);
+
+  // 坐标变换
+  function toPxX(v){ return PAD.left + (v - X_MIN) / (X_MAX - X_MIN) * PW; }
+  function toPxY(v){ return PAD.top + (Y_MAX - v) / (Y_MAX - Y_MIN) * PH; }
+  function fromPxX(px){ return (px - PAD.left) / PW * (X_MAX - X_MIN) + X_MIN; }
+  function fromPxY(py){ return Y_MAX - (py - PAD.top) / PH * (Y_MAX - Y_MIN); }
+
+  // ---------- 数据 ----------
+  var points = [];
+
+  // ---------- OLS ----------
+  function computeOLS(){
+    var n = points.length;
+    if (n < 2) { return {error:'至少需要 2 个不共线于竖直线的点'}; }
+    var sx = 0, sy = 0, i;
+    for (i = 0; i < n; i++){ sx += points[i].x; sy += points[i].y; }
+    var xb = sx / n, yb = sy / n;
+    var sxx = 0, sxy = 0;
+    for (i = 0; i < n; i++){
+      sxx += (points[i].x - xb) * (points[i].x - xb);
+      sxy += (points[i].x - xb) * (points[i].y - yb);
+    }
+    if (Math.abs(sxx) < 1e-9){ return {error:'至少需要 2 个不共线于竖直线的点'}; }
+    var a = sxy / sxx;
+    var b = yb - a * xb;
+    var sse = 0, sst = 0;
+    for (i = 0; i < n; i++){
+      var yhat = a * points[i].x + b;
+      sse += (points[i].y - yhat) * (points[i].y - yhat);
+      sst += (points[i].y - yb) * (points[i].y - yb);
+    }
+    var r2 = (sst < 1e-12) ? 1 : (1 - sse / sst);
+    if (r2 < 0) r2 = 0; if (r2 > 1) r2 = 1;
+    return {n:n, xb:xb, yb:yb, a:a, b:b, sse:sse, sst:sst, r2:r2};
+  }
+
+  function fmt(v, d){ if (typeof v !== 'number' || !isFinite(v)) return '—'; return v.toFixed(d); }
+
+  // ---------- 绘制 ----------
+  function drawGrid(){
+    ctx.strokeStyle = '#eef2f7';
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= 10; i++){
+      var x = toPxX(i);
+      ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + PH); ctx.stroke();
+      var y = toPxY(i);
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + PW, y); ctx.stroke();
+    }
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(PAD.left, PAD.top, PW, PH);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px -apple-system, "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (var j = 0; j <= 10; j++){
+      ctx.fillText(String(j), toPxX(j), PAD.top + PH + 8);
+      ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(j), PAD.left - 8, toPxY(j));
+      ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    }
+    ctx.fillStyle = '#64748b'; ctx.textAlign = 'center';
+    ctx.fillText('X →', toPxX(10), PAD.top + PH + 24);
+    ctx.save();
+    ctx.translate(14, PAD.top + PH / 2); ctx.rotate(-Math.PI / 2);
+    ctx.fillText('Y ↑', 0, 0); ctx.restore();
+  }
+
+  function draw(){
+    ctx.clearRect(0, 0, CW, CH);
+    drawGrid();
+    var res = computeOLS();
+
+    if (points.length === 0){
+      statusEl.className = 'status-msg';
+      statusEl.textContent = '画布为空：点击空白添加点，或使用「随机生成 / 加载示例」。';
+      setReadoutEmpty();
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '16px -apple-system, "PingFang SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('点击画布空白处添加数据点', CW / 2, CH / 2);
+      updateAria(null);
+      return;
+    }
+
+    if (res.error){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = '⚠ ' + res.error;
+      setReadoutEmpty();
+      drawPoints();
+      ctx.fillStyle = '#dc2626';
+      ctx.font = '15px -apple-system, "PingFang SC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('无法拟合：' + res.error, CW / 2, CH / 2 - 40);
+      updateAria(null);
+      return;
+    }
+
+    statusEl.className = 'status-msg ok';
+    statusEl.textContent = '✓ 已拟合 y = ' + fmt(res.a,4) + '·x + ' + fmt(res.b,4) + '，R² = ' + fmt(res.r2,4) + '，回归线过样本中心 (' + fmt(res.xb,2) + ', ' + fmt(res.yb,2) + ')。';
+    setReadout(res);
+    drawRegression(res);
+    drawPoints();
+    updateAria(res);
+  }
+
+  function drawPoints(){
+    ctx.fillStyle = '#1e40af';
+    ctx.strokeStyle = '#1e3a8a';
+    ctx.lineWidth = 1;
+    for (var i = 0; i < points.length; i++){
+      var px = toPxX(points[i].x), py = toPxY(points[i].y);
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  function drawRegression(res){
+    // 残差虚线
+    ctx.strokeStyle = 'rgba(245,158,11,.8)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5,4]);
+    for (var i = 0; i < points.length; i++){
+      var yhat = res.a * points[i].x + res.b;
+      ctx.beginPath();
+      ctx.moveTo(toPxX(points[i].x), toPxY(points[i].y));
+      ctx.lineTo(toPxX(points[i].x), toPxY(yhat));
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    // 回归直线（延伸整个 X 区间）
+    var x0p = toPxX(X_MIN), y0p = toPxY(res.a * X_MIN + res.b);
+    var x1p = toPxX(X_MAX), y1p = toPxY(res.a * X_MAX + res.b);
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x0p, y0p); ctx.lineTo(x1p, y1p); ctx.stroke();
+    // 样本中心
+    var cxp = toPxX(res.xb), cyp = toPxY(res.yb);
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cxp - 10, cyp); ctx.lineTo(cxp + 10, cyp);
+    ctx.moveTo(cxp, cyp - 10); ctx.lineTo(cxp, cyp + 10);
+    ctx.stroke();
+    ctx.fillStyle = '#dc2626';
+    ctx.font = '12px -apple-system, "PingFang SC", sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+    ctx.fillText('(x̄,ȳ)=(' + fmt(res.xb,2) + ', ' + fmt(res.yb,2) + ')', cxp + 12, cyp - 8);
+  }
+
+  function setReadout(res){
+    rN.textContent = String(res.n);
+    rA.textContent = fmt(res.a,4);
+    rB.textContent = fmt(res.b,4);
+    rR2.textContent = fmt(res.r2,4);
+    rSSE.textContent = fmt(res.sse,4);
+    rXb.textContent = fmt(res.xb,4);
+    rYb.textContent = fmt(res.yb,4);
+  }
+  function setReadoutEmpty(){
+    rN.textContent = String(points.length);
+    rA.textContent = '—'; rB.textContent = '—'; rR2.textContent = '—';
+    rSSE.textContent = '—'; rXb.textContent = '—'; rYb.textContent = '—';
+  }
+  function updateAria(res){
+    if (res){
+      canvas.setAttribute('aria-label', '散点回归画布：当前回归方程 y=' + fmt(res.a,4) + '·x+' + fmt(res.b,4) + '，R²=' + fmt(res.r2,4) + '，样本中心 (' + fmt(res.xb,2) + ',' + fmt(res.yb,2) + ')');
+    } else {
+      canvas.setAttribute('aria-label', '散点回归画布：当前无法拟合回归线，样本点数为 ' + points.length);
+    }
+  }
+
+  // ---------- 交互 ----------
+  function addPoint(x, y){
+    if (points.length >= MAX_POINTS){
+      statusEl.className = 'status-msg err';
+      statusEl.textContent = '⚠ 点数已达上限 ' + MAX_POINTS + ' 个，请先清空或拖拽移动。';
+      return false;
+    }
+    points.push({x:x, y:y});
+    draw();
+    return true;
+  }
+
+  function randomPoints(){
+    var count = 8 + Math.floor(Math.random() * 8); // 8~15
+    points = [];
+    var baseA = (Math.random() * 1.6) - 0.6;
+    var baseB = 1 + Math.random() * 5;
+    for (var i = 0; i < count; i++){
+      var x = +(Math.random() * 9.6 + 0.2).toFixed(2);
+      var y = +(baseA * x + baseB + (Math.random() - 0.5) * 3).toFixed(2);
+      if (y < 0) y = 0; if (y > 10) y = 10;
+      points.push({x:x, y:y});
+    }
+    draw();
+    statusEl.className = 'status-msg ok';
+    statusEl.textContent = '✓ 已随机生成 ' + count + ' 个点，可继续拖拽调整。';
+  }
+
+  function loadSample(){
+    points = SAMPLE.map(function(p){ return {x:p.x, y:p.y}; });
+    draw();
+    statusEl.className = 'status-msg ok';
+    statusEl.textContent = '✓ 已加载 10 点示例数据：a≈0.7577、b≈1.5723、R²≈0.9992。';
+  }
+
+  btnRandom.addEventListener('click', randomPoints);
+  btnClear.addEventListener('click', function(){ points = []; draw(); statusEl.className='status-msg'; statusEl.textContent='已清空全部点。'; });
+  btnSample.addEventListener('click', loadSample);
+
+  btnTips.addEventListener('click', function(){
+    var open = tipsBody.classList.toggle('open');
+    btnTips.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btnTips.textContent = open ? '🙈 收起学习助手 Tips' : '💡 静态学习助手 Tips（点击展开/折叠）';
+  });
+
+  // ---------- 画布鼠标交互 ----------
+  var dragIndex = -1;
+  var downPos = null;
+
+  function findPoint(px, py, tol){
+    var best = -1, bestD = tol;
+    for (var i = 0; i < points.length; i++){
+      var dx = toPxX(points[i].x) - px, dy = toPxY(points[i].y) - py;
+      var d = Math.sqrt(dx*dx + dy*dy);
+      if (d < bestD){ bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  function canvasPos(evt){
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width / (window.devicePixelRatio || 1);
+    var scaleY = canvas.height / rect.height / (window.devicePixelRatio || 1);
+    var px = (evt.clientX - rect.left) * scaleX;
+    var py = (evt.clientY - rect.top) * scaleY;
+    return {px:px, py:py};
+  }
+
+  canvas.addEventListener('mousedown', function(evt){
+    var pos = canvasPos(evt);
+    dragIndex = findPoint(pos.px, pos.py, 16);
+    downPos = pos;
+    if (dragIndex >= 0){
+      canvas.style.cursor = 'grabbing';
+    }
+  });
+
+  canvas.addEventListener('mousemove', function(evt){
+    var pos = canvasPos(evt);
+    if (dragIndex >= 0){
+      var x = fromPxX(pos.px), y = fromPxY(pos.py);
+      if (x < X_MIN) x = X_MIN; if (x > X_MAX) x = X_MAX;
+      if (y < Y_MIN) y = Y_MIN; if (y > Y_MAX) y = Y_MAX;
+      points[dragIndex].x = +x.toFixed(3);
+      points[dragIndex].y = +y.toFixed(3);
+      draw();
+    } else {
+      var hit = findPoint(pos.px, pos.py, 16);
+      canvas.style.cursor = hit >= 0 ? 'pointer' : 'crosshair';
+    }
+  });
+
+  window.addEventListener('mouseup', function(){
+    if (dragIndex >= 0){
+      dragIndex = -1;
+      canvas.style.cursor = 'crosshair';
+    }
+  });
+
+  canvas.addEventListener('click', function(evt){
+    // 点击仅在未拖动时添加点（拖动结束的 click 忽略）
+    if (downPos && evt.type === 'click'){
+      var pos = canvasPos(evt);
+      var moved = Math.abs(pos.px - downPos.px) + Math.abs(pos.py - downPos.py);
+      if (moved < 4){
+        var idx = findPoint(pos.px, pos.py, 16);
+        if (idx < 0){
+          var x = fromPxX(pos.px), y = fromPxY(pos.py);
+          if (x >= X_MIN && x <= X_MAX && y >= Y_MIN && y <= Y_MAX){
+            addPoint(+x.toFixed(3), +y.toFixed(3));
+          }
+        }
+      }
+    }
+    downPos = null;
+  });
+
+  // 初始化：加载示例数据
+  loadSample();
+})();
+</script>
+</body>
+</html>

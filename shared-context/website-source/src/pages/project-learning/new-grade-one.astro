@@ -1,0 +1,243 @@
+---
+import BaseLayout from '../../components/BaseLayout.astro';
+import ProjectAnalysisWorkbench from '../../components/ProjectAnalysisWorkbench.astro';
+import {
+  gravityMethods,
+  methodComparison,
+  reportSpec,
+  previewQuestions,
+  gradeOneWorkbenches
+} from '../../data/project-learning';
+
+const stars = (n: number) => '★★★'.slice(0, n) + '☆☆☆'.slice(0, 3 - n);
+const workbenchById = new Map(gradeOneWorkbenches.map((item) => [item.id, item]));
+---
+
+<BaseLayout
+  title="新高一项目式学习 | 育才物理创新实验室"
+  description="新高一暑假项目式学习：用五种方案测量深圳本地重力加速度 g，支持填写数据表、自动计算、绘制图表并导出 CSV 与结果图片。"
+>
+  <section class="section-band bg-lab">
+    <div class="page-shell">
+      <div class="grid gap-8 lg:grid-cols-[1fr_0.85fr] lg:items-end">
+        <div>
+          <p class="eyebrow">PART 01 · NEW GRADE ONE</p>
+          <h1 class="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">
+            新高一：测量深圳本地<br />重力加速度 g
+          </h1>
+          <p class="mt-5 leading-8 text-slate-700">
+            利用身边简易器材实测深圳地区真实 g 值，对比 9.8 m/s² 分析误差。至少完成一种方案，有余力者可完成两种方案并比较结果差异。
+          </p>
+        </div>
+        <div class="rounded-md border border-yucai-200 bg-white p-6 shadow-soft">
+          <p class="text-sm font-black text-yucai-700">项目目标</p>
+          <ul class="mt-3 space-y-2 text-sm leading-7 text-slate-700">
+            <li>1. 建立自由落体或周期运动模型，写出核心公式。</li>
+            <li>2. 记录原始数据，不只写最终答案。</li>
+            <li>3. 用网页表格自动计算 g、平均值和误差。</li>
+            <li>4. 导出 CSV 和结果图片，放入探究报告。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="methods" class="section-band bg-lab scroll-mt-20">
+    <div class="page-shell">
+      <p class="eyebrow">EXPERIMENT METHODS</p>
+      <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">五种实验方案</h2>
+      <p class="mt-4 max-w-3xl leading-8 text-slate-700">
+        推荐先做手机慢动作摄像法，因为器材最容易准备、运动过程最直观。想要提高报告质量，可以再做单摆法或弹簧测力计图像法作为对照。
+      </p>
+
+      <div id="method-tabs" class="mt-8 flex flex-wrap gap-2">
+        {gravityMethods.map((m, i) => (
+          <button
+            type="button"
+            class="method-tab focus-ring flex items-center gap-2 rounded-md border px-4 py-2.5 text-sm font-bold transition data-[active=true]:border-yucai-600 data-[active=true]:bg-yucai-700 data-[active=true]:text-white data-[active=false]:border-slate-300 data-[active=false]:bg-white data-[active=false]:text-slate-700 data-[active=false]:hover:border-yucai-300"
+            data-method-tab={i}
+            data-active={i === 0 ? 'true' : 'false'}
+          >
+            {m.recommended && <span class="rounded bg-signal px-1.5 py-0.5 text-[11px] font-black text-ink">荐</span>}
+            <span>{m.name}</span>
+          </button>
+        ))}
+      </div>
+
+      <div class="mt-6">
+        {gravityMethods.map((m, i) => {
+          const methodWorkbench = workbenchById.get(m.id);
+          return (
+            <article
+              class="method-panel overflow-hidden rounded-lg border border-yucai-200 bg-white shadow-soft data-[active=false]:hidden"
+              data-method-panel={i}
+              data-active={i === 0 ? 'true' : 'false'}
+            >
+              <div class="flex flex-wrap items-center gap-3 border-b border-yucai-100 bg-yucai-50 px-6 py-5">
+                <span class="rounded-md bg-yucai-700 px-3 py-1 text-xs font-black text-white">{m.badge}</span>
+                <h3 class="text-2xl font-black text-ink">{m.name}</h3>
+                <span class="font-mono text-base text-signal" title="难度">{stars(m.difficulty)}</span>
+                <span class="ml-auto rounded-md bg-white px-4 py-2 text-lg font-bold text-yucai-800" set:html={m.formula} />
+              </div>
+              <div class="grid gap-8 p-6 lg:grid-cols-[1.1fr_0.9fr]">
+                <div>
+                  <figure class="mb-5 overflow-hidden rounded-md border border-slate-200 bg-lab">
+                    <img
+                      src={m.image.src}
+                      alt={m.image.alt}
+                      loading={i === 0 ? 'eager' : 'lazy'}
+                      class="w-full"
+                    />
+                  </figure>
+                  {m.formulaNote && (
+                    <p class="mb-4 rounded-md bg-yucai-50 px-4 py-2 text-sm text-slate-600" set:html={m.formulaNote} />
+                  )}
+                  <h4 class="text-sm font-black text-yucai-700">实验原理</h4>
+                  <p class="mt-2 leading-8 text-slate-700">{m.principle}</p>
+                  <dl class="mt-4 space-y-1 text-sm text-slate-600">
+                    {m.symbols.map(([sym, desc]) => (
+                      <div class="flex gap-2">
+                        <dt class="font-mono font-bold text-ink" set:html={sym} />
+                        <dd>—— {desc}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <h4 class="mt-6 text-sm font-black text-yucai-700">操作步骤</h4>
+                  <ol class="mt-2 list-decimal space-y-2 pl-5 leading-7 text-slate-700">
+                    {m.steps.map((s) => <li>{s}</li>)}
+                  </ol>
+                </div>
+                <div class="space-y-6">
+                  <div class="rounded-md bg-lab p-5">
+                    <h4 class="text-sm font-black text-yucai-700">实验器材</h4>
+                    <ul class="mt-2 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+                      {m.gear.map((g) => <li>{g}</li>)}
+                    </ul>
+                  </div>
+                  <div class="rounded-md border border-amber-200 bg-amber-50/80 p-5">
+                    <h4 class="text-sm font-black text-[#b9760a]">注意事项</h4>
+                    <ul class="mt-2 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+                      {m.cautions.map((c) => <li>{c}</li>)}
+                    </ul>
+                  </div>
+                  <div class="rounded-md bg-lab p-5">
+                    <h4 class="text-sm font-black text-slate-600">主要误差来源</h4>
+                    <ul class="mt-2 list-disc space-y-1 pl-5 text-sm leading-7 text-slate-700">
+                      {m.errors.map((e) => <li>{e}</li>)}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              {methodWorkbench && (
+                <div class="border-t border-yucai-100 bg-slate-50/70 p-5 sm:p-6">
+                  <ProjectAnalysisWorkbench
+                    title={`${m.name}数据分析表`}
+                    intro="这张表只对应当前实验方案。填写原始数据后，可导出 CSV 与结果图片放入探究报告。"
+                    workbenches={[methodWorkbench]}
+                    embedded
+                  />
+                  <div class="mt-5 rounded-md border border-yucai-100 bg-white p-4">
+                    <p class="text-sm font-black text-yucai-700">切换其他方案</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      {gravityMethods.map((option, optionIndex) => (
+                        <button
+                          type="button"
+                          class="method-tab focus-ring flex items-center gap-2 rounded-md border px-4 py-2.5 text-sm font-bold transition data-[active=true]:border-yucai-600 data-[active=true]:bg-yucai-700 data-[active=true]:text-white data-[active=false]:border-slate-300 data-[active=false]:bg-white data-[active=false]:text-slate-700 data-[active=false]:hover:border-yucai-300"
+                          data-method-tab={optionIndex}
+                          data-active={optionIndex === i ? 'true' : 'false'}
+                        >
+                          {option.recommended && <span class="rounded bg-signal px-1.5 py-0.5 text-[11px] font-black text-ink">荐</span>}
+                          <span>{option.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </article>
+          );
+        })}
+      </div>
+
+      <h3 class="mt-12 text-2xl font-black text-ink">五种方案对比</h3>
+      <div class="mt-5 overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-soft">
+        <table class="w-full min-w-[560px] text-left text-sm">
+          <thead class="bg-slate-100 text-xs font-black text-slate-600">
+            <tr>
+              <th class="px-5 py-3">方案</th>
+              <th class="px-5 py-3">难度</th>
+              <th class="px-5 py-3">核心优势</th>
+              <th class="px-5 py-3">适合场景</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 text-slate-700">
+            {methodComparison.map((row) => (
+              <tr>
+                <td class="px-5 py-3 font-bold text-ink">{row.name}</td>
+                <td class="px-5 py-3 font-mono text-signal">{row.difficulty}</td>
+                <td class="px-5 py-3">{row.advantage}</td>
+                <td class="px-5 py-3">{row.scene}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-method-tab]'));
+      const panels = Array.from(document.querySelectorAll<HTMLElement>('[data-method-panel]'));
+      const activate = (index: number) => {
+        tabs.forEach((tab) => {
+          tab.dataset.active = tab.dataset.methodTab === String(index) ? 'true' : 'false';
+        });
+        panels.forEach((panel) => {
+          panel.dataset.active = panel.dataset.methodPanel === String(index) ? 'true' : 'false';
+        });
+        window.setTimeout(() => window.dispatchEvent(new Event('resize')), 0);
+      };
+      tabs.forEach((tab) => {
+        tab.addEventListener('click', () => activate(Number(tab.dataset.methodTab)));
+      });
+    </script>
+  </section>
+
+  <section class="section-band bg-white">
+    <div class="page-shell grid gap-10 lg:grid-cols-2">
+      <div>
+        <p class="eyebrow">PREVIEW</p>
+        <h2 class="mt-3 text-2xl font-black text-ink sm:text-3xl">预习与思考</h2>
+        <ul class="mt-5 space-y-3">
+          {previewQuestions.map((q, i) => (
+            <li class="flex gap-3 rounded-md bg-lab p-4 leading-7 text-slate-700">
+              <span class="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-yucai-700 text-xs font-black text-white">{i + 1}</span>
+              <span>{q}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <p class="eyebrow">REPORT</p>
+        <h2 class="mt-3 text-2xl font-black text-ink sm:text-3xl">探究报告提交规范</h2>
+        <div class="mt-5 rounded-md border border-slate-200 bg-white p-5 shadow-soft">
+          <p class="text-sm font-black text-yucai-700">报告封面</p>
+          <p class="mt-1 text-sm leading-7 text-slate-700">{reportSpec.cover.join(' · ')}</p>
+          <p class="mt-4 text-sm font-black text-yucai-700">报告正文板块</p>
+          <ul class="mt-2 space-y-2">
+            {reportSpec.body.map(([t, d]) => (
+              <li class="text-sm leading-6 text-slate-700">
+                <strong class="text-ink">{t}：</strong>{d}
+              </li>
+            ))}
+          </ul>
+          <p class="mt-4 rounded-md bg-amber-50/80 p-3 text-sm leading-6 text-slate-700">
+            <strong class="text-[#b9760a]">加分项：</strong>{reportSpec.bonus}
+          </p>
+          <p class="mt-4 text-sm leading-6 text-slate-700">
+            <strong class="text-ink">成果整理：</strong>{reportSpec.submit}
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DNA单链复制 · 动态图解 + 知识文字说明 + 智能测验 | 高中生物互动学习</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #123b28 0%, #092115 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'PingFang SC', 'Roboto', 'Noto Sans', system-ui, sans-serif;
+            padding: 24px 20px;
+        }
+
+        .master-container {
+            max-width: 1300px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: #fffef7;
+            border-radius: 56px;
+            box-shadow: 0 28px 44px rgba(0,0,0,0.35), inset 0 1px 2px rgba(255,250,210,0.7);
+            padding: 20px 26px 28px 26px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.9rem;
+            background: linear-gradient(135deg, #0a5438, #208a60);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 6px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .canvas-stage {
+            background: #fef6e4;
+            border-radius: 48px;
+            padding: 10px;
+            box-shadow: inset 0 0 0 2px #fffcf0, 0 12px 24px rgba(0,0,0,0.12);
+            margin-bottom: 20px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fffff2;
+            border-radius: 36px;
+            margin: 0 auto;
+        }
+
+        .step-interact {
+            background: #eff6ec;
+            border-radius: 48px;
+            padding: 20px 24px;
+            margin: 12px 0 10px;
+            border-left: 8px solid #e28c3c;
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: #1f543e;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .step-desc {
+            font-size: 1rem;
+            line-height: 1.45;
+            color: #2c523f;
+            margin-bottom: 20px;
+            background: #fffef0;
+            padding: 12px 18px;
+            border-radius: 40px;
+        }
+
+        .step-action {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .primary-btn {
+            background: #e28c3c;
+            box-shadow: 0 4px 0 #a8621f;
+        }
+        .secondary-btn {
+            background: #3f6b58;
+            box-shadow: 0 4px 0 #254e3d;
+        }
+        button {
+            border: none;
+            font-weight: 600;
+            border-radius: 60px;
+            color: white;
+            cursor: pointer;
+            transition: 0.1s linear;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 28px;
+            font-size: 1rem;
+        }
+        button:active { transform: translateY(2px); box-shadow: 0 1px 0 #0f4632; }
+
+        .status-badge {
+            background: #e2f0e6;
+            border-radius: 40px;
+            padding: 6px 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.85rem;
+            color: #166d48;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        /* 知识点文字面板 - 在演示过程中显示基本信息 */
+        .info-panel {
+            background: #fef5e6;
+            border-radius: 40px;
+            padding: 14px 20px;
+            margin: 12px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 12px;
+            border: 1px solid #e2d4b6;
+            font-size: 0.85rem;
+        }
+        .info-item {
+            background: white;
+            border-radius: 60px;
+            padding: 6px 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .info-label {
+            font-weight: 800;
+            color: #c44f1b;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 14px;
+            font-size: 0.75rem;
+            background: #eaf3e8;
+            padding: 8px 18px;
+            border-radius: 60px;
+            color: #255f43;
+        }
+        .footer {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 14px;
+            color: #5a7f69;
+        }
+        .highlight-red { color: #c7254e; background-color: #f9e6eb; font-weight: 800; padding: 0px 4px; border-radius: 12px; }
+        .highlight-orange { color: #d45a1a; background-color: #ffe4ce; font-weight: 800; padding: 0px 4px; border-radius: 12px; }
+        .highlight-green { color: #197f53; background-color: #e0f2e6; font-weight: 800; padding: 0px 4px; border-radius: 12px; }
+
+        .choice-overlay {
+            background: #fef9ea;
+            border-radius: 48px;
+            padding: 20px 28px;
+            text-align: center;
+            border: 2px solid #e8dbbc;
+        }
+        .choice-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 18px 0 8px;
+            flex-wrap: wrap;
+        }
+        .choice-btn {
+            background: #e28c3c;
+            box-shadow: 0 4px 0 #a8621f;
+            font-size: 1.1rem;
+        }
+
+        .quiz-area {
+            background: #fefcf3;
+            border-radius: 48px;
+            padding: 20px;
+        }
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1f543e;
+            margin-bottom: 22px;
+            line-height: 1.4;
+            background: #fef7e0;
+            padding: 14px 20px;
+            border-radius: 48px;
+            border-left: 8px solid #e28c3c;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .option {
+            background: #f7f3e6;
+            border-radius: 80px;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: 0.1s;
+            border: 1px solid #e5dbc8;
+            font-weight: 500;
+        }
+        .option:hover { background: #eae0ce; }
+        .selected-correct { background: #c8e6d9; border-left: 6px solid #2c8c5a; }
+        .selected-wrong { background: #ffe0db; border-left: 6px solid #e05a3a; text-decoration: line-through; }
+        .feedback-card {
+            background: #fef3e0;
+            border-radius: 36px;
+            padding: 14px 20px;
+            margin: 14px 0;
+            border-left: 6px solid #e28c3c;
+        }
+        .btn-group { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+        
+        /* 答题结果+知识点总结卡片 */
+        .summary-card {
+            background: linear-gradient(115deg, #fff9ef 0%, #fef5e8 100%);
+            border-radius: 48px;
+            padding: 24px 28px;
+            margin-top: 20px;
+            border: 2px solid #e0cca8;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .summary-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1f543e;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #e28c3c;
+            display: inline-block;
+            width: auto;
+            padding-bottom: 6px;
+        }
+        .score-analysis {
+            background: #eef2e6;
+            border-radius: 40px;
+            padding: 16px 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        .score-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #e28c3c;
+        }
+        .mistake-list {
+            background: #fff6e6;
+            border-radius: 32px;
+            padding: 16px 20px;
+            margin: 20px 0;
+        }
+        .mistake-item {
+            border-bottom: 1px solid #edd8b0;
+            padding: 12px 0;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 18px;
+            margin-top: 12px;
+        }
+        .summary-item {
+            background: #ffffffcc;
+            border-radius: 32px;
+            padding: 16px 20px;
+            backdrop-filter: blur(2px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .summary-item strong {
+            color: #c44f1b;
+            font-size: 1.05rem;
+            display: block;
+            margin-bottom: 8px;
+            border-left: 4px solid #e28c3c;
+            padding-left: 12px;
+        }
+        .restart-summary-btn {
+            background: #3f6b58;
+            margin-top: 16px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+<div class="master-container">
+    <!-- DNA单链复制动态演示卡片 -->
+    <div class="card" id="simulationCard">
+        <h1>🧬 DNA单链复制 · 动态图解 + 知识加油站</h1>
+        <div style="text-align: center;"><div class="status-badge" id="stepStatus">🔬 阶段0/8 · 等待启动复制</div></div>
+        <div class="canvas-stage">
+            <canvas id="dnaCanvas" width="1120" height="480" style="width:100%; height:auto; max-width:1120px; aspect-ratio:1120/480"></canvas>
+        </div>
+        
+        <!-- 固定知识点说明栏：复制方式、酶、原料、产物等基本信息 -->
+        <div class="info-panel" id="infoPanel">
+            <div class="info-item"><span class="info-label">🧬 复制方式：</span>半保留复制</div>
+            <div class="info-item"><span class="info-label">⚙️ 关键酶：</span>解旋酶、DNA聚合酶</div>
+            <div class="info-item"><span class="info-label">🧪 原料：</span>4种游离脱氧核苷酸 (dATP/dTTP/dGTP/dCTP)</div>
+            <div class="info-item"><span class="info-label">🔬 产物：</span>两个子代DNA (各含一条母链+一条新链)</div>
+            <div class="info-item"><span class="info-label">🧭 方向：</span>新链合成 5'→3'</div>
+        </div>
+        
+        <div class="step-interact">
+            <div class="step-title"><span>📌 当前步骤</span><span id="stepNameTag">准备就绪</span></div>
+            <div class="step-desc" id="stepDescription">点击下方按钮，逐步观察以一条母链为模板，按照碱基互补配对原则 (A-T, G-C) 合成新链的完整过程。</div>
+            <div class="step-action">
+                <button id="nextStepBtn" class="primary-btn">▶ 执行下一步 & 动态合成</button>
+                <button id="resetSimBtn" class="secondary-btn">⟳ 重置全过程</button>
+            </div>
+        </div>
+        <div class="legend">
+            <span><div style="background:#2c7da0; width:18px; height:18px; border-radius:18px;"></div> 模板链 (母链)</span>
+            <span><div style="background:#f4c542; width:18px; height:18px; border-radius:18px;"></div> 新合成子链</span>
+            <span><div style="background:#b5838d; width:18px; height:18px; border-radius:18px;"></div> 解旋酶 / 复制叉</span>
+            <span>🧬 碱基配对 <span class="highlight-red">A-T / G-C</span> &nbsp;|&nbsp; 新链延伸方向 <span class="highlight-red">5'→3'</span></span>
+        </div>
+        <div class="footer">💡 每按一次「执行下一步」都会添加一个核苷酸，右侧信息栏展示核心知识。演示结束后可选择「开始测验」或「继续试验」。</div>
+    </div>
+
+    <!-- 选择面板 (演示结束后显示) -->
+    <div id="choicePanel" style="display: none;">
+        <div class="choice-overlay">
+            <div style="font-size:1.3rem; font-weight:bold;">✨ 单链复制动态演示已完成 ✨</div>
+            <div style="margin:12px 0;">请选择接下来的学习模式：</div>
+            <div class="choice-buttons">
+                <button id="continueDemoBtn" class="choice-btn">🔄 继续试验 (重新演示)</button>
+                <button id="startQuizBtn" class="choice-btn">📝 开始5道 DNA 复制闯关测验</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 测验容器 -->
+    <div id="quizContainer" style="display: none;" class="quiz-area"></div>
+    
+    <!-- 答题结果 + 知识点总结（答题结束后跳转） -->
+    <div id="summaryContainer" style="display: none;"></div>
+</div>
+
+<script>
+    // ===================== 1. 单链复制动态模型 =====================
+    const TEMPLATE_STRAND = ["A", "T", "G", "C", "C", "T", "A", "G"];
+    const TOTAL_BASES = TEMPLATE_STRAND.length;
+    let newStrand = [];          
+    let currentStage = 0;       
+    let currentProgress = 0;    
+    let simCompleted = false;
+
+    const canvas = document.getElementById('dnaCanvas');
+    const ctx = canvas.getContext('2d');
+    const stepStatusSpan = document.getElementById('stepStatus');
+    const stepNameTag = document.getElementById('stepNameTag');
+    const stepDescriptionDiv = document.getElementById('stepDescription');
+    const nextStepBtn = document.getElementById('nextStepBtn');
+    const resetSimBtn = document.getElementById('resetSimBtn');
+    const choicePanel = document.getElementById('choicePanel');
+    const continueDemoBtn = document.getElementById('continueDemoBtn');
+    const startQuizBtn = document.getElementById('startQuizBtn');
+    const quizContainer = document.getElementById('quizContainer');
+    const summaryContainer = document.getElementById('summaryContainer');
+
+    const W = 1120, H = 480;
+    canvas.width = W; canvas.height = H;
+    const startX = 180, endX = 940;
+    const baseWidth = (endX - startX) / TOTAL_BASES;
+    const templateY = 150;      
+    const newStrandY = 270;     
+    const forkY = 210;           
+
+    function getComplement(base) {
+        if (base === "A") return "T";
+        if (base === "T") return "A";
+        if (base === "G") return "C";
+        if (base === "C") return "G";
+        return "?";
+    }
+
+    function syncDataByProgress(progress) {
+        for (let i = 0; i < progress; i++) {
+            if (newStrand[i] === undefined) newStrand[i] = getComplement(TEMPLATE_STRAND[i]);
+        }
+        currentProgress = progress;
+    }
+
+    function resetFullProcess() {
+        currentStage = 0;
+        newStrand = [];
+        currentProgress = 0;
+        simCompleted = false;
+        choicePanel.style.display = 'none';
+        quizContainer.style.display = 'none';
+        summaryContainer.style.display = 'none';
+        updateUIAndDraw();
+    }
+
+    function executeNextStep() {
+        if (simCompleted) {
+            stepDescriptionDiv.innerHTML = "🎉 演示已完成！请从下方选择「继续试验」重新体验或「开始测验」巩固知识。";
+            return;
+        }
+        if (currentStage === 0) {
+            currentStage = 1;
+            updateUIAndDraw("🔓 步骤1: 解旋酶结合到DNA模板链起始点，局部解开双链，暴露出碱基序列。", "解旋酶结合 · 暴露模板");
+        } 
+        else if (currentStage === 1) {
+            if (currentProgress < TOTAL_BASES) {
+                let idx = currentProgress;
+                newStrand[idx] = getComplement(TEMPLATE_STRAND[idx]);
+                currentProgress++;
+                if (currentProgress === 1) currentStage = 2;
+                else currentStage = currentProgress + 1;
+                updateUIAndDraw(`🧬 步骤${currentStage-1}/9 : DNA聚合酶识别模板碱基 “${TEMPLATE_STRAND[idx]}”，按照互补配对原则加入游离核苷酸 “${newStrand[idx]}”，新链沿5'→3'延伸。`, `合成碱基 ${currentProgress}/${TOTAL_BASES}`);
+            } else { if (currentProgress >= TOTAL_BASES) finishSimulation(); }
+        }
+        else if (currentStage >= 2 && currentStage <= 8) {
+            if (currentProgress < TOTAL_BASES) {
+                let idx = currentProgress;
+                newStrand[idx] = getComplement(TEMPLATE_STRAND[idx]);
+                currentProgress++;
+                if (currentProgress === TOTAL_BASES) finishSimulation();
+                else currentStage = currentProgress + 1;
+                updateUIAndDraw(`🧬 复制叉右移，DNA聚合酶添加第 ${currentProgress} 个碱基 “${newStrand[idx-1]}” 与模板 “${TEMPLATE_STRAND[idx-1]}” 配对，形成磷酸二酯键。`, `延伸新链 · 进度 ${currentProgress}/${TOTAL_BASES}`);
+            } else finishSimulation();
+        }
+        else if (currentStage === 9) {
+            if (currentProgress < TOTAL_BASES) {
+                let idx = currentProgress;
+                newStrand[idx] = getComplement(TEMPLATE_STRAND[idx]);
+                currentProgress++;
+                finishSimulation();
+            } else finishSimulation();
+        }
+        if (currentProgress >= TOTAL_BASES && currentStage !== 10) finishSimulation();
+    }
+
+    function finishSimulation() {
+        currentStage = 10;
+        simCompleted = true;
+        syncDataByProgress(TOTAL_BASES);
+        drawCanvas(TOTAL_BASES);
+        stepDescriptionDiv.innerHTML = "✅ 单链复制完成！新合成的链与模板链碱基完全互补配对，体现了半保留复制中模板的指导作用。";
+        stepNameTag.innerText = "完成·单链复制";
+        stepStatusSpan.innerText = "🧬 复制完成 | 请选择后续模式 🧬";
+        choicePanel.style.display = 'block';
+    }
+
+    function updateUIAndDraw(customDesc, customStepName) {
+        let progress = (currentStage === 0 ? 0 : (currentStage === 1 ? 0 : (currentStage >= 2 && currentStage <= 9 ? currentStage-1 : TOTAL_BASES)));
+        if (currentStage === 10) progress = TOTAL_BASES;
+        syncDataByProgress(progress);
+        if (customDesc) stepDescriptionDiv.innerHTML = customDesc;
+        else {
+            if (currentStage === 0) stepDescriptionDiv.innerHTML = "👆 点击「执行下一步」开始复制之旅：解旋酶识别并打开模板链。";
+            else if (currentStage === 1) stepDescriptionDiv.innerHTML = "✅ 解旋酶已结合并局部解开双链，暴露模板碱基。下一步将开始聚合第一个核苷酸。";
+            else if (currentStage >= 2 && currentStage <= 9) stepDescriptionDiv.innerHTML = `🔬 当前正在合成第 ${currentStage-1}/${TOTAL_BASES} 个碱基。DNA聚合酶沿模板3'→5'移动，新链合成方向5'→3'，遵循A-T/G-C规则。`;
+            else stepDescriptionDiv.innerHTML = "🎉 复制完成！新链与模板链完全互补。";
+        }
+        if (customStepName) stepNameTag.innerText = customStepName;
+        else {
+            if (currentStage === 0) stepNameTag.innerText = "初始模板链";
+            else if (currentStage === 1) stepNameTag.innerText = "解旋酶结合";
+            else if (currentStage >= 2 && currentStage <= 9) stepNameTag.innerText = `合成阶段 ${currentStage-1}/${TOTAL_BASES}`;
+            else stepNameTag.innerText = "复制完成";
+        }
+        let statusText = "";
+        if (currentStage === 0) statusText = "🔬 阶段0/8 · 完整模板链，等待启动";
+        else if (currentStage === 1) statusText = "⚡ 阶段1/8 · 解旋酶打开模板，暴露碱基";
+        else if (currentStage >= 2 && currentStage <= 9) statusText = `🧬 阶段${currentStage}/8 · 合成第${currentStage-1}个碱基 | 新链延伸5'→3'`;
+        else statusText = "✅ 阶段8/8 · 单链复制完成！";
+        stepStatusSpan.innerText = statusText;
+        drawCanvas(progress);
+    }
+
+    function drawCanvas(progress) {
+        ctx.clearRect(0, 0, W, H);
+        ctx.save();
+        ctx.globalAlpha = 0.08;
+        for(let i=0;i<10;i++){ ctx.beginPath(); ctx.moveTo(40,20+i*48); ctx.lineTo(1080,20+i*48); ctx.strokeStyle="#5d8f6e"; ctx.stroke(); }
+        ctx.globalAlpha = 1;
+        for(let i = 0; i < TOTAL_BASES; i++) {
+            const x = startX + i * baseWidth;
+            const cx = x + baseWidth/2;
+            drawBaseSphere(cx, templateY, TEMPLATE_STRAND[i], "#2c7da0", "#ffffff");
+        }
+        ctx.beginPath(); ctx.moveTo(startX, templateY); ctx.lineTo(endX, templateY); ctx.lineWidth = 2.8; ctx.strokeStyle = "#bc8f64"; ctx.stroke();
+        for(let i = 0; i < progress; i++) {
+            const x = startX + i * baseWidth;
+            const cx = x + baseWidth/2;
+            const base = newStrand[i] || "?";
+            drawBaseSphere(cx, newStrandY, base, "#f4c542", "#2e2b1f");
+            ctx.beginPath(); ctx.moveTo(cx, templateY+12); ctx.lineTo(cx, newStrandY-8); ctx.strokeStyle = "#bb99aa"; ctx.setLineDash([5,4]); ctx.stroke(); ctx.setLineDash([]);
+        }
+        if(progress > 0) {
+            ctx.beginPath(); ctx.moveTo(startX, newStrandY); ctx.lineTo(startX + progress * baseWidth, newStrandY); ctx.lineWidth = 2.6; ctx.strokeStyle = "#dba55c"; ctx.stroke();
+        }
+        const forkX = startX + (progress / TOTAL_BASES) * (endX - startX);
+        if(progress > 0 && progress < TOTAL_BASES) {
+            ctx.beginPath(); ctx.ellipse(forkX, forkY, 22, 18, 0, 0, 2*Math.PI); ctx.fillStyle = "#b5838ddd"; ctx.fill();
+            ctx.fillStyle = "#472c36"; ctx.font = "bold 11px 'Segoe UI'"; ctx.fillText("解旋酶", forkX-26, forkY-12);
+            ctx.font = "17px sans-serif"; ctx.fillStyle = "#ffdfaa"; ctx.fillText("⚡", forkX-8, forkY+5);
+            ctx.beginPath(); ctx.moveTo(forkX+14, forkY); ctx.lineTo(forkX+28, forkY-5); ctx.lineTo(forkX+28, forkY+5); ctx.fillStyle = "#cb8b54"; ctx.fill();
+            ctx.font = "italic 9px system-ui"; ctx.fillStyle = "#bb632c"; ctx.fillText("DNA聚合酶", forkX+14, forkY+20);
+        } else if(progress === TOTAL_BASES && currentStage === 10) {
+            ctx.font = "bold 14px 'Segoe UI'"; ctx.fillStyle = "#23945f"; ctx.fillText("✓ 单链复制完成！新链与模板互补", W/2-160, 60);
+        }
+        ctx.font = "10px monospace"; ctx.fillStyle = "#8b6b45";
+        ctx.fillText("5'", endX+10, templateY-4); ctx.fillText("3'", startX-30, templateY+6);
+        ctx.fillText("3'", endX+10, newStrandY+6); ctx.fillText("5'", startX-30, newStrandY-2);
+        if(progress > 0) { ctx.fillStyle = "#cd824a"; ctx.font = "bold 10px system-ui"; ctx.fillText("新链延伸 5'→3'", endX-120, newStrandY+15); }
+        ctx.font = "bold 11px 'Segoe UI'"; ctx.fillStyle = "#2a6b4c";
+        ctx.fillText("模板链 (母链) 3'→5'", startX+10, templateY-15);
+        ctx.fillText("新合成链 (互补链) 5'→3'", startX+10, newStrandY+32);
+        ctx.font = "500 12px system-ui"; ctx.fillStyle = "#1a6343";
+        ctx.fillText(`复制进度: ${progress}/${TOTAL_BASES} 碱基`, 40, H-20);
+        if(progress === TOTAL_BASES) ctx.fillStyle = "#238b5a", ctx.fillText("产物: 完整的互补新链", 40, H-5);
+        ctx.restore();
+    }
+
+    function drawBaseSphere(cx, cy, letter, bgColor, textColor) {
+        ctx.save(); ctx.shadowBlur = 1.2; ctx.beginPath(); ctx.ellipse(cx, cy, 16, 18, 0, 0, 2*Math.PI);
+        ctx.fillStyle = bgColor; ctx.fill(); ctx.strokeStyle = "#cfc494"; ctx.stroke();
+        ctx.fillStyle = textColor; ctx.font = "bold 15px 'Courier New'"; ctx.fillText(letter, cx-7, cy+6);
+        let pair = {A:"T",T:"A",G:"C",C:"G"}[letter] || ""; ctx.font = "8px system-ui"; ctx.fillStyle = "#ffe3b3"; ctx.fillText(pair, cx-4, cy-10);
+        ctx.restore();
+    }
+
+    nextStepBtn.addEventListener('click', () => { if(!simCompleted) executeNextStep(); else stepDescriptionDiv.innerHTML = "演示已完成，请从下方选择继续试验或开始测验。"; });
+    resetSimBtn.addEventListener('click', () => { resetFullProcess(); });
+    continueDemoBtn.addEventListener('click', () => { resetFullProcess(); choicePanel.style.display = 'none'; quizContainer.style.display = 'none'; summaryContainer.style.display = 'none'; });
+    
+    // ===================== 2. 5道DNA复制闯关测验 =====================
+    const QUESTIONS = [
+        { text: "1. 某DNA分子的一条链碱基序列为 5'-AGCT-3'，则以该链为模板合成的新链序列是（   ）", options: ["A. 5'-TCGA-3'", "B. 3'-TCGA-5'", "C. 5'-AGCT-3'", "D. 3'-AGCT-5'"], correct: 1, explanation: "依据碱基互补配对（A-T, G-C），模板链5'-AGCT-3'互补链为3'-TCGA-5'。注意新链合成方向与模板反向平行。" },
+        { text: "2. 在DNA复制过程中，催化游离脱氧核苷酸连接到子链上的关键酶是（   ）", options: ["A. 解旋酶", "B. DNA聚合酶", "C. RNA聚合酶", "D. DNA连接酶"], correct: 1, explanation: "DNA聚合酶催化新链合成形成磷酸二酯键。解旋酶打开双链，连接酶连接冈崎片段。" },
+        { text: "3. 下列关于DNA半保留复制的叙述，错误的是（   ）", options: ["A. 子代DNA分子中，一条链来自亲代，一条链是新合成的", "B. 复制过程需要模板、原料、能量和酶", "C. 复制时两条母链均作为模板", "D. 复制结束后，亲代DNA两条链被完全分解"], correct: 3, explanation: "半保留复制亲代DNA两条链分别进入子代分子，不会被分解。D错误。" },
+        { text: "4. 若一个双链DNA分子中，腺嘌呤(A)占全部碱基的20%，则鸟嘌呤(G)占全部碱基的比例为（   ）", options: ["A. 20%", "B. 30%", "C. 40%", "D. 60%"], correct: 1, explanation: "A=T=20%，则A+T=40%，G+C=60%，G=30%。" },
+        { text: "5. 真核细胞中，DNA复制的主要场所和时期是（   ）", options: ["A. 细胞核；有丝分裂前期", "B. 细胞质；分裂期", "C. 细胞核；间期", "D. 核糖体；间期"], correct: 2, explanation: "真核DNA复制在细胞核，发生于有丝分裂间期(S期)。" }
+    ];
+    
+    let quizIndex = 0, userAnswers = new Array(5).fill(null);
+    
+    // 展示答题结果分析 + 知识点总结 (含正确率展示)
+    function showResultAndSummary() {
+        let correctCount = 0;
+        let mistakes = [];
+        for (let i = 0; i < QUESTIONS.length; i++) {
+            if (userAnswers[i] !== null && userAnswers[i] === QUESTIONS[i].correct) {
+                correctCount++;
+            } else if (userAnswers[i] !== null) {
+                mistakes.push({ index: i, question: QUESTIONS[i].text, correctAnswer: QUESTIONS[i].options[QUESTIONS[i].correct], explanation: QUESTIONS[i].explanation });
+            }
+        }
+        const accuracy = (correctCount / QUESTIONS.length) * 100;
+        let mistakeHtml = '';
+        if (mistakes.length > 0) {
+            mistakeHtml = `<div class="mistake-list"><strong>📌 错题分析与纠正 (${mistakes.length}处)</strong>`;
+            mistakes.forEach(m => {
+                mistakeHtml += `<div class="mistake-item">❓ ${m.question}<br>✅ 正确答案：${m.correctAnswer}<br>📖 解析：${m.explanation}</div>`;
+            });
+            mistakeHtml += `</div>`;
+        } else {
+            mistakeHtml = `<div class="mistake-list" style="background:#e0f2e6;"><strong>🎉 完美！全部正确！</strong> 你已经掌握了DNA复制的核心概念。</div>`;
+        }
+        
+        summaryContainer.style.display = 'block';
+        summaryContainer.innerHTML = `
+            <div class="summary-card">
+                <div style="text-align: center;"><span class="summary-title">📊 答题结果分析 & 知识点总结</span></div>
+                <div class="score-analysis">
+                    <span style="font-size:1.1rem;">正确率：</span>
+                    <span class="score-number">${accuracy}%</span>
+                    <span style="font-size:1rem;"> ( ${correctCount} / ${QUESTIONS.length} )</span>
+                    ${accuracy === 100 ? '<div style="margin-top:8px;"><span class="highlight-green">✔️ 优秀！DNA复制知识点掌握牢固</span></div>' : '<div style="margin-top:8px;"><span class="highlight-orange">📘 建议回顾错题，巩固半保留复制机制</span></div>'}
+                </div>
+                ${mistakeHtml}
+                <div style="border-top: 2px dashed #e0cca8; margin: 16px 0;"></div>
+                <div style="text-align: center;"><span class="summary-title" style="font-size:1.3rem;">🧬 DNA复制 · 核心知识卡片</span></div>
+                <div class="summary-grid">
+                    <div class="summary-item"><strong>🧬 复制方式</strong><p>半保留复制：每个子代DNA分子由一条母链和一条新合成的子链组成，遗传信息精确传递。</p></div>
+                    <div class="summary-item"><strong>📍 复制场所</strong><p>真核生物：<span class="highlight-green">细胞核</span>（线粒体、叶绿体也可发生）；原核生物：拟核区域。</p></div>
+                    <div class="summary-item"><strong>⚙️ 关键酶</strong><p>🔹 <span class="highlight-orange">解旋酶</span>：解开DNA双螺旋，断裂氢键。<br>🔹 <span class="highlight-orange">DNA聚合酶</span>：催化新链合成，方向5'→3'。<br>🔹 DNA连接酶：连接冈崎片段（后随链）。</p></div>
+                    <div class="summary-item"><strong>🧪 原料与条件</strong><p>原料：<span class="highlight-red">4种游离脱氧核苷酸 (dATP, dTTP, dGTP, dCTP)</span><br>条件：模板、能量(ATP)、酶、适宜温度/pH。</p></div>
+                    <div class="summary-item"><strong>🔬 复制产物</strong><p>两个完全相同的子代DNA分子，每个DNA含一条亲代链和一条新链，碱基序列与亲代一致。</p></div>
+                    <div class="summary-item"><strong>🧭 复制方向</strong><p>新链延伸方向永远是 <span class="highlight-red">5' → 3'</span>，模板链阅读方向为3' → 5'，保证碱基互补配对正确性。</p></div>
+                </div>
+                <div class="summary-emphasis">
+                    💡 半保留复制保证了遗传的稳定性，是生物遗传的基础。反复练习可加深理解。
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button id="restartFromSummaryBtn" class="secondary-btn" style="background:#e28c3c;">🔄 重新开始测验 / 演示</button>
+                </div>
+            </div>
+        `;
+        const restartBtn = document.getElementById('restartFromSummaryBtn');
+        if (restartBtn) {
+            restartBtn.onclick = () => {
+                resetFullProcess();
+                quizContainer.style.display = 'none';
+                summaryContainer.style.display = 'none';
+                choicePanel.style.display = 'none';
+            };
+        }
+    }
+    
+    function renderQuiz() {
+        if (quizIndex >= QUESTIONS.length) {
+            quizContainer.style.display = 'none';
+            showResultAndSummary();
+            return;
+        }
+        summaryContainer.style.display = 'none';
+        const q = QUESTIONS[quizIndex];
+        const answered = (userAnswers[quizIndex] !== null);
+        const selected = userAnswers[quizIndex];
+        let optionsHtml = '';
+        q.options.forEach((opt, idx) => {
+            let cls = '';
+            if (answered && selected === idx) cls = (idx === q.correct) ? 'selected-correct' : 'selected-wrong';
+            else if (answered && idx === q.correct) cls = 'selected-correct';
+            optionsHtml += `<div class="option ${cls}" data-opt="${idx}">${opt}</div>`;
+        });
+        let feedback = '';
+        let nextBtnHtml = '';
+        if (answered) {
+            const isCor = (selected === q.correct);
+            feedback = `<div class="feedback-card">${isCor ? '✅ 回答正确！' : '❌ 回答错误'} <br> 📖 解析：${q.explanation}</div>`;
+            nextBtnHtml = `<button id="nextQuizBtn" class="primary-btn">➡ 下一题</button><button id="resetQuizFullBtn" class="secondary-btn">⟳ 重做测验</button>`;
+        } else {
+            feedback = `<div class="feedback-card">💡 请选择答案，提交后会立即分析对错。若答错将停留在本题并给出解析，理解后点击“下一题”。</div>`;
+            nextBtnHtml = `<button id="submitQuizBtn" class="primary-btn">📝 提交答案</button><button id="resetQuizFullBtn" class="secondary-btn">⟳ 重做测验</button>`;
+        }
+        quizContainer.innerHTML = `
+            <div class="question-text">${q.text}</div>
+            <div class="options" id="quizOptions">${optionsHtml}</div>
+            ${feedback}
+            <div class="btn-group" style="margin-top:12px;">${nextBtnHtml}</div>
+            <div style="margin-top:16px; text-align:center;">第 ${quizIndex+1} / ${QUESTIONS.length} 题</div>
+        `;
+        if (!answered) {
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.addEventListener('click', (e) => {
+                    if (userAnswers[quizIndex] !== null) return;
+                    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected-correct', 'selected-wrong'));
+                    opt.classList.add('selected-correct');
+                    opt.setAttribute('data-temp', opt.dataset.opt);
+                });
+            });
+            const submit = document.getElementById('submitQuizBtn');
+            if(submit) submit.onclick = () => {
+                let selectedVal = null;
+                document.querySelectorAll('.option').forEach(o => { if(o.classList.contains('selected-correct')) selectedVal = parseInt(o.dataset.opt); });
+                if(selectedVal === null) { alert("请先选择一个答案"); return; }
+                userAnswers[quizIndex] = selectedVal;
+                renderQuiz();
+            };
+        } else {
+            const next = document.getElementById('nextQuizBtn');
+            if(next) next.onclick = () => { if(quizIndex+1 < QUESTIONS.length) { quizIndex++; renderQuiz(); } else renderQuiz(); };
+        }
+        const resetFull = document.getElementById('resetQuizFullBtn');
+        if(resetFull) resetFull.onclick = () => { quizIndex=0; userAnswers.fill(null); renderQuiz(); summaryContainer.style.display = 'none'; };
+    }
+
+    startQuizBtn.addEventListener('click', () => {
+        choicePanel.style.display = 'none';
+        quizContainer.style.display = 'block';
+        summaryContainer.style.display = 'none';
+        quizIndex = 0; userAnswers.fill(null);
+        renderQuiz();
+    });
+    resetFullProcess();
+    window.addEventListener('resize', () => drawCanvas(currentProgress));
+</script>
+</body>
+</html>

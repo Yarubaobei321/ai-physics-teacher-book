@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>B0 可用材料全景审阅台</title>
+  <style>
+    :root {
+      --paper: #f4f0e7;
+      --paper-2: #fbf8f1;
+      --ink: #252923;
+      --muted: #686c64;
+      --line: #c8c1b2;
+      --line-dark: #8d887d;
+      --green: #234c42;
+      --green-soft: #dce8e1;
+      --ochre: #9a6926;
+      --ochre-soft: #efe1c5;
+      --red: #8a3f36;
+      --red-soft: #f1ddd8;
+      --blue: #31566b;
+      --blue-soft: #dce7ec;
+      --shadow: 0 12px 34px rgba(49, 43, 31, .08);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(rgba(120, 105, 77, .035) 1px, transparent 1px),
+        var(--paper);
+      background-size: 100% 28px;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      line-height: 1.65;
+    }
+    a { color: var(--green); text-underline-offset: 3px; }
+    code { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: .91em; }
+    .page { width: min(1420px, calc(100% - 36px)); margin: 0 auto; }
+    .hero {
+      padding: 62px 0 34px;
+      border-bottom: 1px solid var(--line-dark);
+      background: rgba(251, 248, 241, .78);
+    }
+    .eyebrow { color: var(--ochre); font-size: .8rem; letter-spacing: .18em; font-weight: 700; }
+    h1 { margin: 10px 0 12px; font-family: "Songti SC", "STSong", serif; font-size: clamp(2.15rem, 4vw, 4.6rem); line-height: 1.08; font-weight: 700; }
+    .lead { max-width: 930px; margin: 0; color: var(--muted); font-size: 1.05rem; }
+    .hero-links { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 22px; font-size: .92rem; }
+    .metrics { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border-bottom: 1px solid var(--line-dark); background: var(--paper-2); }
+    .metric { padding: 22px 20px; border-right: 1px solid var(--line); }
+    .metric:last-child { border-right: 0; }
+    .metric strong { display: block; color: var(--green); font-family: Georgia, serif; font-size: 2rem; line-height: 1; }
+    .metric span { display: block; margin-top: 8px; color: var(--muted); font-size: .82rem; }
+    .section { padding: 40px 0; }
+    .section-head { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 18px; }
+    h2 { margin: 0; font-family: "Songti SC", "STSong", serif; font-size: 1.85rem; }
+    .section-note { margin: 0; color: var(--muted); font-size: .9rem; }
+    .controls {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: minmax(230px, 1.8fr) repeat(3, minmax(140px, .7fr)) auto;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid var(--line-dark);
+      background: rgba(251, 248, 241, .96);
+      box-shadow: var(--shadow);
+    }
+    input, select, button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 0;
+      background: #fffdf8;
+      color: var(--ink);
+      font: inherit;
+    }
+    input, select { width: 100%; padding: 8px 10px; }
+    button { padding: 8px 13px; cursor: pointer; }
+    button:hover, button:focus { border-color: var(--green); outline: 2px solid rgba(35, 76, 66, .12); }
+    .quick { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0 0; }
+    .quick button { min-height: 34px; padding: 4px 10px; background: transparent; }
+    .results-line { display: flex; justify-content: space-between; gap: 14px; margin: 20px 0 10px; color: var(--muted); font-size: .9rem; }
+    .cards { border-top: 1px solid var(--line-dark); }
+    .card { border-bottom: 1px solid var(--line); background: rgba(251, 248, 241, .72); }
+    .card[hidden] { display: none; }
+    .card summary {
+      list-style: none;
+      display: grid;
+      grid-template-columns: 116px minmax(210px, 1.2fr) minmax(270px, 2.5fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 19px 14px;
+      cursor: pointer;
+    }
+    .card summary::-webkit-details-marker { display: none; }
+    .card summary:hover { background: rgba(255, 253, 248, .82); }
+    .code { color: var(--green); font-weight: 700; font-size: .8rem; letter-spacing: .02em; }
+    .title { font-family: "Songti SC", "STSong", serif; font-weight: 700; font-size: 1.04rem; }
+    .summary { color: var(--muted); font-size: .9rem; }
+    .tags { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+    .tag { padding: 2px 7px; border: 1px solid var(--line); font-size: .72rem; white-space: nowrap; }
+    .tag.a { background: var(--green-soft); color: var(--green); border-color: #a9c0b3; }
+    .tag.b { background: var(--blue-soft); color: var(--blue); border-color: #adc2cd; }
+    .tag.c { background: var(--ochre-soft); color: #704a15; border-color: #d6bc8e; }
+    .tag.restricted { background: var(--red-soft); color: var(--red); border-color: #d6a9a1; }
+    .detail { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 0 14px 18px; border: 1px solid var(--line); background: #fffdf8; }
+    .detail section { padding: 16px; border-right: 1px solid var(--line); }
+    .detail section:last-child { border-right: 0; }
+    .detail h3 { margin: 0 0 6px; color: var(--green); font-size: .82rem; letter-spacing: .05em; }
+    .detail p { margin: 0; font-size: .9rem; }
+    .path { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); overflow-wrap: anywhere; font-size: .78rem; }
+    .copy { min-height: 30px; padding: 3px 8px; margin-left: auto; flex: 0 0 auto; }
+    .empty { padding: 45px 12px; color: var(--muted); text-align: center; border-bottom: 1px solid var(--line); }
+    .decision-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 24px; }
+    .panel { border-top: 3px solid var(--green); border-bottom: 1px solid var(--line-dark); padding: 18px 0; background: rgba(251, 248, 241, .52); }
+    .panel h3 { margin: 0 0 10px; font-size: 1.05rem; }
+    .panel ol, .panel ul { margin: 0; padding-left: 1.25rem; }
+    .panel li { margin: 7px 0; }
+    .route { padding: 18px; border: 1px solid var(--line-dark); background: #252923; color: #f7f2e8; font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; white-space: pre-wrap; overflow-x: auto; }
+    .warning { margin-top: 16px; padding: 14px 16px; border: 1px solid #c79288; background: var(--red-soft); color: #6e3029; }
+    footer { margin-top: 28px; padding: 30px 0 50px; border-top: 1px solid var(--line-dark); color: var(--muted); font-size: .85rem; }
+    @media (max-width: 1000px) {
+      .metrics { grid-template-columns: repeat(3, 1fr); }
+      .metric:nth-child(3) { border-right: 0; }
+      .controls { grid-template-columns: 1fr 1fr; position: static; }
+      .card summary { grid-template-columns: 100px 1fr; }
+      .summary { grid-column: 1 / -1; }
+      .tags { justify-content: flex-start; }
+      .detail, .decision-grid { grid-template-columns: 1fr; }
+      .detail section { border-right: 0; border-bottom: 1px solid var(--line); }
+    }
+    @media (max-width: 620px) {
+      .page { width: min(100% - 22px, 1420px); }
+      .hero { padding-top: 40px; }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+      .metric:nth-child(2n) { border-right: 0; }
+      .controls { grid-template-columns: 1fr; }
+      .card summary { grid-template-columns: 1fr; gap: 7px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="page">
+      <div class="eyebrow">NEW BOOK · B0 MATERIAL AUDIT</div>
+      <h1>可用材料全景审阅台</h1>
+      <p class="lead">这不是目录，也不是正文。它把作者真实项目、教材、其他教师、旧书和参考书放在同一张可筛选地图上，帮助作者判断哪些材料值得进入B1，哪些只应保留为参照或待确认。</p>
+      <nav class="hero-links" aria-label="相关文档">
+        <a href="../../01_SOURCE/B0_PREPROCESS/B0-AGENT轻量入口.md">Agent轻量入口</a>
+        <a href="../../01_SOURCE/B0_PREPROCESS/B0-全景材料分类索引.md">全景分类索引</a>
+        <a href="../../01_SOURCE/B0-可用材料总表.md">B0可用材料总表</a>
+        <a href="review.md">审阅说明</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="metrics" aria-label="B0统计">
+      <div class="metric"><strong>9</strong><span>材料集合</span></div>
+      <div class="metric"><strong>10,491</strong><span>文件级记录</span></div>
+      <div class="metric"><strong>13</strong><span>教材默认Markdown</span></div>
+      <div class="metric"><strong>13</strong><span>作者真实项目</span></div>
+      <div class="metric"><strong>15</strong><span>其他教师主要项目包</span></div>
+      <div class="metric"><strong>271</strong><span>高敏感学生文件</span></div>
+    </section>
+
+    <section class="section" id="materials">
+      <div class="section-head">
+        <div>
+          <h2>材料卡检索</h2>
+          <p class="section-note">默认隐藏高敏感卡；本页不含任何学生姓名或作品文件名。</p>
+        </div>
+      </div>
+      <div class="controls" aria-label="筛选器">
+        <input id="query" type="search" placeholder="搜索：机械能、传感器、评价、教材、法拉第……" aria-label="搜索材料">
+        <select id="group" aria-label="材料类型">
+          <option value="">全部类型</option>
+          <option value="作者项目">作者项目</option>
+          <option value="教材">教材</option>
+          <option value="其他教师">其他教师</option>
+          <option value="参考与旧书">参考与旧书</option>
+        </select>
+        <select id="owner" aria-label="所有者"><option value="">全部所有者</option></select>
+        <select id="evidence" aria-label="证据等级">
+          <option value="">全部等级</option>
+          <option value="A">A 核心证据</option>
+          <option value="A/C">A/C 核验后使用</option>
+          <option value="B">B 结构参考</option>
+          <option value="B/C">B/C 动态或待核</option>
+          <option value="C">C 待授权/待确认</option>
+        </select>
+        <button id="reset" type="button">清除筛选</button>
+      </div>
+      <div class="quick" aria-label="快捷筛选">
+        <button type="button" data-quick="p0">只看B1高优先</button>
+        <button type="button" data-quick="教材">教材</button>
+        <button type="button" data-quick="王硕">王硕材料</button>
+        <button type="button" data-quick="严力耕">严力耕材料</button>
+        <button type="button" data-quick="restricted">显示受限卡</button>
+        <button type="button" data-quick="all">全部材料</button>
+      </div>
+      <div class="results-line">
+        <span id="count">正在载入……</span>
+        <span>点击一行展开“能支持／不能支持／下一步”</span>
+      </div>
+      <div id="cards" class="cards"></div>
+    </section>
+
+    <section class="section" id="decision">
+      <div class="section-head">
+        <div>
+          <h2>进入B1前的作者判断</h2>
+          <p class="section-note">材料丰富度已经足够，下一步需要选择价值关系，不需要继续全量扫描。</p>
+        </div>
+      </div>
+      <div class="decision-grid">
+        <article class="panel">
+          <h3>优先比较的五组关系</h3>
+          <ol>
+            <li>教师专业判断怎样进入AI任务：教师AI协作＋数智育才＋ESP32。</li>
+            <li>多证据怎样相互约束：机械能三方案＋Web DIS＋动量模型。</li>
+            <li>学生AI作品怎样经过人审门禁：学生AI评价＋继续教育工具。</li>
+            <li>一个问题怎样长成装置、软件和课程：静电场描绘仪＋ESP32＋网站。</li>
+            <li>教材概念怎样被真实项目重新解释：机械能、动量、静电场、电磁感应和传感器。</li>
+          </ol>
+        </article>
+        <article class="panel">
+          <h3>仍需作者裁决</h3>
+          <ul>
+            <li>最优先服务的读者是谁。</li>
+            <li>个人作者还是合著；其他教师材料怎样授权和署名。</li>
+            <li>哪2—3个关系最能成为B1候选方向。</li>
+            <li>哪个真实项目适合做纵向样章。</li>
+            <li>实践叙事与技术手册在样章中怎样结合。</li>
+          </ul>
+        </article>
+      </div>
+      <h3 style="margin-top:28px">给后续Agent的最短读取链</h3>
+      <div class="route">B0-可用材料总表
+→ B0_PREPROCESS/B0-AGENT轻量入口
+→ 作者选中的1—3份人工材料卡
+→ 每个材料块只打开1—5份原件
+→ 回到事实、所有权、版权和证据上限
+→ 形成B1方向候选，不写目录和正文</div>
+      <div class="warning"><strong>隐私门禁：</strong>严力耕“特优生AI技能测试”中的271个学生相关文件默认不读。本页只保留项目包级说明，不显示姓名、班级、文件名和作品内容。</div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="page">生成日期：2026-08-29。静态离线页面，无网络请求。外部原材料保持原位只读；本页统计和判断服务B0，不等于出版授权或正文事实。</div>
+  </footer>
+
+  <script>
+    const m = (id,title,group,owner,evidence,priority,status,summary,supports,limits,next,path='',restricted=false) => ({id,title,group,owner,evidence,priority,status,summary,supports,limits,next,path,restricted});
+    const materials = [
+      m('PRJ-TEACHER-AI','教师与AI共同开发教学资源','作者项目','黄灿斌','A','P0','可进入B1','规则、需求、验收、Git和失败修正形成跨项目方法。','教师怎样表达学科约束、识别错误、验收产物并保留版本。','个人实践不能推导所有教师普遍有效。','从项目卡选择数智育才或ESP32的2—4个原始案例。','/Users/yaril/个人文档/3 写作/项目资源库/00_AGENT入口/教师AI协作开发-项目卡片.md'),
+      m('PRJ-MECH-ENERGY','机械能守恒公开课与在线实验室','作者项目','黄灿斌','A','P0','可进入B1','三套实验方案、83个媒体素材、8张装置图、网页与数据处理资源。','多证据任务、装置比较、六组组织以及实验—数据—模型关系。','缺系统课堂实录、学生原话和学习结果。','按项目卡选择装置、课件、数据和网页各1份。','/Users/yaril/个人文档/3 写作/项目资源库/00_AGENT入口/机械能守恒公开课与在线实验室-项目卡片.md'),
+      m('PRJ-SHUZHI','数智育才教学网站','作者项目','黄灿斌','A','P0','可进入B1','源码、Git、测试和网页记录了资源从课例长成网站的过程。','需求拆分、版本修正、部署失败、维护与资源系统化。','网站存在、访问量和测试通过不证明教学效果。','先读源项目AGENTS和README，再点名功能原件。','/Users/yaril/个人文档/数智育才网站/AGENTS.md'),
+      m('PRJ-ESP32','ESP32Blockly','作者项目','黄灿斌','A','P0','可进入B1','学生端、教师端、固件、积木、例程、板卡台账和诊断链完整。','积木—代码—协议—设备—物理响应及可靠性治理。','部分真机链路和整班稳定实施尚未验证。','点名积木、例程、测试和板卡记录，不加载全项目。','/Users/yaril/个人文档/ESP32Blockly/AGENTS.md'),
+      m('PRJ-STUDENT-AI','学生与AI共制物理作品及评价','作者项目','黄灿斌','A','P0','可进入B1','25份脱敏物理作品形成过程—成品双轨数据和教师复核。','需求表达、跨模型错误、物理复核、过程与成品错位。','不能支持普遍学习效果、长期能力或因果结论。','先读数据口径和主张矩阵，再选2—4个脱敏案例。','/Users/yaril/个人文档/3 写作/物理论文/论文02-学生AI协作评价/README.md'),
+      m('PRJ-CONTINUING-ED','继续教育课程设计','作者项目','黄灿斌','A','P0','可进入B1','4课时、逐字稿、三问选题卡、PRD、验收清单和技能脚手架。','教师从真实问题到需求、实现、验收和发布的学习路径。','没有学员实施、作品、反馈或前后测。','先读4课时教学设计，再点名一个工具模板。','/Users/yaril/个人文档/3 写作/项目资源库/继续教育课程设计/课程设计/课程详细教学设计（4课时版）.md'),
+      m('PRJ-MOMENTUM','动量守恒交互模型','作者项目','黄灿斌','A/C','P1','需物理审阅','6个模型和10个演示GIF覆盖多种约束与守恒情形。','模型假设、系统边界、守恒条件、极限情况与反事实。','尚未逐模型人工核验，不能称已验证资源。','一次只选1—2个模型，核题意、数值和动画一致性。','/Users/yaril/个人文档/数智育才网站/public/simulations/momentum/'),
+      m('PRJ-EFIELD-DEVICE','静电场描绘仪与专利过程','作者项目','黄灿斌','A/C','P1','需状态核验','实物、竞赛、技术交底、装置图和专利过程齐全。','装置迭代、边界条件、模拟法、失败和改进。','专利法律状态、测量效果和课堂使用需另核。','先核实物与技术交底，再核最新法律状态。','/Users/yaril/个人文档/0 物理实验项目课题/1 我的课题论文/专利申请/'),
+      m('PRJ-WEB-DIS','浏览器DIS与光电门数据通道','作者项目','黄灿斌','A/C','P1','证据待补','协议、设备命名、绘图、CSV和六种实验模式已经形成。','数据通道、实验模式、协议和模型表达。','测量精度、长期稳定、整班实施证据不足。','从论文03 README选协议或模式原件，不新增实测。','/Users/yaril/个人文档/3 写作/物理论文/论文03-网页版DIS设计/README.md'),
+      m('PRJ-BRIDGE','初高中衔接课程','作者项目','黄灿斌','A','P2','按需','五节课程、学生/教师双版本及题目—知识点追溯。','课程生产、双版本设计、来源追溯和人工门禁。','无课堂效果；商业教辅不能批量公开。','点名一节课程及其来源链。','/Users/yaril/个人文档/3 写作/项目资源库/初高中衔接班资料库/AGENTS.md'),
+      m('PRJ-LOCAL-CORPUS','本地物理资料结构化','作者项目','黄灿斌','A','P2','按需','616份资料、7,831条候选题、哈希和人工复核入口。','保守切分、来源追溯、质量报告和人审门禁。','正式人工复核记录为0；商业教辅受版权限制。','先读质量报告，再用查询脚本找单份记录。','/Users/yaril/个人文档/3 写作/项目资源库/步步高/physics-digital-library/reports/quality-report.md'),
+      m('PRJ-GAOKAO-CORPUS','广东高考分类资源','作者项目','黄灿斌','A/C','P2','按需','15专题、约530题、595张题图和考情分析。','题目检索、情境分类和模型入口。','约530题不全是真题；正式引用回官方题源。','从总览索引进入一个专题。','/Users/yaril/个人文档/3 写作/项目资源库/广东高考真题汇编/00_总览索引.md'),
+      m('PRJ-RESEARCH-PROGRAMS','两个在研课题','作者项目','黄灿斌','A/C','P2','背景材料','申报、开题、理论框架、路线和时间线充分。','研究问题来源、承诺、项目发展史。','目标和预期成果不是研究结果。','只按时间线和当前阶段读点名原件。','/Users/yaril/个人文档/3 写作/项目资源库/00_AGENT入口/课题开题报告-项目卡片.md'),
+
+      m('TB-RJ-B1','人教版物理必修第一册','教材','教材出版社','B','P2','精校版','运动描述、匀变速、相互作用、牛顿运动定律。','核力学概念、实验任务和超重失重的课程位置。','教材不能证明作者课堂；精确引文和公式回PDF。','按章读取，不整册加载。','/Users/yaril/个人文档/3 写作/项目资源库/教材/精校版/人教版/人教版物理必修第一册/人教版物理必修第一册_精校版.md'),
+      m('TB-RJ-B2','人教版物理必修第二册','教材','教材出版社','B','P1','Hybrid优化版','抛体、圆周、万有引力、机械能守恒。','支撑机械能公开课、抛体模型和守恒实验回查。','自动优化版不是逐字审定；关键处回PDF。','机械能问题只读第八章。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/人教版/人教版物理必修第二册_官网Hybrid优化版/人教版物理必修第二册_官网Hybrid优化版.md'),
+      m('TB-RJ-B3','人教版物理必修第三册','教材','教材出版社','B','P1','Hybrid优化版','静电场、电路、电能和电磁感应初步。','支撑静电场描绘仪、电容器和电路测量。','教材图件、题目和数据不直接复用。','按静电场或电路章节读取。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/人教版/人教版物理必修第三册_官网Hybrid优化版/人教版物理必修第三册_官网Hybrid优化版.md'),
+      m('TB-RJ-X1','人教版物理选择性必修第一册','教材','教材出版社','B','P1','Hybrid优化版','动量、振动、机械波和光。','支撑动量模型、单摆和波光实验。','自动章目可能混入课题研究标题。','一次只读一个主题章。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/人教版/人教版物理选择性必修第一册_官网Hybrid优化版/人教版物理选择性必修第一册_官网Hybrid优化版.md'),
+      m('TB-RJ-X2','人教版物理选择性必修第二册','教材','教材出版社','B','P1','Hybrid优化版','磁场、电磁感应、交变电流、电磁波和传感器。','支撑法拉第案例、DIS和ESP32传感器。','产品与传感器应用状态另核。','按第二章或第五章读取。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/人教版/人教版物理选择性必修第二册_官网Hybrid优化版/人教版物理选择性必修第二册_官网Hybrid优化版.md'),
+      m('TB-RJ-X3','人教版物理选择性必修第三册','教材','教材出版社','B','P2','Hybrid优化版','分子动理论、物态、热力学、量子和原子核。','核对现代物理课程内容与模型表达。','关键公式、常数与人名回PDF。','当前没有项目命中时不读。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/人教版/人教版物理选择性必修第三册_官网Hybrid优化版/人教版物理选择性必修第三册_官网Hybrid优化版.md'),
+      m('TB-YJ-B1','粤教版物理必修第一册','教材','教材出版社','B','P2','Hybrid优化版','运动、匀变速、相互作用和牛顿定律。','与人教版比较观察、讨论和实践栏目。','不能复制原书图件与长段落。','同一主题与人教版各读一章。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/粤教版/粤教版物理必修第一册_官网Hybrid优化版/粤教版物理必修第一册_官网Hybrid优化版.md'),
+      m('TB-YJ-B2','粤教版物理必修第二册','教材','教材出版社','B','P1','Hybrid优化版','抛体、圆周、引力、机械能与相对论初步。','比较机械能任务、物理学史和生活情境。','关键数据与引语回PDF。','机械能问题只读第四章。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/粤教版/粤教版物理必修第二册_官网Hybrid优化版/粤教版物理必修第二册_官网Hybrid优化版.md'),
+      m('TB-YJ-B3','粤教版物理必修第三册','教材','教材出版社','B','P1','Hybrid优化版','静电场、电容器、电路、电能与电磁现象。','支撑静电装置、电容器和电路实验。','教材任务不能证明已实施。','与人教版静电章节成对读取。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/粤教版/粤教版物理必修第三册_官网Hybrid优化版/粤教版物理必修第三册_官网Hybrid优化版.md'),
+      m('TB-YJ-X1','粤教版物理选择性必修第一册','教材','教材出版社','B','P1','Hybrid优化版','动量、振动、机械波和光。','比较动量、单摆和光学实验任务。','公式、题目和图件回原书。','按一个项目主题读取。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/粤教版/粤教版物理选择性必修第一册_官网Hybrid优化版/粤教版物理选择性必修第一册_官网Hybrid优化版.md'),
+      m('TB-YJ-X2','粤教版物理选择性必修第二册','教材','教材出版社','B','P1','Hybrid优化版','磁场、电磁感应、交变电流、电磁波和传感器。','手机磁传感器与自动控制栏目可连接ESP32。','动态应用和技术状态另核。','读取第二章或第五章。','/Users/yaril/个人文档/3 写作/项目资源库/教材/优化版/粤教版/粤教版物理选择性必修第二册_官网Hybrid优化版/粤教版物理选择性必修第二册_官网Hybrid优化版.md'),
+      m('TB-YJ-X3','粤教版物理选择性必修第三册','教材','教材出版社','B','P2','精校版','分子动理论、物态、热力学、波粒二象性和原子核。','核对统计观念、现代物理和新材料内容。','仍需在精确引用时回PDF。','当前没有项目命中时不读。','/Users/yaril/个人文档/3 写作/项目资源库/教材/精校版/粤教版/粤教版物理选择性必修第三册/粤教版物理选择性必修第三册_精校版.md'),
+      m('TB-RJ-TEACHER-B2','人教版教师用书必修第二册','教材','教材出版社','B','P1','精校版','必修二4章18节的教学目标、教材分析和实验建议。','支撑机械能公开课的教材意图和教学建议核对。','教师用书建议不证明作者已经实施。','机械能项目先读第八章相关节。','/Users/yaril/个人文档/3 写作/项目资源库/教材/精校版/人教版/新物理教师用书必修2/新物理教师用书必修2_精校版.md'),
+
+      m('WS-01','单摆公开课包','其他教师','王硕','C','P2','需授权','教学设计、课堂案、课件、数据Excel和通讯稿。','单摆教学、任务单与数据处理的同题参照。','不作为作者实证；通讯稿不证明效果。','获准后转写教学设计与课堂案。'),
+      m('WS-02','机械能守恒公开课包','其他教师','王硕','C','P1','需授权','2份课件、导学、学案、课后作业和实践作业。','与作者三方案公开课比较资源结构和AI角色。','未授权不能做效果对比。','优先转写主课件、课堂学案和作业。'),
+      m('WS-03','速度随时间变化规律课例','其他教师','王硕','C','P2','需授权','课件、探究文稿、论文和学案。','实验课怎样连接数据、学案和论文表达。','课堂事实与论文观点需分开。','命中“实验课到研究”方向后再转写。'),
+      m('WS-04','法拉第电磁感应精品课','其他教师','王硕','C','P1','需授权','教学设计、说课稿、课件、任务单、作业与精品课文稿。','课程包可连接教材、掌控板论文和ESP32路线。','不能照搬课程包或认定教学成效。','转写教学设计、任务单和一份主课件。'),
+      m('WS-05','法拉第实验创新论文','其他教师','王硕','C','P1','需页码核验','两篇实验创新PDF，含掌控板路线。','同行怎样论证硬件介入物理实验。','论文不能替代装置、数据和课堂原件。','先快筛装置、数据和结论页。'),
+      m('WS-06','骨干教师与深圳市分享','其他教师','王硕','C','P2','按需授权','教学评一体化、核心素养和实验器材创新分享。','同行公开表达与共同关注的问题。','邀请函只证明受邀，不证明报告效果。','只转写主讲文稿，不优先处理邀请函。'),
+      m('WS-07','电容器与莱顿瓶','其他教师','王硕','C','P1','需图件授权','创新实验设计、课件和3张装置/现场图片。','电容器、自制实验和真实装置参照。','图片人物、版权和装置归属需确认。','先建装置卡与图片授权卡。'),
+      m('WS-08','物理学科周','其他教师','王硕','C','P2','储备','活动计划、新闻稿、总结和解说词。','学科活动策划与教师共同体背景。','宣传稿不能承担学习效果主张。','新书命中学校支持环境时再整理。'),
+      m('YL-01','活版电路拼图','其他教师','严力耕','C','P1','需授权','创新实验文稿、介绍、3份课件和报名表。','模块化电路教具与参赛材料组织。','不得复用设计和图件。','转写创新实验文稿，另做图件授权。'),
+      m('YL-02','超失重仪','其他教师','严力耕','C','P1','需授权','教具文稿、登记表、TTL网页控制器和Python代码。','装置—网页—代码—硬件交互路线。','代码不复制；性能和课堂使用需核。','建立装置卡和控制链路图。'),
+      m('YL-03','2026年市课题申报','其他教师','严力耕','C','P2','需脱敏','原创论证活页/评审书与官方通知、模板。','同期课题的问题、结构和论证写法。','目标不是结果；含个人与评审信息。','分离原创申请与官方模板后做结构卡。'),
+      m('YL-04','特优生AI技能测试','其他教师','严力耕','C','P2','高敏感','3份管理文件及271个学生相关文件。','学校AI技能评价的任务说明和作品形态。','学生姓名、班级、对话和作品不得默认读取。','目前只读管理文件；全集等待隐私、授权和样本裁决。','',true),
+      m('YL-05','科学领路人培训讲座','其他教师','严力耕','C','P2','待核来源','4份AI教育讲座转写。','同行关注的AI发展、教育变革、评价和人才培养。','转写稿是二手材料，动态事实需回原来源。','只做主题卡和待核事实表。'),
+      m('YL-06','继续教育课程申报','其他教师','严力耕','C','P2','需脱敏','教师继续教育专业科目课程申报表。','官方申报字段和课程结构参照。','不能证明课程实施与效果。','只提取结构字段，不复制个人信息。'),
+      m('DL-01','超重与失重课例','其他教师','丁龙','C','P2','储备','完整教学设计和2025年课件。','与教材、超失重仪形成概念—课例—教具比较。','不作为作者课堂实证。','B1命中相关方向后再转写。'),
+
+      m('OLD-BOOK','《从用到造》作者反馈修订稿','参考与旧书','旧书各材料原作者','B','P1','按需参考','72张材料卡、事实档案、引用矩阵、视觉策划和旧书正文。','发现成熟案例、材料来源、冲突、授权缺口和待补问题。','不沿用十二章结构；旧书正文不是最高事实源。','按“材料卡→事实档案→当前原件”回查。','/Users/yaril/个人文档/3 写作/图书出版/旧版图书/从用到造：高中物理可视化教学的自研之路 V1-作者反馈修订稿/01_SOURCE/资料入口.md'),
+      m('REF-PHY-001','《高中物理习题实验化的实践与探索》','参考与旧书','黄正玉','B','P2','精校版','7章连接概述、理论、操作、力电选修案例和论文。','借鉴单一理念贯穿理论—操作—案例的方式。','不复制案例、段落和图片。','按当前物理问题选1章。','/Users/yaril/个人文档/3 写作/参考图书/黄正玉书/高中物理习题实验化的实践与探索_精校版/高中物理习题实验化的实践与探索_精校版.md'),
+      m('REF-PHY-002','《GeoGebra软件和高中物理的深度融合》','参考与旧书','乔永海','B','P2','精校版','19章按高中物理主题组织软件案例。','借鉴软件案例体例、图文密度和操作—物理映射。','不照搬84个案例、图件和操作清单。','按力学/电磁/波光/热学主题选章。','/Users/yaril/个人文档/3 写作/参考图书/GGB软件和高中物理的深度融合/GeoGebra软件和高中物理的深度融合_精校版/GeoGebra软件和高中物理的深度融合_精校版.md'),
+      m('REF-PHY-003','《聪明教物理》','参考与旧书','袁芳主编及原书作者','B','P2','精校版','6章连接学习科学、概念规律、实验、观察与评价。','为工程实践增加学习与评价视角。','不作为作者课堂事实来源。','理论读1—2章，实验/观察/评价按需读4—6章。','/Users/yaril/个人文档/3 写作/参考图书/聪明教物理/聪明教物理_精校版/聪明教物理_精校版.md'),
+      m('REF-PHY-004','可视化物理教学理论篇草稿','参考与旧书','作者与来源待确认','B/C','P2','待核','DOCX理论篇含51条文献线索，其中29条仍为主题占位。','发现可视化、核心素养、技术演进和行动研究的组织线索。','作者、来源和49条缺失文献需核；不能替代原刊。','只把题录当检索线索。','/Users/yaril/Downloads/可视化物理教学专著-第一篇-理论篇（含文献标注与参考文献）.docx'),
+      m('REF-AI-ORANGE','AI橙皮书系列','参考与旧书','外部AI作者','B/C','P2','先读导航','8本全文和逐书导航覆盖Agent、权限、循环、Skills与知识管理。','提取稳定概念并完成物理教育四次转译。','产品、价格、模型能力和源码版本会变化。','总索引→逐书导航→命中章节。','/Users/yaril/个人文档/3 写作/参考图书/AI橙皮书系列/md/00_总索引.md'),
+      m('REF-WORKBUDDY','WorkBuddy实战蓝皮书','参考与旧书','WorkBuddy社区作者','B/C','P2','先读目录','27章从第一个任务走向Skills、自动化和工作系统。','借鉴小白向坡度、案例主线与工作系统体例。','特定产品能力不能写成普遍AI能力。','总目录→篇章→一个相关案例。','/Users/yaril/个人文档/3 写作/参考图书/WorkBuddyGuide蓝皮书/docs/bluebook/index.md')
+    ];
+
+    const state = { showRestricted: false, priorityOnly: false };
+    const $ = id => document.getElementById(id);
+    const esc = value => String(value).replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+    const tagClass = evidence => evidence.startsWith('A') ? 'a' : evidence.startsWith('B') ? 'b' : 'c';
+
+    function buildOwnerOptions() {
+      [...new Set(materials.map(item => item.owner))].sort((a,b) => a.localeCompare(b,'zh-CN')).forEach(owner => {
+        const option = document.createElement('option');
+        option.value = owner;
+        option.textContent = owner;
+        $('owner').appendChild(option);
+      });
+    }
+
+    function render() {
+      const q = $('query').value.trim().toLowerCase();
+      const group = $('group').value;
+      const owner = $('owner').value;
+      const evidence = $('evidence').value;
+      const filtered = materials.filter(item => {
+        if (item.restricted && !state.showRestricted) return false;
+        if (state.priorityOnly && item.priority !== 'P0') return false;
+        if (group && item.group !== group) return false;
+        if (owner && item.owner !== owner) return false;
+        if (evidence && item.evidence !== evidence) return false;
+        if (q) {
+          const haystack = [item.id,item.title,item.group,item.owner,item.status,item.summary,item.supports,item.limits,item.next].join(' ').toLowerCase();
+          if (!haystack.includes(q)) return false;
+        }
+        return true;
+      });
+      $('count').textContent = `显示 ${filtered.length} / ${materials.length} 张材料卡${state.showRestricted ? '（含受限卡）' : '（受限卡已隐藏）'}`;
+      if (!filtered.length) {
+        $('cards').innerHTML = '<div class="empty">没有命中。可以清除筛选，或换一个更宽的关键词。</div>';
+        return;
+      }
+      $('cards').innerHTML = filtered.map(item => `
+        <details class="card">
+          <summary>
+            <span class="code">${esc(item.id)}</span>
+            <span class="title">${esc(item.title)}</span>
+            <span class="summary">${esc(item.summary)}</span>
+            <span class="tags">
+              <span class="tag ${tagClass(item.evidence)}">${esc(item.evidence)}</span>
+              <span class="tag">${esc(item.group)}</span>
+              <span class="tag">${esc(item.priority)}</span>
+              ${item.restricted ? '<span class="tag restricted">高敏感</span>' : ''}
+            </span>
+          </summary>
+          <div class="detail">
+            <section><h3>能支持</h3><p>${esc(item.supports)}</p></section>
+            <section><h3>不能支持</h3><p>${esc(item.limits)}</p></section>
+            <section><h3>下一步</h3><p>${esc(item.next)}</p></section>
+            <div class="path"><span>${esc(item.owner)} · ${esc(item.status)}${item.path ? ` · <code>${esc(item.path)}</code>` : ''}</span>${item.path ? `<button class="copy" type="button" data-path="${esc(item.path)}">复制路径</button>` : ''}</div>
+          </div>
+        </details>`).join('');
+      document.querySelectorAll('.copy').forEach(button => button.addEventListener('click', async event => {
+        event.preventDefault();
+        try {
+          await navigator.clipboard.writeText(button.dataset.path);
+          button.textContent = '已复制';
+          setTimeout(() => button.textContent = '复制路径', 1200);
+        } catch {
+          button.textContent = '请手动复制';
+        }
+      }));
+    }
+
+    ['query','group','owner','evidence'].forEach(id => $(id).addEventListener(id === 'query' ? 'input' : 'change', render));
+    $('reset').addEventListener('click', () => {
+      $('query').value = ''; $('group').value = ''; $('owner').value = ''; $('evidence').value = '';
+      state.showRestricted = false; state.priorityOnly = false; render();
+    });
+    document.querySelectorAll('[data-quick]').forEach(button => button.addEventListener('click', () => {
+      const value = button.dataset.quick;
+      if (value === 'p0') { state.priorityOnly = true; $('group').value = ''; $('owner').value = ''; }
+      else if (value === 'restricted') { state.showRestricted = !state.showRestricted; }
+      else if (value === 'all') { state.priorityOnly = false; state.showRestricted = false; $('query').value=''; $('group').value=''; $('owner').value=''; $('evidence').value=''; }
+      else if (value === '教材') { state.priorityOnly = false; $('group').value = '教材'; $('owner').value = ''; }
+      else { state.priorityOnly = false; $('group').value = '其他教师'; $('owner').value = value; }
+      render();
+    }));
+
+    buildOwnerOptions();
+    render();
+  </script>
+</body>
+</html>

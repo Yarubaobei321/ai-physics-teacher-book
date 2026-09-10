@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>动量守恒验证实验 - 三球无重叠碰撞 | 详细原理解析 | 高中物理</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动干扰 */
+        }
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #f0f4fa 0%, #e6ecf3 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .experiment-container {
+            max-width: 1600px;
+            width: 100%;
+            background: rgba(255,255,255,0.94);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+            padding: 1.5rem 2rem 2rem 2rem;
+            transition: all 0.2s;
+        }
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e2a3e, #0f2b3d);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin: 0 0 1rem 0;
+            letter-spacing: -0.3px;
+        }
+        /* 已删除标题下方的那行文字 */
+        .main-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            margin-top: 0.5rem;
+        }
+        .canvas-panel {
+            flex: 2.2;
+            min-width: 320px;
+            background: #ffffffd9;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        .controls-panel {
+            flex: 1.2;
+            min-width: 280px;
+            background: #ffffffcc;
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.4rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+        }
+        .history-panel {
+            margin-top: 1.5rem;
+            background: #f8fafc;
+            border-radius: 1.5rem;
+            padding: 0.8rem 1rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .canvas-wrapper {
+            background: #fef9ef;
+            border-radius: 1.2rem;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.1);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fffef7;
+            cursor: default;
+        }
+        .exp-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-weight: 500;
+            background: #eef3fa;
+            padding: 8px 14px;
+            border-radius: 60px;
+            font-size: 0.8rem;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .momentum-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            color: #0a5b8c;
+        }
+        .slider-group {
+            margin-bottom: 1.2rem;
+        }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #1f3a48;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+        .icon-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .blue-icon, .orange-icon, .green-icon {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            margin-right: 4px;
+        }
+        .blue-icon { background: radial-gradient(circle at 30% 30%, #3b82f6, #1e4a8a); }
+        .orange-icon { background: radial-gradient(circle at 30% 30%, #f97316, #c2410c); }
+        .green-icon { background: radial-gradient(circle at 30% 30%, #22c55e, #15803d); }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #cbdbe0;
+            border-radius: 5px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #f97316;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+        .value-display {
+            background: #e2e8f0;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        button {
+            background: #1f6392;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.2s;
+            width: 100%;
+            margin-top: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #0e4a6f;
+            transform: scale(0.98);
+        }
+        .btn-primary {
+            background: #2c7a4d;
+        }
+        .btn-primary:hover {
+            background: #1e5a38;
+        }
+        .theory-card {
+            margin-top: 1rem;
+            background: #f8fafd;
+            border-radius: 1.2rem;
+            padding: 0.7rem 1rem;
+            border-left: 4px solid #3b82f6;
+        }
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #eef2f5;
+            padding: 6px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            text-align: center;
+            margin: 8px 0;
+        }
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            margin-top: 8px;
+        }
+        .history-table th, .history-table td {
+            border: 1px solid #cbd5e1;
+            padding: 6px 4px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .history-table th {
+            background: #e2e8f0;
+            font-weight: 600;
+        }
+        .history-scroll {
+            max-height: 260px;
+            overflow-y: auto;
+        }
+        .badge {
+            background: #dcfce7;
+            color: #15803d;
+            padding: 2px 8px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .status-msg {
+            font-size: 0.75rem;
+            margin-top: 8px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .delete-btn {
+            background: #ef4444;
+            padding: 2px 8px;
+            font-size: 0.65rem;
+            width: auto;
+            margin: 0;
+            border-radius: 20px;
+        }
+        .delete-btn:hover {
+            background: #dc2626;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1rem;
+            color: #607d8b;
+        }
+        hr { margin: 10px 0; }
+        @media (max-width: 800px) {
+            .experiment-container { padding: 1rem; }
+            .exp-info { font-size: 0.65rem; }
+        }
+        .principle-text {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            color: #2c3e4e;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #0a5b8c;
+        }
+        /* 加大画面中小球速度的字体 */
+        .canvas-speed-label {
+            font-size: 14px !important;
+            font-weight: 600;
+            text-shadow: 0 0 2px white;
+        }
+    </style>
+</head>
+<body>
+<div class="experiment-container">
+    <h1>⚛️ 动量守恒定律 · 三球碰撞实验台</h1>
+    
+    <div class="main-panel">
+        <div class="canvas-panel">
+            <div class="canvas-wrapper">
+                <canvas id="collisionCanvas" width="900" height="350" style="width:100%; height:auto; aspect-ratio:900/350"></canvas>
+            </div>
+            <div class="exp-info">
+                <span><span class="blue-icon"></span> 球1: m₁=<span id="m1Val">1.0</span>kg v₁=<span id="v1Val">1.50</span>m/s</span>
+                <span><span class="orange-icon"></span> 球2: m₂=<span id="m2Val">1.0</span>kg v₂=<span id="v2Val">-0.50</span>m/s</span>
+                <span><span class="green-icon"></span> 球3: m₃=<span id="m3Val">1.0</span>kg v₃=<span id="v3Val">0.00</span>m/s</span>
+                <span>💫 e=<span id="eVal">1.00</span></span>
+            </div>
+            <div class="exp-info" style="background:#e9f0f5; justify-content: space-around;">
+                <span>📊 碰撞前总动量: <strong id="pBefore" class="momentum-value">0.00</strong> kg·m/s</span>
+                <span>⚡ 碰撞后总动量: <strong id="pAfter" class="momentum-value">0.00</strong> kg·m/s</span>
+                <span id="consistencyBadge" class="badge">⚖️ 待实验</span>
+            </div>
+            <div id="expStatusMsg" class="status-msg">✨ 调整参数后点击【开始实验】 | 小球发生连续碰撞 → 触边停止并自动记录数据 (无重叠)</div>
+        </div>
+
+        <div class="controls-panel">
+            <button id="startExpBtn" class="btn-primary">▶ 开始实验 (单次运行·速度恒定)</button>
+            <button id="resetParamsBtn">🔄 重置参数 & 位置</button>
+            
+            <div class="slider-group">
+                <label><span class="icon-inline"><span class="blue-icon"></span> 质量 m₁</span> <span id="m1SlideVal" class="value-display">1.0 kg</span></label>
+                <input type="range" id="m1Slider" min="0.3" max="3.0" step="0.02" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label><span class="icon-inline"><span class="orange-icon"></span> 质量 m₂</span> <span id="m2SlideVal" class="value-display">1.0 kg</span></label>
+                <input type="range" id="m2Slider" min="0.3" max="3.0" step="0.02" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label><span class="icon-inline"><span class="green-icon"></span> 质量 m₃</span> <span id="m3SlideVal" class="value-display">1.0 kg</span></label>
+                <input type="range" id="m3Slider" min="0.3" max="3.0" step="0.02" value="1.0">
+            </div>
+            <div class="slider-group">
+                <label><span class="icon-inline"><span class="blue-icon"></span> 初速度 v₁₀</span> <span id="v10ValShow" class="value-display">1.50 m/s</span></label>
+                <input type="range" id="v10Slider" min="-2.5" max="2.5" step="0.05" value="1.50">
+            </div>
+            <div class="slider-group">
+                <label><span class="icon-inline"><span class="orange-icon"></span> 初速度 v₂₀</span> <span id="v20ValShow" class="value-display">-0.50 m/s</span></label>
+                <input type="range" id="v20Slider" min="-2.5" max="2.5" step="0.05" value="-0.50">
+            </div>
+            <div class="slider-group">
+                <label><span class="icon-inline"><span class="green-icon"></span> 初速度 v₃₀</span> <span id="v30ValShow" class="value-display">0.00 m/s</span></label>
+                <input type="range" id="v30Slider" min="-2.5" max="2.5" step="0.05" value="0.00">
+            </div>
+            <div class="slider-group">
+                <label>💥 恢复系数 e <span id="eSliderVal" class="value-display">1.00</span></label>
+                <input type="range" id="eSlider" min="0.0" max="1.0" step="0.01" value="1.0">
+            </div>
+            
+            <!-- 详细实验原理解释板块（已按要求删去“同时”后文字） -->
+            <div class="theory-card">
+                <h3>📖 动量守恒定律 · 详细解析</h3>
+                <div class="principle-text">
+                    <p><span class="highlight">定律表述：</span>对于一个不受外力（或合外力为零）的系统，系统总动量保持不变。</p>
+                    <div class="formula">∑mᵢvᵢ = 常矢量  &nbsp;&nbsp;→&nbsp;&nbsp; m₁v₁ + m₂v₂ + m₃v₃ = m₁v₁' + m₂v₂' + m₃v₃'</div>
+                    <p><span class="highlight">碰撞过程：</span>两球之间发生完全弹性碰撞（e=1）或非弹性碰撞（0≤e<1）。恢复系数 e = |分离速度| / |接近速度|。</p>
+                    <p><span class="highlight">一维碰撞速度公式：</span>对于两个小球 i 和 j，碰撞后的速度由下式给出（基于动量守恒和恢复系数定义）：</p>
+                    <div class="formula">
+                        vᵢ' = [mᵢvᵢ + mⱼvⱼ + mⱼ·e·(vⱼ - vᵢ)] / (mᵢ+mⱼ)<br>
+                        vⱼ' = [mᵢvᵢ + mⱼvⱼ + mᵢ·e·(vᵢ - vⱼ)] / (mᵢ+mⱼ)
+                    </div>
+                    <p><span class="highlight">实验原理：</span>本实验模拟三个小球在光滑水平轨道上的一维运动。系统水平方向不受外力，总动量守恒。通过调整质量、初速度和恢复系数，观察碰撞前后总动量的数值不变性，验证动量守恒定律。采用刚性分离算法确保小球在任何情况下<strong>绝不重叠</strong>，完全符合真实物理接触法则。</p>
+                    <p>⭐ 每次实验过程中，滑块参数不再改变，保证单次实验初条件恒定。小球触碰左右边界即停止，并自动记录碰撞后的最终速度及总动量。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史记录表格 -->
+    <div class="history-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong>📋 实验历史记录 (每次运行自动保存)</strong>
+            <button id="clearHistoryBtn" style="width: auto; padding: 4px 12px; margin:0; background:#64748b;">清空所有</button>
+        </div>
+        <div class="history-scroll">
+            <table class="history-table" id="historyTable">
+                <thead>
+                    <tr>
+                        <th>#</th><th>m₁,m₂,m₃(kg)</th><th>v₁₀,v₂₀,v₃₀(m/s)</th><th>e</th>
+                        <th>碰撞前P</th><th>碰撞后P'</th>
+                        <th>v₁'(m/s)</th><th>v₂'(m/s)</th><th>v₃'(m/s)</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTbody"><tr><td colspan="10" style="text-align:center;">暂无数据</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+    <footer>✨ 无重叠物理引擎 | 实验过程参数锁定 | 动量守恒自动验证 | 可单独删除历史记录</footer>
+</div>
+
+<script>
+    (function(){
+        // 三球参数
+        let m = [1.0, 1.0, 1.0];
+        let v = [1.50, -0.50, 0.00];
+        let e = 1.0;
+        // 备份默认
+        let default_m = [1.0, 1.0, 1.0];
+        let default_v = [1.50, -0.50, 0.00];
+        let default_e = 1.0;
+        
+        // 几何参数: 半径24px
+        const radius = 24;
+        const diameter = radius * 2;
+        const canvas = document.getElementById('collisionCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = 900, height = 350;
+        canvas.width = width; canvas.height = height;
+        
+        // 三个球的x坐标 (y固定中线)
+        let pos = [180, width/2, width-180];
+        const boundaryLeft = radius + 5;
+        const boundaryRight = width - radius - 5;
+        
+        // 强力防重叠函数，确保小球完全不重叠（基于迭代分离）
+        function enforceNoOverlap() {
+            for(let iter=0; iter<10; iter++) {
+                let anyOverlap = false;
+                for(let i=0;i<3;i++){
+                    for(let j=i+1;j<3;j++){
+                        let dist = Math.abs(pos[i] - pos[j]);
+                        if(dist < diameter) {
+                            anyOverlap = true;
+                            let overlap = diameter - dist;
+                            let direction = (pos[i] < pos[j]) ? -1 : 1;
+                            let correction = overlap / 2;
+                            pos[i] -= correction * direction;
+                            pos[j] += correction * direction;
+                        }
+                    }
+                }
+                for(let i=0;i<3;i++) {
+                    pos[i] = Math.min(boundaryRight, Math.max(boundaryLeft, pos[i]));
+                }
+                if(!anyOverlap) break;
+            }
+        }
+        enforceNoOverlap();
+        
+        // 实验控制
+        let animationId = null;
+        let isRunning = false;
+        let hasRecorded = false;
+        let expParamsSnapshot = null;
+        
+        const SPEED_FACTOR = 210;
+        
+        // DOM 绑定
+        const m1Slider = document.getElementById('m1Slider');
+        const m2Slider = document.getElementById('m2Slider');
+        const m3Slider = document.getElementById('m3Slider');
+        const v10Slider = document.getElementById('v10Slider');
+        const v20Slider = document.getElementById('v20Slider');
+        const v30Slider = document.getElementById('v30Slider');
+        const eSlider = document.getElementById('eSlider');
+        const startBtn = document.getElementById('startExpBtn');
+        const resetBtn = document.getElementById('resetParamsBtn');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+        
+        // 显示
+        const m1Val = document.getElementById('m1Val'), m2Val = document.getElementById('m2Val'), m3Val = document.getElementById('m3Val');
+        const v1ValSpan = document.getElementById('v1Val'), v2ValSpan = document.getElementById('v2Val'), v3ValSpan = document.getElementById('v3Val');
+        const eValSpan = document.getElementById('eVal');
+        const pBeforeSpan = document.getElementById('pBefore'), pAfterSpan = document.getElementById('pAfter');
+        const consistencyBadge = document.getElementById('consistencyBadge');
+        const expStatusMsg = document.getElementById('expStatusMsg');
+        
+        const m1SlideVal = document.getElementById('m1SlideVal'), m2SlideVal = document.getElementById('m2SlideVal'), m3SlideVal = document.getElementById('m3SlideVal');
+        const v10Show = document.getElementById('v10ValShow'), v20Show = document.getElementById('v20ValShow'), v30Show = document.getElementById('v30ValShow');
+        const eSliderVal = document.getElementById('eSliderVal');
+        
+        let historyRecords = [];
+        
+        function updateUI() {
+            m1Val.innerText = m[0].toFixed(2); m2Val.innerText = m[1].toFixed(2); m3Val.innerText = m[2].toFixed(2);
+            v1ValSpan.innerText = v[0].toFixed(2); v2ValSpan.innerText = v[1].toFixed(2); v3ValSpan.innerText = v[2].toFixed(2);
+            eValSpan.innerText = e.toFixed(2);
+            m1SlideVal.innerText = m[0].toFixed(2)+"kg"; m2SlideVal.innerText=m[1].toFixed(2)+"kg"; m3SlideVal.innerText=m[2].toFixed(2)+"kg";
+            v10Show.innerText = v[0].toFixed(2)+" m/s"; v20Show.innerText=v[1].toFixed(2)+" m/s"; v30Show.innerText=v[2].toFixed(2)+" m/s";
+            eSliderVal.innerText = e.toFixed(2);
+            let totalP = m[0]*v[0] + m[1]*v[1] + m[2]*v[2];
+            pBeforeSpan.innerText = totalP.toFixed(5);
+            pAfterSpan.innerText = totalP.toFixed(5);
+        }
+        
+        // 两两碰撞解析(基于恢复系数e, 一维) + 碰撞后强制分离保证不重叠
+        function resolveCollision(i, j) {
+            let xi = pos[i], xj = pos[j];
+            if(Math.abs(xi - xj) <= diameter) {
+                // 强制分离：精确分离至刚好相切
+                let overlap = diameter - Math.abs(xi - xj);
+                if(overlap > 0) {
+                    let dir = (xi < xj) ? -1 : 1;
+                    let correction = overlap / 2;
+                    pos[i] -= correction * dir;
+                    pos[j] += correction * dir;
+                    pos[i] = Math.min(boundaryRight, Math.max(boundaryLeft, pos[i]));
+                    pos[j] = Math.min(boundaryRight, Math.max(boundaryLeft, pos[j]));
+                }
+                // 相对速度大于零说明相互接近，才发生物理碰撞
+                let relativeV = v[i] - v[j];
+                if(relativeV > 0) {
+                    let totalM = m[i] + m[j];
+                    let newVi = (m[i]*v[i] + m[j]*v[j] + m[j]*e*(v[j]-v[i])) / totalM;
+                    let newVj = (m[i]*v[i] + m[j]*v[j] + m[i]*e*(v[i]-v[j])) / totalM;
+                    v[i] = newVi;
+                    v[j] = newVj;
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // 多次迭代处理所有碰撞
+        function handleCollisions() {
+            let anyCollision = false;
+            for(let iter=0; iter<5; iter++) {
+                let collided = false;
+                for(let i=0;i<3;i++)
+                    for(let j=i+1;j<3;j++)
+                        if(resolveCollision(i,j)) collided = true;
+                if(collided) anyCollision = true;
+                else break;
+            }
+            return anyCollision;
+        }
+        
+        // 边界停止检测
+        function checkEdgeStop() {
+            for(let i=0;i<3;i++){
+                if(pos[i] <= boundaryLeft || pos[i] >= boundaryRight){
+                    if(isRunning){
+                        isRunning = false;
+                        if(animationId) cancelAnimationFrame(animationId);
+                        animationId = null;
+                        expStatusMsg.innerHTML = "🏁 小球触碰边缘，实验终止。如需再次实验请点击开始。";
+                        if(!hasRecorded && expParamsSnapshot){
+                            let pAfter = m[0]*v[0] + m[1]*v[1] + m[2]*v[2];
+                            saveRecord(pAfter, [...v]);
+                            hasRecorded = true;
+                            consistencyBadge.innerHTML = "✅ 动量守恒已验证";
+                            consistencyBadge.style.background = "#dcfce7";
+                        }
+                        drawCanvas();
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        function updatePositions(dt){
+            for(let i=0;i<3;i++) pos[i] += v[i] * dt * SPEED_FACTOR;
+            for(let i=0;i<3;i++) pos[i] = Math.min(boundaryRight, Math.max(boundaryLeft, pos[i]));
+        }
+        
+        function saveRecord(pAfterVal, finalVelocities) {
+            if(!expParamsSnapshot) return;
+            let record = {
+                id: Date.now() + Math.random(),
+                masses: [expParamsSnapshot.m[0], expParamsSnapshot.m[1], expParamsSnapshot.m[2]],
+                v0s: [expParamsSnapshot.v0[0], expParamsSnapshot.v0[1], expParamsSnapshot.v0[2]],
+                e: expParamsSnapshot.e,
+                pBefore: expParamsSnapshot.pBefore,
+                pAfter: pAfterVal,
+                vAfter: [...finalVelocities]
+            };
+            historyRecords.push(record);
+            renderHistoryTable();
+        }
+        
+        function renderHistoryTable() {
+            const tbody = document.getElementById('historyTbody');
+            if(historyRecords.length===0){
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">暂无实验数据，点击开始实验</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            historyRecords.forEach((rec, idx) => {
+                let row = tbody.insertRow();
+                row.insertCell(0).innerText = idx+1;
+                row.insertCell(1).innerHTML = `${rec.masses[0].toFixed(2)}, ${rec.masses[1].toFixed(2)}, ${rec.masses[2].toFixed(2)}`;
+                row.insertCell(2).innerHTML = `${rec.v0s[0].toFixed(2)}, ${rec.v0s[1].toFixed(2)}, ${rec.v0s[2].toFixed(2)}`;
+                row.insertCell(3).innerText = rec.e.toFixed(2);
+                row.insertCell(4).innerText = rec.pBefore.toFixed(5);
+                row.insertCell(5).innerText = rec.pAfter.toFixed(5);
+                row.insertCell(6).innerText = rec.vAfter[0].toFixed(4);
+                row.insertCell(7).innerText = rec.vAfter[1].toFixed(4);
+                row.insertCell(8).innerText = rec.vAfter[2].toFixed(4);
+                let delBtn = document.createElement('button');
+                delBtn.innerText = '删除';
+                delBtn.className = 'delete-btn';
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    historyRecords.splice(idx,1);
+                    renderHistoryTable();
+                    expStatusMsg.innerHTML = "已删除一条实验记录。";
+                };
+                let cell = row.insertCell(9);
+                cell.appendChild(delBtn);
+            });
+        }
+        
+        function clearAllHistory() {
+            historyRecords = [];
+            renderHistoryTable();
+            expStatusMsg.innerHTML = "所有历史记录已清空。";
+        }
+        
+        function resetAllParameters() {
+            if(isRunning){
+                if(animationId) cancelAnimationFrame(animationId);
+                isRunning=false; animationId=null;
+            }
+            m1Slider.value = default_m[0]; m2Slider.value = default_m[1]; m3Slider.value = default_m[2];
+            v10Slider.value = default_v[0]; v20Slider.value = default_v[1]; v30Slider.value = default_v[2];
+            eSlider.value = default_e;
+            m[0]=default_m[0]; m[1]=default_m[1]; m[2]=default_m[2];
+            v[0]=default_v[0]; v[1]=default_v[1]; v[2]=default_v[2];
+            e=default_e;
+            pos = [180, width/2, width-180];
+            enforceNoOverlap();
+            hasRecorded=false;
+            updateUI();
+            drawCanvas();
+            expStatusMsg.innerHTML = "参数与位置已重置。可修改滑块后开始实验。";
+            consistencyBadge.innerHTML = "⚖️ 待实验";
+            consistencyBadge.style.background="#e2e8f0";
+        }
+        
+        // 开始实验: 锁定当前参数
+        function startExperiment() {
+            if(isRunning){
+                if(animationId) cancelAnimationFrame(animationId);
+                isRunning=false;
+            }
+            // 从UI获取最新参数并锁定
+            m[0] = parseFloat(m1Slider.value); m[1] = parseFloat(m2Slider.value); m[2] = parseFloat(m3Slider.value);
+            let newV0 = [parseFloat(v10Slider.value), parseFloat(v20Slider.value), parseFloat(v30Slider.value)];
+            v[0]=newV0[0]; v[1]=newV0[1]; v[2]=newV0[2];
+            e = parseFloat(eSlider.value);
+            enforceNoOverlap();
+            hasRecorded = false;
+            let pInit = m[0]*v[0] + m[1]*v[1] + m[2]*v[2];
+            expParamsSnapshot = {
+                m: [...m], v0: [...v], e: e, pBefore: pInit
+            };
+            updateUI();
+            drawCanvas();
+            isRunning = true;
+            expStatusMsg.innerHTML = "⚡ 实验运行中 ... 发生连续碰撞 → 边缘停止后自动记录数据 (无重叠)";
+            consistencyBadge.innerHTML = "⚖️ 实验中";
+            consistencyBadge.style.background="#fef9c3";
+            
+            let lastTime = 0;
+            function animLoop(now){
+                if(!isRunning){
+                    drawCanvas(); return;
+                }
+                if(!lastTime){ lastTime=now; requestAnimationFrame(animLoop); drawCanvas(); return;}
+                let delta = Math.min(0.033, (now-lastTime)/1000);
+                if(delta<0.008){ requestAnimationFrame(animLoop); drawCanvas(); return;}
+                lastTime=now;
+                let dt = Math.min(delta,0.02);
+                updatePositions(dt);
+                let collided = handleCollisions();
+                if(collided) {
+                    updateUI();
+                    enforceNoOverlap();
+                }
+                let stopped = checkEdgeStop();
+                if(stopped){
+                    drawCanvas(); return;
+                }
+                updateUI();
+                drawCanvas();
+                requestAnimationFrame(animLoop);
+            }
+            animationId = requestAnimationFrame(animLoop);
+        }
+        
+        function drawCanvas(){
+            ctx.clearRect(0,0,width,height);
+            ctx.fillStyle="#fffef7"; ctx.fillRect(0,0,width,height);
+            ctx.beginPath(); ctx.strokeStyle="#cbd5e1"; ctx.lineWidth=2; ctx.setLineDash([6,10]);
+            ctx.moveTo(0,height/2); ctx.lineTo(width,height/2); ctx.stroke();
+            ctx.setLineDash([]);
+            const gradStops = [
+                [[0,'#3b82f6'],[1,'#1e4a8a']], [[0,'#f97316'],[1,'#c2410c']], [[0,'#22c55e'],[1,'#15803d']]
+            ];
+            for(let i=0;i<3;i++){
+                let grad = ctx.createLinearGradient(pos[i]-8,height/2-8,pos[i]+8,height/2+8);
+                grad.addColorStop(0, gradStops[i][0][1]);
+                grad.addColorStop(1, gradStops[i][1][1]);
+                ctx.beginPath(); ctx.arc(pos[i], height/2, radius, 0, Math.PI*2);
+                ctx.fillStyle = grad; ctx.fill();
+                ctx.fillStyle = "white"; ctx.font = "bold 16px 'Segoe UI'";
+                ctx.fillText((i+1).toString(), pos[i]-6, height/2+7);
+            }
+            // 加大速度字体：使用14px粗体，更清晰
+            ctx.font = "bold 14px 'JetBrains Mono', 'Segoe UI', monospace";
+            ctx.fillStyle = "#1e293b";
+            ctx.shadowBlur = 0;
+            for(let i=0;i<3;i++){
+                let speedText = `v${i+1}=${v[i].toFixed(2)} m/s`;
+                let textWidth = ctx.measureText(speedText).width;
+                let textX = pos[i] - textWidth/2;
+                let textY = (i === 0) ? height/2 - 28 : (i === 1 ? height/2 - 28 : height/2 - 28);
+                // 统一放在球上方偏上位置，确保清晰
+                ctx.fillStyle = "#0f172a";
+                ctx.fillText(speedText, pos[i] - textWidth/2, height/2 - 28);
+            }
+            // 额外添加球下方小标识（可选，保留风格）
+            ctx.font = "12px 'Segoe UI'";
+            ctx.fillStyle = "#475569";
+            for(let i=0;i<3;i++){
+                ctx.fillText(`m=${m[i].toFixed(2)}kg`, pos[i]-25, height/2+32);
+            }
+        }
+        
+        function bindEvents(){
+            startBtn.addEventListener('click', startExperiment);
+            resetBtn.addEventListener('click', resetAllParameters);
+            clearHistoryBtn.addEventListener('click', clearAllHistory);
+            const sliders = [m1Slider,m2Slider,m3Slider,v10Slider,v20Slider,v30Slider,eSlider];
+            sliders.forEach(sl => {
+                sl.addEventListener('input', ()=>{
+                    if(isRunning){
+                        if(animationId) cancelAnimationFrame(animationId);
+                        isRunning=false; animationId=null;
+                    }
+                    m[0]=parseFloat(m1Slider.value); m[1]=parseFloat(m2Slider.value); m[2]=parseFloat(m3Slider.value);
+                    v[0]=parseFloat(v10Slider.value); v[1]=parseFloat(v20Slider.value); v[2]=parseFloat(v30Slider.value);
+                    e=parseFloat(eSlider.value);
+                    updateUI();
+                    drawCanvas();
+                    expStatusMsg.innerHTML = "参数已修改，点击开始实验生效。";
+                    consistencyBadge.innerHTML = "⚖️ 待实验";
+                });
+            });
+        }
+        
+        function init(){
+            bindEvents();
+            resetAllParameters();
+            drawCanvas();
+        }
+        init();
+    })();
+</script>
+</body>
+</html>

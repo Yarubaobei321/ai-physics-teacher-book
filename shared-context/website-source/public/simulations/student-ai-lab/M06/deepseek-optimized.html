@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>立体几何相关知识点 · 互动科普</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;background:#eef2f7;color:#22303c;overflow:hidden}
+  header{background:linear-gradient(135deg,#2c5282,#3182ce);color:#fff;padding:14px 22px}
+  header h1{font-size:22px;font-weight:700;letter-spacing:1px}
+  header p{font-size:13px;opacity:.92;margin-top:4px}
+  .tabs{display:flex;gap:8px;background:#2a4365;padding:8px 22px;flex-wrap:wrap}
+  .tabs button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 16px;font-size:13px;cursor:pointer;transition:.2s}
+  .tabs button:hover{background:rgba(255,255,255,.25)}
+  .tabs button.active{background:#fff;color:#2a4365;font-weight:700}
+  .layout{display:grid;grid-template-columns:300px 1fr 300px;gap:12px;padding:12px 16px;height:calc(100vh - 150px)}
+  .pane{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(42,67,101,.08);padding:14px;overflow-y:auto}
+  .control label{display:block;font-size:13px;font-weight:600;color:#2b6cb0;margin:12px 0 6px}
+  .control input[type=number]{width:90px;padding:7px;border:1px solid #cbd5e0;border-radius:6px;font-size:14px;text-align:center}
+  .control .row{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .control .hint{font-size:12px;color:#718096;margin-top:5px;line-height:1.6}
+  .btn{background:#2b6cb0;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:14px;cursor:pointer;margin:6px 4px 0 0}
+  .btn:hover{background:#234e80}
+  .btn.secondary{background:#e2e8f0;color:#2d3748}
+  .btn.green{background:#2f855a}
+  .btn.video{background:#e53e3e}
+  .data h3{font-size:14px;color:#2a4365;border-bottom:2px solid #bee3f8;padding-bottom:6px;margin-bottom:10px}
+  .readout{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:10px;font-size:14px}
+  .readout .k{color:#718096;font-size:12px}
+  .readout .v{font-size:18px;font-weight:700;color:#1a202c;margin-top:2px}
+  .canvas-holder{display:flex;flex-direction:column;gap:10px}
+  canvas{display:block;background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:100%}
+  .cap{font-size:12px;color:#718096;text-align:center;margin-top:4px}
+  .guide h2{font-size:18px;color:#2a4365;margin-bottom:10px}
+  .guide p,.guide li{font-size:14px;line-height:1.9;color:#2d3748}
+  .guide ul{margin:8px 0 8px 22px}
+  .formula{background:#ebf8ff;border-left:4px solid #2b6cb0;padding:10px 14px;margin:10px 0;border-radius:0 8px 8px 0;font-size:15px;color:#1a202c}
+  footer{position:fixed;left:0;right:0;bottom:0;background:#2a4365;color:#e2e8f0;font-size:12.5px;padding:10px 22px;line-height:1.7;border-top:3px solid #3182ce}
+  footer b{color:#90cdf4}
+  .sub{font-size:.7em;vertical-align:sub}
+  .sup{font-size:.7em;vertical-align:super}
+  .step{border-left:4px solid #2b6cb0;padding:6px 12px;margin:8px 0;background:#f0f7ff;font-size:14px;line-height:1.8}
+  .model-label{position:absolute;top:8px;left:50%;transform:translateX(-50%);background:rgba(42,67,101,.9);color:#fff;border-radius:16px;padding:3px 14px;font-size:13px;z-index:5;pointer-events:none}
+  .wrap{position:relative}
+  .video-box{background:#fff5f5;border:1px solid #feb2b2;border-radius:10px;padding:14px;margin-top:12px}
+  .need-net{display:inline-block;background:#fed7d7;color:#742a2a;border-radius:4px;padding:1px 8px;font-size:12px;font-weight:600}
+</style>
+</head>
+<body>
+<header>
+  <h1>立体几何相关知识点 · 互动科普</h1>
+  <p>柱 / 锥 / 台 / 球 · 线面平行与垂直判定 · 空间角与距离 · 外接球与内切球 —— 可离线打开</p>
+</header>
+
+<div class="tabs" role="tablist">
+  <button data-tab="guide" class="active">① 知识点讲解</button>
+  <button data-tab="model">② 3D 模型演示</button>
+  <button data-tab="calc">③ 演算例题</button>
+  <button data-tab="video">④ 视频讲解</button>
+</div>
+
+<main class="layout">
+  <!-- ============ 控制区 ============ -->
+  <aside class="pane control">
+    <div class="tab-pane" id="ctl-guide">
+      <div class="hint">点击上方标签页进入「3D 模型演示」「演算例题」或「视频讲解」。</div>
+      <div class="hint" style="margin-top:12px"><b>本页覆盖知识点：</b></div>
+      <ul style="font-size:13px;color:#4a5568;margin:6px 0 0 20px;line-height:1.9">
+        <li>柱 / 锥 / 台 / 球的结构特征</li>
+        <li>线面平行与垂直判定</li>
+        <li>空间角（线面角）与距离</li>
+        <li>外接球与内切球</li>
+        <li>斜二测画法</li>
+      </ul>
+      <div class="hint" style="margin-top:8px">所有公式使用 Unicode 数学符号渲染（√、π、²、³、½），离线可读，无任何 CDN 依赖。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-model" style="display:none">
+      <label>选择几何体（切换时自动清空旧模型与旧标签）</label>
+      <div class="row">
+        <button class="btn secondary" data-model="box">长方体</button>
+        <button class="btn secondary" data-model="tetra">正四面体</button>
+        <button class="btn secondary" data-model="cyl">圆柱</button>
+        <button class="btn secondary" data-model="sphere">球</button>
+      </div>
+      <button class="btn" id="modelReset">↺ 复位视角</button>
+      <label>长方体尺寸 a、b、c</label>
+      <div class="row"><input type="number" id="modelA" value="3" step="0.5" min="0.5" max="6">×<input type="number" id="modelB" value="4" step="0.5" min="0.5" max="6">×<input type="number" id="modelC" value="5" step="0.5" min="0.5" max="6"></div>
+      <label>正四面体 / 圆柱 / 球 的半径或棱长</label>
+      <div class="row"><input type="number" id="modelR" value="1.6" step="0.2" min="0.4" max="4"></div>
+      <button class="btn secondary" id="modelApply">✓ 应用尺寸</button>
+      <div class="hint">在画布上<b>按住拖动</b>旋转，<b>滚轮</b>缩放。切换按钮会先清空画布与标签，再创建新模型。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-calc" style="display:none">
+      <label>演算例题（3 道，含解答与数值答案）</label>
+      <button class="btn" data-calc="1">第 1 题 · 长方体对角线/表面积</button>
+      <button class="btn secondary" data-calc="2">第 2 题 · 两两垂直三棱锥外接球</button>
+      <button class="btn secondary" data-calc="3">第 3 题 · 正方体外接球表面积</button>
+      <div class="hint" style="margin-top:8px">例题答案可手算核对，公式与计算过程见画布区。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-video" style="display:none">
+      <div class="hint"><b>视频讲解</b>：推荐 B 站等平台的立体几何教学视频。</div>
+      <a class="btn video" href="https://www.bilibili.com/" target="_blank" rel="noopener">🎬 打开 B 站搜索立体几何</a>
+      <div class="hint" style="margin-top:6px"><span class="need-net">需联网</span> 视频为外部资源，离线状态下无法播放；本页其余 3D 模型、公式、例题均可离线使用。</div>
+      <div class="hint" style="margin-top:10px"><b>推荐搜索关键词：</b></div>
+      <ul style="font-size:13px;color:#4a5568;margin:4px 0 0 20px;line-height:1.9">
+        <li>「高一数学 立体几何 外接球」</li>
+        <li>「线面垂直 判定定理 动画」</li>
+        <li>「空间向量 距离 公式」</li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- ============ 画布区 ============ -->
+  <section class="pane canvas-holder">
+    <div class="tab-pane" id="cv-guide" style="flex:1">
+      <div class="guide">
+        <h2>一、柱、锥、台、球的结构特征</h2>
+        <ul>
+          <li><b>棱柱/圆柱</b>：两底面全等且平行；圆柱底面圆，母线平行且相等；</li>
+          <li><b>棱锥/圆锥</b>：一个底面、一个顶点；圆锥母线长 l = √(r²+h²)；</li>
+          <li><b>棱台/圆台</b>：用平行于底面的平面截锥体所得，上下底面相似；</li>
+          <li><b>球</b>：到球心距离等于半径 R 的点的集合。</li>
+        </ul>
+        <h2>二、体积与表面积公式</h2>
+        <div class="formula">
+          V_柱 = Sh，V_锥 = ⅓Sh，V_球 = (4/3)πR³<br>
+          S_球 = 4πR²，S_圆柱侧 = 2πrl
+        </div>
+        <h2>三、长方体与正方体</h2>
+        <div class="formula">
+          长方体（a,b,c）：体对角线 = √(a²+b²+c²)，表面积 = 2(ab+bc+ca)<br>
+          正方体（棱长 a）：体对角线 = a√3，外接球半径 = a√3/2
+        </div>
+        <h2>四、线面平行与垂直判定</h2>
+        <div class="formula" style="border-left-color:#e53e3e">
+          线面垂直判定：直线 l ⊥ 平面内<b>两条相交直线</b> ⇒ l ⊥ 平面（「相交」条件缺一不可）<br>
+          线面平行判定：平面外直线 l ∥ 平面内一条直线 ⇒ l ∥ 平面
+        </div>
+        <h2>五、空间角与距离</h2>
+        <div class="formula">
+          线面角范围：<b>[0°, 90°]</b>（斜线与平面所成角为其与射影的夹角）<br>
+          两点距离：|P₁P₂| = √((x₂−x₁)²+(y₂−y₁)²+(z₂−z₁)²)
+        </div>
+        <h2>六、外接球与内切球</h2>
+        <p>侧棱两两垂直且长度为 a、b、c 的三棱锥，外接球半径：</p>
+        <div class="formula">R = ½√(a²+b²+c²)</div>
+        <h2>七、斜二测画法</h2>
+        <div class="formula">原图面积 = 直观图面积 × 2√2</div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-model" style="display:none;flex:1">
+      <div class="wrap">
+        <div class="model-label" id="modelLabel" aria-label="当前 3D 模型名称">长方体</div>
+        <canvas id="modelCanvas" aria-label="3D 模型演示：长方体/正四面体/圆柱/球，可拖动旋转、滚轮缩放，切换时清空旧模型与旧标签"></canvas>
+      </div>
+      <div class="cap">3D 模型（拖动旋转 / 滚轮缩放）：切换按钮时旧几何体与旧标签被清空，只显示当前模型</div>
+    </div>
+
+    <div class="tab-pane" id="cv-calc" style="display:none;flex:1">
+      <div class="guide" id="calcBox" style="max-width:760px;margin:0 auto"></div>
+    </div>
+
+    <div class="tab-pane" id="cv-video" style="display:none;flex:1">
+      <div class="guide" style="max-width:760px;margin:0 auto">
+        <h2>视频讲解</h2>
+        <p>推荐在 B 站等视频平台搜索以下主题的视频讲解（教学视频为外部资源，需联网）：</p>
+        <ul style="margin:10px 0 0 22px;font-size:14px;line-height:2.2">
+          <li>🎬 立体几何基础：柱锥台球的结构特征</li>
+          <li>🎬 线面垂直、线面平行的判定定理精讲</li>
+          <li>🎬 外接球与内切球：公式推导与题型</li>
+          <li>🎬 空间角与距离的求法</li>
+        </ul>
+        <div class="video-box">
+          <span class="need-net">需联网</span> 视频需连接外部网站观看；离线环境下请使用本页左侧的 3D 模型与例题功能。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 数据区 ============ -->
+  <aside class="pane data">
+    <div class="tab-pane" id="data-guide">
+      <div class="readout"><div class="k">V_柱 / V_锥</div><div class="v" style="font-size:16px">Sh / ⅓Sh</div></div>
+      <div class="readout"><div class="k">V_球 / S_球</div><div class="v" style="font-size:16px">(4/3)πR³ / 4πR²</div></div>
+      <div class="readout"><div class="k">线面角范围</div><div class="v" style="font-size:16px">[0°, 90°]</div></div>
+      <div class="readout"><div class="k">斜二测</div><div class="v" style="font-size:16px">原图 = 直观图 × 2√2</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-model" style="display:none">
+      <div class="readout"><div class="k">当前模型</div><div class="v" id="dmName">长方体</div></div>
+      <div class="readout"><div class="k">尺寸参数</div><div class="v" id="dmDim" style="font-size:15px">a=3, b=4, c=5</div></div>
+      <div class="readout"><div class="k">体对角线</div><div class="v" id="dmDiag" style="color:#2b6cb0">√50 = 5√2 ≈ 7.07</div></div>
+      <div class="readout"><div class="k">表面积</div><div class="v" id="dmArea" style="color:#2f855a">2(12+20+15) = 94</div></div>
+      <div class="readout"><div class="k">标签状态</div><div class="v" id="dmLabel" style="font-size:13px">仅当前模型标签，无残留</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-calc" style="display:none">
+      <div class="readout"><div class="k">当前例题</div><div class="v" id="dcName" style="font-size:15px">—</div></div>
+      <div class="readout"><div class="k">答案</div><div class="v" id="dcAns" style="font-size:15px">—</div></div>
+      <div class="readout"><div class="k">关键公式</div><div class="v" id="dcFormula" style="font-size:14px">—</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-video" style="display:none">
+      <div class="readout"><div class="k">视频来源</div><div class="v" style="font-size:14px">B 站等外部平台（需联网）</div></div>
+      <div class="readout"><div class="k">离线替代</div><div class="v" style="font-size:14px">本页 3D 模型 / 公式 / 例题均可离线使用</div></div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <b>观察与结论：</b>① 判定<b>线面垂直</b>必须满足「一条直线与平面内<b>两条相交直线</b>都垂直」，少一个条件都不能下结论；② 判定<b>线面平行</b>要求直线在平面<b>外</b>；③ <b>外接球</b>的半径常通过体对角线/最长线段求出（正方体 R=a√3/2）；④ 线面角范围恒为 <b>[0°, 90°]</b>；⑤ 斜二测画法中直观图面积是原图的 1/(2√2)。
+</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+function fmt(v, n) { const f = Math.pow(10, n); return (Math.round(v * f) / f).toFixed(n); }
+function setupCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (w === 0 || h === 0) return null;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+
+const state = {
+  tab: 'guide',
+  model: { type: 'box', a: 3, b: 4, c: 5, r: 1.6, rotX: 0.6, rotY: 0.8, zoom: 1 },
+  calc: 1
+};
+
+/* ============ 标签页 ============ */
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  ['guide','model','calc','video'].forEach(t => {
+    document.getElementById('ctl-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('cv-' + t).style.display = t === tab ? 'flex' : 'none';
+    document.getElementById('data-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'model') { drawModel(); updateModelData(); }
+  if (tab === 'calc') renderCalc();
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+/* ============ 3D 软渲染（纯 Canvas，无 Three.js / 无 CDN） ============ */
+class P3D {
+  constructor(rotX, rotY, zoom) { this.rotX = rotX; this.rotY = rotY; this.zoom = zoom; }
+  project(p, cx, cy, scale) {
+    const rx = this.rotX, ry = this.rotY;
+    let x1 = p.x * Math.cos(ry) + p.z * Math.sin(ry);
+    let z1 = -p.x * Math.sin(ry) + p.z * Math.cos(ry);
+    let y1 = p.y;
+    let y2 = y1 * Math.cos(rx) - z1 * Math.sin(rx);
+    let z2 = y1 * Math.sin(rx) + z1 * Math.cos(rx);
+    const persp = 1 / (4.6 - z2);
+    return { x: cx + x1 * scale * persp * this.zoom, y: cy - y2 * scale * persp * this.zoom, depth: z2 };
+  }
+}
+function drawAxis(ctx, P, scale, cx, cy) {
+  ctx.strokeStyle = '#a0aec0'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+  [[2.2,0,0,'x'],[0,2.2,0,'y'],[0,0,2.2,'z']].forEach(([px,py,pz,lab]) => {
+    const e = P.project({ x: px, y: py, z: pz }, cx, cy, scale);
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(e.x, e.y); ctx.stroke();
+    ctx.fillStyle = '#718096'; ctx.font = '12px sans-serif';
+    ctx.fillText(lab, e.x + 4, e.y);
+  });
+  ctx.setLineDash([]);
+}
+
+/* ============ 模型绘制（关键：先 clearRect 清空，再画当前模型；标签同理由 DOM 更新） ============ */
+function drawModel() {
+  const cv = $('modelCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  // 1. 清空旧几何体与旧标签（每次重绘都清空整个画布）
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2;
+  const t = state.model.type;
+  const scale = Math.min(w, h) * 0.26 * state.model.zoom;
+  const P = new P3D(state.model.rotX, state.model.rotY, 1);
+  drawAxis(ctx, P, scale, cx, cy);
+
+  // 2. 按当前类型绘制
+  if (t === 'box') {
+    const { a, b, c } = state.model;
+    const v = [];
+    for (const [sx, sy, sz] of [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]]) {
+      v.push(P.project({ x: sx * a / 2, y: sy * b / 2, z: sz * c / 2 }, cx, cy, scale));
+    }
+    const faces = [[0,1,2,3],[4,5,6,7],[0,1,5,4],[2,3,7,6],[0,3,7,4],[1,2,6,5]];
+    ctx.fillStyle = 'rgba(66,153,225,.32)'; ctx.strokeStyle = '#2a4365'; ctx.lineWidth = 1.6;
+    for (const f of faces) {
+      ctx.beginPath(); ctx.moveTo(v[f[0]].x, v[f[0]].y);
+      for (let i = 1; i < 4; i++) ctx.lineTo(v[f[i]].x, v[f[i]].y);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  } else if (t === 'tetra') {
+    // 正四面体顶点 (±k,±k,±k)，取四个点，边长 2√2·k
+    const k = state.model.r / (2 * Math.sqrt(2)) * 2.6;
+    const pts = [{x:k,y:k,z:k},{x:-k,y:-k,z:k},{x:-k,y:k,z:-k},{x:k,y:-k,z:-k}];
+    const pr = pts.map(p => P.project(p, cx, cy, scale));
+    const edges = [[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+    ctx.strokeStyle = '#2a4365'; ctx.lineWidth = 2;
+    for (const [i, j] of edges) { ctx.beginPath(); ctx.moveTo(pr[i].x, pr[i].y); ctx.lineTo(pr[j].x, pr[j].y); ctx.stroke(); }
+    ctx.fillStyle = 'rgba(66,153,225,.28)';
+    ctx.beginPath(); ctx.moveTo(pr[0].x, pr[0].y); ctx.lineTo(pr[1].x, pr[1].y); ctx.lineTo(pr[2].x, pr[2].y); ctx.closePath(); ctx.fill();
+  } else if (t === 'cyl') {
+    const r = state.model.r, h = state.model.r * 1.5, n = 36;
+    ctx.strokeStyle = '#2a4365'; ctx.lineWidth = 1.3;
+    const topPts = [], botPts = [];
+    for (let i = 0; i <= n; i++) {
+      const th = i / n * TAU;
+      topPts.push(P.project({ x: r * Math.cos(th), y: h / 2, z: r * Math.sin(th) }, cx, cy, scale));
+      botPts.push(P.project({ x: r * Math.cos(th), y: -h / 2, z: r * Math.sin(th) }, cx, cy, scale));
+    }
+    for (let i = 0; i < n; i++) {
+      ctx.beginPath();
+      ctx.moveTo(topPts[i].x, topPts[i].y); ctx.lineTo(botPts[i].x, botPts[i].y);
+      ctx.lineTo(botPts[i+1].x, botPts[i+1].y); ctx.lineTo(topPts[i+1].x, topPts[i+1].y);
+      ctx.closePath(); ctx.fillStyle = 'rgba(66,153,225,.32)'; ctx.fill(); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(topPts[0].x, topPts[0].y);
+    for (let i = 1; i <= n; i++) ctx.lineTo(topPts[i].x, topPts[i].y);
+    ctx.closePath(); ctx.fillStyle = '#e2f0ff'; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(botPts[0].x, botPts[0].y);
+    for (let i = 1; i <= n; i++) ctx.lineTo(botPts[i].x, botPts[i].y);
+    ctx.closePath(); ctx.fillStyle = '#e2f0ff'; ctx.fill(); ctx.stroke();
+  } else { // sphere
+    const r = state.model.r;
+    ctx.strokeStyle = '#2a4365'; ctx.lineWidth = 1.2;
+    for (let i = 0; i < 12; i++) {
+      ctx.beginPath();
+      for (let j = 0; j <= 48; j++) {
+        const th = j / 48 * TAU;
+        const p = { x: r * Math.cos(th) * Math.cos(i * Math.PI / 6), y: r * Math.sin(th), z: r * Math.cos(th) * Math.sin(i * Math.PI / 6) };
+        const pr = P.project(p, cx, cy, scale);
+        j === 0 ? ctx.moveTo(pr.x, pr.y) : ctx.lineTo(pr.x, pr.y);
+      }
+      ctx.stroke();
+    }
+    for (let i = 1; i < 6; i++) {
+      ctx.beginPath();
+      for (let j = 0; j <= 48; j++) {
+        const th = j / 48 * TAU;
+        const y = -r + 2 * r * i / 6;
+        const rr = Math.sqrt(Math.max(0, r * r - y * y));
+        const pr = P.project({ x: rr * Math.cos(th), y: y, z: rr * Math.sin(th) }, cx, cy, scale);
+        j === 0 ? ctx.moveTo(pr.x, pr.y) : ctx.lineTo(pr.x, pr.y);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(66,153,225,.2)';
+    ctx.beginPath(); ctx.arc(cx, cy, r * scale * 0.95, 0, TAU); ctx.fill();
+  }
+
+  // 3. 画布内文字标注（随整体清空而消失，不残留）
+  ctx.fillStyle = '#2b6cb0'; ctx.font = '13px sans-serif';
+  if (t === 'box') ctx.fillText('a=' + state.model.a + ' b=' + state.model.b + ' c=' + state.model.c, cx - 50, cy + 60);
+  else if (t === 'tetra') ctx.fillText('棱长 a=' + fmt(state.model.r, 2), cx - 50, cy + 60);
+  else if (t === 'cyl') ctx.fillText('r=' + fmt(state.model.r, 2) + ' h=' + fmt(state.model.r * 1.5, 2), cx - 50, cy + 60);
+  else ctx.fillText('R=' + fmt(state.model.r, 2), cx - 50, cy + 60);
+
+  // 4. DOM 标签（覆盖式更新，不堆叠）
+  const names = { box: '长方体', tetra: '正四面体', cyl: '圆柱', sphere: '球' };
+  $('modelLabel').textContent = names[t];
+  $('modelLabel').setAttribute('aria-label', '当前 3D 模型：' + names[t]);
+}
+function updateModelData() {
+  const t = state.model.type;
+  $('dmName').textContent = { box: '长方体', tetra: '正四面体', cyl: '圆柱', sphere: '球' }[t];
+  if (t === 'box') {
+    const { a, b, c } = state.model;
+    $('dmDim').textContent = 'a=' + a + ', b=' + b + ', c=' + c;
+    const d = Math.sqrt(a * a + b * b + c * c);
+    $('dmDiag').textContent = '√(' + a * a + '+' + b * b + '+' + c * c + ') = √' + (a * a + b * b + c * c) + ' = ' + fmt(d, 3);
+    $('dmArea').textContent = '2(' + a * b + '+' + b * c + '+' + c * a + ') = ' + fmt(2 * (a * b + b * c + c * a), 2);
+  } else if (t === 'tetra') {
+    const a = state.model.r;
+    $('dmDim').textContent = '棱长 a = ' + fmt(a, 2);
+    const R = a * Math.sqrt(6) / 4;
+    $('dmDiag').textContent = '外接球半径 R = a√6/4 = ' + fmt(R, 3);
+    $('dmArea').textContent = '表面积 = √3·a² = ' + fmt(Math.sqrt(3) * a * a, 3);
+  } else if (t === 'cyl') {
+    const r = state.model.r, h = r * 1.5;
+    $('dmDim').textContent = 'r = ' + fmt(r, 2) + ', h = ' + fmt(h, 2);
+    $('dmDiag').textContent = 'V = πr²h = ' + fmt(Math.PI * r * r * h, 3);
+    $('dmArea').textContent = 'S_侧 = 2πrh = ' + fmt(2 * Math.PI * r * h, 3);
+  } else {
+    const r = state.model.r;
+    $('dmDim').textContent = 'R = ' + fmt(r, 2);
+    $('dmDiag').textContent = 'V = (4/3)πR³ = ' + fmt(4 / 3 * Math.PI * r * r * r, 3);
+    $('dmArea').textContent = 'S = 4πR² = ' + fmt(4 * Math.PI * r * r, 3);
+  }
+  $('dmLabel').textContent = '仅当前模型标签（切换已清空旧标签），无残留';
+}
+document.querySelectorAll('[data-model]').forEach(b => b.addEventListener('click', () => {
+  state.model.type = b.dataset.model;
+  // 切换前显式清空（drawModel 内先 clearRect 再重绘）
+  drawModel();
+  updateModelData();
+}));
+$('modelApply').addEventListener('click', () => {
+  state.model.a = Math.max(0.5, Math.min(6, parseFloat($('modelA').value) || 3));
+  state.model.b = Math.max(0.5, Math.min(6, parseFloat($('modelB').value) || 4));
+  state.model.c = Math.max(0.5, Math.min(6, parseFloat($('modelC').value) || 5));
+  state.model.r = Math.max(0.4, Math.min(4, parseFloat($('modelR').value) || 1.6));
+  drawModel(); updateModelData();
+});
+$('modelReset').addEventListener('click', () => { state.model.rotX = 0.6; state.model.rotY = 0.8; state.model.zoom = 1; drawModel(); });
+
+/* ============ ③ 演算例题 ============ */
+const CALCS = {
+  1: {
+    name: '第 1 题 · 长方体（3,4,5）对角线 / 表面积',
+    body: '<h2>题目</h2><p>长方体长 a=3、宽 b=4、高 c=5，求体对角线长与表面积。</p>' +
+          '<h2 style="margin-top:12px">解答</h2>' +
+          '<div class="step">体对角线 d = √(a²+b²+c²) = √(9+16+25) = √50 = <b>5√2 ≈ 7.07</b>；</div>' +
+          '<div class="step">表面积 S = 2(ab+bc+ca) = 2(3·4+4·5+5·3) = 2(12+20+15) = <b>94</b>。</div>',
+    ans: 'd = 5√2 ≈ 7.07，S = 94',
+    formula: 'd = √(a²+b²+c²)；S = 2(ab+bc+ca)'
+  },
+  2: {
+    name: '第 2 题 · 两两垂直三棱锥（3,4,5）外接球',
+    body: '<h2>题目</h2><p>三棱锥的三条侧棱两两垂直，长度分别为 3、4、5，求其外接球半径与表面积。</p>' +
+          '<h2 style="margin-top:12px">解答</h2>' +
+          '<div class="step">外接球半径 R = ½√(a²+b²+c²) = ½√(9+16+25) = ½·5√2 = <b>5√2/2 ≈ 3.536</b>；</div>' +
+          '<div class="step">外接球表面积 S = 4πR² = 4π·(50/4) = <b>50π ≈ 157.08</b>。</div>',
+    ans: 'R = 5√2/2 ≈ 3.54，S = 50π ≈ 157.08',
+    formula: 'R = ½√(a²+b²+c²)；S = 4πR²'
+  },
+  3: {
+    name: '第 3 题 · 正方体（a=2）外接球',
+    body: '<h2>题目</h2><p>正方体棱长 a=2，求其体对角线、外接球半径与外接球表面积。</p>' +
+          '<h2 style="margin-top:12px">解答</h2>' +
+          '<div class="step">体对角线 = a√3 = 2√3 ≈ <b>3.464</b>；</div>' +
+          '<div class="step">外接球半径 R = a√3/2 = √3 ≈ <b>1.732</b>；</div>' +
+          '<div class="step">外接球表面积 S = 4πR² = 4π·(√3)² = <b>12π ≈ 37.70</b>。</div>',
+    ans: '体对角线 = 2√3 ≈ 3.46，R = √3 ≈ 1.73，S = 12π ≈ 37.70',
+    formula: '对角线 = a√3；R = a√3/2；S = 4πR²'
+  }
+};
+function renderCalc() {
+  const e = CALCS[state.calc];
+  $('calcBox').innerHTML = e.body;
+  $('dcName').textContent = e.name;
+  $('dcAns').textContent = e.ans;
+  $('dcFormula').textContent = e.formula;
+}
+document.querySelectorAll('[data-calc]').forEach(b => b.addEventListener('click', () => {
+  state.calc = parseInt(b.dataset.calc);
+  renderCalc();
+}));
+
+/* ============ 旋转 / 缩放 ============ */
+let dragging = false, lastX = 0, lastY = 0;
+(function attach() {
+  const cv = $('modelCanvas');
+  cv.addEventListener('mousedown', e => { dragging = true; lastX = e.clientX; lastY = e.clientY; cv.style.cursor = 'grabbing'; });
+  window.addEventListener('mouseup', () => { dragging = false; cv.style.cursor = 'grab'; });
+  cv.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    state.model.rotY += (e.clientX - lastX) * 0.008;
+    state.model.rotX += (e.clientY - lastY) * 0.008;
+    lastX = e.clientX; lastY = e.clientY;
+    drawModel();
+  });
+  cv.addEventListener('wheel', e => {
+    e.preventDefault();
+    state.model.zoom = Math.max(0.4, Math.min(2.4, state.model.zoom * (e.deltaY > 0 ? 0.9 : 1.1)));
+    drawModel();
+  }, { passive: false });
+})();
+
+/* ============ 初始化 ============ */
+function resizeAll() { if (state.tab === 'model') { drawModel(); updateModelData(); } }
+window.addEventListener('resize', resizeAll);
+function fitCanvas() {
+  const el = $('modelCanvas');
+  el.style.height = Math.max(380, el.clientWidth * 0.64) + 'px';
+}
+fitCanvas();
+window.addEventListener('resize', fitCanvas);
+
+drawModel(); updateModelData();
+renderCalc();
+</script>
+</body>
+</html>

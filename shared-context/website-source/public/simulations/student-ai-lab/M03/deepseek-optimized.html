@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>三角函数的性质与运用</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;background:#eef2f7;color:#22303c;overflow:hidden}
+  header{background:linear-gradient(135deg,#44337a,#6b46c1);color:#fff;padding:14px 22px}
+  header h1{font-size:22px;font-weight:700;letter-spacing:1px}
+  header p{font-size:13px;opacity:.92;margin-top:4px}
+  .tabs{display:flex;gap:8px;background:#44337a;padding:8px 22px;flex-wrap:wrap}
+  .tabs button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 16px;font-size:13px;cursor:pointer;transition:.2s}
+  .tabs button:hover{background:rgba(255,255,255,.25)}
+  .tabs button.active{background:#fff;color:#44337a;font-weight:700}
+  .layout{display:grid;grid-template-columns:290px 1fr 290px;gap:12px;padding:12px 16px;height:calc(100vh - 150px)}
+  .pane{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(68,51,122,.08);padding:14px;overflow-y:auto}
+  .control label{display:block;font-size:13px;font-weight:600;color:#6b46c1;margin:12px 0 6px}
+  .control input[type=range]{width:100%}
+  .control input[type=number]{width:90px;padding:7px;border:1px solid #cbd5e0;border-radius:6px;font-size:14px;text-align:center}
+  .control .row{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .control .hint{font-size:12px;color:#718096;margin-top:5px;line-height:1.6}
+  .btn{background:#6b46c1;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:14px;cursor:pointer;margin:6px 4px 0 0}
+  .btn:hover{background:#553c9a}
+  .btn.secondary{background:#e2e8f0;color:#2d3748}
+  .btn.green{background:#2f855a}
+  .data h3{font-size:14px;color:#44337a;border-bottom:2px solid #e9d8fd;padding-bottom:6px;margin-bottom:10px}
+  .readout{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:10px;font-size:14px}
+  .readout .k{color:#718096;font-size:12px}
+  .readout .v{font-size:18px;font-weight:700;color:#1a202c;margin-top:2px}
+  .canvas-holder{display:flex;flex-direction:column;gap:10px}
+  canvas{display:block;background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:100%}
+  .cap{font-size:12px;color:#718096;text-align:center;margin-top:4px}
+  .guide h2{font-size:18px;color:#44337a;margin-bottom:10px}
+  .guide p,.guide li{font-size:14px;line-height:1.9;color:#2d3748}
+  .guide ul{margin:8px 0 8px 22px}
+  .formula{background:#faf5ff;border-left:4px solid #6b46c1;padding:10px 14px;margin:10px 0;border-radius:0 8px 8px 0;font-size:15px;color:#1a202c}
+  footer{position:fixed;left:0;right:0;bottom:0;background:#44337a;color:#e2e8f0;font-size:12.5px;padding:10px 22px;line-height:1.7;border-top:3px solid #6b46c1}
+  footer b{color:#d6bcfa}
+  .sub{font-size:.7em;vertical-align:sub}
+  .sup{font-size:.7em;vertical-align:super}
+  .vec{font-style:italic;font-weight:700}
+  .bf{font-weight:700}
+  .result{background:#f0fff4;border:1px solid #9ae6b4;border-radius:8px;padding:10px;margin-top:10px;font-size:14px;color:#22543d}
+  .result.bad{background:#fff5f5;border-color:#feb2b2;color:#742a2a}
+  .tri-table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .tri-table td,.tri-table th{border:1px solid #cbd5e0;padding:6px;text-align:center}
+  .tri-table th{background:#faf5ff}
+</style>
+</head>
+<body>
+<header>
+  <h1>三角函数的性质与运用 · 综合学习页</h1>
+  <p>单位圆 · sin/cos/tan 分图 · 诱导公式 · 正余弦定理 —— 周期性 / 奇偶性 / 单调性 / 解三角形</p>
+</header>
+
+<div class="tabs" role="tablist">
+  <button data-tab="guide" class="active">① 概念指南</button>
+  <button data-tab="unit">② 单位圆动画</button>
+  <button data-tab="graphs">③ sin/cos/tan 分图</button>
+  <button data-tab="induct">④ 诱导公式</button>
+  <button data-tab="law">⑤ 正余弦定理</button>
+</div>
+
+<main class="layout">
+  <!-- ============ 控制区 ============ -->
+  <aside class="pane control">
+    <div class="tab-pane" id="ctl-guide">
+      <div class="hint">点击上方标签页进入「单位圆动画」「sin/cos/tan 分图」「诱导公式」或「正余弦定理」。</div>
+      <div class="hint" style="margin-top:12px"><b>核心概念速览：</b></div>
+      <div class="formula">sin 周期 2π，cos 周期 2π，tan 周期 π</div>
+      <div class="hint">tanθ 在 θ=π/2+kπ（k∈Z）无定义，图像存在渐近线。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-unit" style="display:none">
+      <label for="uTheta">动点角度 θ（弧度）</label>
+      <input type="range" id="uTheta" min="0" max="6.2832" step="0.0105" value="1.0472">
+      <div class="row" style="justify-content:space-between"><span>0</span><span id="uThetaL">θ = 60° = π/3</span><span>2π</span></div>
+      <button class="btn" id="uPlay">▶ 播放</button>
+      <button class="btn secondary" id="uPause">⏸ 暂停</button>
+      <button class="btn green" id="uReset">↺ 复位到 60°</button>
+      <div class="hint">复位按钮一键将动点与读数归位 θ=60°=π/3（sinθ=√3/2≈0.866，cosθ=1/2）。</div>
+      <div class="hint" style="margin-top:6px">显示 sin / cos / tan 三条投影：tanθ 在 cosθ=0 处无定义。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-graphs" style="display:none">
+      <div class="hint">同一横轴（rad）对照 sin / cos / tan 三个分图：</div>
+      <ul style="font-size:13px;color:#4a5568;margin:8px 0 0 20px;line-height:2">
+        <li>sinθ 与 cosθ 周期 <b>2π</b>，值域 [−1, 1]；</li>
+        <li>tanθ 周期 <b>π</b>，在 π/2、3π/2 等 π/2+kπ 处有<b>渐近线</b>（虚线），不连续；</li>
+        <li>tan 图像渐近线已用红色虚线标出。</li>
+      </ul>
+    </div>
+
+    <div class="tab-pane" id="ctl-induct" style="display:none">
+      <label for="iTheta">输入 θ（弧度，或点下方快捷值）</label>
+      <input type="number" id="iTheta" value="0.5236" step="0.01" min="0" max="6.28">
+      <div class="row" style="margin-top:6px">
+        <button class="btn secondary" data-q="0.5236">π/6</button>
+        <button class="btn secondary" data-q="1.0472">π/3</button>
+        <button class="btn secondary" data-q="1.5708">π/2</button>
+      </div>
+      <button class="btn" id="iCalc">= 验证两组诱导公式</button>
+      <div class="hint" id="iMsg">输入 θ 后点「验证」，页面计算 sin(π−θ) 与 sinθ、cos(π−θ) 与 −cosθ 的数值并比较。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-law" style="display:none">
+      <label>正弦定理算例：输入</label>
+      <div class="row"><span>边 a =</span><input type="number" id="lawA" value="6" step="0.5" min="0.1"></div>
+      <div class="row"><span>角 A =</span><input type="number" id="lawAngA" value="30" step="1" min="1" max="178">°</div>
+      <div class="row"><span>角 B =</span><input type="number" id="lawAngB" value="45" step="1" min="1" max="178">°</div>
+      <button class="btn" id="lawCalc">= 用正弦定理解算</button>
+      <div class="hint">a/sinA = b/sinB = c/sinC = 2R。程序自动解出外接圆半径 R、边 b、边 c 与角 C。</div>
+      <div class="hint" style="margin-top:8px"><b>余弦定理：</b>c² = a² + b² − 2ab·cosC</div>
+    </div>
+  </aside>
+
+  <!-- ============ 画布区 ============ -->
+  <section class="pane canvas-holder">
+    <div class="tab-pane" id="cv-guide" style="flex:1">
+      <div class="guide">
+        <h2>一、弧度制与单位圆</h2>
+        <p>角度 θ（弧度）与单位圆上动点 <b>(cosθ, sinθ)</b> 一一对应。弧度制下横轴以 <b>rad</b> 为单位。</p>
+        <div class="formula">点 P = (cosθ, sinθ)，θ∈R（弧度）</div>
+
+        <h2>二、周期性、奇偶性与单调性</h2>
+        <ul>
+          <li><b>sinθ 周期</b>：sin(θ+2kπ)=sinθ，最小正周期 <b>2π</b>；</li>
+          <li><b>cosθ 周期</b>：cos(θ+2kπ)=cosθ，最小正周期 <b>2π</b>；</li>
+          <li><b>tanθ 周期</b>：tan(θ+kπ)=tanθ，最小正周期 <b>π</b>；</li>
+          <li>sinθ 为奇函数（sin(−θ)=−sinθ），cosθ 为偶函数（cos(−θ)=cosθ）；</li>
+          <li>单调性：sin 在 [−π/2, π/2] 上递增，cos 在 [0, π] 上递减，tan 在每个开区间 (−π/2+kπ, π/2+kπ) 上递增。</li>
+        </ul>
+
+        <h2>三、诱导公式（常用 5 组）</h2>
+        <div class="formula">
+          sin(π−θ)=sinθ，&nbsp;cos(π−θ)=−cosθ<br>
+          sin(π+θ)=−sinθ，&nbsp;cos(π+θ)=−cosθ<br>
+          sin(−θ)=−sinθ，&nbsp;cos(−θ)=cosθ<br>
+          sin(2π−θ)=−sinθ，&nbsp;cos(2π−θ)=cosθ<br>
+          tan(θ+π)=tanθ，&nbsp;tan(π−θ)=−tanθ
+        </div>
+
+        <h2>四、正余弦定理（解三角形）</h2>
+        <div class="formula">
+          正弦定理：a/sinA = b/sinB = c/sinC = 2R<br>
+          余弦定理：c² = a² + b² − 2ab·cosC
+        </div>
+        <p>其中 a、b、c 为三角形三边，A、B、C 为对角，R 为外接圆半径。</p>
+        <p>算例：a=6、A=30°、B=45°，由 a/sinA = 2R 得 2R = 12、R = 6，b = 2R·sinB = 12·sin45° = 6√2 ≈ 8.49。</p>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-unit" style="display:none;flex:1">
+      <div class="canvas-wrap">
+        <canvas id="unitCanvas" aria-label="单位圆：动点 P=(cosθ,sinθ)，显示 sin/cos/tan 三条投影线，tan 在 π/2 处无定义"></canvas>
+        <div class="cap">单位圆（r=1）：P=(cosθ, sinθ)，蓝=cosθ 投影、绿=sinθ 投影、橙=tan 线段（延切线方向）</div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-graphs" style="display:none;flex:1">
+      <canvas id="graphsCanvas" aria-label="sin/cos/tan 三个分图对照：sin 与 cos 周期 2π，tan 周期 π 且 π/2+kπ 处有渐近线"></canvas>
+      <div class="cap">三行分图：sin（蓝）、cos（绿）、tan（橙，红色虚线为渐近线），横轴单位 rad</div>
+    </div>
+
+    <div class="tab-pane" id="cv-induct" style="display:none;flex:1">
+      <div class="guide" style="max-width:680px;margin:0 auto">
+        <h2>诱导公式交互验证</h2>
+        <p>输入一个 θ（弧度），观察以下两组公式的数值验证：</p>
+        <div class="formula">
+          <b>第一组</b>：sin(π−θ) 与 sinθ 应相等<br>
+          <b>第二组</b>：cos(π−θ) 与 −cosθ 应相等
+        </div>
+        <div class="readout" style="margin-top:12px">
+          <div class="k">sin(π−θ) = sin(π − <span id="ivTh">π/6</span>)</div>
+          <div class="v" id="ivSinPi" style="font-size:15px">—</div>
+          <div class="k" style="margin-top:6px">sinθ = sin(<span id="ivTh2">π/6</span>)</div>
+          <div class="v" id="ivSin" style="font-size:15px">—</div>
+        </div>
+        <div class="readout">
+          <div class="k">cos(π−θ) = cos(π − <span id="ivTh3">π/6</span>)</div>
+          <div class="v" id="ivCosPi" style="font-size:15px">—</div>
+          <div class="k" style="margin-top:6px">−cosθ = −cos(<span id="ivTh4">π/6</span>)</div>
+          <div class="v" id="ivCosNeg" style="font-size:15px">—</div>
+        </div>
+        <div class="result" id="ivResult" style="display:none"></div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-law" style="display:none;flex:1">
+      <div class="guide" style="max-width:680px;margin:0 auto">
+        <h2>正弦定理算例</h2>
+        <p>已知 <b>a</b>、<b>A</b>、<b>B</b>，用正弦定理 a/sinA = 2R 解三角形：</p>
+        <div class="formula">2R = a/sinA，&nbsp;b = 2R·sinB，&nbsp;C = 180° − A − B，&nbsp;c = 2R·sinC</div>
+        <div class="readout" id="lawOut">
+          <div class="k">解算结果</div>
+          <div class="v" id="lawV" style="font-size:15px">点击左侧「用正弦定理解算」查看结果</div>
+        </div>
+        <div class="readout">
+          <div class="k">余弦定理（可自行代入三边验证）</div>
+          <div class="v" style="font-size:15px">c² = a² + b² − 2ab·cosC</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 数据区 ============ -->
+  <aside class="pane data">
+    <div class="tab-pane" id="data-guide">
+      <div class="readout"><div class="k">正弦定理</div><div class="v" style="font-size:16px">a/sinA = b/sinB = c/sinC = 2R</div></div>
+      <div class="readout"><div class="k">余弦定理</div><div class="v" style="font-size:16px">c² = a²+b²−2ab·cosC</div></div>
+      <div class="readout"><div class="k">周期</div><div class="v" style="font-size:16px">sin/cos: 2π；tan: π</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-unit" style="display:none">
+      <div class="readout"><div class="k">当前角度 θ</div><div class="v" id="dUth">60° = π/3</div></div>
+      <div class="readout"><div class="k">sinθ</div><div class="v" id="dUsin" style="color:#2f855a">0.8660（√3/2）</div></div>
+      <div class="readout"><div class="k">cosθ</div><div class="v" id="dUcos" style="color:#2b6cb0">0.5（1/2）</div></div>
+      <div class="readout"><div class="k">tanθ</div><div class="v" id="dUtan" style="color:#dd6b20">1.732（√3）</div></div>
+      <div class="readout"><div class="k">无定义提示</div><div class="v" id="dUndef" style="font-size:13px">θ=π/2+kπ 时 tanθ 无定义</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-graphs" style="display:none">
+      <div class="readout"><div class="k">sin 周期</div><div class="v" style="color:#2b6cb0">T = 2π</div></div>
+      <div class="readout"><div class="k">cos 周期</div><div class="v" style="color:#2f855a">T = 2π</div></div>
+      <div class="readout"><div class="k">tan 周期</div><div class="v" style="color:#dd6b20">T = π</div></div>
+      <div class="readout"><div class="k">tan 渐近线位置</div><div class="v" style="font-size:13px">θ = π/2 + kπ（k∈Z），如 π/2、3π/2</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-induct" style="display:none">
+      <div class="readout"><div class="k">第一组公式</div><div class="v" style="font-size:14px" id="dGroup1">sin(π−θ)=sinθ</div></div>
+      <div class="readout"><div class="k">第二组公式</div><div class="v" style="font-size:14px" id="dGroup2">cos(π−θ)=−cosθ</div></div>
+      <div class="readout"><div class="k">验证状态</div><div class="v" id="dCheckStat" style="font-size:14px;color:#2f855a">两组公式均成立</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-law" style="display:none">
+      <div class="readout"><div class="k">外接圆直径 2R</div><div class="v" id="dLaw2R">—</div></div>
+      <div class="readout"><div class="k">外接圆半径 R</div><div class="v" id="dLawR">—</div></div>
+      <div class="readout"><div class="k">边 b = 2R·sinB</div><div class="v" id="dLawb">—</div></div>
+      <div class="readout"><div class="k">角 C</div><div class="v" id="dLawC">—</div></div>
+      <div class="readout"><div class="k">边 c = 2R·sinC</div><div class="v" id="dLawc">—</div></div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <b>观察与结论：</b>① <b>周期</b>：sin、cos 的周期为 2π，tan 的周期为 π（tan 每 π 重复一次）；② <b>奇偶性</b>：sin 为奇函数、cos 为偶函数；③ <b>单调性</b>：sin 在 [−π/2, π/2] 递增、cos 在 [0, π] 递减、tan 在 (−π/2+kπ, π/2+kπ) 递增；④ <b>诱导公式</b>把任意角的三角函数化为锐角三角函数；⑤ <b>正余弦定理</b>沟通边与角，用于解三角形。
+</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+function fmt(v, n) { const f = Math.pow(10, n); return (Math.round(v * f) / f).toFixed(n); }
+function setupCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (w === 0 || h === 0) return null;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+function fmtRad(x) {
+  const v = Math.abs(x);
+  const map = [[Math.PI, 'π'], [Math.PI/2, 'π/2'], [Math.PI/3, 'π/3'], [Math.PI/4, 'π/4'], [Math.PI/6, 'π/6'], [Math.PI*2/3, '2π/3'], [Math.PI*3/2, '3π/2']];
+  for (const [val, lab] of map) { if (Math.abs(v - val) < 1e-4) return (x < 0 ? '-' : '') + lab; }
+  return fmt(x, 3);
+}
+
+const state = {
+  tab: 'guide',
+  unit: { theta: Math.PI / 3, playing: false },
+  induct: { theta: Math.PI / 6 }
+};
+
+/* ============ 标签页 ============ */
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  ['guide','unit','graphs','induct','law'].forEach(t => {
+    document.getElementById('ctl-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('cv-' + t).style.display = t === tab ? 'flex' : 'none';
+    document.getElementById('data-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'unit') { drawUnit(); updateUnitData(); }
+  if (tab === 'graphs') drawGraphs();
+  if (tab === 'induct') runInduct();
+  if (tab === 'law') runLaw();
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+/* ============ 坐标轴 ============ */
+function drawAxes(ctx, w, h, pad, xmin, xmax, ymin, ymax) {
+  const sx = (w - 2 * pad) / (xmax - xmin);
+  const sy = (h - 2 * pad) / (ymax - ymin);
+  const X = x => pad + (x - xmin) * sx;
+  const Y = y => h - pad - (y - ymin) * sy;
+  ctx.strokeStyle = '#edf2f7'; ctx.lineWidth = 1;
+  const xStep = (xmax - xmin) / 16;
+  for (let x = xmin; x <= xmax; x += xStep) { ctx.beginPath(); ctx.moveTo(X(x), pad); ctx.lineTo(X(x), h - pad); ctx.stroke(); }
+  const yStep = (ymax - ymin) / 10;
+  for (let y = ymin; y <= ymax; y += yStep) { ctx.beginPath(); ctx.moveTo(pad, Y(y)); ctx.lineTo(w - pad, Y(y)); ctx.stroke(); }
+  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.moveTo(pad, Y(0)); ctx.lineTo(w - pad, Y(0)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(X(0), pad); ctx.lineTo(X(0), h - pad); ctx.stroke();
+  ctx.fillStyle = '#718096'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  const tickX = (xmax - xmin) / 8;
+  for (let x = xmin; x <= xmax; x += tickX) {
+    ctx.beginPath(); ctx.moveTo(X(x), Y(0) - 4); ctx.lineTo(X(x), Y(0) + 4); ctx.stroke();
+    ctx.fillText(fmtRad(x), X(x), Y(0) + 15);
+  }
+  ctx.fillText('θ (rad)', w - pad, Y(0) + 15);
+  ctx.textAlign = 'left';
+  return { X, Y };
+}
+
+/* ============ ① 单位圆动画 ============ */
+function drawUnit() {
+  const cv = $('unitCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  ctx.clearRect(0, 0, w, h);
+  const cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 30;
+  // 网格
+  ctx.strokeStyle = '#edf2f7'; ctx.lineWidth = 1;
+  for (let i = 0; i < 8; i++) {
+    ctx.beginPath(); ctx.moveTo(cx + r * Math.cos(i * Math.PI / 4), cy - r * Math.sin(i * Math.PI / 4));
+    ctx.lineTo(cx - r * Math.cos(i * Math.PI / 4), cy + r * Math.sin(i * Math.PI / 4)); ctx.stroke();
+  }
+  for (let i = -2; i <= 2; i++) {
+    ctx.beginPath(); ctx.moveTo(cx + i * r / 2, cy - r); ctx.lineTo(cx + i * r / 2, cy + r); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - r, cy + i * r / 2); ctx.lineTo(cx + r, cy + i * r / 2); ctx.stroke();
+  }
+  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(10, cy); ctx.lineTo(w - 10, cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx, 10); ctx.lineTo(cx, h - 10); ctx.stroke();
+  ctx.fillStyle = '#718096'; ctx.font = '12px sans-serif';
+  ctx.fillText('cosθ', w - 46, cy + 16); ctx.fillText('sinθ', cx + 10, 14);
+
+  const th = state.unit.theta;
+  const cosT = Math.cos(th), sinT = Math.sin(th);
+  const px = cx + r * cosT, py = cy - r * sinT;
+
+  // 单位圆
+  ctx.strokeStyle = '#6b46c1'; ctx.lineWidth = 2.2;
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, TAU); ctx.stroke();
+
+  // 投影
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = '#2f855a'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(px, cy); ctx.stroke();
+  ctx.strokeStyle = '#2b6cb0'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(cx, py); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // tan 线段：沿单位圆切线方向延伸，从 (1,0) 切点向上到与 OP 延长线交点
+  ctx.strokeStyle = '#dd6b20'; ctx.lineWidth = 2;
+  if (Math.abs(cosT) > 1e-9) {
+    const tx = cx + r, ty = cy;               // 切点 (1,0)
+    const yTan = r * Math.tan(th);            // 切线段长度 = tanθ
+    const top = cy - yTan;
+    if (Math.abs(yTan) < r * 4) {
+      ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx, top); ctx.stroke();
+      ctx.fillStyle = '#dd6b20';
+      ctx.beginPath(); ctx.arc(tx, top, 4, 0, TAU); ctx.fill();
+      ctx.fillText('tanθ=' + (Math.abs(Math.tan(th)) > 20 ? '∞' : fmt(Math.tan(th), 2)), tx + 8, top - 6);
+    }
+  }
+
+  // 角度弧
+  ctx.fillStyle = 'rgba(230,57,70,.14)';
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r * 0.2, 0, -th, th < 0); ctx.closePath(); ctx.fill();
+
+  // 半径与动点
+  ctx.strokeStyle = '#e53e3e'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+  ctx.fillStyle = '#e53e3e';
+  ctx.beginPath(); ctx.arc(px, py, 6, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, py, 6, 0, TAU); ctx.stroke();
+  ctx.fillStyle = '#2d3748'; ctx.font = '13px sans-serif';
+  ctx.fillText('P=(cosθ, sinθ)', Math.min(px, cx) - 60, Math.min(py, cy) - 12);
+}
+function updateUnitData() {
+  const th = state.unit.theta;
+  const s = Math.sin(th), c = Math.cos(th);
+  $('dUth').textContent = fmtRad(th) + '（' + fmt(th * 180 / Math.PI, 1) + '°）';
+  $('dUsin').textContent = fmt(s, 4) + (Math.abs(Math.abs(s) - 0.5) < 1e-6 ? '（1/2）' : Math.abs(Math.abs(s) - Math.sqrt(3) / 2) < 1e-6 ? '（√3/2）' : Math.abs(Math.abs(s) - 1) < 1e-6 ? '（1）' : Math.abs(Math.abs(s) - Math.sqrt(2) / 2) < 1e-6 ? '（√2/2）' : '');
+  $('dUcos').textContent = fmt(c, 4) + (Math.abs(Math.abs(c) - 0.5) < 1e-6 ? '（1/2）' : Math.abs(Math.abs(c) - Math.sqrt(3) / 2) < 1e-6 ? '（√3/2）' : Math.abs(Math.abs(c) - 1) < 1e-6 ? '（1）' : Math.abs(Math.abs(c) - Math.sqrt(2) / 2) < 1e-6 ? '（√2/2）' : '');
+  if (Math.abs(c) < 1e-6) {
+    $('dUtan').textContent = '无定义（cosθ=0）';
+    $('dUndef').textContent = 'θ = π/2 + kπ（k∈Z），tanθ 无定义';
+  } else {
+    const t = Math.tan(th);
+    $('dUtan').textContent = fmt(t, 4) + '（tanθ = sinθ/cosθ）';
+    $('dUndef').textContent = 'θ=π/2+kπ 时 tanθ 无定义（当前 cosθ≠0，可计算）';
+  }
+}
+let anim = false;
+function unitLoop() {
+  if (!state.unit.playing || state.tab !== 'unit') { state.unit.playing = false; $('uPlay').textContent = '▶ 播放'; return; }
+  state.unit.theta = (state.unit.theta + 0.02) % TAU;
+  $('uTheta').value = state.unit.theta;
+  $('uThetaL').textContent = 'θ = ' + fmtRad(state.unit.theta) + ' = ' + fmt(state.unit.theta, 2) + ' rad';
+  drawUnit(); updateUnitData();
+  requestAnimationFrame(unitLoop);
+}
+$('uPlay').addEventListener('click', () => { if (!state.unit.playing) { state.unit.playing = true; $('uPlay').textContent = '▶ 播放中…'; requestAnimationFrame(unitLoop); } });
+$('uPause').addEventListener('click', () => { state.unit.playing = false; $('uPlay').textContent = '▶ 播放'; });
+$('uReset').addEventListener('click', () => {
+  state.unit.playing = false; $('uPlay').textContent = '▶ 播放';
+  state.unit.theta = Math.PI / 3;
+  $('uTheta').value = Math.PI / 3;
+  $('uThetaL').textContent = 'θ = 60° = π/3';
+  drawUnit(); updateUnitData();
+});
+$('uTheta').addEventListener('input', e => {
+  state.unit.playing = false; $('uPlay').textContent = '▶ 播放';
+  state.unit.theta = parseFloat(e.target.value);
+  $('uThetaL').textContent = 'θ = ' + fmtRad(state.unit.theta) + ' = ' + fmt(state.unit.theta, 2) + ' rad';
+  drawUnit(); updateUnitData();
+});
+
+/* ============ ② sin/cos/tan 分图 ============ */
+function drawGraphs() {
+  const cv = $('graphsCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  ctx.clearRect(0, 0, w, h);
+  const pad = 26;
+  const xmin = -Math.PI, xmax = 3 * Math.PI;
+  const rowH = (h - 2 * pad) / 3;
+  const X = x => pad + (x - xmin) / (xmax - xmin) * (w - 2 * pad);
+  function row(top, ymin, ymax, label, color, f, asymptotes) {
+    const Y = y => top + rowH - (y - ymin) / (ymax - ymin) * (rowH - 16) - 8;
+    // 网格线
+    ctx.strokeStyle = '#edf2f7'; ctx.lineWidth = 1;
+    for (let x = xmin; x <= xmax; x += Math.PI / 4) { ctx.beginPath(); ctx.moveTo(X(x), top); ctx.lineTo(X(x), top + rowH); ctx.stroke(); }
+    for (let i = 0; i <= 6; i++) { const y = ymin + (ymax - ymin) * i / 6; ctx.beginPath(); ctx.moveTo(pad, Y(y)); ctx.lineTo(w - pad, Y(y)); ctx.stroke(); }
+    // 轴
+    ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(pad, Y(0)); ctx.lineTo(w - pad, Y(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(X(0), top); ctx.lineTo(X(0), top + rowH); ctx.stroke();
+    // 刻度
+    ctx.fillStyle = '#718096'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+    for (let x = xmin; x <= xmax; x += Math.PI / 2) { ctx.fillText(fmtRad(x), X(x), Y(0) + 12); }
+    ctx.textAlign = 'left';
+    // 渐近线
+    if (asymptotes) {
+      ctx.strokeStyle = '#e53e3e'; ctx.lineWidth = 1.3; ctx.setLineDash([6, 4]);
+      for (let k = Math.ceil((xmin - Math.PI / 2) / Math.PI); k <= Math.floor((xmax - Math.PI / 2) / Math.PI); k++) {
+        const xa = Math.PI / 2 + k * Math.PI;
+        ctx.beginPath(); ctx.moveTo(X(xa), top); ctx.lineTo(X(xa), top + rowH); ctx.stroke();
+        if (xa >= xmin && xa <= xmax) { ctx.fillStyle = '#e53e3e'; ctx.font = '9.5px sans-serif'; ctx.fillText('π/2+kπ', X(xa) + 3, top + 12); }
+      }
+      ctx.setLineDash([]);
+    }
+    // 曲线
+    ctx.strokeStyle = color; ctx.lineWidth = 2.4;
+    let pen = false;
+    for (let px = 0; px <= w - pad; px++) {
+      const x = xmin + px / (w - pad) * (xmax - xmin);
+      let y = f(x);
+      if (asymptotes && Math.abs(y) > (ymax - ymin) * 2) { pen = false; continue; }
+      const Yv = Y(y);
+      if (!pen) { ctx.beginPath(); ctx.moveTo(X(x), Yv); pen = true; } else ctx.lineTo(X(x), Yv);
+    }
+    ctx.stroke();
+    ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText(label, pad + 4, top + 18);
+  }
+  row(2, -1.4, 1.4, 'y = sinθ', '#2b6cb0', x => Math.sin(x), false);
+  row(2 + rowH, -1.4, 1.4, 'y = cosθ', '#2f855a', x => Math.cos(x), false);
+  row(2 + 2 * rowH, -4.2, 4.2, 'y = tanθ（渐近线：θ=π/2+kπ）', '#dd6b20', x => Math.tan(x), true);
+  ctx.fillText('θ (rad)', w - 40, h - 4);
+}
+
+/* ============ ③ 诱导公式 ============ */
+function runInduct() {
+  const th = state.induct.theta;
+  const sinPi = Math.sin(Math.PI - th), sinTh = Math.sin(th);
+  const cosPi = Math.cos(Math.PI - th), negCos = -Math.cos(th);
+  const lab = fmtRad(th);
+  $('ivTh').textContent = lab; $('ivTh2').textContent = lab; $('ivTh3').textContent = lab; $('ivTh4').textContent = lab;
+  $('ivSinPi').textContent = 'sin(π−' + lab + ') = sin(' + fmtRad(Math.PI - th) + ') = ' + fmt(sinPi, 4);
+  $('ivSin').textContent = 'sin(' + lab + ') = ' + fmt(sinTh, 4);
+  $('ivCosPi').textContent = 'cos(π−' + lab + ') = cos(' + fmtRad(Math.PI - th) + ') = ' + fmt(cosPi, 4);
+  $('ivCosNeg').textContent = '−cos(' + lab + ') = ' + fmt(negCos, 4);
+  const res = $('ivResult');
+  res.style.display = 'block';
+  const ok1 = Math.abs(sinPi - sinTh) < 1e-9;
+  const ok2 = Math.abs(cosPi - negCos) < 1e-9;
+  if (ok1 && ok2) {
+    res.className = 'result';
+    res.textContent = '✓ 两组诱导公式均成立：sin(π−θ)=sinθ=' + fmt(sinTh, 4) + '，cos(π−θ)=−cosθ=' + fmt(negCos, 4) + '。';
+  } else {
+    res.className = 'result bad';
+    res.textContent = '数值异常（可能是浮点误差，请检查输入）。';
+  }
+  $('dCheckStat').textContent = (ok1 && ok2) ? '两组公式均成立 ✓' : '请检查输入';
+}
+$('iCalc').addEventListener('click', () => {
+  const t = parseFloat($('iTheta').value);
+  if (isNaN(t)) { alert('请输入有效角度（弧度）'); return; }
+  state.induct.theta = t;
+  runInduct();
+});
+document.querySelectorAll('[data-q]').forEach(b => b.addEventListener('click', () => {
+  $('iTheta').value = b.dataset.q;
+  state.induct.theta = parseFloat(b.dataset.q);
+  runInduct();
+}));
+
+/* ============ ④ 正余弦定理 ============ */
+function runLaw() {
+  const a = parseFloat($('lawA').value) || 6;
+  const A = parseFloat($('lawAngA').value) || 30;
+  const B = parseFloat($('lawAngB').value) || 45;
+  const Arad = A * Math.PI / 180, Brad = B * Math.PI / 180;
+  if (A + B >= 180) { $('dLaw2R').textContent = '错误：A+B≥180°'; return; }
+  const twoR = a / Math.sin(Arad);
+  const R = twoR / 2;
+  const b = twoR * Math.sin(Brad);
+  const C = 180 - A - B;
+  const c = twoR * Math.sin(C * Math.PI / 180);
+  $('dLaw2R').textContent = '2R = a/sinA = ' + fmt(a, 2) + '/sin(' + fmt(A, 1) + '°) = ' + fmt(twoR, 4);
+  $('dLawR').textContent = 'R = ' + fmt(R, 4);
+  $('dLawb').textContent = 'b = 2R·sinB = ' + fmt(twoR, 4) + '·sin(' + fmt(B, 1) + '°) = ' + fmt(b, 4);
+  $('dLawC').textContent = 'C = 180° − ' + fmt(A, 1) + '° − ' + fmt(B, 1) + '° = ' + fmt(C, 1) + '°';
+  $('dLawc').textContent = 'c = 2R·sinC = ' + fmt(c, 4);
+  $('lawV').textContent = '2R=' + fmt(twoR, 3) + '，R=' + fmt(R, 3) + '，b=' + fmt(b, 3) + '，C=' + fmt(C, 1) + '°，c=' + fmt(c, 3);
+}
+$('lawCalc').addEventListener('click', runLaw);
+
+/* ============ 初始化 ============ */
+function resizeAll() {
+  if (state.tab === 'unit') { drawUnit(); updateUnitData(); }
+  else if (state.tab === 'graphs') drawGraphs();
+}
+window.addEventListener('resize', resizeAll);
+function fitCanvas() {
+  const el = $('unitCanvas');
+  el.style.height = Math.max(320, el.clientWidth * 0.62) + 'px';
+  const g = $('graphsCanvas');
+  g.style.height = Math.max(420, el.clientWidth * 0.8) + 'px';
+}
+fitCanvas();
+window.addEventListener('resize', fitCanvas);
+
+drawUnit(); updateUnitData();
+drawGraphs();
+runInduct();
+runLaw();
+</script>
+</body>
+</html>

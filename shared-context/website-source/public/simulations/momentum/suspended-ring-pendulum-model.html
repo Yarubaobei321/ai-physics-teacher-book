@@ -1,0 +1,2230 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="悬绳小球与光滑杆上滑环模型模拟，演示最高点共速、回到底端类弹性碰撞、v-t 图像以及质量和初速度对最大高度的影响。">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:,">
+  <title>悬绳小球-滑环模型 | 模拟实验室</title>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [["\\(", "\\)"]],
+        displayMath: [["\\[", "\\]"]]
+      },
+      svg: {
+        fontCache: "global"
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      --yucai-blue: #0b63c7;
+      --yucai-50: #eef7ff;
+      --yucai-100: #d8ecff;
+      --yucai-200: #b7dcff;
+      --yucai-700: #074f9f;
+      --yucai-800: #0a437f;
+      --yucai-900: #0d3969;
+      --ink: #102033;
+      --lab: #f5f8fb;
+      --slate-50: #f8fafc;
+      --slate-100: #f1f5f9;
+      --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1;
+      --slate-500: #64748b;
+      --slate-600: #475569;
+      --slate-700: #334155;
+      --signal: #f4a51c;
+      --green: #059669;
+      --red: #b8442b;
+      --surface: rgba(255, 255, 255, 0.94);
+      --shadow-soft: 0 18px 60px rgba(16, 32, 51, 0.12);
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      background: var(--lab);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      touch-action: manipulation;
+    }
+
+    ::selection {
+      background: var(--yucai-200);
+      color: var(--ink);
+    }
+
+    .page-shell {
+      width: min(1120px, calc(100% - 32px));
+      margin-inline: auto;
+    }
+
+    .focus-ring {
+      outline: 3px solid transparent;
+      outline-offset: 3px;
+    }
+
+    .focus-ring:focus-visible {
+      outline-color: #85c6ff;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid var(--slate-200);
+      background: #fff;
+    }
+
+    .header-row {
+      display: flex;
+      height: 64px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      min-width: 0;
+      align-items: center;
+      gap: 12px;
+      color: inherit;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #fff 0%, var(--yucai-50) 100%);
+      border: 1px solid var(--yucai-100);
+      box-shadow: 0 8px 20px rgba(16, 32, 51, 0.08);
+    }
+
+    .brand-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .desktop-nav,
+    .mobile-nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .desktop-nav a,
+    .mobile-nav a {
+      border-radius: 6px;
+      color: var(--slate-700);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .desktop-nav a {
+      padding: 8px 12px;
+    }
+
+    .mobile-nav {
+      display: none;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: none;
+    }
+
+    .mobile-nav::-webkit-scrollbar {
+      display: none;
+    }
+
+    .mobile-nav a {
+      min-width: fit-content;
+      flex: 1 0 auto;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .desktop-nav a:hover,
+    .mobile-nav a:hover {
+      background: var(--slate-100);
+      color: var(--yucai-800);
+    }
+
+    .desktop-nav a.active,
+    .mobile-nav a.active {
+      background: var(--yucai-100);
+      color: var(--yucai-800);
+    }
+
+    .hero {
+      padding: 44px 0 28px;
+      background:
+        linear-gradient(180deg, rgba(238, 247, 255, 0.94), rgba(245, 248, 251, 0.98)),
+        radial-gradient(circle at 74% 10%, rgba(244, 165, 28, 0.16), transparent 28%);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.55fr);
+      gap: 34px;
+      align-items: end;
+    }
+
+    .hero-grid > *,
+    .tool-grid > *,
+    .process-head > *,
+    .case-grid > *,
+    .side-panel > *,
+    .info-grid > * {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin: 0;
+      color: var(--yucai-blue);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      overflow-wrap: anywhere;
+    }
+
+    h1 {
+      margin: 10px 0 14px;
+      color: var(--ink);
+      font-size: clamp(32px, 5vw, 54px);
+      line-height: 1.06;
+      letter-spacing: 0;
+    }
+
+    .hero-copy {
+      max-width: 760px;
+      margin: 0;
+      color: var(--slate-600);
+      font-size: 18px;
+    }
+
+    .model-card,
+    .process-panel,
+    .tool-surface,
+    .info-card {
+      border: 1px solid rgba(183, 220, 255, 0.82);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .model-card {
+      padding: 22px;
+    }
+
+    .model-card h2,
+    .current-demo h2,
+    .control-group h2,
+    .key-explain h2,
+    .info-card h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .model-card p,
+    .current-demo p,
+    .key-explain p,
+    .info-card p,
+    .info-card li {
+      color: var(--slate-600);
+    }
+
+    .formula,
+    .formula-block {
+      overflow-x: auto;
+      color: var(--ink);
+      font-size: 15px;
+    }
+
+    mjx-container {
+      max-width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .main-section {
+      padding: 28px 0 52px;
+    }
+
+    .process-panel {
+      margin-bottom: 22px;
+      padding: 22px;
+      box-shadow: 0 12px 34px rgba(16, 32, 51, 0.08);
+    }
+
+    .process-head {
+      display: grid;
+      grid-template-columns: minmax(0, 0.85fr) minmax(260px, 1fr);
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 16px;
+    }
+
+    .process-head h2 {
+      margin: 4px 0 0;
+      font-size: 24px;
+    }
+
+    .process-head p {
+      margin: 0;
+      color: var(--slate-600);
+    }
+
+    .panel-label {
+      margin: 0;
+      color: var(--yucai-blue);
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .case-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .case-card {
+      min-height: 180px;
+      padding: 18px;
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .case-card.active {
+      border-color: var(--yucai-blue);
+      background: linear-gradient(180deg, #fff, var(--yucai-50));
+    }
+
+    .case-card strong {
+      display: block;
+      margin: 5px 0 10px;
+      font-size: 17px;
+    }
+
+    .case-card ul,
+    .info-card ol,
+    .info-card ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .case-card li {
+      margin: 7px 0;
+      color: var(--slate-600);
+    }
+
+    .tool-surface {
+      overflow: hidden;
+    }
+
+    .tool-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+    }
+
+    .simulation-area {
+      display: flex;
+      min-height: 0;
+      flex-direction: column;
+      border-bottom: 1px solid var(--slate-200);
+      background:
+        linear-gradient(90deg, rgba(226, 232, 240, 0.52) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(226, 232, 240, 0.52) 1px, transparent 1px),
+        linear-gradient(180deg, #fff 0%, #f8fbff 100%);
+      background-size: 44px 44px, 44px 44px, auto;
+    }
+
+    .tool-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--slate-200);
+      background: rgba(255, 255, 255, 0.9);
+    }
+
+    .button-row,
+    .toolbar-tools,
+    .segmented {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .button {
+      min-height: 38px;
+      border: 1px solid var(--slate-300);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 800;
+      padding: 8px 12px;
+    }
+
+    .button:hover {
+      border-color: var(--yucai-blue);
+      color: var(--yucai-800);
+    }
+
+    .button.primary {
+      border-color: var(--yucai-blue);
+      background: var(--yucai-blue);
+      color: #fff;
+    }
+
+    .button[aria-pressed="true"] {
+      border-color: var(--yucai-blue);
+      background: var(--yucai-100);
+      color: var(--yucai-800);
+    }
+
+    .time-readout {
+      min-width: 96px;
+      border: 1px solid var(--slate-200);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--slate-700);
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      padding: 8px 10px;
+      text-align: center;
+    }
+
+    .simulation-workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(230px, 1fr);
+      align-items: stretch;
+      min-height: 600px;
+    }
+
+    .stage-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+      min-height: 600px;
+      padding: 10px 12px;
+      border-right: 1px solid var(--slate-200);
+    }
+
+    .analysis-stack {
+      display: flex;
+      flex: 0 0 auto;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .energy-panel {
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 10px 12px;
+    }
+
+    .energy-panel-head {
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 950;
+    }
+
+    .energy-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px 14px;
+    }
+
+    .energy-item {
+      display: grid;
+      grid-template-columns: minmax(58px, auto) minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .energy-item-label {
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .energy-bar-track {
+      height: 12px;
+      overflow: hidden;
+      border: 1px solid var(--slate-200);
+      border-radius: 4px;
+      background: var(--slate-100);
+    }
+
+    .energy-bar-fill {
+      width: 0;
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.08s linear;
+    }
+
+    .energy-bar-fill.energy-ka {
+      background: var(--yucai-blue);
+    }
+
+    .energy-bar-fill.energy-kr {
+      background: var(--signal);
+    }
+
+    .energy-bar-fill.energy-u {
+      background: var(--green);
+    }
+
+    .energy-item-value {
+      min-width: 42px;
+      color: var(--slate-600);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .svg-frame {
+      position: relative;
+      display: flex;
+      flex: 1 1 auto;
+      flex-direction: column;
+      width: 100%;
+      min-height: 320px;
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: #f8fafc;
+      overflow: hidden;
+    }
+
+    .chart-card {
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      padding: 10px 12px 12px;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .chart-card h3 {
+      margin: 0;
+      color: var(--ink);
+      font-size: 15px;
+      line-height: 1.25;
+      font-weight: 950;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px 12px;
+      color: var(--slate-700);
+      font-size: 12px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--yucai-blue);
+    }
+
+    .legend-dot.ball {
+      background: var(--signal);
+    }
+
+    .vt-graph {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 128px;
+      aspect-ratio: 90 / 13;
+      overflow: visible;
+    }
+
+    .axis-line {
+      stroke: var(--slate-300);
+      stroke-width: 1.5;
+    }
+
+    .graph-grid {
+      stroke: var(--slate-200);
+      stroke-width: 1;
+    }
+
+    .graph-label {
+      fill: var(--slate-600);
+      font-size: 12px;
+      font-weight: 750;
+    }
+
+    .ball-curve {
+      fill: none;
+      stroke: var(--signal);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ring-curve {
+      fill: none;
+      stroke: var(--yucai-blue);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .current-time-line {
+      stroke: var(--red);
+      stroke-width: 2;
+      stroke-dasharray: 6 5;
+    }
+
+    .scene {
+      display: block;
+      width: 100%;
+      height: 100%;
+      min-height: 320px;
+      background:
+        linear-gradient(rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+        radial-gradient(circle at 42% 24%, rgba(216, 236, 255, 0.66), transparent 42%),
+        #ffffff;
+      background-size: 34px 34px, 34px 34px, auto, auto;
+    }
+
+    .rod-line {
+      stroke: #425466;
+      stroke-width: 5;
+      stroke-linecap: round;
+    }
+
+    .rod-rail {
+      stroke: #94a3b8;
+      stroke-width: 2;
+      stroke-linecap: round;
+    }
+
+    .ring {
+      fill: #fff;
+      stroke: #334155;
+      stroke-width: 4;
+    }
+
+    .ring-core {
+      fill: var(--yucai-50);
+      stroke: #94a3b8;
+      stroke-width: 2;
+    }
+
+    .string-line {
+      stroke: #475569;
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .ball {
+      fill: #fff;
+      stroke: var(--yucai-blue);
+      stroke-width: 5;
+    }
+
+    .ball-glow {
+      fill: rgba(11, 99, 199, 0.1);
+    }
+
+    .trail {
+      fill: none;
+      stroke: rgba(11, 99, 199, 0.32);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 8 10;
+    }
+
+    .com-line,
+    .height-line,
+    .bottom-line {
+      stroke: rgba(100, 116, 139, 0.65);
+      stroke-width: 2;
+      stroke-dasharray: 8 8;
+    }
+
+    .bottom-line {
+      stroke-dasharray: none;
+      opacity: 0.5;
+    }
+
+    .velocity-a,
+    .velocity-ring {
+      stroke-width: 5;
+      stroke-linecap: round;
+    }
+
+    .velocity-a {
+      stroke: var(--yucai-blue);
+      marker-end: url(#arrowBlue);
+    }
+
+    .velocity-ring {
+      stroke: var(--signal);
+      marker-end: url(#arrowOrange);
+    }
+
+    .scene-label,
+    .tiny-label,
+    .velocity-label {
+      fill: var(--slate-700);
+      font-weight: 800;
+      paint-order: stroke;
+      stroke: rgba(255, 255, 255, 0.9);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+    }
+
+    .scene-label {
+      font-size: 17px;
+    }
+
+    .tiny-label,
+    .velocity-label {
+      font-size: 13px;
+    }
+
+    .height-fill {
+      fill: rgba(244, 165, 28, 0.12);
+      stroke: rgba(244, 165, 28, 0.45);
+      stroke-width: 2;
+    }
+
+    .energy-panel-bg {
+      fill: rgba(255, 255, 255, 0.88);
+      stroke: var(--slate-200);
+      stroke-width: 1.5;
+    }
+
+    .energy-bar-bg {
+      fill: var(--slate-100);
+      stroke: var(--slate-200);
+      stroke-width: 1;
+    }
+
+    .side-panel {
+      display: grid;
+      grid-template-columns: minmax(320px, 0.95fr) minmax(360px, 1.05fr);
+      align-items: start;
+      gap: 20px;
+      padding: 22px 24px;
+      background: #fff;
+    }
+
+    .canvas-control-panel {
+      border-left: 1px solid var(--slate-200);
+      background: rgba(255, 255, 255, 0.92);
+      padding: 18px 16px;
+    }
+
+    .canvas-control-panel .control-group {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .canvas-control-panel .parameter-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .canvas-control-panel .toggle-row {
+      margin-top: 18px;
+    }
+
+    .current-demo,
+    .key-explain,
+    .control-group,
+    .teaching-note {
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--slate-200);
+      margin-bottom: 18px;
+    }
+
+    .current-demo {
+      grid-column: 1;
+    }
+
+    .control-group {
+      grid-column: 1;
+    }
+
+    .key-explain {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .side-panel .current-demo,
+    .side-panel .key-explain {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .teaching-note {
+      grid-column: 1 / -1;
+      padding-top: 16px;
+      border-top: 1px solid var(--slate-200);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--slate-200);
+      border-radius: 8px;
+      background: var(--slate-50);
+      padding: 10px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--slate-500);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      color: var(--ink);
+      font-size: 17px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .field {
+      margin-top: 14px;
+    }
+
+    .parameter-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 16px;
+    }
+
+    .field label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--slate-700);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .field output {
+      color: var(--yucai-blue);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--yucai-blue);
+    }
+
+    .toggle-row {
+      display: grid;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--slate-700);
+      font-size: 14px;
+      font-weight: 750;
+    }
+
+    .teaching-note {
+      border-bottom: 0;
+      margin-bottom: 0;
+      color: var(--slate-600);
+      font-weight: 650;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .info-card {
+      padding: 22px;
+      box-shadow: 0 12px 34px rgba(16, 32, 51, 0.08);
+    }
+
+    .info-card h3 {
+      margin: 18px 0 8px;
+      color: var(--ink);
+      font-size: 17px;
+    }
+
+    .info-card li {
+      margin: 8px 0;
+    }
+
+    .formula-line {
+      display: grid;
+      gap: 6px;
+      border-radius: 8px;
+      background: var(--yucai-50);
+      padding: 12px;
+      color: var(--slate-700);
+      font-size: 14px;
+    }
+
+    .formula-line code {
+      color: var(--ink);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: normal;
+    }
+
+    .footer {
+      border-top: 1px solid var(--slate-200);
+      background: var(--yucai-900);
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .footer-inner {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 24px 0;
+    }
+
+    .footer strong {
+      display: block;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .footer p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    @media (max-width: 900px) {
+      .desktop-nav {
+        display: none;
+      }
+
+      .mobile-nav {
+        display: flex;
+      }
+
+      .header-row {
+        height: 58px;
+      }
+
+      .hero-grid,
+      .process-head,
+      .tool-grid,
+      .simulation-workspace,
+      .side-panel,
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .simulation-area {
+        min-height: 560px;
+        border-right: 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+
+      .stage-wrap {
+        border-right: 0;
+        border-bottom: 1px solid var(--slate-200);
+      }
+
+      .simulation-workspace {
+        min-height: 0;
+      }
+
+      .canvas-control-panel {
+        border-top: 1px solid var(--slate-200);
+        border-left: 0;
+      }
+
+      .chart-head {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .energy-row {
+        grid-template-columns: 1fr;
+      }
+
+      .simulation-workspace,
+      .stage-wrap {
+        min-height: 0;
+      }
+
+      .svg-frame,
+      .scene {
+        min-height: 260px;
+      }
+
+      .current-demo,
+      .control-group,
+      .key-explain,
+      .teaching-note {
+        grid-column: auto;
+        grid-row: auto;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page-shell {
+        width: min(1120px, calc(100% - 64px));
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      li {
+        overflow-wrap: anywhere;
+        word-break: break-all;
+      }
+
+      .hero {
+        padding-top: 30px;
+      }
+
+      .hero-copy {
+        font-size: 16px;
+      }
+
+      .process-panel,
+      .model-card,
+      .info-card {
+        padding: 16px;
+      }
+
+      .case-grid,
+      .metrics,
+      .parameter-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tool-toolbar {
+        align-items: stretch;
+      }
+
+      .button-row,
+      .toolbar-tools,
+      .segmented {
+        width: 100%;
+      }
+
+      .button,
+      .segmented .button,
+      .time-readout {
+        flex: 1 1 auto;
+        min-height: 40px;
+      }
+
+      .side-panel {
+        padding: 16px;
+      }
+    }
+  
+    .gif-download-panel {
+      width: min(1120px, calc(100% - 32px));
+      margin: 28px auto 0;
+      padding: 22px;
+      border: 1px solid rgba(16, 32, 51, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 18px 60px rgba(16, 32, 51, 0.10);
+    }
+    .gif-download-panel h2 {
+      margin: 0;
+      color: #102033;
+      font-size: 1.25rem;
+      font-weight: 900;
+    }
+    .gif-download-panel p {
+      margin: 8px 0 0;
+      color: #475569;
+      line-height: 1.8;
+    }
+    .gif-download-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+    .gif-download-actions a {
+      display: inline-flex;
+      min-height: 40px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      border: 1px solid #0b63c7;
+      background: #0b63c7;
+      color: #fff;
+      padding: 9px 14px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .gif-download-actions a:hover {
+      background: #074f9f;
+    }
+    @media (max-width: 640px) {
+      .gif-download-actions a { width: 100%; }
+    }
+
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="page-shell header-row">
+      <a class="brand focus-ring" href="/" aria-label="返回育才物理创新实验室首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="30" height="30" viewBox="0 0 30 30" role="img">
+            <rect x="3" y="3" width="24" height="24" rx="5" fill="#0b63c7"/>
+            <path d="M9 17.6 14.2 7.8h2.2l-3.3 6.4h7.9L15.7 24h-2.2l3.5-6.4H9Z" fill="#fff"/>
+            <circle cx="21.5" cy="8.2" r="2.3" fill="#f4a51c"/>
+          </svg>
+        </span>
+        <span class="brand-name">育才物理创新实验室</span>
+      </a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <a class="focus-ring" href="/">首页</a>
+        <a class="focus-ring" href="/programming/">在线编程</a>
+        <a class="focus-ring" href="/dis/">网页版 DIS</a>
+        <a class="focus-ring" href="/photogate-comparison/">光电门对比</a>
+        <a class="focus-ring" href="/online-lab/">在线实验室</a>
+        <a class="focus-ring active" href="/simulations/" aria-current="page">模拟实验室</a>
+      </nav>
+    </div>
+    <nav class="page-shell mobile-nav" aria-label="移动端主导航">
+      <a class="focus-ring" href="/">首页</a>
+      <a class="focus-ring" href="/programming/">在线编程</a>
+      <a class="focus-ring" href="/dis/">网页版 DIS</a>
+      <a class="focus-ring" href="/photogate-comparison/">光电门对比</a>
+      <a class="focus-ring" href="/online-lab/">在线实验室</a>
+      <a class="focus-ring active" href="/simulations/" aria-current="page">模拟实验室</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="page-shell hero-grid">
+        <div>
+          <p class="eyebrow">SIMULATION LAB</p>
+          <h1>悬绳小球-滑环模型</h1>
+          <p class="hero-copy">小球在最低点获得向右初速度，随后拉动滑环同向运动。观察最高点共速和底端类弹性碰撞。</p>
+        </div>
+        <aside class="model-card" aria-label="模型假设和守恒关系">
+          <h2>模型核心</h2>
+          <p>滑环只能水平运动，杆和绳均理想光滑，系统水平方向不受外力。绳长为 \(L\)，小球质量为 \(m\)，滑环质量为 \(M\)。初始时小球在最低点获得向右速度 \(v_0\)，滑环瞬时静止，系统总水平动量为 \(m v_0\)。</p>
+          <div class="formula">
+            \[
+              P_x=m v_0=\text{常量},\qquad E=\frac{1}{2}m v_0^2
+            \]
+            \[
+              h_{\max}=\frac{M}{M+m}\frac{v_0^2}{2g}\lt L
+            \]
+            \[
+              v_{\text{共}}=\frac{m v_0}{M+m}
+            \]
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="main-section">
+      <div class="page-shell">
+        <section class="process-panel" aria-label="类碰撞过程分解">
+          <div class="process-head">
+            <div>
+              <p class="panel-label">过程分解</p>
+              <h2>悬绳模型的两个“类碰撞”时刻</h2>
+            </div>
+            <p>这不是“从高处静止释放”的情形：初始总水平动量不为零。上升到最高点时，小球相对滑环瞬时静止，像完全非弹性碰撞后的共速；回到底端时，高度又回到零，动量和机械能一起约束末速度，像一维弹性碰撞。</p>
+          </div>
+          <div class="case-grid" aria-label="两个关键时刻对比">
+            <div class="case-card active">
+              <p class="panel-label">最高点</p>
+              <strong>类完全非弹性碰撞：共速</strong>
+              <ul>
+                <li>小球不再沿圆弧继续上升，\(\dot{\theta}=0\)。</li>
+                <li>小球和滑环只剩共同水平速度 \(v_{\text{共}}\)。</li>
+                <li>损失的相对动能转化为小球重力势能。</li>
+              </ul>
+            </div>
+            <div class="case-card">
+              <p class="panel-label">回到底端</p>
+              <strong>类弹性碰撞：末速度分配</strong>
+              <ul>
+                <li>小球高度又回到初始位置，重力势能回到零。</li>
+                <li>系统水平动量仍为 \(m v_0\)。</li>
+                <li>末速度满足一维弹性碰撞形式。</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <div class="tool-surface">
+          <div class="tool-grid">
+            <div class="simulation-area">
+              <div class="tool-toolbar">
+                <div class="button-row">
+                  <button class="button primary focus-ring" id="playPause" type="button">播放</button>
+                  <button class="button focus-ring" id="reset" type="button">复位</button>
+                  <button class="button focus-ring" id="step" type="button">单步</button>
+                </div>
+                <div class="toolbar-tools">
+                  <button class="button focus-ring" id="jumpPeak" type="button">右侧最高点</button>
+                  <button class="button focus-ring" id="jumpBottom" type="button">第一次底端</button>
+                  <button class="button focus-ring" id="jumpLeftPeak" type="button">左侧最高点</button>
+                  <button class="button focus-ring" id="jumpCycleEnd" type="button">第二次底端</button>
+                  <div class="time-readout" id="timeReadout">t = 0.00 s</div>
+                </div>
+              </div>
+
+              <div class="simulation-workspace">
+                <div class="stage-wrap">
+                  <div class="svg-frame">
+                    <svg class="scene" id="scene" viewBox="0 0 960 396" preserveAspectRatio="xMidYMin meet" role="img" aria-labelledby="svgTitle svgDesc">
+                  <title id="svgTitle">悬绳小球与光滑杆上滑环模型模拟动画和 v-t 图像</title>
+                  <desc id="svgDesc">画面显示光滑水平杆、可水平滑动的圆环、轻绳和小球；小球从最低点获得水平初速度后摆起，再回到底端，并同步显示能量分配。</desc>
+                  <defs>
+                    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                      <path d="M0,0 L8,3 L0,6 Z" fill="#0b63c7"/>
+                    </marker>
+                    <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                      <path d="M0,0 L8,3 L0,6 Z" fill="#f4a51c"/>
+                    </marker>
+                  </defs>
+
+                  <text class="scene-label" x="54" y="42">光滑水平杆：初始动量来自小球，质心线向右匀速移动</text>
+                  <line class="rod-rail" x1="88" y1="104" x2="878" y2="104"/>
+                  <line class="rod-line" x1="88" y1="132" x2="878" y2="132"/>
+                  <line class="rod-rail" x1="88" y1="160" x2="878" y2="160"/>
+
+                  <path class="trail" id="ballTrail" d=""/>
+                  <rect class="height-fill" id="heightFill" x="0" y="0" width="0" height="0" rx="4"/>
+                  <line class="com-line" id="cmLine" x1="480" y1="82" x2="480" y2="352"/>
+                  <text class="tiny-label" id="cmText" x="492" y="92">质心线</text>
+                  <line class="height-line" id="heightLine" x1="0" y1="0" x2="0" y2="0"/>
+                  <text class="tiny-label" id="heightLabel" x="0" y="0">h</text>
+                  <line class="bottom-line" id="bottomLine" x1="80" y1="0" x2="880" y2="0"/>
+
+                  <g id="ringGroup">
+                    <ellipse class="ring" id="ringOuter" cx="0" cy="132" rx="18" ry="30"/>
+                    <ellipse class="ring-core" id="ringInner" cx="0" cy="132" rx="10" ry="21"/>
+                  </g>
+                  <line class="string-line" id="stringLine" x1="0" y1="132" x2="0" y2="0"/>
+                  <circle class="ball-glow" id="ballGlow" cx="0" cy="0" r="27"/>
+                  <circle class="ball" id="ball" cx="0" cy="0" r="19"/>
+                  <text class="scene-label" id="ringLabel" x="0" y="0">滑环 M</text>
+                  <text class="scene-label" id="ballLabel" x="0" y="0">小球 m</text>
+
+                  <line class="velocity-a" id="velBall" x1="0" y1="0" x2="0" y2="0"/>
+                  <line class="velocity-ring" id="velRing" x1="0" y1="0" x2="0" y2="0"/>
+                  <text class="velocity-label" id="velBallLabel" x="0" y="0">v球</text>
+                  <text class="velocity-label" id="velRingLabel" x="0" y="0">V环</text>
+                  <text class="scene-label" id="phaseText" x="520" y="42">初始：小球在最低点向右运动，滑环随后被拉向右</text>
+                    </svg>
+                  </div>
+
+                  <div class="analysis-stack">
+                    <div class="energy-panel" id="energyPanel" aria-label="能量分配">
+                      <div class="energy-panel-head">能量分配</div>
+                      <div class="energy-row">
+                        <div class="energy-item">
+                          <span class="energy-item-label">小球动能</span>
+                          <div class="energy-bar-track" aria-hidden="true">
+                            <div class="energy-bar-fill energy-ka" id="barKB"></div>
+                          </div>
+                          <span class="energy-item-value" id="barKBText">0%</span>
+                        </div>
+                        <div class="energy-item">
+                          <span class="energy-item-label">滑环动能</span>
+                          <div class="energy-bar-track" aria-hidden="true">
+                            <div class="energy-bar-fill energy-kr" id="barKR"></div>
+                          </div>
+                          <span class="energy-item-value" id="barKRText">0%</span>
+                        </div>
+                        <div class="energy-item">
+                          <span class="energy-item-label">重力势能</span>
+                          <div class="energy-bar-track" aria-hidden="true">
+                            <div class="energy-bar-fill energy-u" id="barU"></div>
+                          </div>
+                          <span class="energy-item-value" id="barUText">0%</span>
+                        </div>
+                      </div>
+                      <span class="energy-item-value" id="energySumText" hidden>0%</span>
+                    </div>
+
+                    <div class="chart-card" aria-label="小球和滑环速度时间图像">
+                    <div class="chart-head">
+                      <h3>v-t 图像</h3>
+                      <div class="chart-legend" aria-live="polite">
+                        <span class="legend-item"><span class="legend-dot ball" aria-hidden="true"></span>小球 <span id="vtBallValue">0.00 m/s</span></span>
+                        <span class="legend-item"><span class="legend-dot" aria-hidden="true"></span>滑环 <span id="vtRingValue">0.00 m/s</span></span>
+                        <span class="legend-item" id="vtPhaseText">初始：小球最快，滑环静止</span>
+                      </div>
+                    </div>
+                    <svg class="vt-graph" id="vtGraph" viewBox="0 0 900 170" role="img" aria-label="小球和滑环水平速度随时间变化图像">
+                      <line class="axis-line" x1="58" y1="134" x2="850" y2="134"/>
+                      <line class="axis-line" x1="58" y1="24" x2="58" y2="144"/>
+                      <line class="graph-grid" x1="58" y1="107" x2="850" y2="107"/>
+                      <line class="graph-grid" x1="58" y1="80" x2="850" y2="80"/>
+                      <line class="graph-grid" x1="58" y1="53" x2="850" y2="53"/>
+                      <text class="graph-label" x="24" y="29">v</text>
+                      <text class="graph-label" x="836" y="158">t/s</text>
+                      <text class="graph-label" x="14" y="138">0</text>
+                      <text class="graph-label" id="vtMidLabel" x="14" y="84">2.1</text>
+                      <text class="graph-label" id="vtMaxLabel" x="14" y="29">4.2</text>
+                      <path class="ball-curve" id="ballVtPath" d=""/>
+                      <path class="ring-curve" id="ringVtPath" d=""/>
+                      <line class="current-time-line" id="currentTimeLine" x1="58" y1="24" x2="58" y2="134"/>
+                      <circle id="ballVtDot" cx="58" cy="0" r="5" fill="#f4a51c"/>
+                      <circle id="ringVtDot" cx="58" cy="0" r="5" fill="#0b63c7"/>
+                    </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="canvas-control-panel" aria-label="参数调节">
+                  <div class="control-group">
+                    <h2>参数调节</h2>
+                    <div class="parameter-grid">
+                      <div class="field">
+                        <label for="massBall">小球质量 m <output id="massBallOut">3.00 kg</output></label>
+                        <input class="focus-ring" id="massBall" type="range" min="0.5" max="6" value="3" step="0.1">
+                      </div>
+                      <div class="field">
+                        <label for="massRing">滑环质量 M <output id="massRingOut">1.00 kg</output></label>
+                        <input class="focus-ring" id="massRing" type="range" min="0.5" max="6" value="1" step="0.1">
+                      </div>
+                      <div class="field">
+                        <label for="ropeLength">绳长 L <output id="ropeLengthOut">1.20 m</output></label>
+                        <input class="focus-ring" id="ropeLength" type="range" min="0.8" max="2.2" value="1.2" step="0.05">
+                      </div>
+                      <div class="field">
+                        <label for="initialSpeed">小球初速度 \(v_0\) <output id="initialSpeedOut">3.50 m/s</output></label>
+                        <input class="focus-ring" id="initialSpeed" type="range" min="0.4" max="4.5" value="3.5" step="0.05">
+                      </div>
+                      <div class="field">
+                        <label for="speed">播放倍率 <output id="speedOut">0.50×</output></label>
+                        <input class="focus-ring" id="speed" type="range" min="0.15" max="2" value="0.5" step="0.05">
+                      </div>
+                    </div>
+
+                    <div class="toggle-row">
+                      <label class="toggle">
+                        <input id="showVelocity" type="checkbox" checked>
+                        显示速度箭头
+                      </label>
+                      <label class="toggle">
+                        <input id="showEnergy" type="checkbox" checked>
+                        显示能量条
+                      </label>
+                      <label class="toggle">
+                        <input id="showTrace" type="checkbox" checked>
+                        显示小球轨迹
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <aside class="side-panel" aria-label="状态、校验和学习提示">
+              <div class="current-demo">
+                <p class="panel-label">当前状态</p>
+                <h2 id="modeTitle">从最低点出发</h2>
+                <p id="modeDesc">小球向右获得初速度，轻绳开始倾斜，滑环被绳的水平分力拉向右。</p>
+                <div class="metrics">
+                  <div class="metric">
+                    <span>最大高度 \(h_{\max}\)</span>
+                    <strong id="heightRead">0.00 m</strong>
+                  </div>
+                  <div class="metric">
+                    <span>共速 \(v_{\text{共}}\)</span>
+                    <strong id="commonSpeedRead">0.00 m/s</strong>
+                  </div>
+                  <div class="metric">
+                    <span>临界速度 \(v_c\)</span>
+                    <strong id="criticalSpeedRead">0.00 m/s</strong>
+                  </div>
+                  <div class="metric">
+                    <span>最高角度</span>
+                    <strong id="angleRead">0.0°</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div class="key-explain" id="keyExplain" aria-live="polite">
+                <h2>关键时刻说明</h2>
+                <p>点击四个关键位置，可以依次观察右侧共速、第一次底端、左侧共速、第二次底端。</p>
+              </div>
+
+              <p class="teaching-note">读图要点：v-t 图中橙线是小球速度大小、蓝线是滑环速度；右侧最高点处两线相交于共速。第一次回到底端后滑环已有速度，还会带着小球向另一侧摆起，第二次回到底端才完成一个完整周期。</p>
+            </aside>
+          </div>
+        </div>
+
+        <section class="info-grid" aria-label="原理说明和观察任务">
+          <article class="info-card">
+            <h2>为什么最高点共速</h2>
+            <p>设滑环水平位置为 \(X\)，小球相对竖直向下方向的夹角为 \(\theta\)。小球坐标可写成 \(x=X+L\sin\theta\)，高度为 \(h=L(1-\cos\theta)\)。</p>
+            <div class="formula-block">
+              \[
+                P_x=(M+m)\dot X+mL\cos\theta\dot\theta=mv_0
+              \]
+              \[
+                E=\frac{1}{2}M\dot X^2+\frac{1}{2}m v_m^2+mgh
+              \]
+            </div>
+            <p>最高点时 \(\dot\theta=0\)，小球不再相对滑环沿圆弧运动。此时小球和滑环都只有 \(\dot X\) 这个共同水平速度，所以 \(v_m=V_M=v_{\text{共}}\)。</p>
+            <h3>最大高度</h3>
+            <p>最高点的动能等于系统整体平动动能，剩下的初始动能转成重力势能：</p>
+            <div class="formula-block">
+              \[
+                \frac{1}{2}m v_0^2-\frac{1}{2}(M+m)v_{\text{共}}^2=mgh_{\max}
+              \]
+              \[
+                h_{\max}=\frac{M}{M+m}\frac{v_0^2}{2g}
+              \]
+            </div>
+          </article>
+
+          <article class="info-card">
+            <h2>回到底端为什么像弹性碰撞</h2>
+            <p>小球回到底端时 \(h=0\)，重力势能回到初始值。只要忽略阻力，系统水平方向动量和机械能都与初始状态相同，于是末速度满足：</p>
+            <div class="formula-block">
+              \[
+                m v_0=m v_m' + M V_M'
+              \]
+              \[
+                \frac{1}{2}m v_0^2=\frac{1}{2}m{v_m'}^2+\frac{1}{2}M{V_M'}^2
+              \]
+              \[
+                v_m'=\frac{m-M}{m+M}v_0,\qquad
+                V_M'=\frac{2m}{m+M}v_0
+              \]
+            </div>
+            <p>这就是“类弹性碰撞”的含义：没有真的撞在一起，但两个守恒方程给出的速度关系和一维弹性碰撞完全一样。</p>
+          </article>
+
+          <article class="info-card">
+            <h2>和滑环固定时比较</h2>
+            <p>如果滑环固定，小球获得同样初速度时，全部初动能都可以转化为小球重力势能：</p>
+            <div class="formula-block">
+              \[
+                h_1=\frac{v_0^2}{2g}
+              \]
+            </div>
+            <p>如果滑环不固定，最高点时系统仍有共同平动动能，所以最大高度变小：</p>
+            <div class="formula-block">
+              \[
+                h_2=\frac{M}{M+m}\frac{v_0^2}{2g}
+              \]
+            </div>
+            <p>因此 \(h_1:h_2=(M+m):M\)。题图里若小球质量为 \(3m\)、滑环质量为 \(m\)，则 \(h_1:h_2=4:1\)。</p>
+          </article>
+
+          <article class="info-card">
+            <h2>观察任务</h2>
+            <ol>
+              <li>保持题图比例：小球质量 \(3\,\mathrm{kg}\)，滑环质量 \(1\,\mathrm{kg}\)，观察 \(h_1:h_2\) 是否为 \(4:1\)。</li>
+              <li>点击“最高点”，比较小球速度箭头和滑环速度箭头是否等长同向，并观察 v-t 图中两线是否相交。</li>
+              <li>点击“回到底端”，改变 \(M/m\)，观察小球末速度会不会反向。</li>
+              <li>把小球初速度调大，注意页面会自动限制 \(h_{\max}<L\)，保证小球不会越过绳长对应的高度。</li>
+            </ol>
+            <h3>易错提醒</h3>
+            <p>水平方向动量守恒，不等于小球或滑环各自的水平动量不变。绳的拉力会不断交换两者的动量，但两者相加始终保持为 \(mv_0\)。</p>
+          </article>
+        </section>
+      </div>
+    </section>
+  </main>
+  <section class="gif-download-panel" aria-label="动画下载">
+    <h2>动画下载</h2>
+    <p>悬绳小球-滑环模型动画 可下载为 GIF，方便插入课件、班级群或复习资料。</p>
+    <div class="gif-download-actions">
+      <a href="exports/suspended-ring-pendulum.gif" download>完整周期动画</a>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="page-shell footer-inner">
+      <div>
+        <strong>育才物理创新实验室</strong>
+        <p>面向物理实验、创新教具和学生作品发布的校园实验室门户</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (() => {
+      const g = 9.8;
+      const yRing = 132;
+      const scale = 190;
+      const baseRingX = 170;
+      const eps = 1e-9;
+
+      const els = {
+        playPause: document.getElementById("playPause"),
+        reset: document.getElementById("reset"),
+        step: document.getElementById("step"),
+        jumpPeak: document.getElementById("jumpPeak"),
+        jumpBottom: document.getElementById("jumpBottom"),
+        jumpLeftPeak: document.getElementById("jumpLeftPeak"),
+        jumpCycleEnd: document.getElementById("jumpCycleEnd"),
+        timeReadout: document.getElementById("timeReadout"),
+        massBall: document.getElementById("massBall"),
+        massRing: document.getElementById("massRing"),
+        ropeLength: document.getElementById("ropeLength"),
+        initialSpeed: document.getElementById("initialSpeed"),
+        speed: document.getElementById("speed"),
+        massBallOut: document.getElementById("massBallOut"),
+        massRingOut: document.getElementById("massRingOut"),
+        ropeLengthOut: document.getElementById("ropeLengthOut"),
+        initialSpeedOut: document.getElementById("initialSpeedOut"),
+        speedOut: document.getElementById("speedOut"),
+        showVelocity: document.getElementById("showVelocity"),
+        showEnergy: document.getElementById("showEnergy"),
+        showTrace: document.getElementById("showTrace"),
+        modeTitle: document.getElementById("modeTitle"),
+        modeDesc: document.getElementById("modeDesc"),
+        heightRead: document.getElementById("heightRead"),
+        commonSpeedRead: document.getElementById("commonSpeedRead"),
+        criticalSpeedRead: document.getElementById("criticalSpeedRead"),
+        angleRead: document.getElementById("angleRead"),
+        keyExplain: document.getElementById("keyExplain"),
+        ringOuter: document.getElementById("ringOuter"),
+        ringInner: document.getElementById("ringInner"),
+        stringLine: document.getElementById("stringLine"),
+        ball: document.getElementById("ball"),
+        ballGlow: document.getElementById("ballGlow"),
+        ringLabel: document.getElementById("ringLabel"),
+        ballLabel: document.getElementById("ballLabel"),
+        velBall: document.getElementById("velBall"),
+        velRing: document.getElementById("velRing"),
+        velBallLabel: document.getElementById("velBallLabel"),
+        velRingLabel: document.getElementById("velRingLabel"),
+        ballTrail: document.getElementById("ballTrail"),
+        cmLine: document.getElementById("cmLine"),
+        cmText: document.getElementById("cmText"),
+        heightLine: document.getElementById("heightLine"),
+        heightLabel: document.getElementById("heightLabel"),
+        heightFill: document.getElementById("heightFill"),
+        bottomLine: document.getElementById("bottomLine"),
+        phaseText: document.getElementById("phaseText"),
+        energyPanel: document.getElementById("energyPanel"),
+        barKB: document.getElementById("barKB"),
+        barKR: document.getElementById("barKR"),
+        barU: document.getElementById("barU"),
+        barKBText: document.getElementById("barKBText"),
+        barKRText: document.getElementById("barKRText"),
+        barUText: document.getElementById("barUText"),
+        energySumText: document.getElementById("energySumText"),
+        ballVtPath: document.getElementById("ballVtPath"),
+        ringVtPath: document.getElementById("ringVtPath"),
+        currentTimeLine: document.getElementById("currentTimeLine"),
+        ballVtDot: document.getElementById("ballVtDot"),
+        ringVtDot: document.getElementById("ringVtDot"),
+        vtBallValue: document.getElementById("vtBallValue"),
+        vtRingValue: document.getElementById("vtRingValue"),
+        vtPhaseText: document.getElementById("vtPhaseText"),
+        vtMidLabel: document.getElementById("vtMidLabel"),
+        vtMaxLabel: document.getElementById("vtMaxLabel")
+      };
+
+      let vtProfileCache = null;
+
+      const state = {
+        theta: 0,
+        phase: "rightUp",
+        time: 0,
+        playing: false,
+        lastTs: null
+      };
+
+      function params() {
+        const m = Number(els.massBall.value);
+        const M = Number(els.massRing.value);
+        const L = Number(els.ropeLength.value);
+        const vc = Math.sqrt(2 * g * L * (M + m) / M);
+        const maxV = Math.max(0.45, vc * 0.985);
+        els.initialSpeed.max = maxV.toFixed(2);
+        if (Number(els.initialSpeed.value) > maxV) {
+          els.initialSpeed.value = maxV.toFixed(2);
+        }
+        const v0 = Number(els.initialSpeed.value);
+        const P = m * v0;
+        const E0 = 0.5 * m * v0 * v0;
+        const common = P / (M + m);
+        const hMax = M / (M + m) * v0 * v0 / (2 * g);
+        const thetaMax = Math.acos(Math.max(-1, Math.min(1, 1 - hMax / L)));
+        const finalBall = (m - M) / (m + M) * v0;
+        const finalRing = (2 * m) / (m + M) * v0;
+        return { m, M, L, v0, vc, P, E0, common, hMax, thetaMax, finalBall, finalRing };
+      }
+
+      function thetaDotMagnitude(theta, p) {
+        const angle = Math.abs(theta);
+        const h = p.L * (1 - Math.cos(angle));
+        const reducedEnergy = 0.5 * p.m * p.M / (p.M + p.m) * p.v0 * p.v0;
+        const available = Math.max(0, reducedEnergy - p.m * g * h);
+        const inertia = p.m * p.L * p.L * (1 - (p.m / (p.M + p.m)) * Math.cos(angle) * Math.cos(angle));
+        return Math.sqrt(Math.max(0, (2 * available) / Math.max(inertia, eps)));
+      }
+
+      function estimateTimeToTheta(targetTheta, p) {
+        const target = Math.max(0, Math.min(targetTheta, p.thetaMax));
+        if (target <= 0) {
+          return 0;
+        }
+        const steps = 96;
+        let sum = 0;
+        for (let i = 0; i < steps; i += 1) {
+          const theta = target * (i + 0.5) / steps;
+          sum += (target / steps) / Math.max(thetaDotMagnitude(theta, p), 0.02);
+        }
+        return sum;
+      }
+
+      function omegaSign(phase) {
+        return phase === "rightUp" || phase === "leftDown" ? 1 : -1;
+      }
+
+      function kinematics(theta, phase, p) {
+        const omega = omegaSign(phase) * thetaDotMagnitude(theta, p);
+        const ringV = (p.P - p.m * p.L * Math.cos(theta) * omega) / (p.M + p.m);
+        const relVx = p.L * Math.cos(theta) * omega;
+        const relVy = -p.L * Math.sin(theta) * omega;
+        const ballVx = ringV + relVx;
+        const ballVy = relVy;
+        const h = p.L * (1 - Math.cos(theta));
+        const ballK = 0.5 * p.m * (ballVx * ballVx + ballVy * ballVy);
+        const ringK = 0.5 * p.M * ringV * ringV;
+        const U = p.m * g * h;
+        return { omega, ringV, ballVx, ballVy, h, ballK, ringK, U };
+      }
+
+      function position(theta, phase, p, time = state.time) {
+        const cmWorldX = p.common * Math.max(0, time);
+        const ringWorldX = cmWorldX - (p.m / (p.M + p.m)) * p.L * Math.sin(theta);
+        const ringX = baseRingX + ringWorldX * scale;
+        const ballX = ringX + p.L * Math.sin(theta) * scale;
+        const ballY = yRing + p.L * Math.cos(theta) * scale;
+        const bottomY = yRing + p.L * scale;
+        const cmSceneX = baseRingX + cmWorldX * scale;
+        return { ringX, ballX, ballY, bottomY, cmSceneX };
+      }
+
+      function setLine(el, x1, y1, x2, y2) {
+        el.setAttribute("x1", x1.toFixed(1));
+        el.setAttribute("y1", y1.toFixed(1));
+        el.setAttribute("x2", x2.toFixed(1));
+        el.setAttribute("y2", y2.toFixed(1));
+      }
+
+      function setText(el, text, x, y) {
+        el.textContent = text;
+        el.setAttribute("x", x.toFixed(1));
+        el.setAttribute("y", y.toFixed(1));
+      }
+
+      function formatPct(value) {
+        return `${(value * 100).toFixed(1)}%`;
+      }
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function thetaForAscendingTime(t, p) {
+        if (t <= 0) {
+          return 0;
+        }
+        let lo = 0;
+        let hi = p.thetaMax;
+        for (let i = 0; i < 48; i += 1) {
+          const mid = (lo + hi) / 2;
+          if (estimateTimeToTheta(mid, p) < t) {
+            lo = mid;
+          } else {
+            hi = mid;
+          }
+        }
+        return (lo + hi) / 2;
+      }
+
+      function stateAtTime(t, p) {
+        const peakTime = estimateTimeToTheta(p.thetaMax, p);
+        if (peakTime <= eps) {
+          return { theta: 0, phase: "rightUp" };
+        }
+        const clamped = clamp(t, 0, 4 * peakTime);
+        if (clamped <= peakTime) {
+          return { theta: thetaForAscendingTime(clamped, p), phase: "rightUp" };
+        }
+        if (clamped <= 2 * peakTime) {
+          return { theta: thetaForAscendingTime(2 * peakTime - clamped, p), phase: "rightDown" };
+        }
+        if (clamped <= 3 * peakTime) {
+          return { theta: -thetaForAscendingTime(clamped - 2 * peakTime, p), phase: "leftUp" };
+        }
+        return { theta: -thetaForAscendingTime(4 * peakTime - clamped, p), phase: "leftDown" };
+      }
+
+      function profileKey(p) {
+        return `${p.m}|${p.M}|${p.L}|${p.v0}`;
+      }
+
+      function buildVtProfile(p) {
+        const key = profileKey(p);
+        if (vtProfileCache && vtProfileCache.key === key) {
+          return vtProfileCache;
+        }
+        const peakTime = estimateTimeToTheta(p.thetaMax, p);
+        const totalTime = Math.max(4 * peakTime, eps);
+        const samples = [];
+        const count = 160;
+        let maxSpeed = Math.max(p.v0, p.common, 0.1);
+        for (let i = 0; i <= count; i += 1) {
+          const time = totalTime * i / count;
+          const snapshot = stateAtTime(time, p);
+          const kin = kinematics(snapshot.theta, snapshot.phase, p);
+          const ballSpeed = Math.hypot(kin.ballVx, kin.ballVy);
+          const ringSpeed = Math.abs(kin.ringV);
+          maxSpeed = Math.max(maxSpeed, ballSpeed, ringSpeed);
+          samples.push({ time, ballSpeed, ringSpeed });
+        }
+        vtProfileCache = {
+          key,
+          samples,
+          totalTime,
+          peakTime,
+          maxSpeed: maxSpeed * 1.08
+        };
+        return vtProfileCache;
+      }
+
+      function drawVtGraph(profile, p, nowTime, kin) {
+        const x0 = 58;
+        const y0 = 134;
+        const w = 792;
+        const h = 108;
+        const maxV = Math.max(profile.maxSpeed, 0.1);
+        const mapX = (time) => x0 + (time / profile.totalTime) * w;
+        const mapY = (speed) => y0 - (clamp(speed, 0, maxV) / maxV) * h;
+        const toPath = (selector) => profile.samples.map((sample, index) => {
+          const x = mapX(sample.time);
+          const y = mapY(selector(sample));
+          return `${index === 0 ? "M" : "L"} ${x.toFixed(1)} ${y.toFixed(1)}`;
+        }).join(" ");
+
+        els.ballVtPath.setAttribute("d", toPath((sample) => sample.ballSpeed));
+        els.ringVtPath.setAttribute("d", toPath((sample) => sample.ringSpeed));
+
+        const clampedTime = clamp(nowTime, 0, profile.totalTime);
+        const x = mapX(clampedTime);
+        const ballSpeed = Math.hypot(kin.ballVx, kin.ballVy);
+        const ringSpeed = Math.abs(kin.ringV);
+        els.currentTimeLine.setAttribute("x1", x.toFixed(1));
+        els.currentTimeLine.setAttribute("x2", x.toFixed(1));
+        els.ballVtDot.setAttribute("cx", x.toFixed(1));
+        els.ballVtDot.setAttribute("cy", mapY(ballSpeed).toFixed(1));
+        els.ringVtDot.setAttribute("cx", x.toFixed(1));
+        els.ringVtDot.setAttribute("cy", mapY(ringSpeed).toFixed(1));
+        els.vtBallValue.textContent = `${ballSpeed.toFixed(2)} m/s`;
+        els.vtRingValue.textContent = `${ringSpeed.toFixed(2)} m/s`;
+        els.vtMidLabel.textContent = (maxV / 2).toFixed(1);
+        els.vtMaxLabel.textContent = maxV.toFixed(1);
+
+        if (nowTime <= 0.02) {
+          els.vtPhaseText.textContent = "初始：小球最快，滑环静止";
+        } else if (Math.abs(nowTime - profile.peakTime) < profile.totalTime * 0.03) {
+          els.vtPhaseText.textContent = "右侧最高点：小球与滑环共速";
+        } else if (Math.abs(nowTime - 2 * profile.peakTime) < profile.totalTime * 0.03) {
+          els.vtPhaseText.textContent = "第一次回到底端：速度重新分配";
+        } else if (Math.abs(nowTime - 3 * profile.peakTime) < profile.totalTime * 0.03) {
+          els.vtPhaseText.textContent = "左侧最高点：再次共速";
+        } else if (nowTime >= profile.totalTime * 0.98) {
+          els.vtPhaseText.textContent = "第二次回到底端：完成一个周期";
+        } else if (nowTime < profile.peakTime) {
+          els.vtPhaseText.textContent = "上升：小球减速，滑环加速";
+        } else if (nowTime < 2 * profile.peakTime) {
+          els.vtPhaseText.textContent = "下滑：势能转回动能";
+        } else if (nowTime < 3 * profile.peakTime) {
+          els.vtPhaseText.textContent = "后半周期：滑环带动小球向左摆起";
+        } else {
+          els.vtPhaseText.textContent = "后半周期下滑：回到周期末端";
+        }
+      }
+
+      function buildTrail(p) {
+        const points = [];
+        const steps = 48;
+        const peakTime = estimateTimeToTheta(p.thetaMax, p);
+        for (let i = 0; i <= steps; i += 1) {
+          const theta = p.thetaMax * i / steps;
+          const pos = position(theta, "rightUp", p, estimateTimeToTheta(theta, p));
+          points.push(`${i === 0 ? "M" : "L"}${pos.ballX.toFixed(1)},${pos.ballY.toFixed(1)}`);
+        }
+        for (let i = 1; i <= steps; i += 1) {
+          const theta = p.thetaMax * (1 - i / steps);
+          const t = peakTime + (peakTime - estimateTimeToTheta(theta, p));
+          const pos = position(theta, "rightDown", p, t);
+          points.push(`L${pos.ballX.toFixed(1)},${pos.ballY.toFixed(1)}`);
+        }
+        for (let i = 1; i <= steps; i += 1) {
+          const theta = -p.thetaMax * i / steps;
+          const t = 2 * peakTime + estimateTimeToTheta(Math.abs(theta), p);
+          const pos = position(theta, "leftUp", p, t);
+          points.push(`L${pos.ballX.toFixed(1)},${pos.ballY.toFixed(1)}`);
+        }
+        for (let i = 1; i <= steps; i += 1) {
+          const theta = -p.thetaMax * (1 - i / steps);
+          const t = 3 * peakTime + (peakTime - estimateTimeToTheta(Math.abs(theta), p));
+          const pos = position(theta, "leftDown", p, t);
+          points.push(`L${pos.ballX.toFixed(1)},${pos.ballY.toFixed(1)}`);
+        }
+        return points.join(" ");
+      }
+
+      function updateOutputs(p) {
+        els.massBallOut.textContent = `${p.m.toFixed(2)} kg`;
+        els.massRingOut.textContent = `${p.M.toFixed(2)} kg`;
+        els.ropeLengthOut.textContent = `${p.L.toFixed(2)} m`;
+        els.initialSpeedOut.textContent = `${p.v0.toFixed(2)} m/s`;
+        els.speedOut.textContent = `${Number(els.speed.value).toFixed(2)}×`;
+        els.heightRead.textContent = `${p.hMax.toFixed(2)} m`;
+        els.commonSpeedRead.textContent = `${p.common.toFixed(2)} m/s`;
+        els.criticalSpeedRead.textContent = `${p.vc.toFixed(2)} m/s`;
+        els.angleRead.textContent = `${(p.thetaMax * 180 / Math.PI).toFixed(1)}°`;
+      }
+
+      function updateExplanation(p, kin) {
+        const peakTime = estimateTimeToTheta(p.thetaMax, p);
+        const nearPeak = Math.abs(Math.abs(state.theta) - p.thetaMax) < 0.012;
+        const nearBottom = Math.abs(state.theta) < 0.018 && state.time > 0.05;
+        const nearCycleEnd = nearBottom && state.time > 3 * peakTime;
+        const nearFirstBottom = nearBottom && state.time > peakTime && state.time < 3 * peakTime;
+        if (nearPeak) {
+          els.modeTitle.textContent = "最高点：小球与滑环共速";
+          els.modeDesc.textContent = "小球相对滑环的角速度为零，系统只剩整体水平平动。";
+          els.keyExplain.innerHTML = `
+            <h2>最高点：类完全非弹性碰撞</h2>
+            <p>此时 \\(\\dot\\theta=0\\)，小球和滑环具有共同速度 \\(v_{\\text{共}}=\\frac{m v_0}{M+m}\\)。初始相对动能的一部分转化为小球重力势能。</p>
+          `;
+        } else if (nearCycleEnd) {
+          els.modeTitle.textContent = "周期末端：回到初始相对状态";
+          els.modeDesc.textContent = "小球第二次回到底端，相对滑环的运动状态恢复，整个系统只向右平移了一段距离。";
+          els.keyExplain.innerHTML = `
+            <h2>一个完整周期</h2>
+            <p>右侧摆起、回到底端、左侧摆起、再回到底端，才是相对滑环的一个完整周期。地面参考系中，质心线在这段时间继续向右匀速移动。</p>
+          `;
+        } else if (nearFirstBottom) {
+          const direction = p.finalBall < -0.02 ? "小球反向运动" : p.finalBall > 0.02 ? "小球继续向右" : "小球瞬时静止";
+          els.modeTitle.textContent = "第一次回到底端：继续下一半周期";
+          els.modeDesc.textContent = `${direction}，但滑环已经获得速度，所以轻绳会把小球带向另一侧继续摆起。`;
+          els.keyExplain.innerHTML = `
+            <h2>底端：类弹性碰撞</h2>
+            <p>第一次回到底端时 \\(h=0\\)，可用 \\(v_m'=\\frac{m-M}{m+M}v_0\\)，\\(V_M'=\\frac{2m}{m+M}v_0\\) 理解速度分配。但这不是动画终点，滑环速度会继续改变绳的方向。</p>
+          `;
+        } else if (state.phase === "rightUp") {
+          els.modeTitle.textContent = "右侧上升：相对动能转为势能";
+          els.modeDesc.textContent = "小球向右上方摆起并减速，滑环被轻绳拉向右运动，系统逐渐接近共速。";
+          els.keyExplain.innerHTML = `
+            <h2>上升过程</h2>
+            <p>小球初始动量为 \\(m v_0\\)，因此系统质心向右匀速运动。轻绳的拉力不断交换两者动量，滑环从静止开始向右加速。</p>
+          `;
+        } else if (state.phase === "rightDown") {
+          els.modeTitle.textContent = "右侧下滑：势能转回动能";
+          els.modeDesc.textContent = "小球从最高点返回最低点，速度关系逐渐接近弹性碰撞末态。";
+          els.keyExplain.innerHTML = `
+            <h2>下滑过程</h2>
+            <p>小球重力势能减少，系统动能增加。回到底端后可用两条守恒式直接求末速度。</p>
+          `;
+        } else if (state.phase === "leftUp") {
+          els.modeTitle.textContent = "左侧上升：滑环带动小球继续摆起";
+          els.modeDesc.textContent = "第一次回到底端后滑环仍向右运动，小球相对滑环转向左上方，开始周期的后半段。";
+          els.keyExplain.innerHTML = `
+            <h2>后半周期上升</h2>
+            <p>这一段不是新的外力推动，而是第一次到底端后的速度分配继续演化；相对滑环看，小球会摆到另一侧最高点。</p>
+          `;
+        } else {
+          els.modeTitle.textContent = "左侧下滑：回到周期末端";
+          els.modeDesc.textContent = "小球从左侧最高点回到底端，相对滑环的状态逐渐恢复到初始方向。";
+          els.keyExplain.innerHTML = `
+            <h2>后半周期下滑</h2>
+            <p>到第二次回到底端时，小球相对滑环的速度方向回到初始状态；在地面参考系中，整个图形已经随质心向右平移。</p>
+          `;
+        }
+
+        if (window.MathJax?.typesetPromise) {
+          window.MathJax.typesetPromise([els.keyExplain]).catch(() => {});
+        }
+      }
+
+      function render() {
+        const p = params();
+        updateOutputs(p);
+        state.theta = Math.max(-p.thetaMax, Math.min(state.theta, p.thetaMax));
+        const kin = kinematics(state.theta, state.phase, p);
+        const pos = position(state.theta, state.phase, p);
+
+        els.ringOuter.setAttribute("cx", pos.ringX.toFixed(1));
+        els.ringInner.setAttribute("cx", pos.ringX.toFixed(1));
+        setLine(els.stringLine, pos.ringX, yRing, pos.ballX, pos.ballY);
+        els.ball.setAttribute("cx", pos.ballX.toFixed(1));
+        els.ball.setAttribute("cy", pos.ballY.toFixed(1));
+        els.ballGlow.setAttribute("cx", pos.ballX.toFixed(1));
+        els.ballGlow.setAttribute("cy", pos.ballY.toFixed(1));
+        setText(els.ringLabel, "滑环 M", pos.ringX - 34, yRing + 56);
+        setText(els.ballLabel, "小球 m", pos.ballX - 72, pos.ballY + 32);
+
+        setLine(els.cmLine, pos.cmSceneX, 82, pos.cmSceneX, Math.min(368, pos.bottomY + 18));
+        setText(els.cmText, "系统质心线", pos.cmSceneX + 10, 104);
+        setLine(els.bottomLine, 80, pos.bottomY, 880, pos.bottomY);
+        setLine(els.heightLine, pos.ballX + 70, pos.ballY, pos.ballX + 70, pos.bottomY);
+        if (kin.h < 0.035) {
+          setText(els.heightLabel, `h=${kin.h.toFixed(2)} m`, pos.ballX + 58, pos.ballY - 34);
+        } else {
+          setText(els.heightLabel, `h=${kin.h.toFixed(2)} m`, pos.ballX + 78, (pos.ballY + pos.bottomY) / 2);
+        }
+        els.heightFill.setAttribute("x", (pos.ballX + 38).toFixed(1));
+        els.heightFill.setAttribute("y", pos.ballY.toFixed(1));
+        els.heightFill.setAttribute("width", "32");
+        els.heightFill.setAttribute("height", Math.max(0, pos.bottomY - pos.ballY).toFixed(1));
+        els.ballTrail.setAttribute("d", buildTrail(p));
+
+        const vScale = 26;
+        setLine(els.velBall, pos.ballX, pos.ballY, pos.ballX + kin.ballVx * vScale, pos.ballY + kin.ballVy * vScale);
+        setText(els.velBallLabel, "v球", pos.ballX + kin.ballVx * vScale + 8, pos.ballY + kin.ballVy * vScale + 18);
+        setLine(els.velRing, pos.ringX, yRing - 58, pos.ringX + kin.ringV * vScale, yRing - 58);
+        setText(els.velRingLabel, "V环", pos.ringX + kin.ringV * vScale + 8, yRing - 64);
+
+        const showVelocity = els.showVelocity.checked;
+        [els.velBall, els.velRing, els.velBallLabel, els.velRingLabel].forEach((el) => {
+          el.style.display = showVelocity ? "" : "none";
+        });
+        els.energyPanel.style.display = els.showEnergy.checked ? "" : "none";
+        els.ballTrail.style.display = els.showTrace.checked ? "" : "none";
+
+        const total = Math.max(p.E0, eps);
+        const kbPct = kin.ballK / total;
+        const krPct = kin.ringK / total;
+        const uPct = kin.U / total;
+        els.barKB.style.width = `${Math.max(0, Math.min(100, kbPct * 100)).toFixed(1)}%`;
+        els.barKR.style.width = `${Math.max(0, Math.min(100, krPct * 100)).toFixed(1)}%`;
+        els.barU.style.width = `${Math.max(0, Math.min(100, uPct * 100)).toFixed(1)}%`;
+        els.barKBText.textContent = formatPct(kbPct);
+        els.barKRText.textContent = formatPct(krPct);
+        els.barUText.textContent = formatPct(uPct);
+
+        const energy = kin.ballK + kin.ringK + kin.U;
+        const energyErr = Math.abs(energy - p.E0) / Math.max(p.E0, eps);
+        els.energySumText.textContent = `${(energyErr * 100).toFixed(3)}%`;
+        els.timeReadout.textContent = `t = ${state.time.toFixed(2)} s`;
+
+        const profile = buildVtProfile(p);
+        drawVtGraph(profile, p, state.time, kin);
+
+        if (state.phase === "rightUp") {
+          els.phaseText.textContent = state.theta > p.thetaMax * 0.82
+            ? "接近最高点：相对角速度趋近于 0，小球与滑环即将共速"
+            : "上升：小球向右上方减速，滑环被轻绳拉向右加速";
+        } else if (state.phase === "rightDown") {
+          els.phaseText.textContent = state.theta < p.thetaMax * 0.18
+            ? "第一次回到底端：滑环已有速度，运动还会继续"
+            : "下滑：重力势能转回动能，小球回到最低点";
+        } else if (state.phase === "leftUp") {
+          els.phaseText.textContent = Math.abs(state.theta) > p.thetaMax * 0.82
+            ? "接近左侧最高点：小球与滑环再次共速"
+            : "后半周期：滑环带动小球向左上方摆起";
+        } else {
+          els.phaseText.textContent = Math.abs(state.theta) < p.thetaMax * 0.18
+            ? "第二次回到底端：相对运动完成一个周期"
+            : "后半周期下滑：小球回到最低点";
+        }
+
+        updateExplanation(p, kin);
+      }
+
+      function advance(dt) {
+        const p = params();
+        const speed = Number(els.speed.value);
+        const peakTime = estimateTimeToTheta(p.thetaMax, p);
+        const cycleDone = state.phase === "rightUp" && Math.abs(state.theta) <= 0.001 && state.time > 3 * peakTime;
+        if (cycleDone) {
+          render();
+          return;
+        }
+        const substeps = Math.max(1, Math.ceil((dt * speed) / 0.012));
+        const subDt = dt / substeps;
+        for (let i = 0; i < substeps; i += 1) {
+          const omega = thetaDotMagnitude(state.theta, p);
+          let dTheta = omega * subDt * speed;
+          if ((state.phase === "rightDown" || state.phase === "leftDown") && p.thetaMax - Math.abs(state.theta) < 0.002) {
+            dTheta = Math.max(dTheta, 0.00045);
+          }
+          if (state.phase === "rightUp") {
+            state.theta += dTheta;
+            if (state.theta >= p.thetaMax) {
+              state.theta = Math.max(0, p.thetaMax - 0.00045);
+              state.phase = "rightDown";
+            }
+          } else if (state.phase === "rightDown") {
+            state.theta -= dTheta;
+            if (state.theta <= 0) {
+              state.theta = Math.min(0, -0.00045);
+              state.phase = "leftUp";
+            }
+          } else if (state.phase === "leftUp") {
+            state.theta -= dTheta;
+            if (state.theta <= -p.thetaMax) {
+              state.theta = Math.min(0, -p.thetaMax + 0.00045);
+              state.phase = "leftDown";
+            }
+          } else {
+            state.theta += dTheta;
+            if (state.theta >= 0) {
+              state.theta = 0;
+              state.phase = "rightUp";
+              state.playing = false;
+              els.playPause.textContent = "播放";
+              break;
+            }
+          }
+        }
+        state.time += dt * speed;
+        render();
+      }
+
+      function tick(ts) {
+        if (!state.lastTs) {
+          state.lastTs = ts;
+        }
+        const dt = Math.min(0.032, (ts - state.lastTs) / 1000);
+        state.lastTs = ts;
+        if (state.playing) {
+          advance(dt);
+          requestAnimationFrame(tick);
+        }
+      }
+
+      function reset() {
+        state.theta = 0;
+        state.phase = "rightUp";
+        state.time = 0;
+        state.playing = false;
+        state.lastTs = null;
+        els.playPause.textContent = "播放";
+        render();
+      }
+
+      function handleParamChange() {
+        const p = params();
+        vtProfileCache = null;
+        state.theta = Math.max(-p.thetaMax, Math.min(state.theta, p.thetaMax));
+        state.phase = "rightUp";
+        state.time = 0;
+        render();
+      }
+
+      els.playPause.addEventListener("click", () => {
+        state.playing = !state.playing;
+        els.playPause.textContent = state.playing ? "暂停" : "播放";
+        if (state.playing) {
+          const p = params();
+          const peakTime = estimateTimeToTheta(p.thetaMax, p);
+          if (state.phase === "rightUp" && Math.abs(state.theta) <= 0.001 && state.time > 3 * peakTime) {
+            state.theta = 0;
+            state.phase = "rightUp";
+            state.time = 0;
+          }
+          state.lastTs = null;
+          requestAnimationFrame(tick);
+        }
+      });
+
+      els.reset.addEventListener("click", reset);
+      els.step.addEventListener("click", () => advance(0.08));
+      els.jumpPeak.addEventListener("click", () => {
+        const p = params();
+        state.theta = p.thetaMax;
+        state.phase = "rightDown";
+        state.time = estimateTimeToTheta(p.thetaMax, p);
+        state.playing = false;
+        els.playPause.textContent = "播放";
+        render();
+      });
+      els.jumpBottom.addEventListener("click", () => {
+        const p = params();
+        state.theta = 0;
+        state.phase = "leftUp";
+        state.time = 2 * estimateTimeToTheta(p.thetaMax, p);
+        state.playing = false;
+        els.playPause.textContent = "播放";
+        render();
+      });
+      els.jumpLeftPeak.addEventListener("click", () => {
+        const p = params();
+        state.theta = -p.thetaMax;
+        state.phase = "leftDown";
+        state.time = 3 * estimateTimeToTheta(p.thetaMax, p);
+        state.playing = false;
+        els.playPause.textContent = "播放";
+        render();
+      });
+      els.jumpCycleEnd.addEventListener("click", () => {
+        const p = params();
+        state.theta = 0;
+        state.phase = "rightUp";
+        state.time = 4 * estimateTimeToTheta(p.thetaMax, p);
+        state.playing = false;
+        els.playPause.textContent = "播放";
+        render();
+      });
+
+      [els.massBall, els.massRing, els.ropeLength, els.initialSpeed, els.speed].forEach((input) => {
+        input.addEventListener("input", handleParamChange);
+      });
+      [els.showVelocity, els.showEnergy, els.showTrace].forEach((input) => {
+        input.addEventListener("change", render);
+      });
+
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        state.playing = false;
+      }
+
+      window.suspendedRingExport = {
+        params,
+        estimateTimeToTheta,
+        advance,
+        render,
+        reset,
+        state,
+        configure(options = {}) {
+          if (options.initialSpeed != null) {
+            els.initialSpeed.value = String(options.initialSpeed);
+          }
+          if (options.speed != null) {
+            els.speed.value = String(options.speed);
+          }
+          if (options.showVelocity != null) {
+            els.showVelocity.checked = Boolean(options.showVelocity);
+          }
+          if (options.showEnergy != null) {
+            els.showEnergy.checked = Boolean(options.showEnergy);
+          }
+          if (options.showTrace != null) {
+            els.showTrace.checked = Boolean(options.showTrace);
+          }
+          reset();
+          return params();
+        },
+        totalPlaybackSeconds() {
+          const p = params();
+          const peakTime = estimateTimeToTheta(p.thetaMax, p);
+          const playbackSpeed = Math.max(Number(els.speed.value), 0.05);
+          return (4 * peakTime) / playbackSpeed + 0.8;
+        }
+      };
+
+      reset();
+    })();
+  </script>
+</body>
+</html>

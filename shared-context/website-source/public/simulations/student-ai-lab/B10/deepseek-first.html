@@ -1,0 +1,1194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA转录为mRNA - 交互式演示 | 高中生物必修二</title>
+    <style>
+        :root {
+            --bg: #f5f0e8;
+            --card-bg: #fffef9;
+            --text: #2c2416;
+            --text-secondary: #5c4f3a;
+            --accent: #c0392b;
+            --accent-blue: #2471a3;
+            --border: #d5cbb8;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --btn-bg: #faf6ef;
+            --btn-hover: #ede4d3;
+            --highlight: #fef3cd;
+            --info-bg: #f8f9fa;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(160deg, #f7f3ea 0%, #ede4d3 30%, #f2ede3 60%, #f9f6f0 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 16px;
+            color: var(--text);
+            line-height: 1.7;
+        }
+
+        .container {
+            max-width: 960px;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow), 0 1px 3px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #3a2f1f 0%, #5a3e2b 40%, #3a2f1f 100%);
+            color: #f5e6d3;
+            padding: 20px 28px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .header h1 {
+            font-size: 1.7em;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .header .subtitle {
+            font-size: 0.95em;
+            opacity: 0.85;
+            margin-top: 4px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 0.03em;
+        }
+        .header .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.13);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 20px;
+            padding: 3px 14px;
+            font-size: 0.8em;
+            margin-top: 8px;
+            letter-spacing: 0.05em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background: #fdfcf8;
+            border-bottom: 1px solid var(--border);
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 420px;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: #fefefc;
+            box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 20px;
+            background: #fdfbf6;
+            border-bottom: 1px solid var(--border);
+        }
+        .controls button {
+            font-family: inherit;
+            font-size: 0.9em;
+            padding: 9px 18px;
+            border-radius: 25px;
+            border: 1.5px solid #c9bda8;
+            background: var(--btn-bg);
+            color: #3a2f1f;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .controls button:hover {
+            background: var(--btn-hover);
+            border-color: #b0a080;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .controls button:active {
+            transform: scale(0.96);
+            background: #e8dfcf;
+        }
+        .controls button.primary {
+            background: #c0392b;
+            color: #fff;
+            border-color: #a93226;
+            font-weight: 600;
+        }
+        .controls button.primary:hover {
+            background: #d44637;
+            border-color: #b9352a;
+            box-shadow: 0 3px 12px rgba(192, 57, 43, 0.25);
+        }
+        .controls button.active-btn {
+            background: #2c3e50;
+            color: #fff;
+            border-color: #1a252f;
+        }
+        .speed-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .speed-group input[type="range"] {
+            width: 90px;
+            accent-color: #c0392b;
+            cursor: pointer;
+        }
+        .speed-label {
+            min-width: 38px;
+            text-align: center;
+            font-weight: 600;
+            color: #3a2f1f;
+            font-size: 0.85em;
+        }
+
+        .info-section {
+            padding: 24px 28px 28px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 700px) {
+            .info-section {
+                grid-template-columns: 1fr;
+            }
+        }
+        .info-card {
+            background: #fefefc;
+            border: 1px solid #e8e0d3;
+            border-radius: 14px;
+            padding: 18px 20px;
+            transition: all 0.2s ease;
+        }
+        .info-card:hover {
+            box-shadow: 0 3px 14px rgba(0, 0, 0, 0.06);
+            border-color: #d0c4af;
+        }
+        .info-card h3 {
+            font-size: 1.05em;
+            color: #5a3e2b;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8dcc8;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .info-card h3 .icon {
+            font-size: 1.3em;
+        }
+        .info-card p,
+        .info-card li {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            line-height: 1.75;
+        }
+        .info-card ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .info-card ul li {
+            padding-left: 20px;
+            position: relative;
+            margin-bottom: 4px;
+        }
+        .info-card ul li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: #c0392b;
+            font-size: 0.75em;
+            top: 3px;
+        }
+        .pairing-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85em;
+            margin-top: 6px;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .pairing-table th,
+        .pairing-table td {
+            padding: 7px 10px;
+            text-align: center;
+            border: 1px solid #e8e0d3;
+        }
+        .pairing-table th {
+            background: #f8f3e9;
+            font-weight: 600;
+            color: #5a3e2b;
+            font-size: 0.8em;
+            letter-spacing: 0.04em;
+        }
+        .pairing-table .dna-base {
+            background: #eaf6fd;
+            font-weight: 600;
+        }
+        .pairing-table .rna-base {
+            background: #fdf2f8;
+            font-weight: 600;
+            color: #8e44ad;
+        }
+        .pairing-table .arrow-cell {
+            font-size: 1.3em;
+            color: #c0392b;
+            font-weight: bold;
+        }
+
+        .legend-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            padding: 10px 20px 14px;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-dot {
+            width: 13px;
+            height: 13px;
+            border-radius: 50%;
+            display: inline-block;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.75em;
+            color: #aaa;
+            padding: 10px 20px 16px;
+            letter-spacing: 0.03em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧬 DNA 转录为 mRNA</h1>
+            <div class="subtitle">高中生物 · 必修二 · 基因的表达</div>
+            <span class="badge">📖 交互式动画演示</span>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="mainCanvas" width="900" height="500" aria-label="DNA转录为mRNA的动画演示"></canvas>
+        </div>
+
+        <div class="legend-bar">
+            <span class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> 腺嘌呤 A</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#3498db;"></span> 胸腺嘧啶 T</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#2ecc71;"></span> 胞嘧啶 C</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#f39c12;"></span> 鸟嘌呤 G</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#9b59b6;"></span> 尿嘧啶 U（RNA）</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#c0392b; width:16px;height:10px;border-radius:5px;"></span> RNA聚合酶</span>
+        </div>
+
+        <div class="controls">
+            <button id="btnPlay" class="primary" title="播放/暂停动画">▶ 播放</button>
+            <button id="btnRestart" title="重新开始">↺ 重新开始</button>
+            <button id="btnStep" title="逐步演示（单步）">⏭ 单步</button>
+            <div class="speed-group">
+                <span>🐢 速度:</span>
+                <input type="range" id="speedSlider" min="0.3" max="3" step="0.1" value="1" title="调节动画速度">
+                <span class="speed-label" id="speedLabel">1×</span>
+            </div>
+            <span id="progressText" style="font-size:0.85em;color:#5c4f3a;font-weight:500;min-width:80px;text-align:center;"></span>
+        </div>
+
+        <div class="info-section">
+            <div class="info-card">
+                <h3><span class="icon">📝</span> 转录过程概述</h3>
+                <p><strong>转录（Transcription）</strong>是指以DNA的一条链（<em>模板链</em>）为模板，按照碱基互补配对原则，在<strong>RNA聚合酶</strong>的催化下合成mRNA的过程。这一过程发生在<strong>细胞核</strong>中，是基因表达的第一步。</p>
+                <ul style="margin-top:8px;">
+                    <li><strong>① 起始：</strong>RNA聚合酶识别并结合到DNA的<em>启动子</em>区域，DNA双链局部解开。</li>
+                    <li><strong>② 延伸：</strong>RNA聚合酶沿模板链3'→5'方向移动，游离的核糖核苷酸与模板链碱基配对，mRNA从5'→3'方向延伸。</li>
+                    <li><strong>③ 终止：</strong>RNA聚合酶到达<em>终止子</em>序列，转录停止，mRNA释放，DNA双链恢复螺旋。</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3><span class="icon">🔬</span> 碱基互补配对规则</h3>
+                <p>转录时，核糖核苷酸与DNA模板链上的碱基按以下规则配对：</p>
+                <table class="pairing-table">
+                    <thead>
+                        <tr><th>DNA模板链</th><th></th><th>mRNA</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="dna-base">A（腺嘌呤）</td><td class="arrow-cell">→</td><td class="rna-base">U（尿嘧啶）</td></tr>
+                        <tr><td class="dna-base">T（胸腺嘧啶）</td><td class="arrow-cell">→</td><td class="rna-base">A（腺嘌呤）</td></tr>
+                        <tr><td class="dna-base">C（胞嘧啶）</td><td class="arrow-cell">→</td><td class="rna-base">G（鸟嘌呤）</td></tr>
+                        <tr><td class="dna-base">G（鸟嘌呤）</td><td class="arrow-cell">→</td><td class="rna-base">C（胞嘧啶）</td></tr>
+                    </tbody>
+                </table>
+                <p style="margin-top:8px;font-size:0.82em;color:#8e44ad;">⚠ 注意：RNA中用<strong>尿嘧啶(U)</strong>代替了DNA中的胸腺嘧啶(T)。</p>
+            </div>
+            <div class="info-card">
+                <h3><span class="icon">🧪</span> 关键概念</h3>
+                <ul>
+                    <li><strong>模板链（反义链）：</strong>DNA双链中被RNA聚合酶读取、用作转录模板的那条链（3'→5'方向）。</li>
+                    <li><strong>编码链（有义链）：</strong>DNA双链中不被转录的那条链，其序列与mRNA一致（仅T→U差异）。</li>
+                    <li><strong>RNA聚合酶：</strong>催化转录的关键酶，负责解开DNA双链并催化磷酸二酯键的形成。</li>
+                    <li><strong>原料：</strong>四种游离的核糖核苷酸——ATP、UTP、CTP、GTP。</li>
+                    <li><strong>方向：</strong>mRNA合成方向为<strong>5'→3'</strong>（即模板链被读取方向为3'→5'）。</li>
+                </ul>
+            </div>
+            <div class="info-card">
+                <h3><span class="icon">💡</span> 动画中的DNA序列</h3>
+                <p style="font-size:0.85em;">本动画演示的DNA序列（12对碱基）：</p>
+                <p style="font-size:0.82em;font-family:'Courier New',monospace;background:#fdfcf7;padding:8px 12px;border-radius:8px;border:1px solid #e8e0d3;">
+                    <strong>编码链 (5'→3')：</strong><span style="color:#3498db;">A T G C C T A G G A T</span><br>
+                    <strong>模板链 (3'→5')：</strong><span style="color:#e74c3c;">T A C G G A T C C T A</span><br>
+                    <strong>mRNA (5'→3')：</strong><span style="color:#9b59b6;">A U G C C U A G G A U</span>
+                </p>
+                <p style="margin-top:6px;font-size:0.8em;color:#888;">观察：mRNA序列与编码链一致（T→U），与模板链互补配对。</p>
+            </div>
+        </div>
+        <footer>
+            📚 高中生物必修二 · 基因的表达 · 转录过程演示 &nbsp;|&nbsp; 拖动速度滑块调节播放速率
+        </footer>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+
+            // ─────────────────────────────────────
+            // DOM元素
+            // ─────────────────────────────────────
+            const btnPlay = document.getElementById('btnPlay');
+            const btnRestart = document.getElementById('btnRestart');
+            const btnStep = document.getElementById('btnStep');
+            const speedSlider = document.getElementById('speedSlider');
+            const speedLabel = document.getElementById('speedLabel');
+            const progressText = document.getElementById('progressText');
+
+            // ─────────────────────────────────────
+            // 碱基序列定义
+            // ─────────────────────────────────────
+            // 模板链 3'→5'（RNA聚合酶沿此链从3'端向5'端移动，即从左向右）
+            const templateStrand = ['T', 'A', 'C', 'G', 'G', 'A', 'T', 'C', 'C', 'T', 'A'];
+            // 编码链 5'→3'（与mRNA一致，T→U）
+            const codingStrand = ['A', 'T', 'G', 'C', 'C', 'T', 'A', 'G', 'G', 'A', 'T'];
+            // mRNA 5'→3'（与模板链互补）
+            const mrnaSequence = ['A', 'U', 'G', 'C', 'C', 'U', 'A', 'G', 'G', 'A', 'U'];
+
+            const NUM_BP = templateStrand.length; // 11对碱基（演示用）
+
+            // ─────────────────────────────────────
+            // 布局参数
+            // ─────────────────────────────────────
+            const bpStartX = 100; // 第一个碱基对x坐标
+            const bpEndX = 760; // 最后一个碱基对x坐标
+            const bpSpacing = (bpEndX - bpStartX) / (NUM_BP - 1); // 约66px间距
+            const codingY = 140; // 编码链y
+            const templateY = 245; // 模板链y
+            const mrnaBaseY = 320; // mRNA基础y（远离模板链后）
+            const bpGap = templateY - codingY; // 碱基对间距约105px
+
+            // 计算每个碱基对的x坐标
+            const bpX = [];
+            for (let i = 0; i < NUM_BP; i++) {
+                bpX.push(bpStartX + i * bpSpacing);
+            }
+
+            // ─────────────────────────────────────
+            // 颜色定义
+            // ─────────────────────────────────────
+            function getBaseColor(base, isRNA = false) {
+                switch (base) {
+                    case 'A':
+                        return '#e74c3c';
+                    case 'T':
+                        return '#3498db';
+                    case 'C':
+                        return '#2ecc71';
+                    case 'G':
+                        return '#f39c12';
+                    case 'U':
+                        return '#9b59b6';
+                    default:
+                        return '#888';
+                }
+            }
+
+            function getBaseTextColor(base) {
+                return '#fff';
+            }
+
+            // ─────────────────────────────────────
+            // 动画状态
+            // ─────────────────────────────────────
+            const ENZYME_WIDTH = 75;
+            const ENZYME_HEIGHT = 55;
+            const ENZYME_INFLUENCE = 50; // 酶影响范围（碱基对在此范围内解开）
+
+            let enzymeX = bpStartX - bpSpacing; // 酶当前x位置（从左向右移动）
+            const enzymeStartX = bpStartX - bpSpacing * 0.8;
+            const enzymeEndX = bpEndX + bpSpacing * 0.6;
+
+            let transcribedCount = 0; // 已转录的碱基对数量（0到NUM_BP）
+            let mrnaReleased = false; // mRNA是否已释放
+            let releaseAlpha = 1; // mRNA释放时的透明度
+            let releaseOffsetY = 0; // mRNA释放时向下偏移
+            let isPlaying = true;
+            let speedMultiplier = 1.0;
+            let cyclePhase = 'transcribing'; // 'transcribing' | 'releasing' | 'resetting' | 'pausing'
+            let pauseTimer = 0;
+            let releaseTimer = 0;
+            let resetTimer = 0;
+
+            // 逐步模式
+            let stepMode = false;
+            let stepTriggered = false;
+
+            function resetAll() {
+                enzymeX = enzymeStartX;
+                transcribedCount = 0;
+                mrnaReleased = false;
+                releaseAlpha = 1;
+                releaseOffsetY = 0;
+                cyclePhase = 'transcribing';
+                pauseTimer = 0;
+                releaseTimer = 0;
+                resetTimer = 0;
+                stepTriggered = false;
+            }
+
+            // ─────────────────────────────────────
+            // 播放控制
+            // ─────────────────────────────────────
+            function togglePlay() {
+                if (cyclePhase === 'pausing' && !isPlaying) {
+                    // 从暂停中恢复
+                }
+                isPlaying = !isPlaying;
+                stepMode = false;
+                updatePlayButton();
+            }
+
+            function restart() {
+                resetAll();
+                isPlaying = true;
+                stepMode = false;
+                updatePlayButton();
+            }
+
+            function doStep() {
+                if (!isPlaying) {
+                    // 如果暂停中，手动推进一帧
+                    stepTriggered = true;
+                    stepMode = true;
+                    updatePlayButton();
+                }
+            }
+
+            function updatePlayButton() {
+                if (stepMode || !isPlaying) {
+                    btnPlay.textContent = '▶ 播放';
+                    btnPlay.classList.remove('active-btn');
+                    btnPlay.classList.add('primary');
+                } else {
+                    btnPlay.textContent = '⏸ 暂停';
+                    btnPlay.classList.add('active-btn');
+                    btnPlay.classList.remove('primary');
+                }
+            }
+
+            btnPlay.addEventListener('click', togglePlay);
+            btnRestart.addEventListener('click', restart);
+            btnStep.addEventListener('click', doStep);
+            speedSlider.addEventListener('input', () => {
+                speedMultiplier = parseFloat(speedSlider.value);
+                speedLabel.textContent = speedMultiplier.toFixed(1) + '×';
+            });
+
+            // 初始按钮状态
+            updatePlayButton();
+            speedLabel.textContent = '1.0×';
+
+            // ─────────────────────────────────────
+            // 获取mRNA核苷酸的y坐标（根据与酶的距离动态计算）
+            // ─────────────────────────────────────
+            function getMrnaNucleotideY(index) {
+                if (index >= transcribedCount) return mrnaBaseY + 60; // 尚未转录，隐藏在下方
+                if (mrnaReleased) return mrnaBaseY + releaseOffsetY;
+
+                const nuclX = bpX[index];
+                const dist = enzymeX - nuclX; // 酶在核苷酸右边时dist为正
+                const maxOffset = 55; // mRNA与模板链的最大距离
+                const decayConst = 70;
+                let offset;
+                if (dist < 0) {
+                    offset = 0;
+                } else if (dist < 15) {
+                    offset = dist * (8 / 15); // 很近时缓慢增加
+                } else {
+                    offset = maxOffset * (1 - Math.exp(-(dist - 15) / decayConst));
+                }
+                offset = Math.min(offset, maxOffset);
+                return templateY + 12 + offset;
+            }
+
+            // ─────────────────────────────────────
+            // 绘制函数
+            // ─────────────────────────────────────
+            function drawDNABackbone(y, color = '#4a3728', lineWidth = 3.5) {
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(bpStartX - 50, y);
+                ctx.lineTo(bpEndX + 50, y);
+                ctx.stroke();
+
+                // 螺旋纹理效果
+                ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([8, 18]);
+                ctx.beginPath();
+                ctx.moveTo(bpStartX - 50, y - 2);
+                ctx.lineTo(bpEndX + 50, y - 2);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            function drawBaseBlock(x, y, base, isTemplate = false, isRNA = false, alpha = 1) {
+                const size = 22;
+                const color = getBaseColor(base, isRNA);
+                ctx.save();
+                ctx.globalAlpha = alpha;
+
+                // 主体圆角矩形
+                const rx = x - size / 2;
+                const ry = y - size / 2;
+                const radius = 5;
+                ctx.fillStyle = color;
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(rx + radius, ry);
+                ctx.lineTo(rx + size - radius, ry);
+                ctx.quadraticCurveTo(rx + size, ry, rx + size, ry + radius);
+                ctx.lineTo(rx + size, ry + size - radius);
+                ctx.quadraticCurveTo(rx + size, ry + size, rx + size - radius, ry + size);
+                ctx.lineTo(rx + radius, ry + size);
+                ctx.quadraticCurveTo(rx, ry + size, rx, ry + size - radius);
+                ctx.lineTo(rx, ry + radius);
+                ctx.quadraticCurveTo(rx, ry, rx + radius, ry);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 字母
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 13px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.25)';
+                ctx.shadowBlur = 2;
+                ctx.fillText(base, x, y);
+                ctx.shadowBlur = 0;
+
+                ctx.restore();
+            }
+
+            function drawHydrogenBond(x, yTop, yBot, isBroken = false) {
+                if (isBroken) {
+                    ctx.setLineDash([4, 6]);
+                    ctx.strokeStyle = 'rgba(180,160,140,0.35)';
+                    ctx.lineWidth = 1;
+                } else {
+                    ctx.setLineDash([3, 4]);
+                    ctx.strokeStyle = 'rgba(140,120,100,0.55)';
+                    ctx.lineWidth = 1.8;
+                }
+                ctx.beginPath();
+                ctx.moveTo(x, yTop + 11);
+                ctx.lineTo(x, yBot - 11);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            function drawRNAPolymerase(x) {
+                const ex = x;
+                const ey = (codingY + templateY) / 2;
+                const hw = ENZYME_WIDTH / 2;
+                const hh = ENZYME_HEIGHT / 2;
+
+                ctx.save();
+                // 光晕
+                const glowGrad = ctx.createRadialGradient(ex, ey, hw * 0.4, ex, ey, hw * 1.6);
+                glowGrad.addColorStop(0, 'rgba(220,80,60,0.3)');
+                glowGrad.addColorStop(1, 'rgba(220,80,60,0)');
+                ctx.fillStyle = glowGrad;
+                ctx.beginPath();
+                ctx.arc(ex, ey, hw * 1.6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 主体椭圆
+                const bodyGrad = ctx.createLinearGradient(ex - hw, ey - hh, ex + hw, ey + hh);
+                bodyGrad.addColorStop(0, '#d44637');
+                bodyGrad.addColorStop(0.3, '#c0392b');
+                bodyGrad.addColorStop(0.7, '#a33024');
+                bodyGrad.addColorStop(1, '#8b1f15');
+                ctx.fillStyle = bodyGrad;
+                ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.ellipse(ex, ey, hw, hh, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // 内部高光
+                const innerGrad = ctx.createRadialGradient(ex - hw * 0.2, ey - hh * 0.3, hw * 0.1, ex, ey, hw * 0.7);
+                innerGrad.addColorStop(0, 'rgba(255,255,255,0.35)');
+                innerGrad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = innerGrad;
+                ctx.beginPath();
+                ctx.ellipse(ex, ey, hw * 0.7, hh * 0.7, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 标签
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 11px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                ctx.shadowBlur = 3;
+                ctx.fillText('RNA聚合酶', ex, ey);
+                ctx.shadowBlur = 0;
+
+                // 移动方向箭头
+                const arrowX = ex + hw + 8;
+                const arrowY = ey;
+                ctx.fillStyle = '#c0392b';
+                ctx.strokeStyle = '#c0392b';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(arrowX - 8, arrowY - 7);
+                ctx.lineTo(arrowX + 6, arrowY);
+                ctx.lineTo(arrowX - 8, arrowY + 7);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            function drawNucleotidePool() {
+                const poolY = H - 55;
+                const poolX = bpStartX + 20;
+                const poolWidth = bpEndX - bpStartX - 40;
+
+                // 池子背景
+                ctx.fillStyle = 'rgba(240,235,225,0.5)';
+                ctx.strokeStyle = 'rgba(180,165,145,0.5)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 3]);
+                ctx.beginPath();
+                ctx.roundRect(poolX, poolY - 15, poolWidth, 38, 10);
+                ctx.fill();
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                ctx.fillStyle = '#8c7b65';
+                ctx.font = '11px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('游离核糖核苷酸池 (ATP, UTP, CTP, GTP)', poolX + poolWidth / 2, poolY - 22);
+
+                // 小核苷酸图标
+                const nuclTypes = ['A', 'U', 'C', 'G'];
+                const miniSize = 15;
+                for (let i = 0; i < 16; i++) {
+                    const nx = poolX + 25 + (i % 8) * (poolWidth / 8.5);
+                    const ny = poolY + (Math.floor(i / 8)) * 16 - 2;
+                    const base = nuclTypes[i % 4];
+                    ctx.fillStyle = getBaseColor(base, true);
+                    ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(nx - miniSize / 2, ny - miniSize / 2, miniSize, miniSize, 3);
+                    ctx.fill();
+                    ctx.stroke();
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 9px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(base, nx, ny);
+                }
+            }
+
+            function drawLabels() {
+                // 编码链标签
+                ctx.fillStyle = '#5c4f3a';
+                ctx.font = 'bold 12px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'right';
+                ctx.fillText('编码链 (5\'→3\')', bpStartX - 15, codingY - 22);
+
+                // 模板链标签
+                ctx.fillText('模板链 (3\'→5\')', bpStartX - 15, templateY + 22);
+
+                // mRNA标签
+                if (transcribedCount > 0 && !mrnaReleased) {
+                    const firstMrnaY = getMrnaNucleotideY(0);
+                    ctx.fillStyle = '#9b59b6';
+                    ctx.font = 'bold 12px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText('mRNA (5\'→3\')', bpStartX - 15, firstMrnaY);
+                }
+
+                // 5'和3'标记
+                ctx.fillStyle = '#888';
+                ctx.font = 'italic 11px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText("5'", bpStartX - 35, codingY - 5);
+                ctx.fillText("3'", bpEndX + 35, codingY - 5);
+                ctx.fillText("3'", bpStartX - 35, templateY + 5);
+                ctx.fillText("5'", bpEndX + 35, templateY + 5);
+
+                if (transcribedCount > 0 && !mrnaReleased) {
+                    ctx.fillStyle = '#9b59b6';
+                    ctx.fillText("5'", bpStartX - 35, getMrnaNucleotideY(0) - 3);
+                    if (transcribedCount >= 2) {
+                        const lastIdx = transcribedCount - 1;
+                        ctx.fillText("3'", bpX[lastIdx] + 28, getMrnaNucleotideY(lastIdx) + 3);
+                    }
+                }
+            }
+
+            function drawDirectionArrow() {
+                // 转录方向大箭头（在酶下方）
+                if (cyclePhase === 'transcribing' && transcribedCount < NUM_BP) {
+                    const arrowY = templateY + 80;
+                    const arrowStartX = enzymeX - 40;
+                    const arrowEndX = enzymeX + 40;
+                    ctx.strokeStyle = 'rgba(192,57,43,0.6)';
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([6, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(arrowStartX, arrowY);
+                    ctx.lineTo(arrowEndX, arrowY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    // 箭头尖
+                    ctx.fillStyle = 'rgba(192,57,43,0.7)';
+                    ctx.beginPath();
+                    ctx.moveTo(arrowEndX + 8, arrowY);
+                    ctx.lineTo(arrowEndX - 4, arrowY - 7);
+                    ctx.lineTo(arrowEndX - 4, arrowY + 7);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = '#c0392b';
+                    ctx.font = '11px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('转录方向 →', enzymeX, arrowY + 18);
+                }
+            }
+
+            // ─────────────────────────────────────
+            // 主绘制
+            // ─────────────────────────────────────
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+
+                // 背景网格
+                ctx.fillStyle = '#fefefc';
+                ctx.fillRect(0, 0, W, H);
+                ctx.strokeStyle = 'rgba(0,0,0,0.025)';
+                ctx.lineWidth = 1;
+                for (let gx = 0; gx < W; gx += 30) {
+                    ctx.beginPath();
+                    ctx.moveTo(gx, 0);
+                    ctx.lineTo(gx, H);
+                    ctx.stroke();
+                }
+                for (let gy = 0; gy < H; gy += 30) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, gy);
+                    ctx.lineTo(W, gy);
+                    ctx.stroke();
+                }
+
+                // 细胞核虚线边框
+                ctx.strokeStyle = 'rgba(120,100,80,0.3)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 12]);
+                ctx.beginPath();
+                ctx.roundRect(25, 18, W - 50, H - 80, 16);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(120,100,80,0.5)';
+                ctx.font = '11px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('细胞核', 38, 40);
+
+                // 绘制DNA骨架
+                drawDNABackbone(codingY, '#5a4030', 3.5);
+                drawDNABackbone(templateY, '#4a3525', 3.5);
+
+                // 绘制碱基对和氢键
+                for (let i = 0; i < NUM_BP; i++) {
+                    const x = bpX[i];
+                    const isInEnzymeRange = Math.abs(enzymeX - x) < ENZYME_INFLUENCE;
+                    const isTranscribed = i < transcribedCount;
+                    const isBeingTranscribed = (i === transcribedCount) && isInEnzymeRange && cyclePhase ===
+                        'transcribing';
+
+                    // 氢键（在酶影响范围内断开）
+                    const bondBroken = isInEnzymeRange || (isTranscribed && Math.abs(enzymeX - x) < ENZYME_INFLUENCE *
+                        1.6);
+                    drawHydrogenBond(x, codingY, templateY, bondBroken && cyclePhase === 'transcribing');
+
+                    // 编码链碱基
+                    let codingAlpha = 1;
+                    if (isInEnzymeRange && cyclePhase === 'transcribing') codingAlpha = 0.55;
+                    drawBaseBlock(x, codingY, codingStrand[i], false, false, codingAlpha);
+
+                    // 模板链碱基
+                    drawBaseBlock(x, templateY, templateStrand[i], true, false, 1);
+
+                    // mRNA核苷酸（已转录的）
+                    if (i < transcribedCount && !mrnaReleased) {
+                        const mrnaY = getMrnaNucleotideY(i);
+                        drawBaseBlock(x, mrnaY, mrnaSequence[i], false, true, 1);
+                    }
+                }
+
+                // 绘制mRNA骨架连线（已转录核苷酸之间的磷酸二酯键）
+                if (transcribedCount >= 2 && !mrnaReleased) {
+                    ctx.strokeStyle = '#9b59b6';
+                    ctx.lineWidth = 2.5;
+                    ctx.lineCap = 'round';
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    const firstY = getMrnaNucleotideY(0);
+                    ctx.moveTo(bpX[0], firstY);
+                    for (let i = 1; i < transcribedCount; i++) {
+                        const ny = getMrnaNucleotideY(i);
+                        ctx.lineTo(bpX[i], ny);
+                    }
+                    ctx.stroke();
+
+                    // mRNA标签小箭头在3'端
+                    if (transcribedCount > 0) {
+                        const lastIdx = transcribedCount - 1;
+                        const lastY = getMrnaNucleotideY(lastIdx);
+                        ctx.fillStyle = '#9b59b6';
+                        ctx.font = 'bold 10px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                        ctx.textAlign = 'left';
+                        ctx.fillText("3'", bpX[lastIdx] + 14, lastY + 2);
+                    }
+                    if (transcribedCount > 0) {
+                        const firstY2 = getMrnaNucleotideY(0);
+                        ctx.fillStyle = '#9b59b6';
+                        ctx.font = 'bold 10px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                        ctx.textAlign = 'right';
+                        ctx.fillText("5'", bpX[0] - 14, firstY2 + 2);
+                    }
+                }
+
+                // 释放后的mRNA
+                if (mrnaReleased && releaseAlpha > 0.02) {
+                    const relY = mrnaBaseY + releaseOffsetY;
+                    ctx.globalAlpha = releaseAlpha;
+                    ctx.strokeStyle = '#9b59b6';
+                    ctx.lineWidth = 2.5;
+                    ctx.lineCap = 'round';
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(bpX[0], relY);
+                    for (let i = 1; i < NUM_BP; i++) {
+                        ctx.lineTo(bpX[i], relY);
+                    }
+                    ctx.stroke();
+                    for (let i = 0; i < NUM_BP; i++) {
+                        drawBaseBlock(bpX[i], relY, mrnaSequence[i], false, true, 1);
+                    }
+                    ctx.fillStyle = '#9b59b6';
+                    ctx.font = 'bold 11px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText("5'", bpX[0] - 14, relY);
+                    ctx.textAlign = 'left';
+                    ctx.fillText("3'", bpX[NUM_BP - 1] + 14, relY);
+                    ctx.fillStyle = '#9b59b6';
+                    ctx.font = 'italic 12px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('mRNA（已释放，将通过核孔进入细胞质）', (bpX[0] + bpX[NUM_BP - 1]) / 2, relY - 30);
+                    ctx.globalAlpha = 1;
+                }
+
+                // 绘制RNA聚合酶
+                if (cyclePhase === 'transcribing' || cyclePhase === 'releasing') {
+                    const enzymeDrawX = (cyclePhase === 'releasing') ? enzymeEndX : enzymeX;
+                    drawRNAPolymerase(enzymeDrawX);
+                }
+
+                // 游离核苷酸池
+                drawNucleotidePool();
+
+                // 标签
+                drawLabels();
+
+                // 方向箭头
+                drawDirectionArrow();
+
+                // 标题区域
+                ctx.fillStyle = '#3a2f1f';
+                ctx.font = 'bold 14px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                let phaseText = '';
+                switch (cyclePhase) {
+                    case 'transcribing':
+                        phaseText = '🔬 转录进行中... RNA聚合酶沿模板链移动';
+                        break;
+                    case 'releasing':
+                        phaseText = '📤 mRNA正在释放...';
+                        break;
+                    case 'resetting':
+                        phaseText = '🔄 准备下一轮转录...';
+                        break;
+                    case 'pausing':
+                        phaseText = '⏸ 转录完成，等待下一轮';
+                        break;
+                }
+                ctx.fillText(phaseText, W / 2, H - 12);
+
+                // 转录进度指示
+                if (cyclePhase === 'transcribing') {
+                    const progressPct = Math.round((transcribedCount / NUM_BP) * 100);
+                    progressText.textContent = `进度: ${progressPct}% (${transcribedCount}/${NUM_BP})`;
+                } else if (cyclePhase === 'releasing') {
+                    progressText.textContent = `mRNA释放中...`;
+                } else if (cyclePhase === 'resetting') {
+                    progressText.textContent = `重置中...`;
+                } else {
+                    progressText.textContent = `就绪`;
+                }
+            }
+
+            // ─────────────────────────────────────
+            // 动画更新
+            // ─────────────────────────────────────
+            const BASE_SPEED = 58; // 基础速度：像素/秒（每个碱基对约1.14秒）
+            let lastTime = null;
+
+            function update(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000; // 秒
+                if (dt <= 0) dt = 0.016;
+                if (dt > 0.1) dt = 0.1; // 防止大帧跳跃
+                lastTime = timestamp;
+
+                if (!isPlaying && !stepTriggered) {
+                    draw();
+                    requestAnimationFrame(update);
+                    return;
+                }
+
+                const effectiveSpeed = BASE_SPEED * speedMultiplier;
+                let frameDt = dt;
+                if (stepTriggered) {
+                    frameDt = 0.04; // 单步模式：固定小步长
+                    stepTriggered = false;
+                }
+
+                switch (cyclePhase) {
+                    case 'transcribing':
+                        if (transcribedCount < NUM_BP) {
+                            enzymeX += effectiveSpeed * frameDt;
+                            // 检查酶是否经过新的碱基对
+                            while (transcribedCount < NUM_BP && enzymeX >= bpX[transcribedCount]) {
+                                transcribedCount++;
+                            }
+                            // 如果酶到达终点
+                            if (enzymeX >= enzymeEndX && transcribedCount >= NUM_BP) {
+                                enzymeX = enzymeEndX;
+                                cyclePhase = 'releasing';
+                                releaseTimer = 0;
+                            }
+                        } else if (enzymeX < enzymeEndX) {
+                            enzymeX += effectiveSpeed * frameDt;
+                            if (enzymeX >= enzymeEndX) {
+                                enzymeX = enzymeEndX;
+                                cyclePhase = 'releasing';
+                                releaseTimer = 0;
+                            }
+                        } else {
+                            cyclePhase = 'releasing';
+                            releaseTimer = 0;
+                        }
+                        break;
+
+                    case 'releasing':
+                        releaseTimer += frameDt;
+                        releaseAlpha = Math.max(0, 1 - releaseTimer / 1.8);
+                        releaseOffsetY = releaseTimer * 35;
+                        if (releaseTimer > 2.2) {
+                            cyclePhase = 'resetting';
+                            resetTimer = 0;
+                            mrnaReleased = true;
+                            releaseAlpha = 0;
+                        }
+                        break;
+
+                    case 'resetting':
+                        resetTimer += frameDt;
+                        const resetProgress = Math.min(1, resetTimer / 1.6);
+                        enzymeX = enzymeEndX - (enzymeEndX - enzymeStartX) * resetProgress;
+                        releaseOffsetY = Math.max(0, releaseOffsetY - frameDt * 50);
+                        if (resetProgress >= 1) {
+                            enzymeX = enzymeStartX;
+                            transcribedCount = 0;
+                            mrnaReleased = false;
+                            releaseAlpha = 1;
+                            releaseOffsetY = 0;
+                            cyclePhase = 'pausing';
+                            pauseTimer = 0;
+                        }
+                        break;
+
+                    case 'pausing':
+                        pauseTimer += frameDt;
+                        if (pauseTimer > 1.5) {
+                            cyclePhase = 'transcribing';
+                            transcribedCount = 0;
+                            mrnaReleased = false;
+                            releaseAlpha = 1;
+                            releaseOffsetY = 0;
+                            enzymeX = enzymeStartX;
+                        }
+                        break;
+                }
+
+                draw();
+                requestAnimationFrame(update);
+            }
+
+            // ─────────────────────────────────────
+            // 启动
+            // ─────────────────────────────────────
+            resetAll();
+            enzymeX = enzymeStartX;
+            draw();
+            requestAnimationFrame(update);
+
+            // ─────────────────────────────────────
+            // 响应窗口大小变化（缩放Canvas显示）
+            // ─────────────────────────────────────
+            function handleResize() {
+                const wrapper = document.querySelector('.canvas-wrapper');
+                if (wrapper && canvas) {
+                    const maxWidth = wrapper.clientWidth - 16;
+                    if (maxWidth < W) {
+                        canvas.style.width = maxWidth + 'px';
+                        canvas.style.height = 'auto';
+                    } else {
+                        canvas.style.width = W + 'px';
+                        canvas.style.height = 'auto';
+                    }
+                }
+            }
+            window.addEventListener('resize', handleResize);
+            handleResize();
+
+            // ─────────────────────────────────────
+            // 键盘快捷键
+            // ─────────────────────────────────────
+            window.addEventListener('keydown', (e) => {
+                switch (e.key.toLowerCase()) {
+                    case ' ':
+                        e.preventDefault();
+                        togglePlay();
+                        break;
+                    case 'r':
+                        if (!e.ctrlKey && !e.metaKey) {
+                            e.preventDefault();
+                            restart();
+                        }
+                        break;
+                    case 's':
+                        if (!e.ctrlKey && !e.metaKey) {
+                            e.preventDefault();
+                            doStep();
+                        }
+                        break;
+                    case 'arrowright':
+                        e.preventDefault();
+                        speedMultiplier = Math.min(3, speedMultiplier + 0.2);
+                        speedSlider.value = speedMultiplier;
+                        speedLabel.textContent = speedMultiplier.toFixed(1) + '×';
+                        break;
+                    case 'arrowleft':
+                        e.preventDefault();
+                        speedMultiplier = Math.max(0.3, speedMultiplier - 0.2);
+                        speedSlider.value = speedMultiplier;
+                        speedLabel.textContent = speedMultiplier.toFixed(1) + '×';
+                        break;
+                }
+            });
+
+            console.log('🧬 DNA转录为mRNA - 交互式演示已就绪');
+            console.log('   ▶ 空格键：播放/暂停');
+            console.log('   ▶ R键：重新开始');
+            console.log('   ▶ S键：单步演示');
+            console.log('   ▶ 左右箭头：调节速度');
+            console.log('   📖 高中生物必修二 · 基因的表达');
+        })();
+    </script>
+</body>
+</html>

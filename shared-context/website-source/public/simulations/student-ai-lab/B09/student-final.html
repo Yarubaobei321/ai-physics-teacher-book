@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, user-scalable=yes">
+  <title>细胞呼吸深度探索 · 高中生物互动课堂</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(165deg, #f5f0e3 0%, #d9e4cc 100%);
+      font-family: 'Segoe UI', 'Roboto', 'Noto Sans', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      color: #2c3a1f;
+    }
+    .container {
+      max-width: 1350px;
+      width: 100%;
+      background: rgba(255, 255, 250, 0.78);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-radius: 3rem;
+      box-shadow: 0 30px 55px rgba(50, 40, 20, 0.12);
+      padding: 2rem 2.5rem;
+      border: 1px solid rgba(155, 185, 125, 0.5);
+    }
+    h1 {
+      font-size: 2.7rem;
+      font-weight: 600;
+      color: #2b4b1a;
+      border-bottom: 4px dashed #a8c98b;
+      padding-bottom: 0.4rem;
+      margin-bottom: 0.3rem;
+    }
+    .subtitle {
+      font-size: 1.2rem;
+      color: #4a6741;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: #ffffffec;
+      border-radius: 2.3rem;
+      padding: 1.9rem 2.2rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 12px 24px rgba(0,0,0,0.04);
+      border: 1px solid #cfdfbc;
+    }
+    h2 {
+      font-size: 1.9rem;
+      font-weight: 550;
+      color: #34572a;
+      margin-bottom: 1.3rem;
+      border-left: 14px solid #96c47c;
+      padding-left: 1.4rem;
+    }
+    .step-nav {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+    .step-btn {
+      background: #eaf3e0;
+      border: 2px solid #b8d99b;
+      padding: 0.8rem 1.5rem;
+      border-radius: 2.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .step-btn.active {
+      background: #6f8f5a;
+      color: white;
+      border-color: #4a6b3a;
+    }
+    .pathway-content {
+      background: #f9fdf5;
+      border-radius: 1.8rem;
+      padding: 1.5rem;
+      border: 1px solid #d0e5ba;
+      margin-top: 0.8rem;
+    }
+    .pathway-step {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem;
+      margin: 0.5rem 0;
+      font-size: 0.95rem;
+    }
+    .metabolite {
+      background: #e2efce;
+      border-radius: 2rem;
+      padding: 0.3rem 0.9rem;
+      font-weight: 500;
+      border: 1px solid #b1cf8a;
+    }
+    .enzyme {
+      background: #f9eec1;
+      border-radius: 2rem;
+      padding: 0.2rem 0.7rem;
+      font-size: 0.8rem;
+      color: #5c4a1f;
+    }
+    .arrow-symbol {
+      color: #5e7a42;
+      font-weight: bold;
+    }
+    .experiment-lab {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+    .lab-bench {
+      flex: 1 1 300px;
+      background: #f4f9ed;
+      border-radius: 2rem;
+      padding: 1.5rem;
+      border: 2px solid #b8d99b;
+    }
+    .quiz-option {
+      background: white;
+      border: 2px solid #c0d8a2;
+      border-radius: 2rem;
+      padding: 0.8rem 1.2rem;
+      margin: 0.6rem 0;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .quiz-option:hover {
+      background: #ecf7e1;
+      border-color: #7aa55b;
+    }
+    .selected-correct {
+      background: #d4edc9 !important;
+      border-color: #4c8b3a !important;
+    }
+    .selected-wrong {
+      background: #fad1d1 !important;
+      border-color: #c44a4a !important;
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      margin: 1rem 0;
+    }
+    canvas {
+      background: #ffffff;
+      border-radius: 2rem;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #c8ddb0;
+    }
+    .quiz-choice {
+      background: white;
+      border: 2px solid #c0d8a2;
+      border-radius: 2rem;
+      padding: 0.9rem 1.3rem;
+      margin: 0.6rem 0;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .quiz-choice:hover {
+      background: #ecf7e1;
+    }
+    .correct-choice {
+      background: #d4edc9 !important;
+      border-color: #4c8b3a !important;
+    }
+    .wrong-choice {
+      background: #fad1d1 !important;
+      border-color: #c44a4a !important;
+    }
+    .celebration {
+      background: linear-gradient(135deg, #f9e56a, #f5c542);
+      border-radius: 2rem;
+      padding: 2rem;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: bold;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.02);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    button {
+      background: #6f8f5a;
+      border: none;
+      color: white;
+      padding: 0.6rem 1.8rem;
+      border-radius: 2.5rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .svg-bench {
+      background: #fff;
+      border-radius: 1.5rem;
+      padding: 0.8rem;
+    }
+    @media (max-width: 700px) {
+      .container {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🌿 细胞呼吸 · 深度探索</h1>
+  <div class="subtitle">🧬 递进式学习 · 虚拟实验 · 科学图表 · 闯关练习</div>
+
+  <!-- 第一部分：生活现象导入 -->
+  <div class="card">
+    <h2>🍃 一、生活现象 · 呼吸之问</h2>
+    <div style="background:#f9fbf5; border-radius:2rem; padding:1.5rem; cursor:pointer;" id="questionBox">
+      <span style="font-size:1.2rem;">🏃 剧烈运动后肌肉为何酸痛？🍞 酵母如何让面团蓬松？</span>
+      <button id="revealBtn" style="margin-left:1rem;">💡 点击思考</button>
+    </div>
+    <div id="answerDisplay" style="display:none; margin-top:1rem; background:#fffde7; padding:1rem; border-radius:1.5rem;">
+      <strong>🔎 答案：</strong>肌肉缺氧进行<strong>无氧呼吸（乳酸发酵）</strong>产生乳酸；酵母菌无氧呼吸产生<strong>CO₂和酒精</strong>。
+    </div>
+  </div>
+
+  <!-- 第二部分：递进式学习呼吸作用步骤 -->
+  <div class="card">
+    <h2>🧪 二、有氧呼吸 · 递进式学习（由简到难）</h2>
+    <p>👇 点击下方按钮，逐步展开每个阶段。建议按顺序学习，从简单的糖酵解开始。</p>
+    <div class="step-nav">
+      <button class="step-btn active" id="btnGlycolysis">🧫 1. 糖酵解</button>
+      <button class="step-btn" id="btnKrebs">🔄 2. 克雷伯氏循环</button>
+      <button class="step-btn" id="btnOxPhos">⚡ 3. 氧化磷酸化</button>
+    </div>
+    <div id="pathwayDisplay" class="pathway-content">
+      <!-- 动态内容 -->
+    </div>
+  </div>
+
+  <!-- 第三部分：沉浸式虚拟实验（保留上一次版本） -->
+  <div class="card">
+    <h2>🔬 三、虚拟实验室 · 探究呼吸作用影响因素</h2>
+    <div class="experiment-lab">
+      <div class="lab-bench">
+        <h3 style="margin-bottom:1rem;">🧪 实验台：探究温度对酵母呼吸的影响</h3>
+        <div class="svg-bench" id="experimentVisual">
+          <svg width="280" height="160" viewBox="0 0 280 160">
+            <rect width="280" height="160" fill="#f4f9ed" rx="12"/>
+            <rect x="30" y="30" width="40" height="80" fill="#b8d99b" rx="8"/>
+            <text x="50" y="75" text-anchor="middle" fill="#2d4a1e" font-size="12">🧴酵母</text>
+            <rect x="110" y="20" width="50" height="70" fill="#f4a261" rx="8"/>
+            <text x="135" y="60" text-anchor="middle" fill="white" font-size="12">🌡️水浴</text>
+            <circle cx="200" cy="60" r="18" fill="#e0e0e0" stroke="#999" stroke-width="2"/>
+            <text x="200" y="65" text-anchor="middle" font-size="12">🎈气球</text>
+          </svg>
+        </div>
+        <div id="experimentQuiz">
+          <p><strong>❓ 第一题：应选择什么实验材料？</strong></p>
+          <div class="quiz-option" data-question="material" data-answer="yeast">🧫 A. 酵母菌液 + 葡萄糖</div>
+          <div class="quiz-option" data-question="material" data-answer="leaf">🍃 B. 新鲜绿叶</div>
+          <div class="quiz-option" data-question="material" data-answer="muscle">💪 C. 肌肉组织匀浆</div>
+          <p style="margin-top:1rem;"><strong>❓ 第二题：如何设置温度梯度？</strong></p>
+          <div class="quiz-option" data-question="temp" data-answer="waterbath">🌡️ A. 不同温度水浴（0°C、25°C、37°C、60°C）</div>
+          <div class="quiz-option" data-question="temp" data-answer="room">🏠 B. 全部放在室温下</div>
+          <p style="margin-top:1rem;"><strong>❓ 第三题：观察什么指标？</strong></p>
+          <div class="quiz-option" data-question="indicator" data-answer="co2">🎈 A. 气球膨胀程度 / 石灰水浑浊度</div>
+          <div class="quiz-option" data-question="indicator" data-answer="color">🎨 B. 溶液颜色变化</div>
+        </div>
+        <button id="submitQuiz" style="margin-top:1rem;">✅ 提交答案 & 模拟实验</button>
+        <div id="quizFeedback" style="margin-top:1rem; padding:0.8rem; border-radius:1rem;"></div>
+      </div>
+      <div class="lab-bench">
+        <h3>📋 实验设计思路</h3>
+        <p>🔹 <strong>控制变量法：</strong>自变量为温度，因变量为呼吸速率（CO₂释放量）。</p>
+        <p>🔹 其他因素如葡萄糖浓度、酵母量需保持一致。</p>
+        <p>🔹 预测：37°C左右呼吸最强，0°C极低，60°C酶变性失活。</p>
+        <div id="simulationResult" style="background:#fff; border-radius:1rem; padding:1rem; margin-top:1rem;">
+          <strong>📊 模拟结果将显示在此处</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第四部分：生活应用 -->
+  <div class="card">
+    <h2>🌍 四、呼吸作用 · 现实应用</h2>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap:1rem;">
+      <div onclick="alert('🍞 面包：酵母无氧呼吸产CO₂，使面团蓬松多孔。')" style="cursor:pointer; background:#f2f8e9; border-radius:1.5rem; padding:1rem; text-align:center;">🍞 面包发酵</div>
+      <div onclick="alert('🍺 酿酒：酵母无氧呼吸产生酒精和CO₂。')" style="cursor:pointer; background:#f2f8e9; border-radius:1.5rem; padding:1rem; text-align:center;">🍷 酿酒工业</div>
+      <div onclick="alert('🏃 运动后肌肉酸痛：乳酸发酵产生乳酸堆积。')" style="cursor:pointer; background:#f2f8e9; border-radius:1.5rem; padding:1rem; text-align:center;">🦵 运动恢复</div>
+      <div onclick="alert('🥒 泡菜腌制：乳酸菌进行乳酸发酵。')" style="cursor:pointer; background:#f2f8e9; border-radius:1.5rem; padding:1rem; text-align:center;">🥬 泡菜腌制</div>
+      <div onclick="alert('🌾 粮食贮藏：降低温度和湿度，抑制呼吸作用减少消耗。')" style="cursor:pointer; background:#f2f8e9; border-radius:1.5rem; padding:1rem; text-align:center;">🌽 粮食贮藏</div>
+      <div onclick="alert('🏊 有氧运动：持续供氧促进有氧呼吸，高效消耗脂肪。')" style="cursor:pointer; background:#f2f8e9; border-radius:1.5rem; padding:1rem; text-align:center;">🏊 健身减脂</div>
+    </div>
+  </div>
+
+  <!-- 第五部分：专业科学图表 -->
+  <div class="card">
+    <h2>📈 五、光合作用与呼吸作用 · 影响因素曲线</h2>
+    <p style="margin-bottom:0.8rem;">📊 选择自变量，观察两条曲线变化趋势。图表包含完整标题、坐标轴、图例和实验结论。</p>
+    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+      <label><strong>📌 自变量：</strong></label>
+      <select id="chartFactorSelect" style="padding:0.5rem; border-radius:2rem;">
+        <option value="light">💡 光照强度</option>
+        <option value="co2">💨 CO₂浓度</option>
+        <option value="temp">🌡️ 温度</option>
+      </select>
+      <button id="updateChartBtn">🔄 更新图表</button>
+    </div>
+    <div class="chart-container">
+      <canvas id="bioChart" width="750" height="380" style="width:100%; height:auto;"></canvas>
+    </div>
+    <div id="chartConclusion" style="margin-top:0.8rem; font-weight:500; background:#f0f7e5; padding:1rem; border-radius:1.5rem;"></div>
+  </div>
+
+  <!-- 第六部分：闯关练习 -->
+  <div class="card">
+    <h2>🏆 六、知识闯关 · 5道选择题</h2>
+    <p>📝 请选择你认为正确的答案，完成后点击提交。答对3道及以上即为通关！</p>
+    <div id="quizContainer"></div>
+    <button id="submitQuizBtn" style="margin-top:1.5rem;">📝 提交答案</button>
+    <div id="quizResult" style="margin-top:1rem;"></div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // 第一部分：生活现象问答
+    document.getElementById('revealBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      const ans = document.getElementById('answerDisplay');
+      ans.style.display = ans.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('questionBox').addEventListener('click', function(e) {
+      if (e.target.tagName !== 'BUTTON') {
+        const ans = document.getElementById('answerDisplay');
+        ans.style.display = ans.style.display === 'none' ? 'block' : 'none';
+      }
+    });
+
+    // 第二部分：递进式学习
+    const btnGly = document.getElementById('btnGlycolysis');
+    const btnKrebs = document.getElementById('btnKrebs');
+    const btnOx = document.getElementById('btnOxPhos');
+    const pathwayDiv = document.getElementById('pathwayDisplay');
+
+    const glycolysisHTML = `
+      <h4>🧫 糖酵解 (细胞质基质) — 最简单第一步</h4>
+      <p style="margin-bottom:0.5rem;">📌 葡萄糖在细胞质中分解为丙酮酸，不需要氧气。</p>
+      <div class="pathway-step">
+        <span class="metabolite">葡萄糖 (6C)</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">6-磷酸葡萄糖</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">果糖-1,6-二磷酸</span>
+      </div>
+      <div class="pathway-step">
+        <span class="metabolite">果糖-1,6-二磷酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">2× 甘油醛-3-磷酸 (3C)</span>
+      </div>
+      <div class="pathway-step">
+        <span class="metabolite">甘油醛-3-磷酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">丙酮酸 (3C)</span>
+        <span class="enzyme">(+2ATP, +2NADH)</span>
+      </div>
+      <p style="margin-top:0.8rem;">✅ <strong>净产能：</strong>2ATP + 2NADH。此阶段不需要氧气，是所有呼吸方式共有的步骤。</p>
+    `;
+
+    const krebsHTML = `
+      <h4>🔄 克雷伯氏循环 (线粒体基质) — 中间产物循环</h4>
+      <p style="margin-bottom:0.5rem;">📌 丙酮酸进入线粒体，先转化为乙酰辅酶A，再进入循环。</p>
+      <div class="pathway-step">
+        <span class="metabolite">丙酮酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">乙酰辅酶A (2C)</span>
+        <span class="enzyme">(+NADH, +CO₂)</span>
+      </div>
+      <div class="pathway-step">
+        <span class="metabolite">乙酰辅酶A + 草酰乙酸 (4C)</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">柠檬酸 (6C)</span>
+      </div>
+      <div class="pathway-step">
+        <span class="metabolite">柠檬酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">α-酮戊二酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">琥珀酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">延胡索酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">苹果酸</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">草酰乙酸</span>
+      </div>
+      <p style="margin-top:0.8rem;">✅ <strong>每圈产能：</strong>1ATP + 3NADH + 1FADH₂ + 2CO₂（一圈消耗一个乙酰辅酶A）</p>
+    `;
+
+    const oxPhosHTML = `
+      <h4>⚡ 氧化磷酸化 (线粒体内膜) — 产生大量ATP</h4>
+      <p style="margin-bottom:0.5rem;">📌 NADH和FADH₂通过电子传递链传递电子，建立质子梯度驱动ATP合成。</p>
+      <div class="pathway-step">
+        <span class="metabolite">NADH / FADH₂</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">复合体Ⅰ → 辅酶Q → 复合体Ⅲ → 细胞色素c → 复合体Ⅳ</span>
+      </div>
+      <div class="pathway-step">
+        <span class="metabolite">电子传递</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">泵出H⁺ 形成质子梯度</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">ATP合酶</span>
+        <span class="arrow-symbol">→</span>
+        <span class="metabolite">约34ATP</span>
+      </div>
+      <p style="margin-top:0.8rem;">✅ <strong>关键点：</strong>O₂是最终电子受体，接受电子和H⁺生成H₂O。此阶段产生绝大多数ATP。</p>
+    `;
+
+    function setActive(btn) {
+      [btnGly, btnKrebs, btnOx].forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    btnGly.addEventListener('click', () => {
+      setActive(btnGly);
+      pathwayDiv.innerHTML = glycolysisHTML;
+    });
+    btnKrebs.addEventListener('click', () => {
+      setActive(btnKrebs);
+      pathwayDiv.innerHTML = krebsHTML;
+    });
+    btnOx.addEventListener('click', () => {
+      setActive(btnOx);
+      pathwayDiv.innerHTML = oxPhosHTML;
+    });
+    // 默认显示糖酵解
+    pathwayDiv.innerHTML = glycolysisHTML;
+
+    // 第三部分：虚拟实验室互动选择题
+    const quizOptions = document.querySelectorAll('#experimentQuiz .quiz-option');
+    let answers = { material: null, temp: null, indicator: null };
+
+    quizOptions.forEach(opt => {
+      opt.addEventListener('click', function() {
+        const question = this.dataset.question;
+        const answer = this.dataset.answer;
+        // 移除同问题其他选项样式
+        document.querySelectorAll(`#experimentQuiz .quiz-option[data-question="${question}"]`).forEach(el => {
+          el.classList.remove('selected-correct', 'selected-wrong');
+        });
+        // 判断正确与否
+        if ((question === 'material' && answer === 'yeast') ||
+            (question === 'temp' && answer === 'waterbath') ||
+            (question === 'indicator' && answer === 'co2')) {
+          this.classList.add('selected-correct');
+          answers[question] = true;
+        } else {
+          this.classList.add('selected-wrong');
+          answers[question] = false;
+        }
+      });
+    });
+
+    document.getElementById('submitQuiz').addEventListener('click', () => {
+      const feedbackDiv = document.getElementById('quizFeedback');
+      const simDiv = document.getElementById('simulationResult');
+      if (answers.material === true && answers.temp === true && answers.indicator === true) {
+        feedbackDiv.innerHTML = '🎉 太棒了！你正确设计了实验！现在模拟不同温度下的呼吸速率...';
+        feedbackDiv.style.background = '#d4edc9';
+        simDiv.innerHTML = `
+          <strong>📊 模拟结果：</strong><br>
+          🌡️ 0°C : 气球几乎未膨胀 (呼吸速率 5%)<br>
+          🌡️ 25°C : 气球轻微膨胀 (呼吸速率 42%)<br>
+          🌡️ 37°C : 气球明显膨胀 (呼吸速率 95%)<br>
+          🌡️ 60°C : 气球无变化 (酶变性失活, 速率 2%)<br>
+          <span style="color:#2d5a1e;">✅ 结论：温度通过影响酶活性来影响呼吸作用速率，最适温度约37°C。</span>
+        `;
+      } else {
+        feedbackDiv.innerHTML = '⚠️ 部分选项有误，请根据提示修改：应选用酵母菌液、设置水浴温度梯度、观察CO₂释放量（气球膨胀或石灰水浑浊度）。';
+        feedbackDiv.style.background = '#fad1d1';
+        simDiv.innerHTML = '<strong>📊 请先正确完成实验设计</strong>';
+      }
+    });
+
+    // 第五部分：科学图表
+    const canvas = document.getElementById('bioChart');
+    const ctx = canvas.getContext('2d');
+
+    function drawChart(factor) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width;
+      const h = canvas.height;
+      const pad = 60;
+
+      // 背景网格
+      ctx.strokeStyle = '#e8eedd';
+      ctx.lineWidth = 0.6;
+      for (let i = 0; i <= 10; i++) {
+        let y = pad + (h - 2 * pad) * i / 10;
+        ctx.beginPath();
+        ctx.moveTo(pad, y);
+        ctx.lineTo(w - pad, y);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= 10; i++) {
+        let x = pad + (w - 2 * pad) * i / 10;
+        ctx.beginPath();
+        ctx.moveTo(x, pad);
+        ctx.lineTo(x, h - pad);
+        ctx.stroke();
+      }
+
+      // 坐标轴
+      ctx.strokeStyle = '#3a4f2b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(pad, pad);
+      ctx.lineTo(pad, h - pad);
+      ctx.lineTo(w - pad, h - pad);
+      ctx.stroke();
+
+      // 坐标轴箭头
+      ctx.beginPath();
+      ctx.moveTo(pad, pad);
+      ctx.lineTo(pad - 6, pad + 12);
+      ctx.moveTo(pad, pad);
+      ctx.lineTo(pad + 6, pad + 12);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(w - pad, h - pad);
+      ctx.lineTo(w - pad - 12, h - pad - 6);
+      ctx.moveTo(w - pad, h - pad);
+      ctx.lineTo(w - pad - 12, h - pad + 6);
+      ctx.stroke();
+
+      // 标题
+      ctx.fillStyle = '#2d3a1c';
+      ctx.font = 'bold 16px "Segoe UI", "PingFang SC", sans-serif';
+      let titleText = '';
+      if (factor === 'light') titleText = '光照强度对光合作用与呼吸作用的影响';
+      else if (factor === 'co2') titleText = 'CO₂浓度对光合作用与呼吸作用的影响';
+      else titleText = '温度对光合作用与呼吸作用的影响';
+      ctx.fillText(titleText, w / 2 - ctx.measureText(titleText).width / 2, 30);
+
+      // 坐标轴标签
+      ctx.fillStyle = '#2d3a1c';
+      ctx.font = 'bold 14px "Segoe UI", "PingFang SC", sans-serif';
+      ctx.fillText('相对速率 (%)', pad - 48, pad - 10);
+      let xLabel = '';
+      if (factor === 'light') xLabel = '光照强度 (klx)';
+      else if (factor === 'co2') xLabel = 'CO₂浓度 (相对值)';
+      else xLabel = '温度 (°C)';
+      ctx.fillText(xLabel, w / 2 - ctx.measureText(xLabel).width / 2, h - 12);
+
+      // 刻度标注
+      ctx.fillStyle = '#4a5e3a';
+      ctx.font = '11px "Segoe UI", "PingFang SC", sans-serif';
+      for (let i = 0; i <= 10; i += 2) {
+        let y = h - pad - (h - 2 * pad) * i / 10;
+        ctx.fillText(i * 10, pad - 30, y + 4);
+      }
+      const maxX = factor === 'temp' ? 50 : 100;
+      for (let i = 0; i <= 10; i += 2) {
+        let x = pad + (w - 2 * pad) * i / 10;
+        ctx.fillText(Math.round(maxX * i / 10), x - 8, h - pad + 20);
+      }
+
+      // 定义曲线函数
+      function photoRate(x) {
+        if (factor === 'light') return Math.min(100, 5 + x * 1.85);
+        else if (factor === 'co2') return Math.min(100, 8 + x * 1.7);
+        else return x < 3 ? 2 : (x < 22 ? 12 + x * 2.2 : (x < 36 ? 58 + (x - 22) * 1.1 : Math.max(3, 82 - (x - 36) * 5.5)));
+      }
+
+      function respRate(x) {
+        if (factor === 'light') return 30;
+        else if (factor === 'co2') return 28 + x * 0.04;
+        else return x < 3 ? 4 : (x < 28 ? 18 + x * 0.85 : Math.max(5, 42 - (x - 28) * 1.2));
+      }
+
+      // 绘制光合作用曲线（红色）
+      ctx.beginPath();
+      ctx.strokeStyle = '#d94f4f';
+      ctx.lineWidth = 3.5;
+      for (let i = 0; i <= 60; i++) {
+        let xVal = (i / 60) * maxX;
+        let x = pad + (i / 60) * (w - 2 * pad);
+        let y = h - pad - (photoRate(xVal) / 100) * (h - 2 * pad);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // 绘制呼吸作用曲线（蓝色）
+      ctx.beginPath();
+      ctx.strokeStyle = '#3a6ea5';
+      ctx.lineWidth = 3.5;
+      for (let i = 0; i <= 60; i++) {
+        let xVal = (i / 60) * maxX;
+        let x = pad + (i / 60) * (w - 2 * pad);
+        let y = h - pad - (respRate(xVal) / 100) * (h - 2 * pad);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // 图例
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(w - 160, 38, 130, 65);
+      ctx.strokeStyle = '#b0c89a';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(w - 160, 38, 130, 65);
+      ctx.fillStyle = '#d94f4f';
+      ctx.fillRect(w - 150, 48, 18, 18);
+      ctx.fillStyle = '#2d3a1c';
+      ctx.font = '13px "Segoe UI", "PingFang SC", sans-serif';
+      ctx.fillText('光合作用速率', w - 125, 63);
+      ctx.fillStyle = '#3a6ea5';
+      ctx.fillRect(w - 150, 72, 18, 18);
+      ctx.fillStyle = '#2d3a1c';
+      ctx.fillText('呼吸作用速率', w - 125, 87);
+
+      // 实验结论
+      let conclusion = '';
+      if (factor === 'light') {
+        conclusion = '📌 <strong>实验结论：</strong>光照强度主要影响光合作用的光反应阶段。随着光照增强，光合速率上升直至光饱和点；呼吸作用速率基本不受光照强度影响，保持相对恒定。';
+      } else if (factor === 'co2') {
+        conclusion = '📌 <strong>实验结论：</strong>CO₂是光合作用暗反应的原料，其浓度升高可促进光合速率直至CO₂饱和点；呼吸作用速率受CO₂浓度影响较小，仅在高浓度时有微弱抑制。';
+      } else {
+        conclusion = '📌 <strong>实验结论：</strong>温度通过影响酶的活性来调控两者速率。光合作用与呼吸作用均有最适温度（约25-35°C），低温抑制酶活性，高温（>45°C）导致酶变性失活，速率急剧下降。';
+      }
+      document.getElementById('chartConclusion').innerHTML = conclusion;
+    }
+
+    document.getElementById('updateChartBtn').addEventListener('click', () => {
+      drawChart(document.getElementById('chartFactorSelect').value);
+    });
+    // 初始绘制
+    drawChart('light');
+
+    // 第六部分：闯关练习
+    const quizData = [
+      {
+        q: '1. 有氧呼吸中，葡萄糖分解为丙酮酸发生在哪个场所？',
+        options: ['线粒体基质', '细胞质基质', '线粒体内膜', '细胞核'],
+        ans: 1
+      },
+      {
+        q: '2. 克雷伯氏循环直接产生什么气体？',
+        options: ['O₂', 'CO₂', 'H₂', 'N₂'],
+        ans: 1
+      },
+      {
+        q: '3. 氧化磷酸化中，最终电子受体是什么？',
+        options: ['NAD⁺', 'O₂', 'FAD', 'ATP'],
+        ans: 1
+      },
+      {
+        q: '4. 无氧呼吸中，酵母菌产生什么产物？',
+        options: ['乳酸', '酒精和CO₂', '仅酒精', '乳酸和CO₂'],
+        ans: 1
+      },
+      {
+        q: '5. 下列哪项措施会降低细胞呼吸作用速率？',
+        options: ['适当升温至37°C', '低温储存粮食', '增加氧气供应', '提高葡萄糖浓度'],
+        ans: 1
+      }
+    ];
+
+    const quizContainer = document.getElementById('quizContainer');
+    quizData.forEach((item, idx) => {
+      let html = `<p style="margin-top:1.2rem;"><strong>${item.q}</strong></p>`;
+      item.options.forEach((opt, oidx) => {
+        html +=
+          `<div class="quiz-choice" data-q="${idx}" data-a="${oidx}">${String.fromCharCode(65 + oidx)}. ${opt}</div>`;
+      });
+      quizContainer.innerHTML += html;
+    });
+
+    document.querySelectorAll('.quiz-choice').forEach(opt => {
+      opt.addEventListener('click', function() {
+        const q = this.dataset.q;
+        document.querySelectorAll(`.quiz-choice[data-q="${q}"]`).forEach(el => el.classList.remove(
+          'correct-choice', 'wrong-choice'));
+        if (parseInt(this.dataset.a) === quizData[q].ans) {
+          this.classList.add('correct-choice');
+        } else {
+          this.classList.add('wrong-choice');
+        }
+      });
+    });
+
+    document.getElementById('submitQuizBtn').addEventListener('click', () => {
+      let score = 0;
+      quizData.forEach((item, idx) => {
+        const selected = document.querySelector(`.quiz-choice.correct-choice[data-q="${idx}"]`);
+        if (selected) score++;
+      });
+      const resultDiv = document.getElementById('quizResult');
+      if (score >= 3) {
+        resultDiv.innerHTML = `
+          <div class="celebration">
+            🎉 恭喜！你答对了 ${score}/5 题！<br>
+            你已经掌握呼吸作用的核心知识！<br>
+            <span style="font-size:2.5rem;">💪 Respect！🧬</span>
+          </div>
+        `;
+      } else {
+        resultDiv.innerHTML = `
+          <div style="background:#fff3cd; border-radius:1.5rem; padding:1.5rem; text-align:center;">
+            <p style="font-size:1.3rem;">😔 你答对了 ${score}/5 题，还需继续努力！</p>
+            <p>建议回顾上面的递进式学习内容和实验探究，加深理解。</p>
+            <button onclick="location.reload()" style="margin-top:0.5rem;">🔄 重新挑战</button>
+          </div>
+        `;
+      }
+    });
+  })();
+</script>
+</body>
+</html>

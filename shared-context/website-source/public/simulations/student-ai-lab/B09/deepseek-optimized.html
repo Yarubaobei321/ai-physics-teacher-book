@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>细胞呼吸 · 有氧三阶段与无氧对比交互讲学</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#1c2733; --sub:#5b6b7a;
+    --line:#dbe4ee; --accent:#d97706; --accent2:#0ea5e9; --green:#16a34a;
+    --ok:#16a34a; --err:#dc2626;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:0.95rem; line-height:1.55;
+  }
+  header{
+    background:linear-gradient(120deg,#78350f,#d97706 55%,#f59e0b);
+    color:#fff; padding:16px 24px;
+  }
+  header h1{font-size:1.35rem;}
+  header p{font-size:.9rem; opacity:.92; margin-top:2px;}
+  .layout{
+    display:grid; grid-template-columns:1.1fr 1.1fr 1fr; gap:14px;
+    padding:14px 18px; max-width:1500px; margin:0 auto; align-items:start;
+  }
+  @media (max-width:1200px){ .layout{grid-template-columns:1fr;} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:0 1px 3px rgba(16,42,67,.06);}
+  .card h2{font-size:1.02rem; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:10px;}
+  button{
+    font-family:inherit; font-size:.9rem; border:1px solid var(--line); background:#fff;
+    color:var(--ink); border-radius:8px; padding:7px 12px; cursor:pointer; transition:all .15s;
+  }
+  button:hover:not(:disabled){border-color:var(--accent); color:var(--accent);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button.primary:hover:not(:disabled){background:#b45309; color:#fff;}
+  button.stage-active{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+  .row{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
+  .hint{font-size:.88rem; color:var(--sub); background:#fff7ed; border-radius:8px; padding:8px 10px; margin:6px 0;}
+  .stage-box{border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:8px 0; background:#fffdf5; min-height:150px;}
+  .stage-box h3{font-size:.95rem; color:#78350f;}
+  .stage-box .loc{display:inline-block; background:#fef3c7; color:#92400e; border-radius:6px; padding:1px 8px; font-size:.82rem;}
+  table{border-collapse:collapse; width:100%; font-size:.9rem;}
+  th,td{border:1px solid var(--line); padding:5px 8px; text-align:left;}
+  th{background:#fffbeb;}
+  .eq{font-size:.95rem; font-weight:600; color:#78350f; margin:4px 0;}
+  canvas{display:block; width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; max-width:640px;}
+  .concl{font-size:.9rem; margin-top:8px; padding:8px 10px; border-radius:8px; background:#f0fdf4; color:#14532d; border:1px solid #bbf7d0;}
+  .quiz-panel{border:1px solid #fed7aa; border-radius:10px; padding:10px 12px; margin-top:8px; background:#fffbf5;}
+  .q{margin:10px 0; padding:8px; border:1px solid var(--line); border-radius:8px;}
+  .q .stem{font-weight:600; margin-bottom:6px; font-size:.92rem;}
+  .q .opts{display:flex; flex-direction:column; gap:6px;}
+  .q .opt{text-align:left; width:100%;}
+  .q .opt.correct{border-color:var(--ok); background:#f0fdf4; color:#14532d;}
+  .q .opt.wrong{border-color:var(--err); background:#fef2f2; color:#7f1d1d;}
+  .feedback{font-size:.88rem; margin-top:6px; padding:6px 9px; border-radius:8px; display:none;}
+  .feedback.good{background:#f0fdf4; color:#14532d; border:1px solid #bbf7d0;}
+  .feedback.bad{background:#fef2f2; color:#7f1d1d; border:1px solid #fecaca;}
+  .encourage{font-size:.95rem; font-weight:700; color:#b45309; margin-top:8px;}
+  .badge{display:inline-block; background:#fef3c7; color:#92400e; border-radius:20px; padding:1px 10px; font-size:.8rem; margin-right:4px;}
+  .vs-wrap{display:flex; gap:10px; flex-wrap:wrap;}
+  .vs-card{flex:1 1 200px; border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff;}
+  .vs-card h4{font-size:.9rem; margin-bottom:6px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🔥 细胞呼吸交互讲学</h1>
+  <p>生活导入 · 有氧三阶段 · 有氧/无氧对比 · 限制因素变量实验 · 闯关练习</p>
+</header>
+
+<div class="layout">
+
+  <!-- ============ 导入 / 三阶段流程区 ============ -->
+  <section class="card" aria-label="导入与有氧呼吸三阶段">
+    <h2>🏃 生活现象导入</h2>
+    <div class="vs-wrap">
+      <div class="vs-card"><h4>😮‍💨 长跑后肌肉酸痛</h4>剧烈运动时供氧不足，肌肉细胞进行无氧呼吸产生<b>乳酸</b>。</div>
+      <div class="vs-card"><h4>🍞 发面</h4>酵母菌无氧呼吸产生<b>酒精和 CO₂</b>，CO₂ 使面团膨松。</div>
+      <div class="vs-card"><h4>🍺 酿酒</h4>酵母菌在缺氧条件下把葡萄糖转化为<b>酒精和 CO₂</b>。</div>
+    </div>
+
+    <h2 style="margin-top:14px;">📈 有氧呼吸三阶段（递进式）</h2>
+    <p class="hint">按顺序点击阶段按钮，由简到难逐步掌握：先了解第一步，再看后续阶段。</p>
+    <div class="row">
+      <button id="stg1" class="primary">阶段一 · 糖酵解</button>
+      <button id="stg2" disabled>阶段二 · 三羧酸循环</button>
+      <button id="stg3" disabled>阶段三 · 氧化磷酸化</button>
+    </div>
+    <div class="row">
+      <button id="pauseBtn">⏸ 暂停</button>
+      <button id="resetStg">↺ 重置流程</button>
+    </div>
+    <div class="stage-box" id="stageBox" aria-live="polite">
+      <h3>尚未开始</h3>
+      <p>请先点击「阶段一 · 糖酵解」查看第一步。</p>
+    </div>
+
+    <h2 style="margin-top:14px;">🧮 有氧呼吸总反应式</h2>
+    <div class="stage-box">
+      <h3>C₆H₁₂O₆ + 6O₂ + 6H₂O → 6CO₂ + 12H₂O + 能量</h3>
+      <p>配平检查：C：左侧 6 = 右侧 6；H：左侧 12+12=24 = 右侧 12×2=24；O：左侧 6+12+6=24 = 右侧 6×2+12=24。反应物侧与产物侧 C/H/O 原子守恒。</p>
+    </div>
+
+    <h2 style="margin-top:14px;">⚖️ 有氧 / 无氧对比</h2>
+    <table>
+      <thead><tr><th>类型</th><th>场所</th><th>产物</th></tr></thead>
+      <tbody>
+        <tr><td>有氧呼吸</td><td>细胞质基质 → 线粒体基质 → 线粒体内膜</td><td>CO₂ + H₂O + 大量能量</td></tr>
+        <tr><td>无氧呼吸（动物肌肉细胞）</td><td>全程细胞质基质</td><td>乳酸（不产 CO₂）</td></tr>
+        <tr><td>无氧呼吸（酵母菌）</td><td>全程细胞质基质</td><td>酒精 + CO₂</td></tr>
+      </tbody>
+    </table>
+    <p class="hint" style="margin-top:8px;">⚠️ 区分记忆：<b>动物肌肉无氧→乳酸，酵母菌无氧→酒精+CO₂</b>，二者不可混淆。</p>
+  </section>
+
+  <!-- ============ 实验与图表区 ============ -->
+  <section class="card" aria-label="限制因素变量实验">
+    <h2>🧪 限制因素变量实验</h2>
+    <p class="hint">选择自变量并观察呼吸速率（因变量，相对值）随其变化的趋势；同时设有对照组（适宜温度、充足氧气）。</p>
+    <div class="row">
+      <button id="facTemp" class="primary">自变量：温度</button>
+      <button id="facO2">自变量：氧气浓度</button>
+      <button id="facCO2">自变量：CO₂ 浓度</button>
+    </div>
+    <canvas id="chart" width="640" height="380" aria-label="呼吸速率随自变量变化折线图，标题与坐标轴随所选自变量更新"></canvas>
+    <div class="concl" id="chartConcl">结论文字将随所选自变量更新。</div>
+  </section>
+
+  <!-- ============ 练习区 ============ -->
+  <section class="card" aria-label="闯关练习">
+    <h2>✅ 闯关练习（5 题，答对 ≥3 题有鼓励）</h2>
+    <div id="quizArea"></div>
+    <p class="encourage" id="encourage" style="display:none;"></p>
+    <div class="row"><button id="redoQuiz" class="primary">↺ 重做练习</button></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  /* ===== 有氧呼吸三阶段 ===== */
+  const STAGES = [
+    {
+      name:"阶段一 · 糖酵解", loc:"细胞质基质",
+      desc:"1 分子葡萄糖（C₆H₁₂O₆）在细胞质基质中被分解为 2 分子丙酮酸（C₃H₄O₃），同时产生 [H]（NADH）和少量 ATP（净 2 ATP）。这是有氧呼吸的第一步。",
+      eq:"C₆H₁₂O₆ → 2 丙酮酸 + [H] + 少量 ATP（净 2 ATP）"
+    },
+    {
+      name:"阶段二 · 三羧酸循环", loc:"线粒体基质",
+      desc:"丙酮酸进入线粒体基质，经三羧酸循环逐步分解，产生 CO₂、[H]（NADH、FADH₂）和少量 ATP。CO₂ 在此阶段释放。",
+      eq:"丙酮酸 → CO₂ + [H] + 少量 ATP"
+    },
+    {
+      name:"阶段三 · 氧化磷酸化", loc:"线粒体内膜",
+      desc:"前两阶段积累的 [H] 在线粒体内膜上与 O₂ 结合生成 H₂O，同时释放大量能量合成大量 ATP。这是产能最多的阶段。",
+      eq:"[H] + O₂ → H₂O + 大量 ATP"
+    }
+  ];
+  const stageBox = document.getElementById("stageBox");
+  const stgBtns = [document.getElementById("stg1"), document.getElementById("stg2"), document.getElementById("stg3")];
+  let stageActive = -1;
+  let stagePaused = false;
+
+  function renderStage(i){
+    const s = STAGES[i];
+    stageBox.innerHTML = "";
+    const h = document.createElement("h3");
+    h.textContent = s.name;
+    stageBox.appendChild(h);
+    const loc = document.createElement("span");
+    loc.className = "loc";
+    loc.textContent = "场所：" + s.loc;
+    stageBox.appendChild(loc);
+    const eq = document.createElement("p");
+    eq.className = "eq";
+    eq.textContent = "反应式：" + s.eq;
+    stageBox.appendChild(eq);
+    const d = document.createElement("p");
+    d.textContent = s.desc;
+    stageBox.appendChild(d);
+  }
+  function showStage(i){
+    stageActive = i;
+    stagePaused = false;
+    document.getElementById("pauseBtn").textContent = "⏸ 暂停";
+    renderStage(i);
+    stgBtns.forEach(function(b, k){ b.disabled = k > i; });
+    stgBtns.forEach(function(b, k){ b.classList.toggle("stage-active", k === i); });
+  }
+  stgBtns[0].addEventListener("click", function(){ showStage(0); });
+  stgBtns[1].addEventListener("click", function(){ showStage(1); });
+  stgBtns[2].addEventListener("click", function(){ showStage(2); });
+  document.getElementById("pauseBtn").addEventListener("click", function(){
+    if(stageActive < 0){ return; }
+    stagePaused = !stagePaused;
+    this.textContent = stagePaused ? "▶ 继续" : "⏸ 暂停";
+    if(stagePaused){
+      stageBox.innerHTML = "<h3>" + STAGES[stageActive].name + "（已暂停）</h3><p>点击「继续」查看该阶段的场所、反应物与产物。</p>";
+    }else{
+      renderStage(stageActive);
+    }
+  });
+  document.getElementById("resetStg").addEventListener("click", function(){
+    stageActive = -1; stagePaused = false;
+    stageBox.innerHTML = "<h3>尚未开始</h3><p>请先点击「阶段一 · 糖酵解」查看第一步。</p>";
+    stgBtns.forEach(function(b,k){ b.disabled = k !== 0; b.classList.remove("stage-active"); });
+    document.getElementById("pauseBtn").textContent = "⏸ 暂停";
+  });
+
+  /* ===== 限制因素实验图表 ===== */
+  const cv = document.getElementById("chart");
+  const ctx = cv.getContext("2d");
+  const conclEl = document.getElementById("chartConcl");
+  const W = cv.width, H = cv.height;
+
+  const FACTORS = {
+    temp:{
+      title:"温度对呼吸速率的影响",
+      xLabel:"温度（℃）",
+      xRange:[0,40],
+      xTicks:["0","10","20","30","40"],
+      control:4.0,
+      series:[{name:"实验组（变化温度）", color:"#d97706", pts:[[0,1.2],[5,2.0],[10,2.8],[15,3.5],[20,4.1],[25,4.6],[30,4.8],[35,4.3],[40,3.0]]}],
+      concl:"结论：在一定范围内，呼吸速率随温度升高而增大；超过最适温度（约 30℃）后，酶活性下降，呼吸速率反而降低。"
+    },
+    o2:{
+      title:"氧气浓度对有氧呼吸速率的影响",
+      xLabel:"氧气浓度（%）",
+      xRange:[0,21],
+      xTicks:["0","5","10","15","21"],
+      control:4.4,
+      series:[{name:"实验组（变化 O₂ 浓度）", color:"#0ea5e9", pts:[[0,0.5],[3,1.8],[6,3.0],[9,3.7],[12,4.1],[15,4.3],[18,4.4],[21,4.4]]}],
+      concl:"结论：随 O₂ 浓度升高，有氧呼吸速率加快并逐渐趋于饱和；O₂ 浓度过低时，细胞会转向无氧呼吸来补充能量。"
+    },
+    co2:{
+      title:"CO₂ 浓度对呼吸速率的影响",
+      xLabel:"CO₂ 浓度（%）",
+      xRange:[0,5],
+      xTicks:["0","1","2","3","4","5"],
+      control:4.4,
+      series:[{name:"实验组（变化 CO₂ 浓度）", color:"#16a34a", pts:[[0,4.4],[1,3.8],[2,3.2],[3,2.6],[4,2.0],[5,1.4]]}],
+      concl:"结论：随 CO₂ 浓度升高，呼吸速率逐渐下降。这是因为 CO₂ 作为呼吸作用的产物，浓度过高时对呼吸作用产生抑制作用（产物抑制）。"
+    }
+  };
+  let factor = "temp";
+  const factorBtns = {temp:document.getElementById("facTemp"), o2:document.getElementById("facO2"), co2:document.getElementById("facCO2")};
+
+  function drawChart(){
+    const f = FACTORS[factor];
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0,0,W,H);
+    /* 标题 */
+    ctx.fillStyle = "#1c2733";
+    ctx.font = "bold 17px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(f.title, W/2, 30);
+    /* 绘图区 */
+    const padL = 62, padB = 46, padT = 48, padR = 26;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+    const yMax = 5, yMin = 0;
+    /* 网格与坐标轴 */
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 1;
+    for(let gy=0; gy<=5; gy++){
+      const y = padT + plotH - (gy/5)*plotH;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W-padR, y); ctx.stroke();
+      ctx.fillStyle = "#64748b";
+      ctx.font = "12px sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(gy.toFixed(0), padL-8, y+4);
+    }
+    const xN = f.xTicks.length;
+    for(let gx=0; gx<xN; gx++){
+      const x = padL + (gx/(xN-1))*plotW;
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, H-padB); ctx.stroke();
+      ctx.fillStyle = "#64748b";
+      ctx.textAlign = "center";
+      ctx.fillText(f.xTicks[gx], x, H-padB+18);
+    }
+    /* 坐标轴名 */
+    ctx.fillStyle = "#334155";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(f.xLabel, padL + plotW/2, H-8);
+    ctx.save();
+    ctx.translate(18, padT + plotH/2);
+    ctx.rotate(-Math.PI/2);
+    ctx.fillText("呼吸速率（相对值）", 0, 0);
+    ctx.restore();
+    /* 对照组（虚线水平线） */
+    const xToPx = function(x){
+      const x0 = f.xRange[0], x1 = f.xRange[1];
+      return padL + ((x - x0)/(x1 - x0))*plotW;
+    };
+    const yToPx = function(y){ return padT + plotH - (y/(yMax-yMin))*plotH; };
+    ctx.strokeStyle = "#94a3b8";
+    ctx.setLineDash([6,4]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(padL, yToPx(f.control));
+    ctx.lineTo(W-padR, yToPx(f.control));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#64748b";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("对照组（适宜温度、充足氧气）", W-padR-210, yToPx(f.control)-8);
+    /* 实验组折线 */
+    const s = f.series[0];
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    s.pts.forEach(function(p, i){
+      const px = xToPx(p[0]), py = yToPx(p[1]);
+      if(i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+    /* 数据点 */
+    s.pts.forEach(function(p){
+      const px = xToPx(p[0]), py = yToPx(p[1]);
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI*2);
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    });
+    /* 图例 */
+    ctx.fillStyle = "#ffffff";
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.rect(W-padR-208, padT-26, 204, 22);
+    ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(W-padR-200, padT-15); ctx.lineTo(W-padR-172, padT-15); ctx.stroke();
+    ctx.fillStyle = "#1c2733";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(s.name, W-padR-166, padT-11);
+  }
+  function setFactor(f){
+    factor = f;
+    Object.keys(factorBtns).forEach(function(k){
+      factorBtns[k].classList.toggle("primary", k === f);
+    });
+    drawChart();
+    conclEl.textContent = FACTORS[f].concl;
+  }
+  factorBtns.temp.addEventListener("click", function(){ setFactor("temp"); });
+  factorBtns.o2.addEventListener("click", function(){ setFactor("o2"); });
+  factorBtns.co2.addEventListener("click", function(){ setFactor("co2"); });
+
+  /* ===== 闯关练习 5 题 ===== */
+  const questions = [
+    {
+      stem:"① 有氧呼吸第一阶段（糖酵解）发生在细胞的哪个场所？",
+      opts:["线粒体基质","细胞质基质","线粒体内膜","叶绿体基质"],
+      correct:1,
+      explain:"糖酵解发生在细胞质基质：1 葡萄糖 → 2 丙酮酸 + [H] + 少量 ATP。"
+    },
+    {
+      stem:"② 三羧酸循环发生在细胞的哪个场所？",
+      opts:["细胞质基质","线粒体内膜","线粒体基质","细胞核"],
+      correct:2,
+      explain:"三羧酸循环发生在线粒体基质，丙酮酸在此分解产生 CO₂、[H] 和少量 ATP。"
+    },
+    {
+      stem:"③ 人体剧烈运动导致供氧不足时，肌肉细胞无氧呼吸的产物是？",
+      opts:["酒精和 CO₂","乳酸（无 CO₂）","CO₂ 和 H₂O","酒精、CO₂ 和 H₂O"],
+      correct:1,
+      explain:"动物（人体）肌肉细胞无氧呼吸产生乳酸，不产生 CO₂；产生酒精和 CO₂ 的是酵母菌等。"
+    },
+    {
+      stem:"④ 酵母菌在无氧条件下进行无氧呼吸，产物是？",
+      opts:["乳酸","酒精和 CO₂","CO₂ 和 H₂O","丙酮酸和乳酸"],
+      correct:1,
+      explain:"酵母菌无氧呼吸产生酒精和 CO₂；而乳酸是无氧条件下动物肌肉细胞的产物。"
+    },
+    {
+      stem:"⑤ 有氧呼吸第三阶段（氧化磷酸化）发生在哪个场所，产物是？",
+      opts:["线粒体基质，生成 CO₂","细胞质基质，生成丙酮酸","线粒体内膜，[H] 与 O₂ 结合生成 H₂O 和大量 ATP","细胞核，生成 H₂O"],
+      correct:2,
+      explain:"氧化磷酸化在线粒体内膜进行：[H] + O₂ → H₂O + 大量 ATP，是产能最多的阶段。"
+    }
+  ];
+  const qArea = document.getElementById("quizArea");
+  const encourage = document.getElementById("encourage");
+  let qState = questions.map(function(){ return {answered:false, correct:false}; });
+
+  function buildQuiz(){
+    qArea.innerHTML = "";
+    questions.forEach(function(q, qi){
+      const d = document.createElement("div");
+      d.className = "q";
+      const stem = document.createElement("p");
+      stem.className = "stem";
+      stem.textContent = q.stem;
+      d.appendChild(stem);
+      const opts = document.createElement("div");
+      opts.className = "opts";
+      q.opts.forEach(function(t, oi){
+        const b = document.createElement("button");
+        b.className = "opt";
+        b.textContent = "○ " + t;
+        b.addEventListener("click", function(){ answer(qi, oi); });
+        opts.appendChild(b);
+      });
+      d.appendChild(opts);
+      const fb = document.createElement("div");
+      fb.className = "feedback";
+      fb.id = "fb"+qi;
+      d.appendChild(fb);
+      qArea.appendChild(d);
+    });
+  }
+  function answer(qi, oi){
+    const q = questions[qi];
+    if(qState[qi].answered) return;
+    qState[qi].answered = true;
+    const isCorrect = oi === q.correct;
+    qState[qi].correct = isCorrect;
+    const d = qArea.children[qi];
+    const optBtns = d.querySelectorAll(".opt");
+    optBtns.forEach(function(b, k){
+      b.disabled = true;
+      if(k === q.correct){
+        b.classList.add("correct");
+        b.textContent = "● " + q.opts[k] + "（正确答案）";
+      }else if(k === oi){
+        b.classList.add("wrong");
+        b.textContent = "● " + q.opts[k];
+      }else{
+        b.textContent = "○ " + q.opts[k];
+      }
+    });
+    const fb = document.getElementById("fb"+qi);
+    fb.style.display = "block";
+    fb.className = "feedback " + (isCorrect ? "good" : "bad");
+    fb.textContent = (isCorrect ? "✅ 回答正确！" : "❌ 回答错误。") + " 解析：" + q.explain;
+    /* 鼓励判定 */
+    const answeredCount = qState.filter(function(s){return s.answered;}).length;
+    const correctCount = qState.filter(function(s){return s.correct;}).length;
+    if(answeredCount === questions.length){
+      if(correctCount >= 3){
+        encourage.style.display = "block";
+        encourage.textContent = "🎉 共答对 " + correctCount + " 题（≥3 题），掌握得很不错！继续加油！";
+      }else{
+        encourage.style.display = "block";
+        encourage.textContent = "💪 答对 " + correctCount + " 题，未满 3 题——请根据错题解析重新复习，再点「重做练习」。";
+      }
+    }
+  }
+  function resetQuiz(){
+    qState = questions.map(function(){ return {answered:false, correct:false}; });
+    encourage.style.display = "none";
+    buildQuiz();
+  }
+  document.getElementById("redoQuiz").addEventListener("click", resetQuiz);
+
+  /* 初始 */
+  drawChart();
+  buildQuiz();
+})();
+</script>
+</body>
+</html>

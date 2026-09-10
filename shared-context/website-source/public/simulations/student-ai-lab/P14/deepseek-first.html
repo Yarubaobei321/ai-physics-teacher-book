@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中物理：验证机械能守恒定律 - 交互式实验模拟</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动干扰，但保留文本选择 */
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, '微软雅黑', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 主实验卡片容器 */
+        .experiment-container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2), 0 0 0 1px rgba(156,180,204,0.3);
+            overflow: hidden;
+            padding: 1.5rem 2rem 2rem 2rem;
+            transition: all 0.2s;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem 0;
+            color: #1a2c3e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        h1 small {
+            font-size: 0.85rem;
+            font-weight: normal;
+            background: #2c3e66;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 40px;
+            letter-spacing: 1px;
+        }
+        .sub {
+            color: #2c3e66;
+            border-left: 4px solid #3b82f6;
+            padding-left: 14px;
+            margin: 8px 0 20px 0;
+            font-weight: 500;
+            font-size: 1rem;
+        }
+
+        /* 两列布局 */
+        .lab-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+        }
+        .simulation-area {
+            flex: 2;
+            min-width: 280px;
+        }
+        .control-panel {
+            flex: 1.2;
+            min-width: 260px;
+            background: #ffffffcc;
+            backdrop-filter: blur(4px);
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.5rem;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        /* canvas 画布区 */
+        .canvas-wrapper {
+            background: #fefcf5;
+            border-radius: 2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 12px;
+            border: 1px solid #cfdee9;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fef9e8;
+            border-radius: 1.2rem;
+            cursor: pointer;
+            margin: 0 auto;
+        }
+        .legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #2d4a6e;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .badge {
+            background: #eef2ff;
+            padding: 4px 10px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* 控制组件样式 */
+        .param-group {
+            margin-bottom: 1.4rem;
+        }
+        .param-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #1f3a4b;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #3b82f6;
+        }
+        .value-display {
+            background: #eef2fa;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        .readonly-data {
+            background: #e6edf4;
+            border-radius: 1.2rem;
+            padding: 12px 14px;
+            margin: 20px 0 16px;
+        }
+        .energy-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            margin: 8px 0;
+            border-bottom: 1px dashed #bdd3e8;
+            padding-bottom: 6px;
+        }
+        .energy-label {
+            font-weight: 600;
+        }
+        .energy-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+        }
+        .total-energy {
+            background: #d9e8fb;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 1rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        button {
+            background: #2c5a7a;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+            font-size: 1rem;
+            margin-top: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #1f4560;
+            transform: scale(0.98);
+        }
+        .note {
+            font-size: 0.7rem;
+            text-align: center;
+            color: #5f7f9c;
+            margin-top: 20px;
+            border-top: 1px solid #cbdde9;
+            padding-top: 12px;
+        }
+        @media (max-width: 750px) {
+            .experiment-container { padding: 1rem; }
+            .control-panel { padding: 1rem; }
+        }
+        .drag-note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 6px;
+            color: #4183b0;
+        }
+    </style>
+</head>
+<body>
+<div class="experiment-container">
+    <h1>
+        ⚖️ 验证机械能守恒定律 
+        <small>理想自由落体 / 动能 + 势能 = 常量</small>
+    </h1>
+    <div class="sub">🔬 调节小球质量、下落高度 | 释放后观察动能与重力势能之和保持不变 (忽略空气阻力)</div>
+    
+    <div class="lab-grid">
+        <!-- 左侧模拟画布区 -->
+        <div class="simulation-area">
+            <div class="canvas-wrapper">
+                <canvas id="experimentCanvas" width="750" height="400" style="width:100%; height:auto; max-width:750px; aspect-ratio:750/400"></canvas>
+                <div class="legend">
+                    <span class="badge">🎯 蓝色小球: 下落物体</span>
+                    <span class="badge">📏 参考零势能面: 地面 (h=0)</span>
+                    <span class="badge">⚡ 实时模拟下落过程</span>
+                </div>
+                <div class="drag-note">
+                    💡 提示: 鼠标拖拽小球可以改变初始高度！ 点击按钮“释放/重置”可重新开始实验。
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧操控与数据面板 -->
+        <div class="control-panel">
+            <div class="param-group">
+                <label>⚙️ 小球质量 <span id="massValueDisplay" class="value-display">0.200 kg</span></label>
+                <input type="range" id="massSlider" min="0.05" max="0.8" step="0.005" value="0.2">
+            </div>
+            <div class="param-group">
+                <label>📐 初始高度 <span id="heightValueDisplay" class="value-display">2.00 m</span></label>
+                <input type="range" id="heightSlider" min="0.3" max="3.5" step="0.01" value="2.0">
+                <div style="font-size:12px; margin-top:4px;">※ 拖拽小球或滑动条均可改变高度</div>
+            </div>
+            <div class="param-group">
+                <label>🕹️ 实验控制</label>
+                <button id="releaseBtn">▶ 释放小球 (开始下落)</button>
+                <button id="resetBtn" style="background:#4a627a;">🔄 重置/停止 & 归位</button>
+            </div>
+
+            <!-- 实时能量监控卡 -->
+            <div class="readonly-data">
+                <div style="font-weight:700; margin-bottom:8px;">📊 瞬时机械能分析 (当前时刻)</div>
+                <div class="energy-row">
+                    <span class="energy-label">🎯 动能 (Ek)</span>
+                    <span class="energy-value" id="kineticEnergy">0.000 J</span>
+                </div>
+                <div class="energy-row">
+                    <span class="energy-label">⬆️ 重力势能 (Ep)</span>
+                    <span class="energy-value" id="potentialEnergy">0.000 J</span>
+                </div>
+                <div class="total-energy">
+                    🔋 总机械能 E = Ek + Ep = <span id="totalEnergy" style="font-size:1.2rem;">0.000 J</span>
+                </div>
+                <div style="margin-top: 8px; font-size:0.75rem; text-align:center; background:#eef2ff; border-radius: 12px; padding:5px;">
+                    📐 理论初态总机械能: <span id="initialTotalEnergy">—</span>
+                </div>
+                <div style="margin-top: 6px; font-size:0.7rem; color:#2b5f3b;" id="conservationMsg">
+                    ✅ 守恒验证: 下落过程中总能量保持恒定
+                </div>
+            </div>
+            <div class="note">
+                * 本实验模拟无空气阻力，重力加速度 g = 9.8 m/s²。<br>
+                小球从静止释放，Ep + Ek = 常数 → 验证机械能守恒定律。
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- 物理常量与全局变量 -----
+        const g = 9.8;                // 重力加速度 m/s²
+        let mass = 0.2;              // kg
+        let initialHeight = 2.0;     // m  初始最大高度（零势能面参考地面）
+        
+        // 运动学状态
+        let isSimulating = false;     // 是否正在下落动画
+        let currentHeight = 2.0;     // 当前高度(m)
+        let currentVelocity = 0.0;    // 当前速度(m/s) 向下为正
+        
+        let animationId = null;
+        let lastTimestamp = 0;
+        let lastFrameTime = 0;
+        
+        // DOM 元素
+        const canvas = document.getElementById('experimentCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const massSlider = document.getElementById('massSlider');
+        const massValueDisplay = document.getElementById('massValueDisplay');
+        const heightSlider = document.getElementById('heightSlider');
+        const heightValueDisplay = document.getElementById('heightValueDisplay');
+        const releaseBtn = document.getElementById('releaseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        const kineticSpan = document.getElementById('kineticEnergy');
+        const potentialSpan = document.getElementById('potentialEnergy');
+        const totalSpan = document.getElementById('totalEnergy');
+        const initialTotalSpan = document.getElementById('initialTotalEnergy');
+        const conservationMsg = document.getElementById('conservationMsg');
+        
+        // 辅助函数：更新理论初始总机械能显示（基于当前设定的初始高度和质量）
+        function updateInitialTotalDisplay() {
+            let initEp = mass * g * initialHeight;
+            let initTotal = initEp;  // 初速度为0
+            initialTotalSpan.innerText = initTotal.toFixed(3) + " J";
+        }
+        
+        // 根据当前高度/速度/质量实时计算并更新能量显示面板
+        function updateEnergyDisplay() {
+            let ep = mass * g * Math.max(0, currentHeight);
+            let ek = 0.5 * mass * currentVelocity * currentVelocity;
+            let total = ep + ek;
+            kineticSpan.innerText = ek.toFixed(4) + " J";
+            potentialSpan.innerText = ep.toFixed(4) + " J";
+            totalSpan.innerText = total.toFixed(4) + " J";
+            
+            // 验证信息反馈: 比较当前总能量与初始理论总能量的偏差(相对误差)
+            let initTotal = mass * g * initialHeight;
+            if (initTotal > 1e-6) {
+                let errorPercent = Math.abs((total - initTotal) / initTotal) * 100;
+                if (isSimulating && errorPercent < 0.05) {
+                    conservationMsg.innerHTML = "✅ 守恒验证通过: 总机械能几乎不变 (误差 &lt; 0.05%) 实验符合机械能守恒定律";
+                } else if (!isSimulating && Math.abs(currentHeight - initialHeight) < 0.001 && currentVelocity === 0){
+                    conservationMsg.innerHTML = "⚙️ 待释放小球 | 初态机械能 = 重力势能，释放后将验证动能+势能恒定";
+                } else if (isSimulating) {
+                    conservationMsg.innerHTML = `✨ 下落中: 总能量保持恒定 (当前误差 ${errorPercent.toFixed(4)}%) 机械能守恒成立！`;
+                } else {
+                    conservationMsg.innerHTML = "📌 机械能守恒理想实验: 任意时刻总机械能 = 初始势能";
+                }
+            } else {
+                conservationMsg.innerHTML = "⚡ 参数调整中，机械能守恒定律依然成立";
+            }
+        }
+        
+        // 根据当前高度和速度绘制场景，同时包含高度标尺和动态小球
+        function drawScene() {
+            if (!canvas || !ctx) return;
+            const w = canvas.width = 750;    // 固定宽高比
+            const h = canvas.height = 400;
+            ctx.clearRect(0, 0, w, h);
+            
+            // 绘制背景&参考地面
+            ctx.fillStyle = "#e9f0e6";
+            ctx.fillRect(0, 0, w, h);
+            // 地面区域
+            ctx.fillStyle = "#b7a06e";
+            ctx.fillRect(0, h-28, w, 28);
+            ctx.fillStyle = "#8b6946";
+            ctx.fillRect(0, h-30, w, 4);
+            ctx.fillStyle = "#6c4f2e";
+            ctx.font = "bold 12px 'Segoe UI'";
+            ctx.fillText("零势能参考面 (地面 h=0)", 20, h-8);
+            
+            // 辅助线: 标尺刻度 (每0.5米对应Y坐标)
+            const groundY = h - 30;      // 地面y坐标
+            const maxHeightMeters = 3.8;  // 最大显示高度略高于3.5
+            const yPerMeter = (groundY - 45) / maxHeightMeters; // 顶部留白45px
+            
+            // 绘制刻度与高度标签
+            ctx.beginPath();
+            ctx.strokeStyle = "#aab7c4";
+            ctx.lineWidth = 0.6;
+            for (let meter = 0; meter <= 4; meter += 0.5) {
+                let yPos = groundY - meter * yPerMeter;
+                if (yPos > 10 && yPos < groundY-5) {
+                    ctx.beginPath();
+                    ctx.moveTo(w-30, yPos);
+                    ctx.lineTo(w-10, yPos);
+                    ctx.stroke();
+                    ctx.fillStyle = "#3d5a73";
+                    ctx.font = "10px monospace";
+                    ctx.fillText(meter.toFixed(1)+"m", w-45, yPos+3);
+                }
+            }
+            
+            // 绘制左侧标尺柱状示意参考 (半透明)
+            ctx.fillStyle = "#cbdae9aa";
+            ctx.fillRect(25, groundY - currentHeight * yPerMeter, 12, currentHeight * yPerMeter);
+            ctx.fillStyle = "#3c7ea3cc";
+            ctx.fillRect(25, groundY - currentHeight * yPerMeter, 12, 3);
+            
+            // 计算小球位置（球心坐标）
+            let ballY = groundY - currentHeight * yPerMeter;
+            let ballX = w/2 + 15;  // 偏右一点避开标尺
+            const ballRadius = Math.min(18, Math.max(12, 12 + (mass*6))); // 质量视觉微调
+            // 阴影
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            // 渐变球体
+            const grad = ctx.createRadialGradient(ballX-4, ballY-4, 3, ballX, ballY, ballRadius);
+            grad.addColorStop(0, '#4aa3ff');
+            grad.addColorStop(1, '#1f6392');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI*2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(ballX-3, ballY-3, 4, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#0a2f44";
+            ctx.beginPath();
+            ctx.arc(ballX-3, ballY-4, 1.5, 0, Math.PI*2);
+            ctx.fill();
+            
+            // 显示当前高度数值
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#1f4a5c";
+            ctx.fillText(`当前高度: ${currentHeight.toFixed(3)} m`, ballX-40, ballY-18);
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#2266aa";
+            ctx.fillText(`v = ${currentVelocity.toFixed(2)} m/s`, ballX-35, ballY-4);
+            
+            // 显示初始高度虚线示意
+            let initY = groundY - initialHeight * yPerMeter;
+            ctx.beginPath();
+            ctx.setLineDash([8, 6]);
+            ctx.strokeStyle = "#f0a55a";
+            ctx.lineWidth = 1.8;
+            ctx.moveTo(30, initY);
+            ctx.lineTo(w-40, initY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#d9892b";
+            ctx.font = "italic 10px sans-serif";
+            ctx.fillText("初始高度位置", w-110, initY-3);
+            
+            // 绘制速度矢量箭头(如果速度>0.1)
+            if(currentVelocity > 0.1 && isSimulating) {
+                ctx.beginPath();
+                ctx.moveTo(ballX+12, ballY);
+                ctx.lineTo(ballX+28, ballY+6);
+                ctx.lineTo(ballX+22, ballY-2);
+                ctx.fillStyle = "#d9534f";
+                ctx.fill();
+                ctx.fillStyle = "#b33";
+                ctx.fillText("↓ v", ballX+22, ballY+12);
+            }
+        }
+        
+        // 物理更新: 基于时间差 dt(秒) 更新速度和位移，同时检测地面碰撞（完全非弹性停止，落地后结束模拟）
+        function updatePhysics(dt) {
+            if (!isSimulating) return;
+            if (dt > 0.03) dt = 0.03; // 限制最大步长
+            
+            // 欧拉积分
+            let acceleration = g;  // 向下为正
+            currentVelocity += acceleration * dt;
+            let deltaY = currentVelocity * dt;   // 下降距离
+            let newHeight = currentHeight - deltaY;
+            
+            if (newHeight <= 0) {
+                // 触地瞬间，正好停在0高度
+                currentHeight = 0;
+                // 根据能量守恒计算落地瞬间速度理论: v = sqrt(2*g*初始高) 但确保真实感
+                // 但是为了能量守恒展示，我们保留最终动能完全转化，但动画停止。
+                // 落地后停止模拟，并将速度设为0，位置为0
+                currentVelocity = 0;
+                isSimulating = false;
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                // 更新一次最终能量展示
+                updateEnergyDisplay();
+                drawScene();
+                return;
+            }
+            currentHeight = newHeight;
+            // 边界微调防止浮点负数
+            if (currentHeight < 0) currentHeight = 0;
+            
+            // 实时更新能量显示
+            updateEnergyDisplay();
+            drawScene();
+        }
+        
+        // 动画循环基于 requestAnimationFrame 精确计时
+        let previousFrameTime = null;
+        function animateSimulation(nowMs) {
+            if (!isSimulating) return;
+            if (!previousFrameTime) {
+                previousFrameTime = nowMs;
+                requestAnimationFrame(animateSimulation);
+                return;
+            }
+            let dt = Math.min(0.033, (nowMs - previousFrameTime) / 1000);
+            if (dt <= 0) {
+                previousFrameTime = nowMs;
+                requestAnimationFrame(animateSimulation);
+                return;
+            }
+            updatePhysics(dt);
+            previousFrameTime = nowMs;
+            
+            if (isSimulating) {
+                animationId = requestAnimationFrame(animateSimulation);
+            } else {
+                // 若触地停止，清除id
+                if (animationId) cancelAnimationFrame(animationId);
+                animationId = null;
+                previousFrameTime = null;
+                drawScene(); // 最后刷新
+            }
+        }
+        
+        // 开始下落模拟 (若已经在模拟, 先重置再启动)
+        function startSimulation() {
+            if (isSimulating) {
+                // 如果正在下落，先停止并重置到初始状态再释放更符合教学预期
+                resetToInitialState();
+            }
+            // 确保从当前设定的初始高度和零速度开始
+            currentHeight = initialHeight;
+            currentVelocity = 0;
+            isSimulating = true;
+            previousFrameTime = null;
+            updateEnergyDisplay();
+            drawScene();
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(animateSimulation);
+        }
+        
+        // 重置：停止动画，恢复高度为当前滑块设定的初始高度，速度归零，取消模拟状态
+        function resetToInitialState() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isSimulating = false;
+            previousFrameTime = null;
+            // 从UI控件获取最新初始高度和质量
+            initialHeight = parseFloat(heightSlider.value);
+            mass = parseFloat(massSlider.value);
+            currentHeight = initialHeight;
+            currentVelocity = 0;
+            // 刷新显示值
+            massValueDisplay.innerText = mass.toFixed(3) + " kg";
+            heightValueDisplay.innerText = initialHeight.toFixed(3) + " m";
+            updateEnergyDisplay();
+            updateInitialTotalDisplay();
+            drawScene();
+        }
+        
+        // 高度同步（滑块或拖拽改变时，重置状态并更新初始高度）
+        function setHeightAndReset(newHeightMeters) {
+            if (isSimulating) {
+                resetToInitialState();
+            }
+            let clamped = Math.min(3.5, Math.max(0.3, newHeightMeters));
+            initialHeight = clamped;
+            currentHeight = clamped;
+            currentVelocity = 0;
+            heightSlider.value = clamped;
+            heightValueDisplay.innerText = clamped.toFixed(3) + " m";
+            updateEnergyDisplay();
+            updateInitialTotalDisplay();
+            drawScene();
+        }
+        
+        // 质量同步
+        function setMassAndReset(newMass) {
+            if (isSimulating) resetToInitialState();
+            mass = Math.min(0.8, Math.max(0.05, newMass));
+            massSlider.value = mass;
+            massValueDisplay.innerText = mass.toFixed(3) + " kg";
+            updateEnergyDisplay();
+            updateInitialTotalDisplay();
+            drawScene();
+        }
+        
+        // ---------- 鼠标拖拽小球改变高度（交互式体验） ----------
+        let isDragging = false;
+        function handleCanvasMouse(e) {
+            if (isSimulating) return; // 下落中不允许拖拽改变高度，保持物理严肃
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;   // canvas实际像素宽750 / css宽
+            const scaleY = canvas.height / rect.height;
+            let mouseX, mouseY;
+            if (e.touches) {
+                mouseX = (e.touches[0].clientX - rect.left) * scaleX;
+                mouseY = (e.touches[0].clientY - rect.top) * scaleY;
+            } else {
+                mouseX = (e.clientX - rect.left) * scaleX;
+                mouseY = (e.clientY - rect.top) * scaleY;
+            }
+            // 计算地面Y和高度映射
+            const groundY = canvas.height - 30;
+            const maxHeightMeters = 3.8;
+            const yPerMeter = (groundY - 45) / maxHeightMeters;
+            // 从鼠标Y坐标反推高度（米）
+            let heightFromY = (groundY - mouseY) / yPerMeter;
+            heightFromY = Math.min(3.5, Math.max(0.15, heightFromY));
+            if (e.type === 'mousedown' || (e.type === 'touchstart')) {
+                // 粗略检测是否点到小球附近，提高体验，但我们都允许拖拽
+                let ballScreenX = canvas.width/2+15;
+                let ballYscr = groundY - currentHeight * yPerMeter;
+                const dx = mouseX - ballScreenX;
+                const dy = mouseY - ballYscr;
+                const radiusCheck = 28;
+                if (Math.hypot(dx, dy) < radiusCheck) {
+                    isDragging = true;
+                    e.preventDefault();
+                    setHeightAndReset(heightFromY);
+                }
+            } else if ((e.type === 'mousemove' || e.type === 'touchmove') && isDragging) {
+                e.preventDefault();
+                setHeightAndReset(heightFromY);
+            } else if (e.type === 'mouseup' || e.type === 'touchend') {
+                isDragging = false;
+            }
+        }
+        
+        // 添加事件监听
+        canvas.addEventListener('mousedown', handleCanvasMouse);
+        window.addEventListener('mousemove', (e) => {
+            if (isDragging) handleCanvasMouse(e);
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        canvas.addEventListener('touchstart', handleCanvasMouse);
+        canvas.addEventListener('touchmove', handleCanvasMouse);
+        canvas.addEventListener('touchend', () => { isDragging = false; });
+        
+        // 滑块事件
+        heightSlider.addEventListener('input', (e) => {
+            if (isSimulating) resetToInitialState();
+            let val = parseFloat(e.target.value);
+            initialHeight = val;
+            currentHeight = val;
+            currentVelocity = 0;
+            heightValueDisplay.innerText = val.toFixed(3) + " m";
+            updateEnergyDisplay();
+            updateInitialTotalDisplay();
+            drawScene();
+        });
+        massSlider.addEventListener('input', (e) => {
+            if (isSimulating) resetToInitialState();
+            let val = parseFloat(e.target.value);
+            mass = val;
+            massValueDisplay.innerText = val.toFixed(3) + " kg";
+            updateEnergyDisplay();
+            updateInitialTotalDisplay();
+            drawScene();
+        });
+        
+        releaseBtn.addEventListener('click', () => {
+            startSimulation();
+        });
+        resetBtn.addEventListener('click', () => {
+            resetToInitialState();
+        });
+        
+        // 初始化界面和显示
+        function init() {
+            resetToInitialState();
+            updateInitialTotalDisplay();
+            drawScene();
+        }
+        init();
+    })();
+</script>
+</body>
+</html>

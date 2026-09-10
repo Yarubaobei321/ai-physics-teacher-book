@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工业区位因素 · 互动网页</title>
+<style>
+:root{
+  --bg:#f0f7ff; --card:#fff; --ink:#0f172a; --muted:#64748b;
+  --blue:#2563eb; --blue-d:#1e40af; --blue-l:#dbeafe; --sky:#eff6ff;
+  --border:#bfdbfe; --shadow:0 4px 16px rgba(37,99,235,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink); background:linear-gradient(180deg,#f8fbff,var(--bg));
+  font-size:0.95rem; line-height:1.65;
+}
+header{background:linear-gradient(135deg,#1e40af,#2563eb); color:#fff; padding:1rem 1.5rem; box-shadow:var(--shadow)}
+header h1{margin:0; font-size:1.25rem; font-weight:600}
+header p{margin:.2rem 0 0; font-size:.85rem; opacity:.92}
+.wrap{max-width:1420px; margin:1rem auto; padding:0 1.5rem 2.5rem}
+.card{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:1.1rem 1.3rem; margin-bottom:1rem; box-shadow:var(--shadow)}
+.card h2{margin:.2rem 0 .7rem; color:var(--blue); font-size:1.12rem; border-left:4px solid var(--blue); padding-left:.6rem}
+.card h3{font-size:1rem; margin:.7rem 0 .35rem; color:var(--blue-d)}
+.page{display:none}
+.page.active{display:block}
+.btn{font-family:inherit; font-size:.9rem; padding:.45rem .95rem; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:10px; cursor:pointer; transition:all .15s}
+.btn:hover{background:var(--blue-l)}
+.btn.primary{background:var(--blue); color:#fff}
+.btn.primary:hover{background:var(--blue-d)}
+
+/* 一级页 */
+.hero{text-align:center; padding:1.2rem 1rem 0}
+.hero h2{font-size:1.5rem; color:var(--blue-d); margin:.2rem 0}
+.factors{display:grid; grid-template-columns:repeat(6,1fr); gap:.8rem; margin-top:1rem}
+.factor-card{background:linear-gradient(180deg,var(--sky),#fff); border:1px solid var(--border); border-radius:12px; padding:.9rem .6rem; text-align:center; cursor:pointer; transition:all .15s}
+.factor-card:hover{transform:translateY(-3px); box-shadow:var(--shadow)}
+.factor-card .ico{font-size:1.8rem}
+.factor-card h4{margin:.3rem 0 .1rem; font-size:.95rem; color:var(--blue-d)}
+.factor-card p{margin:.1rem 0; font-size:.76rem; color:var(--muted)}
+.overview-row{display:flex; gap:1rem; margin-top:1rem; flex-wrap:wrap; align-items:center}
+.index-box{background:var(--sky); border:1px solid var(--border); border-radius:10px; padding:.7rem .9rem; font-size:.9rem; flex:1 1 320px}
+
+/* 二级页 */
+.topbar{display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:.6rem; margin-bottom:1rem}
+.select-wrap{display:flex; align-items:center; gap:.6rem; flex-wrap:wrap}
+.select-wrap select{font-family:inherit; font-size:.95rem; padding:.45rem .8rem; border:1px solid var(--blue); border-radius:10px; background:#fff; color:var(--blue-d); cursor:pointer}
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+.radar-box{text-align:center; background:var(--sky); border:1px solid var(--border); border-radius:12px; padding:.7rem}
+.radar-box canvas{display:block; width:100%; max-width:340px; height:auto; margin:0 auto; background:#fff; border-radius:10px}
+.dominate-tag{display:inline-block; margin-top:.5rem; padding:.25rem .8rem; background:var(--blue); color:#fff; border-radius:14px; font-size:.9rem; font-weight:600}
+.idx-line{margin-top:.4rem; font-size:.9rem}
+.case-line{background:#fef9c3; border:1px solid #fde68a; border-radius:10px; padding:.6rem .8rem; font-size:.88rem; margin-top:.5rem}
+
+/* 快问快答 */
+.qa-item{background:var(--sky); border:1px solid var(--border); border-radius:10px; padding:.6rem .85rem; margin-top:.6rem}
+.qa-item .q{font-weight:500}
+.qa-item .a{display:none; margin-top:.35rem; color:#166534; font-size:.88rem; border-top:1px dashed var(--border); padding-top:.35rem}
+.qa-item.show .a{display:block}
+
+/* 选择题 */
+.quiz-nav{display:flex; gap:.5rem; margin-top:.6rem}
+.quiz-nav button{font-family:inherit; font-size:.86rem; padding:.3rem .8rem; border:1px solid var(--blue); background:#fff; color:var(--blue); border-radius:8px; cursor:pointer}
+.quiz-nav button:hover{background:var(--blue-l)}
+.quiz-nav button:disabled{opacity:.4; cursor:default}
+.quiz-item{background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:.7rem .9rem; margin-top:.5rem}
+.quiz-item label{display:block; margin:.15rem 0; cursor:pointer}
+.quiz-item .exp{display:none; font-size:.85rem; color:var(--muted); margin-top:.4rem; border-top:1px dashed var(--border); padding-top:.35rem}
+.quiz-item.show .exp{display:block}
+.quiz-item.correct{border-color:#16a34a; background:#f0fdf4}
+.quiz-item.wrong{border-color:#dc2626; background:#fef2f2}
+
+/* AI 悬浮窗 */
+.ai-fab{position:fixed; right:1.2rem; bottom:1.2rem; width:56px; height:56px; border-radius:50%; background:var(--blue); color:#fff; border:none; font-size:1.4rem; cursor:pointer; box-shadow:0 6px 20px rgba(37,99,235,.4); z-index:50}
+.ai-panel{position:fixed; right:1.2rem; bottom:5rem; width:320px; max-height:70vh; background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:0 10px 30px rgba(15,23,42,.18); display:none; flex-direction:column; z-index:51; overflow:hidden}
+.ai-panel.open{display:flex}
+.ai-head{background:var(--blue); color:#fff; padding:.5rem .8rem; font-size:.9rem; font-weight:600; display:flex; justify-content:space-between; align-items:center}
+.ai-head button{background:none; border:none; color:#fff; font-size:1.1rem; cursor:pointer}
+.ai-body{padding:.6rem .8rem; overflow-y:auto; flex:1}
+.ai-log{font-size:.86rem; min-height:80px; max-height:220px; overflow-y:auto}
+.ai-msg{margin:.4rem 0; padding:.4rem .6rem; border-radius:8px; background:var(--sky); color:var(--ink); white-space:pre-wrap}
+.ai-msg.bot{background:var(--blue-l)}
+.ai-input-row{display:flex; gap:.4rem; padding:.6rem .8rem; border-top:1px solid var(--border)}
+.ai-input-row input{flex:1; font-family:inherit; font-size:.88rem; padding:.4rem .6rem; border:1px solid var(--border); border-radius:8px}
+.ai-input-row button{font-family:inherit; font-size:.86rem; padding:.4rem .7rem; border:none; background:var(--blue); color:#fff; border-radius:8px; cursor:pointer}
+
+/* 模态 */
+.modal-mask{display:none; position:fixed; inset:0; background:rgba(15,23,42,.45); z-index:60; align-items:center; justify-content:center}
+.modal-mask.open{display:flex}
+.modal{background:#fff; border-radius:14px; max-width:440px; width:92%; padding:1.2rem 1.4rem; box-shadow:0 12px 34px rgba(15,23,42,.25)}
+.modal h3{margin:.1rem 0 .5rem; color:var(--blue-d)}
+.modal .close{float:right; background:none; border:none; font-size:1.2rem; cursor:pointer; color:var(--muted)}
+.note{font-size:.8rem; color:var(--muted)}
+footer{background:#1e40af; color:#dbeafe; padding:.8rem 1.5rem; border-radius:14px; font-size:.8rem; margin-top:1rem}
+@media(max-width:900px){
+  .factors{grid-template-columns:repeat(3,1fr)}
+  .two-col{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>工业区位因素 · 互动网页</h1>
+  <p>高中地理｜六大区位因素 · 韦伯原料指数 · 五类典型工业 · 雷达图联动</p>
+</header>
+
+<div class="wrap">
+
+  <!-- ============ 一级总览页 ============ -->
+  <div class="page active" id="page1">
+    <section class="card">
+      <div class="hero">
+        <h2>🏭 工业区位因素速览</h2>
+        <p style="color:var(--muted)">点击下方卡片查看六大区位因素如何影响工业布局</p>
+      </div>
+      <div class="factors">
+        <div class="factor-card" data-f="0"><div class="ico">🌾</div><h4>原料</h4><p>原料指数 &gt; 1 时近原料地</p></div>
+        <div class="factor-card" data-f="1"><div class="ico">🛒</div><h4>市场</h4><p>产品不宜远运时近市场</p></div>
+        <div class="factor-card" data-f="2"><div class="ico">👷</div><h4>劳动力</h4><p>劳动密集产业近廉价劳动力区</p></div>
+        <div class="factor-card" data-f="3"><div class="ico">🚆</div><h4>交通</h4><p>港口/枢纽降低运输成本</p></div>
+        <div class="factor-card" data-f="4"><div class="ico">⚡</div><h4>能源</h4><p>高耗能产业近电力基地</p></div>
+        <div class="factor-card" data-f="5"><div class="ico">📜</div><h4>政策</h4><p>开发区/补贴引导布局</p></div>
+      </div>
+      <div class="overview-row">
+        <div class="index-box">
+          <b>韦伯原料指数判据：</b>原料指数 = 原料重量 ÷ 产品重量。<b>&gt; 1</b> → 原料导向（如制糖，约 8 吨甘蔗 → 1 吨糖）；<b>&lt; 1</b> → 市场导向（如啤酒）。
+        </div>
+        <button type="button" class="btn primary" id="toClass">进入工业课堂 →</button>
+        <button type="button" class="btn" id="toQuiz">直接做练习</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ 二级课堂页 ============ -->
+  <div class="page" id="page2">
+    <div class="topbar">
+      <button type="button" class="btn" id="toHome">← 返回总览</button>
+      <div class="select-wrap">
+        <label for="indSelect">选择工业类型：</label>
+        <select id="indSelect" aria-label="工业类型选择">
+          <option value="sugar">制糖厂（原料指向）</option>
+          <option value="beer">啤酒厂（市场指向）</option>
+          <option value="gar">服装厂（劳动力指向）</option>
+          <option value="elec">电子装配（劳动力+技术指向）</option>
+          <option value="steel">钢铁厂（原料/能源指向）</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <section class="card">
+        <h2>① 六维雷达图（联动）</h2>
+        <div class="radar-box">
+          <canvas id="radarCanvas" width="340" height="300"
+            aria-label="工业区位六维雷达图。当前：制糖厂。原料5、市场2、劳动力3、交通2、能源2、政策2，主导因素为原料。"></canvas>
+          <div><span class="dominate-tag" id="dominateTag">主导因素：原料</span></div>
+          <div class="idx-line" id="idxLine">原料指数 &gt; 1（约 8 吨甘蔗 → 1 吨糖）→ 原料导向</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>② 案例空间定位</h2>
+        <div class="case-line" id="caseLine">
+          <b>广西糖厂</b>：布局在甘蔗产区（原料近地）；<b>青岛啤酒</b>：全国设厂贴近市场；<b>富士康郑州</b>：航空港 + 充足劳动力；<b>鞍钢</b>近辽宁铁矿 → <b>宝钢</b>上海临海（市场+海运交通）；<b>内蒙古电解铝</b>：依托廉价电力（能源导向）。
+        </div>
+        <h3>③ 快问快答</h3>
+        <div class="qa-item" data-qa="0">
+          <div class="q">Q1：制糖厂属何种指向型？判断依据是什么？</div>
+          <button type="button" class="btn" data-reveal="0" style="margin-top:.3rem">看答案</button>
+          <div class="a">答案：原料指向型。判据：原料指数 &gt; 1（约 8 吨甘蔗 → 1 吨糖），原料易腐、损耗大，宜近原料地（如广西糖厂）。</div>
+        </div>
+        <div class="qa-item" data-qa="1">
+          <div class="q">Q2：青岛啤酒全国设厂，说明其属于何种指向型？</div>
+          <button type="button" class="btn" data-reveal="1" style="margin-top:.3rem">看答案</button>
+          <div class="a">答案：市场指向型。判据：保质期短、运输成本高，原料指数 &lt; 1，宜贴近消费市场，因此在全国多地产销。</div>
+        </div>
+        <div class="qa-item" data-qa="2">
+          <div class="q">Q3：鞍钢布局辽宁、宝钢布局上海，说明工业区位因素发生了怎样的演变？</div>
+          <button type="button" class="btn" data-reveal="2" style="margin-top:.3rem">看答案</button>
+          <div class="a">答案：由"近原料"转向"临海、近市场交通"——技术进步降低单位产品原料消耗，海运发展扩大市场半径，钢铁布局重心向沿海市场移动。</div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>④ 选择题（可切题，含易错题与高考真题）</h2>
+      <div id="quizBox"></div>
+      <div class="quiz-nav">
+        <button type="button" id="quizPrev">上一题</button>
+        <span style="color:var(--muted)" id="quizPos">1 / 5</span>
+        <button type="button" id="quizNext">下一题</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>⑤ 观察与结论</h2>
+      <ul style="margin:.3rem 0">
+        <li>原料指数 &gt; 1 → 原料导向；&lt; 1 → 市场导向（韦伯区位论）。</li>
+        <li>制糖=原料、啤酒=市场、服装=劳动力、电子装配=劳动力+技术、钢铁=原料/能源——主导因素不同，布局逻辑不同。</li>
+        <li>工业区位因素随技术进步与运输条件变化而演变（钢铁"近原料→临海市场"）。</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer>案例与数据参考：人教版高中地理必修二《工业区位因素及其变化》及近年高考真题；韦伯原料指数按教材表述。</footer>
+</div>
+
+<!-- AI 悬浮窗 -->
+<button type="button" class="ai-fab" id="aiFab" aria-label="打开AI工业讲师悬浮窗">🤖</button>
+<div class="ai-panel" id="aiPanel">
+  <div class="ai-head"><span>🤖 AI 工业讲师</span><button type="button" id="aiClose" aria-label="关闭">×</button></div>
+  <div class="ai-body">
+    <div class="ai-log" id="aiLog"></div>
+    <div class="ai-input-row">
+      <input id="aiInput" type="text" placeholder="问我：啤酒厂属于什么指向？">
+      <button type="button" id="aiSend">发送</button>
+    </div>
+    <div style="padding:0 .8rem .6rem">
+      <button type="button" class="btn" id="aiGen" style="font-size:.82rem">🎯 AI 自主命题（当前工业）</button>
+      <div class="ai-msg bot" id="aiGenOut" style="display:none; margin-top:.4rem"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 因素模态 -->
+<div class="modal-mask" id="modalMask">
+  <div class="modal">
+    <button type="button" class="close" id="modalClose" aria-label="关闭">×</button>
+    <h3 id="modalTitle">原料</h3>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============ 一级↔二级页面切换 ============
+  var page1 = document.getElementById('page1');
+  var page2 = document.getElementById('page2');
+  function showPage(p){
+    page1.classList.toggle('active', p === 1);
+    page2.classList.toggle('active', p === 2);
+  }
+  document.getElementById('toClass').addEventListener('click', function(){ showPage(2); });
+  document.getElementById('toHome').addEventListener('click', function(){ showPage(1); });
+  document.getElementById('toQuiz').addEventListener('click', function(){ showPage(2); document.getElementById('quizBox').scrollIntoView({behavior:'smooth'}); });
+
+  // ============ 六大因素模态 ============
+  var FACTORS = [
+    {t:'原料', d:'原料是工业生产的物质基础。原料指数（原料重量÷产品重量）>1 时，运输原料比运输产品更贵，宜布局在原料地。例：制糖厂（8 吨甘蔗→1 吨糖）布局在广西甘蔗产区。'},
+    {t:'市场', d:'产品不便长距离运输或运输成本高时，宜靠近消费市场。例：啤酒厂保质期短、运输成本高，青岛啤酒在全国设厂贴近市场。'},
+    {t:'劳动力', d:'劳动密集型产业需要大量劳动力，宜布局在劳动力充足、工资水平较低的地区。例：服装厂多布局在劳动力密集区；电子装配依托充足劳动力。'},
+    {t:'交通', d:'交通便利可降低原料与产品的运输成本、扩大市场半径。例：富士康郑州依托航空港与铁路枢纽实现快速转运；宝钢上海临海利用海运。'},
+    {t:'能源', d:'动力（能源）是高耗能产业的核心投入，宜布局在电力充足、电价低廉的地区。例：内蒙古电解铝依托廉价电力，炼铝厂属动力指向型。'},
+    {t:'政策', d:'政府的产业政策、税收优惠、开发区规划会引导工业布局。例：经济开发区、高新区通过政策吸引企业集聚，促进产业集群形成。'}
+  ];
+  var modalMask = document.getElementById('modalMask');
+  function openModal(i){
+    document.getElementById('modalTitle').textContent = FACTORS[i].t;
+    document.getElementById('modalBody').textContent = FACTORS[i].d;
+    modalMask.classList.add('open');
+  }
+  document.querySelectorAll('.factor-card').forEach(function(card){
+    card.addEventListener('click', function(){ openModal(Number(card.getAttribute('data-f'))); });
+  });
+  document.getElementById('modalClose').addEventListener('click', function(){ modalMask.classList.remove('open'); });
+  modalMask.addEventListener('click', function(e){ if(e.target === modalMask) modalMask.classList.remove('open'); });
+
+  // ============ 五类工业数据 ============
+  var INDUSTRIES = {
+    sugar: {
+      name:'制糖厂', dominate:'原料', idxText:'原料指数 > 1（约 8 吨甘蔗 → 1 吨糖）→ 原料导向',
+      radar:{原料:5,市场:2,劳动力:3,交通:2,能源:2,政策:2},
+      case:'<b>广西糖厂</b>布局在甘蔗产区：原料易腐、损耗大，原料指数远大于 1，宜近原料地；<b>青岛啤酒</b>全国设厂贴近市场。'
+    },
+    beer: {
+      name:'啤酒厂', dominate:'市场', idxText:'原料指数 < 1 → 市场导向',
+      radar:{原料:2,市场:5,劳动力:3,交通:3,能源:2,政策:2},
+      case:'<b>青岛啤酒</b>全国设厂：保质期短、运输成本高，原料指数小于 1，宜贴近消费市场，缩短运距保证新鲜度。'
+    },
+    gar: {
+      name:'服装厂', dominate:'劳动力', idxText:'原料指数 < 1；主导判据为劳动力（劳动密集型）',
+      radar:{原料:2,市场:3,劳动力:5,交通:3,能源:1,政策:2},
+      case:'<b>服装厂</b>工序多、以手工缝纫为主，属劳动密集型，宜布局在劳动力充足、工资低的地区（劳动力指向）。'
+    },
+    elec: {
+      name:'电子装配', dominate:'劳动力+技术', idxText:'原料指数 < 1；主导为劳动力，并显著依赖交通与技术进步',
+      radar:{原料:2,市场:3,劳动力:5,交通:4,能源:1,政策:3},
+      case:'<b>富士康郑州</b>：依托航空港（交通）+ 充足劳动力完成电子装配与快速转运；电子装配技术含量不断提升。'
+    },
+    steel: {
+      name:'钢铁厂', dominate:'原料/能源', idxText:'原料指数 > 1 → 原料导向；并随演变转向临海市场交通',
+      radar:{原料:5,市场:3,劳动力:3,交通:4,能源:4,政策:2},
+      case:'<b>鞍钢</b>布局辽宁依托本地铁矿（近原料）；<b>宝钢</b>布局上海临海，依托港口与国际市场（市场+交通演变）。'
+    }
+  };
+  var AXES = ['原料','市场','劳动力','交通','能源','政策'];
+
+  // ============ 雷达图 ============
+  var canvas = document.getElementById('radarCanvas');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var cxc = W / 2, cyc = H / 2 - 6, R = 100;
+
+  function radarPoint(i, v){
+    var ang = -Math.PI / 2 + i * (2 * Math.PI / 6);
+    return {x: cxc + Math.cos(ang) * R * v / 5, y: cyc + Math.sin(ang) * R * v / 5};
+  }
+  function drawRadar(key){
+    var ind = INDUSTRIES[key];
+    ctx.clearRect(0, 0, W, H);
+    // 网格
+    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+    for(var ring = 1; ring <= 5; ring++){
+      ctx.beginPath();
+      for(var i = 0; i <= 6; i++){
+        var p = radarPoint(i % 6, ring);
+        if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+    // 轴线
+    for(var a = 0; a < 6; a++){
+      var p0 = radarPoint(a, 5);
+      ctx.beginPath(); ctx.moveTo(cxc, cyc); ctx.lineTo(p0.x, p0.y); ctx.stroke();
+    }
+    // 数据多边形
+    ctx.beginPath();
+    for(var k = 0; k <= 6; k++){
+      var q = radarPoint(k % 6, ind.radar[AXES[k % 6]]);
+      if(k === 0) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(37,99,235,.25)';
+    ctx.fill();
+    ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // 顶点
+    for(var m = 0; m < 6; m++){
+      var rp = radarPoint(m, ind.radar[AXES[m]]);
+      ctx.fillStyle = '#1e40af';
+      ctx.beginPath(); ctx.arc(rp.x, rp.y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+    // 轴标签 + 数值
+    ctx.fillStyle = '#334155';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    for(var n = 0; n < 6; n++){
+      var lp = radarPoint(n, 6);
+      ctx.fillText(AXES[n], lp.x, lp.y + 4);
+      var vp = radarPoint(n, ind.radar[AXES[n]]);
+      ctx.fillStyle = '#2563eb';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(ind.radar[AXES[n]], vp.x, vp.y - 8);
+      ctx.fillStyle = '#334155';
+      ctx.font = 'bold 12px sans-serif';
+    }
+    // 主导标签与指数
+    document.getElementById('dominateTag').textContent = '主导因素：' + ind.dominate;
+    document.getElementById('idxLine').textContent = ind.idxText;
+    document.getElementById('caseLine').innerHTML = ind.case;
+    canvas.setAttribute('aria-label',
+      '工业区位六维雷达图。当前：' + ind.name + '。' +
+      AXES.map(function(a){ return a + ind.radar[a]; }).join('、') + '，主导因素为' + ind.dominate + '。');
+  }
+
+  // ============ select 联动 ============
+  var select = document.getElementById('indSelect');
+  select.addEventListener('change', function(){
+    drawRadar(select.value);
+    updateGen();
+  });
+
+  // ============ 快问快答 ============
+  document.querySelectorAll('button[data-reveal]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var item = btn.closest('.qa-item');
+      if(!item) return;
+      item.classList.toggle('show');
+      btn.textContent = item.classList.contains('show') ? '收起答案' : '看答案';
+    });
+  });
+
+  // ============ 选择题 ============
+  var QUIZ = [
+    {q:'1.（基础）下列工业与其指向类型对应正确的是：',
+     opts:['A 制糖—市场指向', 'B 啤酒—原料指向', 'C 炼铝—动力指向', 'D 服装—技术指向'], ans:'C',
+     exp:'炼铝厂高耗能属动力指向；制糖=原料、啤酒=市场、服装=劳动力。'},
+    {q:'2.（基础）电子装配（如富士康郑州）的主导区位因素是：',
+     opts:['A 原料', 'B 劳动力与交通', 'C 能源', 'D 气候'], ans:'B',
+     exp:'电子装配为劳动力密集型，并依托航空港等交通枢纽实现快速转运。'},
+    {q:'3.（易错）韦伯原料指数 > 1 时，工厂宜布局在：',
+     opts:['A 消费市场', 'B 原料地', 'C 港口', 'D 劳动力密集区'], ans:'B',
+     exp:'原料指数=原料重量÷产品重量，>1 说明运原料比运产品更贵，应近原料地（原料导向）。'},
+    {q:'4.（易错）炼铝厂与啤酒厂的主导区位因素分别是：',
+     opts:['A 动力、市场', 'B 原料、市场', 'C 动力、劳动力', 'D 市场、技术'], ans:'A',
+     exp:'炼铝高耗能→动力（能源）指向；啤酒保质期短→市场指向。'},
+    {q:'5.（高考真题样式）某钢铁厂由内陆迁往沿海地区，主要考虑的因素是：',
+     opts:['A 劳动力成本', 'B 市场与海运交通', 'C 气候条件', 'D 土地价格'], ans:'B',
+     exp:'沿海便于进口铁矿（原料）并接近消费市场，是钢铁"临海布局"演变的核心动力。'}
+  ];
+  var quizBox = document.getElementById('quizBox');
+  var quizPos = document.getElementById('quizPos');
+  var quizIdx = 0;
+
+  function renderQuiz(){
+    var item = QUIZ[quizIdx];
+    quizPos.textContent = (quizIdx + 1) + ' / ' + QUIZ.length;
+    var html = '<div class="quiz-item" data-quiz="' + quizIdx + '">';
+    html += '<div class="q">' + item.q + '</div>';
+    item.opts.forEach(function(o, i){
+      html += '<label><input type="radio" name="q' + quizIdx + '" value="' + String.fromCharCode(65 + i) + '"> ' + o + '</label>';
+    });
+    html += '<div class="exp">' + item.exp + '</div></div>';
+    quizBox.innerHTML = html;
+    var div = quizBox.querySelector('.quiz-item');
+    var itemIdx = quizIdx;
+    div.querySelectorAll('input[type=radio]').forEach(function(radio){
+      radio.addEventListener('change', function(){
+        var correct = radio.value === QUIZ[itemIdx].ans;
+        div.classList.remove('correct', 'wrong');
+        div.classList.add(correct ? 'correct' : 'wrong');
+        div.classList.add('show');
+      });
+    });
+    document.getElementById('quizPrev').disabled = (quizIdx === 0);
+    document.getElementById('quizNext').disabled = (quizIdx === QUIZ.length - 1);
+  }
+  document.getElementById('quizPrev').addEventListener('click', function(){
+    if(quizIdx > 0){ quizIdx--; renderQuiz(); }
+  });
+  document.getElementById('quizNext').addEventListener('click', function(){
+    if(quizIdx < QUIZ.length - 1){ quizIdx++; renderQuiz(); }
+  });
+
+  // ============ AI 悬浮窗 ============
+  var aiPanel = document.getElementById('aiPanel');
+  var aiLog = document.getElementById('aiLog');
+  function aiSay(msg){
+    var d = document.createElement('div');
+    d.className = 'ai-msg bot';
+    d.textContent = msg;
+    aiLog.appendChild(d);
+    aiLog.scrollTop = aiLog.scrollHeight;
+  }
+  aiSay('你好，我是工业区位 AI 讲师。可问我：制糖/啤酒/服装/电子装配/钢铁的指向类型，或"原料指数""韦伯"等术语。');
+  document.getElementById('aiFab').addEventListener('click', function(){
+    aiPanel.classList.toggle('open');
+  });
+  document.getElementById('aiClose').addEventListener('click', function(){
+    aiPanel.classList.remove('open');
+  });
+
+  function aiAnswer(raw){
+    var t = String(raw || '').trim();
+    if(!t) return '请输入问题后再发送。';
+    if(t.indexOf('啤酒') >= 0 || t.indexOf('青岛') >= 0)
+      return '啤酒厂属于市场指向型。判据：保质期短、运输成本高，原料指数 < 1，宜贴近消费市场（如青岛啤酒全国设厂）。';
+    if(t.indexOf('制糖') >= 0 || t.indexOf('甘蔗') >= 0 || /糖厂|制糖厂/.test(t))
+      return '制糖厂属于原料指向型。判据：原料指数 > 1（约 8 吨甘蔗 → 1 吨糖），原料易损耗、不宜远运，宜近原料地（如广西糖厂）。';
+    if(t.indexOf('电子') >= 0 || t.indexOf('富士康') >= 0 || t.indexOf('装配') >= 0)
+      return '电子装配属劳动力+技术指向，并显著依赖交通。富士康郑州依托航空港 + 充足劳动力实现快速组装与转运。';
+    if(t.indexOf('钢铁') >= 0 || t.indexOf('鞍钢') >= 0 || t.indexOf('宝钢') >= 0)
+      return '钢铁布局由"近原料"转向"临海市场交通"：鞍钢依托辽宁本地铁矿（原料指向），宝钢上海临海依托港口与市场（演变）。';
+    if(t.indexOf('服装') >= 0)
+      return '服装厂属于劳动力指向型。判据：工序多、手工密集，宜布局在劳动力充足、工资较低的地区。';
+    if(t.indexOf('原料指数') >= 0 || t.indexOf('韦伯') >= 0)
+      return '韦伯原料指数 = 原料重量 ÷ 产品重量。>1 判原料导向（如制糖），<1 判市场导向（如啤酒）。';
+    if(t.indexOf('炼铝') >= 0 || t.indexOf('电解铝') >= 0 || t.indexOf('能源') >= 0)
+      return '炼铝/电解铝属动力（能源）指向型：高耗能，宜布局在廉价电力基地，如内蒙古电解铝。';
+    return '我是工业区位 AI 讲师。可问我：制糖/啤酒/服装/电子装配/钢铁的指向类型，或"原料指数""韦伯"等术语。';
+  }
+  function sendAi(){
+    var input = document.getElementById('aiInput');
+    var q = input.value.trim();
+    if(!q) return;
+    var d = document.createElement('div');
+    d.className = 'ai-msg';
+    d.textContent = q;
+    aiLog.appendChild(d);
+    aiLog.scrollTop = aiLog.scrollHeight;
+    aiSay(aiAnswer(q));
+    input.value = '';
+  }
+  document.getElementById('aiSend').addEventListener('click', sendAi);
+  document.getElementById('aiInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') sendAi();
+  });
+
+  // ============ AI 自主命题 ============
+  var GEN = {
+    sugar: {q:'【AI 命题】某地甘蔗产量大，若新建糖厂，最佳布局地是：', opts:['A 消费市场', 'B 甘蔗产区', 'C 港口', 'D 电力基地'], ans:'B 甘蔗产区。判据：原料指数>1，宜近原料地。'},
+    beer:  {q:'【AI 命题】某品牌啤酒拟扩大市场，应优先：', opts:['A 集中一地大厂', 'B 多城市就近设厂', 'C 原料产地设厂', 'D 高原地区设厂'], ans:'B 多城市就近设厂。判据：保质期短、运输成本高，宜贴近市场。'},
+    gar:   {q:'【AI 命题】服装厂适宜布局在：', opts:['A 劳动力充足且工资低的地区', 'B 原料矿山', 'C 电力基地', 'D 科研院所'], ans:'A。判据：劳动密集型，主导因素为劳动力。'},
+    elec:  {q:'【AI 命题】电子装配代工厂常选址在机场附近地区，主要因为：', opts:['A 靠近市场', 'B 方便快速转运与劳动力集聚', 'C 原料充足', 'D 气候宜人'], ans:'B。判据：劳动力+交通（航空港）。'},
+    steel: {q:'【AI 命题】大型钢铁厂由内陆迁往沿海，主要因为：', opts:['A 靠近煤矿', 'B 便于海运原料与接近市场', 'C 土地便宜', 'D 政策限制'], ans:'B。判据：原料/能源指向并转向临海市场交通。'}
+  };
+  var genOut = document.getElementById('aiGenOut');
+  function updateGen(){ /* 切换工业时收起旧命题 */ genOut.style.display = 'none'; }
+  document.getElementById('aiGen').addEventListener('click', function(){
+    var item = GEN[select.value];
+    var html = item.q + '<br>' + item.opts.join('　') + '<br><b>' + item.ans + '</b>';
+    genOut.innerHTML = html;
+    genOut.style.display = 'block';
+    aiSay('已根据" ' + INDUSTRIES[select.value].name + ' "生成命题，答案见右侧卡片。');
+  });
+
+  // 初始化
+  drawRadar('sugar');
+  renderQuiz();
+})();
+</script>
+</body>
+</html>

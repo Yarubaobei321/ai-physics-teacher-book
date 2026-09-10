@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/review.schema.json",
+  "title": "步步高人工复核记录",
+  "type": "object",
+  "required": ["id", "relative_path", "status", "target_id", "target_relative_path", "reviewer", "decision", "summary", "issues"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^review\\.bbg\\.[a-z0-9][a-z0-9._-]*$"},
+    "relative_path": {"$ref": "#/$defs/relativePath"},
+    "status": {"$ref": "#/$defs/status"},
+    "target_id": {"type": "string", "minLength": 1},
+    "target_relative_path": {
+      "allOf": [
+        {"$ref": "#/$defs/relativePath"},
+        {"pattern": "^(?:records/documents|questions)/.+\\.json$"}
+      ]
+    },
+    "reviewer": {"type": "string", "minLength": 1},
+    "decision": {"enum": ["approved", "needs_changes", "rejected", "blocked"]},
+    "summary": {"type": "string", "minLength": 1},
+    "issues": {"type": "array", "items": {"type": "string"}},
+    "resolved_issues": {"type": "array", "items": {"type": "string"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"decision": {"const": "approved"}}, "required": ["decision"]},
+      "then": {
+        "properties": {
+          "status": {"enum": ["reviewed", "published"]},
+          "issues": {"maxItems": 0}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"decision": {"enum": ["needs_changes", "rejected"]}}, "required": ["decision"]},
+      "then": {
+        "properties": {
+          "status": {"const": "pending_manual_review"},
+          "issues": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"decision": {"const": "blocked"}}, "required": ["decision"]},
+      "then": {
+        "properties": {
+          "status": {"const": "blocked"},
+          "issues": {"minItems": 1}
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "status": {"enum": ["discovered", "raw_extracted", "ai_structured", "pending_manual_review", "reviewed", "published", "blocked"]},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"}
+  }
+}

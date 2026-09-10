@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>动量·动能·导数实验室 | 全参数共享 | dE/dp = v</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef3f8 0%, #dfe9f0 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Noto Sans', system-ui, sans-serif;
+            padding: 24px 20px;
+            min-height: 100vh;
+        }
+
+        .lab-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(2px);
+            border-radius: 48px;
+            box-shadow: 0 30px 45px -18px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+        }
+
+        .hero {
+            background: linear-gradient(125deg, #0f2c3b, #1b4a62);
+            padding: 1.5rem 2rem;
+            color: white;
+            text-align: center;
+        }
+        .hero h1 {
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .hero h1 span {
+            background: #ffcf4a;
+            color: #1e3e52;
+            font-size: 0.9rem;
+            padding: 0.2rem 1rem;
+            border-radius: 60px;
+            font-family: monospace;
+        }
+        .hero p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+
+        .main-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 28px 28px 20px 28px;
+        }
+
+        .left-area {
+            flex: 2.2;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .right-panel {
+            flex: 1.2;
+            min-width: 280px;
+            background: #f9fbfd;
+            border-radius: 32px;
+            padding: 22px 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(4px);
+        }
+
+        .card {
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+            padding: 18px;
+            border: 1px solid #e2ecf3;
+        }
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #135b78;
+            padding-bottom: 6px;
+            margin-bottom: 14px;
+            border-bottom: 2px solid #ffcf4a;
+            display: inline-block;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 20px;
+        }
+        .graph-container {
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .collision-preview {
+            background: #fefaf0;
+        }
+
+        .param-group {
+            margin-bottom: 24px;
+        }
+        .param-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            color: #1c4c66;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #cbdde6;
+            border-radius: 10px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            width: 18px;
+            height: 18px;
+            background: #1f6d8c;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+        .value-badge {
+            background: #e4edf4;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-family: monospace;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 8px;
+        }
+        .two-col-sliders {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        .obj-card {
+            background: #eef3f9;
+            border-radius: 20px;
+            padding: 12px;
+            flex: 1;
+        }
+        .obj-card h4 {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        button {
+            background: #236b8e;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 60px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.2s;
+            width: 100%;
+            margin-top: 8px;
+        }
+        button:hover {
+            background: #0f526f;
+            transform: scale(0.97);
+        }
+        .derivative-compare {
+            margin-top: 16px;
+        }
+        .deriv-card {
+            background: #f9fdfe;
+            border-radius: 20px;
+            padding: 14px;
+            text-align: center;
+            border: 1px solid #deecf3;
+        }
+        .deriv-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            font-family: monospace;
+            color: #1f6d8c;
+        }
+        .small-canvas {
+            margin: 12px 0;
+        }
+        hr {
+            margin: 12px 0;
+            border-color: #d4e2ed;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 16px;
+            border-top: 1px solid #e0ecf3;
+            color: #4c7185;
+        }
+        @media (max-width: 900px) {
+            .main-grid { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="lab-container">
+    <div class="hero">
+        <h1>
+            ⚡ 动量 · 动能 · 导数实验室
+            <span>全参数共享 | dE/dp = v</span>
+        </h1>
+        <p>调整任意滑块 —— 动能-动量曲线、弹性碰撞动画、导数对比视图 同步响应 | 导数几何意义：切线斜率 = 瞬时速度</p>
+    </div>
+
+    <div class="main-grid">
+        <!-- 左侧：可视化区域 -->
+        <div class="left-area">
+            <!-- 板块1：动能-动量关系图 (基于物体A) -->
+            <div class="card">
+                <div class="card-title">📈 动能 E<sub>k</sub> - 动量 p 关系 (物体A)</div>
+                <div class="graph-container">
+                    <canvas id="ekpCanvas" width="700" height="320" style="width:100%; height:auto; aspect-ratio:700/320"></canvas>
+                </div>
+                <div class="value-badge" style="margin-top: 8px;">
+                    当前 A: 动量 p₁ = <span id="p1ForGraph">0.00</span> kg·m/s &nbsp;|&nbsp;
+                    动能 E<sub>k1</sub> = <span id="ek1ForGraph">0.00</span> J &nbsp;|&nbsp;
+                    切线斜率 = 速度 v₁ = <span id="v1FromGraph">0.00</span> m/s
+                </div>
+                <div style="font-size:0.7rem; text-align:center; margin-top:6px;">曲线: E<sub>k</sub> = p²/(2m₁) &nbsp; 切线斜率 dE/dp = v₁ (瞬时速度)</div>
+            </div>
+
+            <!-- 板块2：光滑水平面弹性碰撞模拟 -->
+            <div class="card collision-preview">
+                <div class="card-title">🏓 一维弹性碰撞 · 光滑水平面</div>
+                <canvas id="collisionCanvas" width="700" height="150" style="width:100%; height:auto; background:#fef8e7; border-radius: 20px;"></canvas>
+                <div style="display: flex; justify-content: space-between; margin-top: 10px; gap: 8px; flex-wrap: wrap;">
+                    <div style="background:#e3f0f7; border-radius: 20px; padding: 4px 12px;"><span style="color:#3a86ff;">🔵 A</span> p₁=<span id="p1Collision">0.00</span> &nbsp; E₁=<span id="e1Collision">0.00</span></div>
+                    <div style="background:#e3f0f7; border-radius: 20px; padding: 4px 12px;"><span style="color:#ff9e3a;">🟠 B</span> p₂=<span id="p2Collision">0.00</span> &nbsp; E₂=<span id="e2Collision">0.00</span></div>
+                    <div style="background:#d9e6f2; border-radius: 20px; padding: 4px 12px;">总动量 <span id="totalP">0.00</span> &nbsp;总动能 <span id="totalE">0.00</span></div>
+                </div>
+                <button id="collisionBtn" style="background:#e67e22; margin-top: 12px;">💥 执行弹性碰撞 (瞬间计算并更新所有参数)</button>
+                <button id="resetBtn" style="background:#4f7a92;">⟳ 重置初始状态</button>
+            </div>
+
+            <!-- 板块3：导数对比实验室 (只保留 dEk/dp = v) -->
+            <div class="card">
+                <div class="card-title">🔬 导数几何意义 | dE<sub>k</sub>/dp = v</div>
+                <div class="derivative-compare">
+                    <div class="deriv-card">
+                        <div style="font-weight:600;">动能对动量的变化率 = 速度</div>
+                        <div class="small-canvas">
+                            <canvas id="derivCanvas" width="400" height="200" style="width:100%; height:auto; background:#fff; border-radius:16px;"></canvas>
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <div>当前观察点：动量 p = <span id="derivPVal">0.00</span> kg·m/s</div>
+                            <div>物体A质量 m₁ = <span id="derivMVal">0.00</span> kg</div>
+                            <div style="background:#eef2fa; border-radius: 28px; padding: 10px; margin-top: 10px;">
+                                🔹 切线斜率 = <strong id="derivSlopeVal">0.00</strong> m/s <br>
+                                ✅ 瞬时速度 v₁ = <span id="derivVVal">0.00</span> m/s
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size:0.75rem; text-align:center; margin-top:12px;">曲线为 E<sub>k</sub>(p) = p²/(2m₁) ，任意点切线斜率 = 物体A的速度 v₁</div>
+            </div>
+        </div>
+
+        <!-- 右侧：全局参数控制 -->
+        <div class="right-panel">
+            <div class="param-group">
+                <div class="param-label"><span>🔵 物体A 质量 m₁ (kg)</span><span id="m1Val">2.00</span></div>
+                <input type="range" id="m1Slider" min="0.3" max="6.0" step="0.05" value="2.0">
+                <div class="param-label" style="margin-top: 12px;"><span>🔵 物体A 速度 v₁ (m/s)</span><span id="v1Val">1.50</span></div>
+                <input type="range" id="v1Slider" min="-4" max="4" step="0.05" value="1.5">
+                <div class="value-badge">动量 p₁ = m₁·v₁ = <span id="p1Show">3.00</span> kg·m/s</div>
+            </div>
+            <hr>
+            <div class="param-group">
+                <div class="param-label"><span>🟠 物体B 质量 m₂ (kg)</span><span id="m2Val">2.00</span></div>
+                <input type="range" id="m2Slider" min="0.3" max="6.0" step="0.05" value="2.0">
+                <div class="param-label" style="margin-top: 12px;"><span>🟠 物体B 速度 v₂ (m/s)</span><span id="v2Val">-0.50</span></div>
+                <input type="range" id="v2Slider" min="-4" max="4" step="0.05" value="-0.5">
+                <div class="value-badge">动量 p₂ = m₂·v₂ = <span id="p2Show">-1.00</span> kg·m/s</div>
+            </div>
+            <hr>
+            <div style="background:#e3f0f7; border-radius: 24px; padding: 12px; text-align:center;">
+                <div>🔁 参数联动说明</div>
+                <div style="font-size:0.75rem;">改变 m₁ / v₁ → 实时更新左侧曲线、碰撞动画、导数演示<br>改变 m₂ / v₂ → 更新碰撞模拟与总动量动能</div>
+            </div>
+        </div>
+    </div>
+    <footer>🎓 全参数共享 | 弹性碰撞动量动能守恒 | 导数演示 dE/dp = v | 微积分 × 物理直观结合</footer>
+</div>
+
+<script>
+    (function(){
+        // ---------- 全局参数 ----------
+        let m1 = 2.0;      // kg
+        let v1 = 1.5;      // m/s
+        let m2 = 2.0;
+        let v2 = -0.5;
+
+        // 辅助函数
+        function p1() { return m1 * v1; }
+        function p2() { return m2 * v2; }
+        function ek1() { return 0.5 * m1 * v1 * v1; }
+        function ek2() { return 0.5 * m2 * v2 * v2; }
+        function totalP() { return p1() + p2(); }
+        function totalE() { return ek1() + ek2(); }
+
+        // DOM 元素绑定
+        const m1Slider = document.getElementById('m1Slider');
+        const v1Slider = document.getElementById('v1Slider');
+        const m2Slider = document.getElementById('m2Slider');
+        const v2Slider = document.getElementById('v2Slider');
+        const m1ValSpan = document.getElementById('m1Val');
+        const v1ValSpan = document.getElementById('v1Val');
+        const m2ValSpan = document.getElementById('m2Val');
+        const v2ValSpan = document.getElementById('v2Val');
+        const p1ShowSpan = document.getElementById('p1Show');
+        const p2ShowSpan = document.getElementById('p2Show');
+        // 碰撞显示
+        const p1CollSpan = document.getElementById('p1Collision');
+        const e1CollSpan = document.getElementById('e1Collision');
+        const p2CollSpan = document.getElementById('p2Collision');
+        const e2CollSpan = document.getElementById('e2Collision');
+        const totalPSpan = document.getElementById('totalP');
+        const totalESpan = document.getElementById('totalE');
+        // 曲线图标签
+        const p1ForGraph = document.getElementById('p1ForGraph');
+        const ek1ForGraph = document.getElementById('ek1ForGraph');
+        const v1FromGraph = document.getElementById('v1FromGraph');
+        // 导数实验区域
+        const derivPVal = document.getElementById('derivPVal');
+        const derivMVal = document.getElementById('derivMVal');
+        const derivSlopeVal = document.getElementById('derivSlopeVal');
+        const derivVVal = document.getElementById('derivVVal');
+
+        // 更新所有数值显示
+        function updateAllNumerics() {
+            // 右侧面板
+            m1ValSpan.innerText = m1.toFixed(2);
+            v1ValSpan.innerText = v1.toFixed(2);
+            m2ValSpan.innerText = m2.toFixed(2);
+            v2ValSpan.innerText = v2.toFixed(2);
+            p1ShowSpan.innerText = p1().toFixed(3);
+            p2ShowSpan.innerText = p2().toFixed(3);
+
+            // 碰撞区数值
+            p1CollSpan.innerText = p1().toFixed(3);
+            e1CollSpan.innerText = ek1().toFixed(3);
+            p2CollSpan.innerText = p2().toFixed(3);
+            e2CollSpan.innerText = ek2().toFixed(3);
+            totalPSpan.innerText = totalP().toFixed(3);
+            totalESpan.innerText = totalE().toFixed(3);
+
+            // 曲线图标签
+            p1ForGraph.innerText = p1().toFixed(3);
+            ek1ForGraph.innerText = ek1().toFixed(3);
+            v1FromGraph.innerText = v1.toFixed(3);
+        }
+
+        // ========== 1. 动能-动量曲线图 (基于物体A) ==========
+        const ekCanvas = document.getElementById('ekpCanvas');
+        const ctxEk = ekCanvas.getContext('2d');
+        let widthEk = 700, heightEk = 320;
+        ekCanvas.width = widthEk; ekCanvas.height = heightEk;
+
+        let pMin = 0, pMax = 12;      // 动量范围 0~12
+        let yMinEk = -0.2, yMaxEk = 14;
+        function kinetic(p, m) { return p*p/(2*m); }
+        function updateYRangeEk() {
+            let maxEk = kinetic(pMax, m1);
+            yMaxEk = maxEk * 1.15;
+            if(yMaxEk < 1) yMaxEk = 2;
+            yMinEk = -0.2;
+        }
+        function toPixelX(p) { return ((p-pMin)/(pMax-pMin))*widthEk; }
+        function toPixelY(ek) { return heightEk - ((ek-yMinEk)/(yMaxEk-yMinEk))*heightEk; }
+
+        function drawGridEk() {
+            ctxEk.save();
+            ctxEk.strokeStyle="#cbdbe2"; ctxEk.lineWidth=0.6;
+            for(let p=0; p<=pMax; p+=1){ let x=toPixelX(p); if(x>=0&&x<=widthEk){ ctxEk.beginPath(); ctxEk.moveTo(x,0); ctxEk.lineTo(x,heightEk); ctxEk.stroke(); } }
+            let stepY = (yMaxEk-yMinEk>12)?2:1;
+            for(let y=0; y<=yMaxEk; y+=stepY){ let py=toPixelY(y); if(py>=0&&py<=heightEk){ ctxEk.beginPath(); ctxEk.moveTo(0,py); ctxEk.lineTo(widthEk,py); ctxEk.stroke(); } }
+            ctxEk.beginPath(); ctxEk.lineWidth=2; ctxEk.strokeStyle="#2d627c";
+            let axisY0=toPixelY(0); if(axisY0>=0&&axisY0<=heightEk){ ctxEk.moveTo(0,axisY0); ctxEk.lineTo(widthEk,axisY0); ctxEk.stroke(); }
+            let axisX0=toPixelX(0); if(axisX0>=0&&axisX0<=widthEk){ ctxEk.moveTo(axisX0,0); ctxEk.lineTo(axisX0,heightEk); ctxEk.stroke(); }
+            ctxEk.fillStyle="#2d627c"; ctxEk.font="10px 'Segoe UI'";
+            if(axisY0>=0){ ctxEk.fillText("p (kg·m/s)", widthEk-50, axisY0-6); }
+            if(axisX0>=0){ ctxEk.fillText("E_k (J)", axisX0+6, 18); }
+            ctxEk.restore();
+        }
+
+        function drawCurveEk() {
+            ctxEk.beginPath(); ctxEk.lineWidth=3; ctxEk.strokeStyle="#2f86a3";
+            let step=(pMax-pMin)/600; let first=true;
+            for(let p=pMin; p<=pMax; p+=step){
+                let ek=kinetic(p,m1);
+                let x=toPixelX(p), y=toPixelY(ek);
+                if(ek>yMaxEk+0.3 || ek<yMinEk-0.2){ first=true; continue; }
+                if(first){ ctxEk.moveTo(x,y); first=false; } else { ctxEk.lineTo(x,y); }
+            }
+            ctxEk.stroke();
+        }
+
+        function drawTangentEk() {
+            let p0 = p1();
+            if(p0 < pMin) p0 = pMin;
+            if(p0 > pMax) p0 = pMax;
+            let ek0 = kinetic(p0, m1);
+            let slope = v1;   // dE/dp = v
+            let pStart = pMin, pEnd = pMax;
+            let yStart = slope*(pStart-p0)+ek0;
+            let yEnd = slope*(pEnd-p0)+ek0;
+            ctxEk.save();
+            ctxEk.beginPath(); ctxEk.lineWidth=2.5; ctxEk.strokeStyle="#e67e22"; ctxEk.setLineDash([8,6]);
+            ctxEk.moveTo(toPixelX(pStart), toPixelY(yStart));
+            ctxEk.lineTo(toPixelX(pEnd), toPixelY(yEnd));
+            ctxEk.stroke();
+            ctxEk.setLineDash([]);
+            let px=toPixelX(p0), py=toPixelY(ek0);
+            ctxEk.beginPath(); ctxEk.fillStyle="#e67e22"; ctxEk.arc(px,py,7,0,2*Math.PI); ctxEk.fill();
+            ctxEk.fillStyle="white"; ctxEk.beginPath(); ctxEk.arc(px,py,3,0,2*Math.PI); ctxEk.fill();
+            ctxEk.restore();
+        }
+
+        function redrawEkp() {
+            updateYRangeEk();
+            ctxEk.clearRect(0,0,widthEk,heightEk);
+            drawGridEk();
+            drawCurveEk();
+            drawTangentEk();
+        }
+
+        // ========== 2. 碰撞动画 Canvas ==========
+        const collCanvas = document.getElementById('collisionCanvas');
+        const ctxColl = collCanvas.getContext('2d');
+        let cw=700, ch=150;
+        collCanvas.width=cw; collCanvas.height=ch;
+
+        function drawCollision() {
+            ctxColl.clearRect(0,0,cw,ch);
+            ctxColl.fillStyle="#fef8e7"; ctxColl.fillRect(0,0,cw,ch);
+            ctxColl.beginPath(); ctxColl.strokeStyle="#bbb"; ctxColl.moveTo(0,ch-40); ctxColl.lineTo(cw,ch-40); ctxColl.stroke();
+            // 动态相对位置（随时间周期摆动，仅视觉）
+            let t = (Date.now() % 6000) / 6000;
+            let offset = (v1 - v2) * t * 50;
+            let x1 = 180 + v1 * 25 + offset * 0.5;
+            let x2 = 520 + v2 * 25 - offset * 0.5;
+            if(x1 < 20) x1 = 20;
+            if(x2 > cw-70) x2 = cw-70;
+            if(x1+45 > x2 && v1 > v2) { /* 接近但不强行改变 */ }
+            ctxColl.fillStyle="#3a86ff"; ctxColl.fillRect(x1, ch-75, 45, 35);
+            ctxColl.fillStyle="#ff9e3a"; ctxColl.fillRect(x2, ch-75, 45, 35);
+            ctxColl.fillStyle="#1f3b4a"; ctxColl.font="bold 12px monospace";
+            ctxColl.fillText("A", x1+18, ch-78);
+            ctxColl.fillText("B", x2+18, ch-78);
+            ctxColl.font="10px sans-serif"; ctxColl.fillStyle="#2c5e7a";
+            ctxColl.fillText(`${v1.toFixed(2)} m/s`, x1, ch-48);
+            ctxColl.fillText(`${v2.toFixed(2)} m/s`, x2, ch-48);
+        }
+        setInterval(drawCollision, 50);
+
+        // ========== 3. 导数对比小图 (dE/dp = v) ==========
+        const derivCanvas = document.getElementById('derivCanvas');
+        const ctxDeriv = derivCanvas.getContext('2d');
+        let dw = 400, dh = 200;
+        derivCanvas.width = dw; derivCanvas.height = dh;
+        function drawDerivativeGraph() {
+            let pMinL = 0, pMaxL = 12;
+            let eMax = kinetic(pMaxL, m1)*1.1;
+            let yMinL = -0.1;
+            function mapX(p) { return (p-pMinL)/(pMaxL-pMinL)*dw; }
+            function mapY(e) { return dh - (e-yMinL)/(eMax-yMinL)*dh; }
+            ctxDeriv.clearRect(0,0,dw,dh);
+            // 网格
+            ctxDeriv.strokeStyle="#ccc"; ctxDeriv.lineWidth=0.5;
+            for(let i=0;i<=4;i++){ let x=i*dw/4; ctxDeriv.beginPath(); ctxDeriv.moveTo(x,0); ctxDeriv.lineTo(x,dh); ctxDeriv.stroke(); }
+            for(let i=0;i<=4;i++){ let y=i*dh/4; ctxDeriv.beginPath(); ctxDeriv.moveTo(0,y); ctxDeriv.lineTo(dw,y); ctxDeriv.stroke(); }
+            // 曲线
+            ctxDeriv.beginPath(); ctxDeriv.strokeStyle="#2f86a3"; ctxDeriv.lineWidth=2;
+            let step=(pMaxL-pMinL)/300; let first=true;
+            for(let p=pMinL; p<=pMaxL; p+=step){
+                let ek=kinetic(p,m1);
+                let x=mapX(p), y=mapY(ek);
+                if(first){ ctxDeriv.moveTo(x,y); first=false; } else ctxDeriv.lineTo(x,y);
+            }
+            ctxDeriv.stroke();
+            // 当前点切线
+            let p0 = p1();
+            if(p0 < pMinL) p0 = pMinL;
+            if(p0 > pMaxL) p0 = pMaxL;
+            let ek0 = kinetic(p0, m1);
+            let slope = v1;
+            let x0 = mapX(p0), y0 = mapY(ek0);
+            let xStart = mapX(pMinL), yStart = mapY(slope*(pMinL-p0)+ek0);
+            let xEnd = mapX(pMaxL), yEnd = mapY(slope*(pMaxL-p0)+ek0);
+            ctxDeriv.beginPath(); ctxDeriv.setLineDash([5,5]); ctxDeriv.strokeStyle="#e67e22"; ctxDeriv.lineWidth=2;
+            ctxDeriv.moveTo(xStart,yStart); ctxDeriv.lineTo(xEnd,yEnd); ctxDeriv.stroke();
+            ctxDeriv.setLineDash([]);
+            ctxDeriv.beginPath(); ctxDeriv.fillStyle="#e67e22"; ctxDeriv.arc(x0,y0,5,0,2*Math.PI); ctxDeriv.fill();
+            // 更新文字
+            derivPVal.innerText = p0.toFixed(3);
+            derivMVal.innerText = m1.toFixed(2);
+            derivSlopeVal.innerText = slope.toFixed(3);
+            derivVVal.innerText = v1.toFixed(3);
+        }
+
+        // ========== 全局刷新：所有画布和数值 ==========
+        function refreshAll() {
+            updateAllNumerics();
+            redrawEkp();
+            drawDerivativeGraph();
+            // 碰撞动画会自己循环，但需更新数值显示
+        }
+
+        // 滑块事件：同步参数并刷新
+        function syncFromSliders() {
+            m1 = parseFloat(m1Slider.value);
+            v1 = parseFloat(v1Slider.value);
+            m2 = parseFloat(m2Slider.value);
+            v2 = parseFloat(v2Slider.value);
+            refreshAll();
+        }
+
+        m1Slider.addEventListener('input', syncFromSliders);
+        v1Slider.addEventListener('input', syncFromSliders);
+        m2Slider.addEventListener('input', syncFromSliders);
+        v2Slider.addEventListener('input', syncFromSliders);
+
+        // 弹性碰撞逻辑 (更新速度)
+        function performCollision() {
+            let newV1 = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+            let newV2 = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+            v1 = newV1;
+            v2 = newV2;
+            // 更新滑块值
+            v1Slider.value = v1;
+            v2Slider.value = v2;
+            m1Slider.value = m1;
+            m2Slider.value = m2;
+            refreshAll();
+        }
+
+        function resetSystem() {
+            m1 = 2.0; v1 = 1.5;
+            m2 = 2.0; v2 = -0.5;
+            m1Slider.value = m1; v1Slider.value = v1;
+            m2Slider.value = m2; v2Slider.value = v2;
+            refreshAll();
+        }
+
+        document.getElementById('collisionBtn').addEventListener('click', performCollision);
+        document.getElementById('resetBtn').addEventListener('click', resetSystem);
+
+        // 窗口大小适配 (简单重绘)
+        window.addEventListener('resize', () => { refreshAll(); });
+        // 初始化
+        refreshAll();
+    })();
+</script>
+</body>
+</html>

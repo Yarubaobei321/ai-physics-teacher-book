@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中化学·乙烯 | 3D交互式断键成键演示 | 必修二+选必三</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+            background: #eef4e8;
+            color: #1a2f1a;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        /* 容器 */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 1.5rem 1.8rem 3rem;
+        }
+
+        /* 头部 */
+        .hero {
+            background: linear-gradient(115deg, #1d5a1f, #2d8230);
+            color: white;
+            border-radius: 2rem;
+            padding: 1.8rem 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 12px 24px -12px rgba(0,0,0,0.25);
+        }
+        .hero h1 {
+            font-size: 2.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 12px;
+        }
+        .hero h1 small {
+            font-size: 0.9rem;
+            background: rgba(255,255,200,0.25);
+            padding: 0.25rem 1rem;
+            border-radius: 40px;
+            font-weight: normal;
+        }
+        .hero p {
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            opacity: 0.9;
+        }
+        .badge {
+            display: inline-block;
+            background: #f3b33d;
+            color: #2a4b0c;
+            padding: 0.2rem 1rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-top: 0.8rem;
+        }
+
+        /* 网格布局 */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 2rem;
+        }
+
+        /* 侧边目录 */
+        .sidebar {
+            position: sticky;
+            top: 1.5rem;
+            align-self: start;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.2rem 0.8rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+            border: 1px solid #cde2c4;
+        }
+        .sidebar h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-left: 0.8rem;
+            border-left: 4px solid #2d8230;
+        }
+        .sidebar ul {
+            list-style: none;
+        }
+        .sidebar li {
+            margin: 0.6rem 0;
+        }
+        .sidebar a {
+            text-decoration: none;
+            color: #2a5e2a;
+            font-weight: 500;
+            display: block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 1rem;
+            transition: 0.2s;
+        }
+        .sidebar a:hover {
+            background: #e2f0dc;
+            color: #0f3f0f;
+            padding-left: 1.2rem;
+        }
+
+        /* 主内容卡片 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 1.8rem;
+        }
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.3rem 1.8rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            border: 1px solid #ddecd6;
+            transition: box-shadow 0.2s;
+        }
+        .card h2 {
+            font-size: 1.6rem;
+            margin-bottom: 0.8rem;
+            border-bottom: 3px solid #8bc34a;
+            display: inline-block;
+            color: #1a551a;
+        }
+        .card h3 {
+            font-size: 1.2rem;
+            margin: 0.8rem 0 0.4rem;
+            color: #2d6e2a;
+        }
+        .equation {
+            background: #f4faf0;
+            padding: 0.5rem 1rem;
+            border-radius: 1rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 500;
+            margin: 0.7rem 0;
+            border-left: 5px solid #6fbf4c;
+            overflow-x: auto;
+        }
+        .grid-props {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(230px,1fr));
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+        .prop-card {
+            background: #f9fff6;
+            padding: 0.5rem 0.8rem;
+            border-radius: 1rem;
+            border: 1px solid #cde0c2;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid #c2dbb4;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        th {
+            background: #dcf1d2;
+        }
+        .highlight {
+            background: #fff0cf;
+            padding: 0 0.2rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        /* 3D 区域 */
+        .canvas-wrapper {
+            background: #fefef5;
+            border-radius: 1.2rem;
+            margin-top: 0.6rem;
+            border: 1px solid #cde0c2;
+            overflow: hidden;
+        }
+        #ethCanvas {
+            width: 100%;
+            height: 420px;
+            display: block;
+            background: radial-gradient(circle at 20% 30%, #e1f0da, #cfe2c4);
+        }
+        .step-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 16px 0 12px;
+        }
+        .step-btn {
+            background: #eaf3e4;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: bold;
+            color: #1b551b;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.85rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .step-btn.active {
+            background: #2b7a2e;
+            color: white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        .step-btn:hover:not(.active) {
+            background: #cde2c0;
+            transform: translateY(-2px);
+        }
+        .step-desc {
+            background: #ebf3e6;
+            padding: 10px 16px;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: 500;
+            color: #2a5c24;
+            border-left: 4px solid #6fbf4c;
+        }
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #5a7352;
+            border-top: 1px solid #cde0c2;
+            padding-top: 1.2rem;
+        }
+        /* 返回顶部 */
+        .go-top {
+            position: fixed;
+            bottom: 1.8rem;
+            right: 1.8rem;
+            background: #2b7a2e;
+            color: white;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: 0.2s;
+            z-index: 99;
+            border: none;
+        }
+        .go-top:hover {
+            background: #1c5f1f;
+            transform: scale(1.05);
+        }
+        @media (max-width: 760px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: static;
+            }
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="hero">
+        <h1>🧪 乙烯 · C₂H₄ <small>最简单的烯烃 | 必修二+选必三</small></h1>
+        <p>碳碳双键 · 加成反应核心 · 3D分步断键成键模拟</p>
+        <div class="badge">🎯 交互模型：点击步骤观察π键断裂 & 新键生成</div>
+    </div>
+
+    <div class="two-columns">
+        <aside class="sidebar">
+            <h3>📖 学习指引</h3>
+            <ul>
+                <li><a href="#struct">🔬 分子结构 & 杂化</a></li>
+                <li><a href="#phys">⚗️ 物理性质</a></li>
+                <li><a href="#chem">🔥 化学性质</a></li>
+                <li><a href="#mechanism3d">✨ 3D机理演示</a></li>
+                <li><a href="#prep">🧪 实验室制法</a></li>
+                <li><a href="#industry">🏭 工业制法</a></li>
+                <li><a href="#usage">💡 用途</a></li>
+                <li><a href="#compare">📊 对比乙烷</a></li>
+                <li><a href="#quiz">✍️ 自测</a></li>
+            </ul>
+        </aside>
+
+        <div class="main-content">
+            <!-- 结构 -->
+            <section id="struct" class="card">
+                <h2>📐 分子结构</h2>
+                <p><strong>分子式：</strong>C₂H₄ &nbsp;|&nbsp; <strong>结构简式：</strong>CH₂=CH₂ &nbsp;|&nbsp; <strong>电子式：</strong>碳碳双键(两对共用电子)</p>
+                <ul>
+                    <li><span class="highlight">杂化方式：</span>C原子为sp²杂化，形成平面三角形，键角≈120°</li>
+                    <li><span class="highlight">双键组成：</span>1个σ键 + 1个π键，π键电子云分布在平面上下，易断裂 → 化学性质活泼</li>
+                    <li>所有原子共平面，C=C键长0.134nm（比乙烷单键短）</li>
+                </ul>
+                <div class="equation">电子式示意： H : C :: C : H   (双键代表两个共价键)</div>
+            </section>
+
+            <!-- 物理性质 -->
+            <section id="phys" class="card">
+                <h2>⚡ 物理性质</h2>
+                <div class="grid-props">
+                    <div class="prop-card">🧊 无色、稍有甜味的气体</div>
+                    <div class="prop-card">💧 难溶于水，易溶于有机溶剂</div>
+                    <div class="prop-card">⚖️ 密度比空气略小 (M=28)</div>
+                    <div class="prop-card">🌡️ 熔点 -169℃ / 沸点 -103.7℃</div>
+                </div>
+            </section>
+
+            <!-- 化学性质 -->
+            <section id="chem" class="card">
+                <h2>🧨 化学性质 (双键的盛宴)</h2>
+                <h3>➕ 加成反应（核心）</h3>
+                <p><strong>定义：</strong>π键断裂，两个原子或基团分别加到双键两端碳上。</p>
+                <div class="equation">① 与Br₂加成：CH₂=CH₂ + Br₂ → CH₂Br–CH₂Br (溴水褪色，检验双键)</div>
+                <div class="equation">② 催化加氢：CH₂=CH₂ + H₂ → CH₃–CH₃ (Ni, 加热)</div>
+                <div class="equation">③ 与水加成：CH₂=CH₂ + H₂O → CH₃CH₂OH (工业乙醇)</div>
+                <div class="equation">④ 与HCl加成：CH₂=CH₂ + HCl → CH₃CH₂Cl</div>
+                <h3>🔥 氧化反应</h3>
+                <p>• 燃烧：火焰明亮带黑烟（含碳量高）<br>• 使酸性KMnO₄溶液褪色（被氧化为CO₂）</p>
+                <h3>🔗 加聚反应</h3>
+                <div class="equation">n CH₂=CH₂ → [–CH₂–CH₂–]ₙ (聚乙烯)</div>
+            </section>
+
+            <!-- 3D 交互演示区域（断键成键分步） -->
+            <section id="mechanism3d" class="card">
+                <h2>✨ 反应机理3D模拟 · 乙烯 + Br₂ 加成</h2>
+                <p><strong>分步观察：</strong>π键断裂 → 两个C-Br σ键形成。点击下方按钮逐步查看。</p>
+                <div class="canvas-wrapper">
+                    <canvas id="ethCanvas"></canvas>
+                </div>
+                <div class="step-bar">
+                    <button class="step-btn" data-step="0">1️⃣ 乙烯初始 (双键完整)</button>
+                    <button class="step-btn" data-step="1">2️⃣ Br₂ 靠近 & 极化</button>
+                    <button class="step-btn" data-step="2">3️⃣ π键断裂 · 双键打开</button>
+                    <button class="step-btn" data-step="3">4️⃣ 新键形成 · 1,2-二溴乙烷</button>
+                </div>
+                <div class="step-desc" id="stepMessage">📌 当前：乙烯分子，碳碳双键包含一个σ键和一个π键（浅色圆柱）。溴分子尚未出现。</div>
+                <p style="font-size:0.8rem; margin-top:8px;">💡 说明：黄色半透明圆柱 = π键；断裂后消失；橙色新键 = C-Br键生成。可用鼠标拖拽/旋转视角。</p>
+            </section>
+
+            <!-- 实验室制法 -->
+            <section id="prep" class="card">
+                <h2>🧪 实验室制法 (乙醇消去)</h2>
+                <div class="equation">CH₃CH₂OH → CH₂=CH₂↑ + H₂O (浓H₂SO₄, 170℃)</div>
+                <ul><li>浓硫酸作催化剂和脱水剂；碎瓷片防暴沸；温度计插入液面，迅速升温至170℃防乙醚生成；NaOH溶液除杂SO₂/CO₂。</li></ul>
+            </section>
+
+            <section id="industry" class="card">
+                <h2>🏭 工业制法 · 石油裂解</h2>
+                <p>高温裂解石脑油或乙烷，获得乙烯、丙烯。乙烯产量是衡量国家石油化工水平的标志。</p>
+            </section>
+
+            <section id="usage" class="card">
+                <h2>💎 主要用途</h2>
+                <div class="grid-props">
+                    <div class="prop-card">🍌 植物催熟剂</div>
+                    <div class="prop-card">🧴 聚乙烯塑料 (薄膜、容器)</div>
+                    <div class="prop-card">🍷 合成乙醇 (水合法)</div>
+                    <div class="prop-card">🏭 制备环氧乙烷、苯乙烯等</div>
+                </div>
+            </section>
+
+            <section id="compare" class="card">
+                <h2>📊 乙烯 vs 乙烷</h2>
+                <table>
+                    <thead><tr><th>对比项</th><th>乙烯 (C₂H₄)</th><th>乙烷 (C₂H₆)</th></tr></thead>
+                    <tbody>
+                        <tr><td>碳碳键型</td><td>双键 (σ+π)</td><td>单键 σ</td></tr>
+                        <tr><td>酸性KMnO₄</td><td>褪色 (氧化)</td><td>不褪色</td></tr>
+                        <tr><td>溴水/CCl₄</td><td>褪色 (加成)</td><td>不褪色 (取代需光照)</td></tr>
+                        <tr><td>主要反应类型</td><td>加成、加聚</td><td>取代、裂解</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section id="quiz" class="card">
+                <h2>✍️ 思维自测 (考点巩固)</h2>
+                <ol>
+                    <li>乙烯使溴水褪色与使酸性高锰酸钾褪色的原理有何不同？</li>
+                    <li>从化学键角度解释乙烯为何比乙烷活泼？</li>
+                    <li>实验室制乙烯为何温度必须迅速升到170℃？</li>
+                </ol>
+                <details><summary style="cursor:pointer; color:#2b6e2a;">🔍 点击查看答案</summary>
+                    <div style="margin-top: 12px; background:#f4faf0; padding:8px 12px; border-radius: 1rem;">
+                        <p>1. 乙烯与溴水是<span class="highlight">加成反应</span>；与酸性KMnO₄是<span class="highlight">氧化还原反应</span>。<br>
+                        2. 乙烯含有π键，易断裂发生加成；乙烷只有σ键，较稳定。<br>
+                        3. 防止在140℃时发生分子间脱水生成乙醚，影响乙烯产率。</p>
+                    </div>
+                </details>
+            </section>
+        </div>
+    </div>
+    <footer>依据人教版高中化学必修第二册 & 选择性必修3 · 乙烯为核心的不饱和烃 | 3D模型展示σ/π键及加成断键过程</footer>
+</div>
+<button class="go-top" id="goTopBtn">↑</button>
+
+<!-- 引入Three.js核心库和扩展 -->
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // --- 初始化场景、相机、渲染器
+    const canvas = document.getElementById('ethCanvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xe1f0da);
+    scene.fog = new THREE.Fog(0xe1f0da, 12, 20);
+    
+    // 相机: 透视
+    const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    camera.position.set(4, 3.2, 5);
+    camera.lookAt(0, 0, 0);
+    
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    
+    function resizeCanvas() {
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // 轨道控制 (允许旋转/缩放)
+    const controls = new OrbitControls(camera, renderer);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = false;
+    controls.enableZoom = true;
+    controls.enablePan = true;
+    controls.target.set(0, 0.2, 0);
+    
+    // 灯光
+    const ambientLight = new THREE.AmbientLight(0x4a5a3a);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(2, 5, 3);
+    scene.add(dirLight);
+    const fillLight = new THREE.PointLight(0xccaa88, 0.4);
+    fillLight.position.set(-1, 2, 2);
+    scene.add(fillLight);
+    const backLight = new THREE.PointLight(0xaacc99, 0.3);
+    backLight.position.set(0, 1, -3);
+    scene.add(backLight);
+    
+    // 辅助网格 (半透明地面参考)
+    const gridHelper = new THREE.GridHelper(8, 20, 0x88aa77, 0xaacc99);
+    gridHelper.position.y = -1.3;
+    gridHelper.material.transparent = true;
+    gridHelper.material.opacity = 0.25;
+    scene.add(gridHelper);
+    
+    // --- 原子材质
+    const carbonMat = new THREE.MeshStandardMaterial({ color: 0x5b8c50, roughness: 0.3, metalness: 0.1 });
+    const hydrogenMat = new THREE.MeshStandardMaterial({ color: 0xd0e0c8, roughness: 0.4 });
+    const bromineMat = new THREE.MeshStandardMaterial({ color: 0xb87333, metalness: 0.2, emissive: 0x331100 });
+    const bondMat = new THREE.MeshStandardMaterial({ color: 0x7a8a6e });
+    const piBondMat = new THREE.MeshPhongMaterial({ color: 0xffaa66, transparent: true, opacity: 0.75, emissive: 0x442200 });
+    const newBondMat = new THREE.MeshStandardMaterial({ color: 0xdd8844, emissive: 0x331a00 });
+    
+    // 坐标定义: 乙烯平面 (x范围 -0.75 ~ 0.75)
+    const c1Pos = new THREE.Vector3(-0.75, 0, 0);
+    const c2Pos = new THREE.Vector3(0.75, 0, 0);
+    const h1Pos = new THREE.Vector3(-1.35, 0.7, 0);
+    const h2Pos = new THREE.Vector3(-1.35, -0.7, 0);
+    const h3Pos = new THREE.Vector3(1.35, 0.7, 0);
+    const h4Pos = new THREE.Vector3(1.35, -0.7, 0);
+    
+    // 溴分子初始 (靠近右侧)
+    const br1Near = new THREE.Vector3(1.8, 0.9, 0.6);
+    const br2Near = new THREE.Vector3(2.8, 0.9, 0.6);
+    // 最终产物溴位置
+    const br1Final = new THREE.Vector3(-1.1, 0.9, 1.0);
+    const br2Final = new THREE.Vector3(1.1, 0.9, 1.0);
+    
+    // 辅助函数：创建圆柱体连接两点
+    function createCylBetween(p1, p2, material, radius = 0.07) {
+        const start = new THREE.Vector3(p1.x, p1.y, p1.z);
+        const end = new THREE.Vector3(p2.x, p2.y, p2.z);
+        const dir = new THREE.Vector3().subVectors(end, start);
+        const len = dir.length();
+        const center = start.clone().add(end).multiplyScalar(0.5);
+        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, len, 8), material);
+        cylinder.position.copy(center);
+        cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+        return cylinder;
+    }
+    
+    // 构建乙烯分子组 (包含碳氢原子及σ键、π键)
+    const etheneGroup = new THREE.Group();
+    // 碳原子
+    const cAtom1 = new THREE.Mesh(new THREE.SphereGeometry(0.38, 32, 16), carbonMat);
+    cAtom1.position.copy(c1Pos);
+    const cAtom2 = new THREE.Mesh(new THREE.SphereGeometry(0.38, 32, 16), carbonMat);
+    cAtom2.position.copy(c2Pos);
+    // 氢原子
+    const hAtoms = [h1Pos, h2Pos, h3Pos, h4Pos].map(pos => {
+        const h = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 12), hydrogenMat);
+        h.position.copy(pos);
+        return h;
+    });
+    etheneGroup.add(cAtom1, cAtom2, ...hAtoms);
+    
+    // 化学键: C-H (4个)
+    const chBonds = [
+        createCylBetween(c1Pos, h1Pos, bondMat, 0.07),
+        createCylBetween(c1Pos, h2Pos, bondMat, 0.07),
+        createCylBetween(c2Pos, h3Pos, bondMat, 0.07),
+        createCylBetween(c2Pos, h4Pos, bondMat, 0.07)
+    ];
+    // C-C σ 键
+    const ccSigma = createCylBetween(c1Pos, c2Pos, bondMat, 0.12);
+    // π 键 (半透明圆柱，垂直于平面，稍抬高)
+    const midCC = c1Pos.clone().add(c2Pos).multiplyScalar(0.5);
+    const piCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 1.55, 12), piBondMat);
+    piCyl.position.copy(midCC);
+    piCyl.position.z += 0.18;
+    piCyl.rotation.x = Math.PI / 2;
+    piCyl.rotation.z = 0;
+    
+    etheneGroup.add(ccSigma, ...chBonds, piCyl);
+    scene.add(etheneGroup);
+    
+    // 溴分子组 (初始不可见)
+    const br2Group = new THREE.Group();
+    const brA1 = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 16), bromineMat);
+    const brA2 = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 16), bromineMat);
+    const brBond = createCylBetween(br1Near, br2Near, new THREE.MeshStandardMaterial({ color: 0xaa8866 }), 0.1);
+    br2Group.add(brA1, brA2, brBond);
+    scene.add(br2Group);
+    br2Group.visible = false;
+    
+    // 产物组 (C-Br键和溴原子，初始不可见)
+    const productGroup = new THREE.Group();
+    const brProd1 = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 16), bromineMat);
+    const brProd2 = new THREE.Mesh(new THREE.SphereGeometry(0.45, 32, 16), bromineMat);
+    brProd1.position.copy(br1Final);
+    brProd2.position.copy(br2Final);
+    const c1Br = createCylBetween(c1Pos, br1Final, newBondMat, 0.1);
+    const c2Br = createCylBetween(c2Pos, br2Final, newBondMat, 0.1);
+    productGroup.add(brProd1, brProd2, c1Br, c2Br);
+    scene.add(productGroup);
+    productGroup.visible = false;
+    
+    // 存储当前显示的溴分子位置 (用于步骤1/2)
+    let currentBrVisible = false;
+    
+    // 步骤控制
+    function setStep(step) {
+        // 重置所有显示
+        piCyl.visible = true;
+        br2Group.visible = false;
+        productGroup.visible = false;
+        // 调整溴分子位置 (步骤1、2需要展示靠近)
+        if (step === 0) {
+            // 初始: 只显示完整乙烯
+            piCyl.visible = true;
+            br2Group.visible = false;
+            productGroup.visible = false;
+            document.getElementById('stepMessage').innerHTML = '📌 步骤0：乙烯分子，碳碳双键包含σ键(灰色)和π键(黄色透明圆柱)。溴分子尚未加入。';
+        } 
+        else if (step === 1) {
+            // Br₂ 靠近 + 极化效果 (显示溴分子)
+            piCyl.visible = true;
+            br2Group.visible = true;
+            // 更新溴原子位置到靠近右侧
+            brA1.position.copy(br1Near);
+            brA2.position.copy(br2Near);
+            // 重新调整键
+            const newBrBond = createCylBetween(br1Near, br2Near, new THREE.MeshStandardMaterial({ color: 0xaa8866 }), 0.1);
+            br2Group.remove(brBond);
+            br2Group.add(newBrBond);
+            window.currentBrBond = newBrBond;
+            productGroup.visible = false;
+            document.getElementById('stepMessage').innerHTML = '📌 步骤1：Br₂分子靠近双键，π电子云诱导Br-Br键极化，为亲电加成做准备。';
+        } 
+        else if (step === 2) {
+            // π键断裂: 隐藏π圆柱，显示溴分子更近且键极化断裂示意(此处简单演示溴分子仍存在)
+            piCyl.visible = false;
+            br2Group.visible = true;
+            brA1.position.copy(new THREE.Vector3(1.5, 0.7, 0.7));
+            brA2.position.copy(new THREE.Vector3(2.4, 0.7, 0.7));
+            const brokenBond = createCylBetween(brA1.position, brA2.position, new THREE.MeshStandardMaterial({ color: 0xaa8866, transparent: true, opacity: 0.5 }), 0.08);
+            br2Group.remove(window.currentBrBond);
+            br2Group.add(brokenBond);
+            window.currentBrBond = brokenBond;
+            document.getElementById('stepMessage').innerHTML = '⚡ 步骤2：π键彻底断裂！双键中的π电子云断开，形成碳正离子中间体，溴-溴键异裂。';
+        } 
+        else if (step === 3) {
+            // 产物生成: 隐藏乙烯的π键和溴分子，显示C-Br新键
+            piCyl.visible = false;
+            br2Group.visible = false;
+            productGroup.visible = true;
+            document.getElementById('stepMessage').innerHTML = '🎉 步骤3：新键形成！两个溴原子分别与两个碳形成C-Br σ键，生成1,2-二溴乙烷。加成反应完成。';
+        }
+    }
+    
+    // 绑定按钮事件并高亮
+    const btns = document.querySelectorAll('.step-btn');
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const stepVal = parseInt(btn.getAttribute('data-step'), 10);
+            setStep(stepVal);
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
+    });
+    // 初始激活步骤0
+    document.querySelector('.step-btn[data-step="0"]').classList.add('active');
+    setStep(0);
+    
+    // 动画循环
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update(); // 更新轨道
+        renderer.render(scene, camera);
+    }
+    animate();
+    
+    // 小调整: 使相机视角更友好
+    setTimeout(() => {
+        camera.position.set(4.2, 3.0, 5.5);
+        controls.target.set(0, 0.2, 0);
+        controls.update();
+    }, 100);
+    
+    // --- 返回顶部按钮功能 (独立)
+    const goTopBtn = document.getElementById('goTopBtn');
+    goTopBtn.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    // 可选的滚动显示/隐藏效果
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 400) {
+            goTopBtn.style.opacity = '1';
+        } else {
+            goTopBtn.style.opacity = '0.7';
+        }
+    });
+    goTopBtn.style.opacity = '0.8';
+</script>
+</body>
+</html>

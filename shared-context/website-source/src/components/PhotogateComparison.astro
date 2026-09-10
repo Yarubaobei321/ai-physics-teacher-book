@@ -1,0 +1,1146 @@
+---
+const comparisonRows = [
+  ['结构', '一发一收，形成一条光路', '左右两块板子各自集成一发一收，形成上下两条光路'],
+  ['计时量', '遮光持续时间 Δt', '两次遮挡之间的时间差 Δt = t₂ - t₁'],
+  ['已知量', '必须知道物体穿过光束方向上的有效宽度 d', '只需要知道两束光之间的固定间距 L = 1 cm'],
+  ['速度公式', 'v = d / Δt', 'v = L / Δt，其中 L = 1 cm = 0.01 m'],
+  ['适合对象', '遮光片、挡光板等规则物体', '小球、滑块、纸带、不规则物体等'],
+  ['主要风险', '小球若未从球心位置遮光，等效宽度会变小', '对物体尺寸依赖少，重复性和稳定性更好']
+];
+
+const dualFeatures = [
+  '不需要输入小球直径或遮光片宽度',
+  '只依赖固定光路间距 L = 1 cm',
+  '通过两次触发边沿计时，重复测量更稳定',
+  '适合自由落体、小球滚动、滑块通过等实验'
+];
+
+const structureFigures = [
+  {
+    label: '带外壳的双头光电门实物结构',
+    tone: 'text-emerald-700',
+    image: '/images/photogate-single-structure.webp',
+    width: 1000,
+    height: 1150,
+    alt: '带外壳的双头光电门实物结构图，红圈标出红外光头位置',
+    copy: '这张图也是双头光电门，只是红外发射和接收光头被外壳封装。开口处两组探头对应两条固定间距的红外光路。'
+  },
+  {
+    label: '未装外壳的双头光电门实物结构',
+    tone: 'text-emerald-700',
+    image: '/images/photogate-dual-structure.webp',
+    width: 1000,
+    height: 1084,
+    alt: '未装外壳的双头光电门实物结构图，红圈和虚线标出两条红外光路',
+    copy: '去掉外壳后可以直接看到左右两块板上的发射和接收光头，它们形成两条相隔 1 cm 的光路。小球依次经过两条光路，记录的是两次触发的时间差。'
+  }
+];
+---
+
+<section class="relative overflow-hidden bg-ink text-white">
+  <img
+    src="/images/photogate-motion-lab.png"
+    alt="钢球在实验轨道上运动的物理实验场景"
+    class="absolute inset-0 h-full w-full object-cover"
+  />
+  <div class="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,32,51,0.95)_0%,rgba(13,57,105,0.82)_48%,rgba(16,32,51,0.30)_100%)]"></div>
+  <div class="page-shell relative flex min-h-[82svh] items-center py-16">
+    <div class="max-w-3xl">
+      <p class="text-sm font-bold text-yucai-100">DIS 传感器 · 光电门测速</p>
+      <h1 class="mt-4 text-4xl font-black leading-tight sm:text-5xl lg:text-6xl">
+        单头与双头光电门，差别不只是多一束光
+      </h1>
+      <p class="mt-6 max-w-2xl text-base leading-8 text-blue-50 sm:text-lg">
+        单头光电门测的是“遮光持续了多久”，双头光电门测的是“物体从第一束光到第二束光用了多久”。
+        这一个变化，让小球测速不再依赖物体尺寸。
+      </p>
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a href="#dual-principle" class="focus-ring inline-flex h-12 items-center justify-center rounded-md bg-white px-6 text-sm font-bold text-yucai-800 transition hover:bg-yucai-50">
+          看双头测速原理
+        </a>
+        <a href="#comparison-table" class="focus-ring inline-flex h-12 items-center justify-center rounded-md border border-white/70 px-6 text-sm font-bold text-white transition hover:bg-white/12">
+          查看对比表
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-band bg-white">
+  <div class="page-shell">
+    <div class="grid gap-8 lg:grid-cols-[0.95fr_1.05fr] lg:items-end">
+      <div>
+        <p class="eyebrow">FIRST QUESTION</p>
+        <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">到底测的是哪个时间？</h2>
+      </div>
+      <p class="leading-8 text-slate-700">
+        两种光电门都在计时，但计时对象完全不同。单头光电门需要把遮光时间换算成速度；
+        双头光电门直接记录物体经过两束光的时间差，位移就是固定的两束光间距。
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+      <article class="rounded-md border border-yucai-200 bg-yucai-50 p-6 shadow-soft">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-bold text-yucai-700">单头光电门</p>
+            <h3 class="mt-2 text-2xl font-black text-ink">一条光路，测遮光时间</h3>
+          </div>
+          <span class="rounded-md bg-white px-3 py-2 font-mono text-sm font-bold text-yucai-800">v = d / Δt</span>
+        </div>
+        <div class="single-path-visual mt-7" aria-label="单头光电门一发一收，一条光路示意">
+          <div class="gate-post emitter"><span>发射器</span></div>
+          <div class="single-beam"></div>
+          <div class="moving-slab">
+            <span>d</span>
+          </div>
+          <div class="velocity-arrow">v</div>
+          <div class="gate-post receiver"><span>接收器</span></div>
+        </div>
+        <p class="mt-6 leading-7 text-slate-700">
+          遮光片从上向下进入光束后开始遮光，离开光束后结束遮光。公式里的 <strong>d</strong>
+          是物体穿过光束方向上的有效宽度，所以必须提前知道。
+        </p>
+      </article>
+
+      <article class="rounded-md border border-emerald-200 bg-emerald-50 p-6 shadow-soft">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-sm font-bold text-emerald-700">双头光电门</p>
+            <h3 class="mt-2 text-2xl font-black text-ink">两条光路，测先后时间差</h3>
+          </div>
+          <span class="rounded-md bg-white px-3 py-2 font-mono text-sm font-bold text-emerald-800">v = L / Δt</span>
+        </div>
+        <div class="dual-path-visual mt-7" aria-label="双头光电门上下两条光路方向相反，间距1厘米示意">
+          <div class="dual-board left-board">
+            <span class="port top emitter-port"></span>
+            <span class="port bottom receiver-port"></span>
+          </div>
+          <div class="dual-beam top-beam"><span>上光路：左 → 右</span></div>
+          <div class="dual-beam bottom-beam"><span>下光路：右 → 左</span></div>
+          <div class="dual-board right-board">
+            <span class="port top receiver-port"></span>
+            <span class="port bottom emitter-port"></span>
+          </div>
+          <div class="distance-bracket"><span>L = 1 cm</span></div>
+        </div>
+        <p class="mt-6 leading-7 text-slate-700">
+          左右两块板子各自集成一个发射器和一个接收器。上光路从左到右，下光路从右到左，
+          两束光之间的固定距离就是测速位移。
+        </p>
+      </article>
+    </div>
+
+    <div class="mt-14 border-t border-slate-200 pt-10">
+      <div class="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+        <div>
+          <p class="eyebrow">REAL STRUCTURE</p>
+          <h2 class="mt-3 text-2xl font-black text-ink sm:text-3xl">把示意图对应到真实光电门</h2>
+        </div>
+        <p class="leading-8 text-slate-700">
+          上面的动画把光路抽象成线条，下面两张结构图展示的是同一种双头光电门的两种实物状态：
+          一张带外壳，一张未装外壳。先看红外光头位置和两条光路，再理解双头测速公式会更直观。
+        </p>
+      </div>
+
+      <div class="mt-8 grid gap-6 lg:grid-cols-2">
+        {
+          structureFigures.map((figure) => (
+            <figure class="overflow-hidden rounded-md border border-slate-200 bg-white shadow-soft">
+              <div class="structure-photo-frame bg-white">
+                <img
+                  src={figure.image}
+                  alt={figure.alt}
+                  width={figure.width}
+                  height={figure.height}
+                  loading="lazy"
+                  decoding="async"
+                  class="h-full w-full object-contain"
+                />
+              </div>
+              <figcaption class="p-5">
+                <p class={`text-sm font-black ${figure.tone}`}>{figure.label}</p>
+                <p class="mt-3 leading-7 text-slate-700">{figure.copy}</p>
+              </figcaption>
+            </figure>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="dual-principle" class="section-band bg-lab">
+  <div class="page-shell">
+    <div class="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+      <div>
+        <p class="eyebrow">DUAL GATE PRINCIPLE</p>
+        <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">双头测速的关键：依次遮挡，不是同时遮挡</h2>
+        <p class="mt-5 leading-8 text-slate-700">
+          图中小球沿两束光的间距方向运动。它先遮挡第一条光路，系统开始计时；
+          再遮挡第二条光路，系统停止计时。两次遮挡的时间差就是 Δt。
+        </p>
+        <div class="mt-7 grid gap-3">
+          {
+            dualFeatures.map((item) => (
+              <div class="flex items-start gap-3 rounded-md border border-slate-200 bg-white p-4">
+                <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500"></span>
+                <p class="leading-7 text-slate-700">{item}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+      <div class="tool-surface overflow-hidden">
+        <div class="border-b border-slate-200 bg-white px-5 py-4">
+          <p class="text-sm font-bold text-slate-500">交互示意</p>
+          <h3 class="mt-1 text-xl font-black text-ink">小球按顺序经过两束光</h3>
+        </div>
+        <div class="p-5">
+          <div class="dual-demo stage-1" data-dual-demo aria-live="polite">
+            <div class="demo-board demo-left">
+              <span class="demo-port demo-top demo-emitter"></span>
+              <span class="demo-port demo-bottom demo-receiver"></span>
+            </div>
+            <div class="demo-board demo-right">
+              <span class="demo-port demo-top demo-receiver"></span>
+              <span class="demo-port demo-bottom demo-emitter"></span>
+            </div>
+            <div class="demo-beam demo-top-beam"></div>
+            <div class="demo-beam demo-bottom-beam"></div>
+            <div class="demo-flow-arrow">运动方向</div>
+            <div class="demo-ball"></div>
+            <div class="demo-label label-top">第一条光路：开始计时 t₁</div>
+            <div class="demo-label label-bottom">第二条光路：停止计时 t₂</div>
+            <div class="demo-gap-label">L = 1 cm</div>
+          </div>
+
+          <div class="mt-5 grid gap-3 sm:grid-cols-3">
+            <button class="stage-button is-active" type="button" data-stage-button="1">
+              t₁ 开始计时
+            </button>
+            <button class="stage-button" type="button" data-stage-button="2">
+              t₂ 停止计时
+            </button>
+            <button class="stage-button" type="button" data-stage-button="3">
+              Δt = t₂ - t₁
+            </button>
+          </div>
+          <p class="stage-copy mt-4 rounded-md bg-slate-50 p-4 leading-7 text-slate-700" data-stage-copy>
+            小球只遮挡上方光路，计时器从这一刻开始计时。
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-band bg-white">
+  <div class="page-shell">
+    <div class="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+      <div>
+        <p class="eyebrow">SIGNAL AND FORMULA</p>
+        <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">从信号图看公式为什么不同</h2>
+      </div>
+      <p class="leading-8 text-slate-700">
+        单头光电门的 Δt 是一段遮光持续时间，必须乘上“已知宽度”才能换算速度。
+        双头光电门的 Δt 是两个触发时刻的差，位移已经由两束光的固定间距给出。
+      </p>
+    </div>
+
+    <div class="mt-12 grid gap-6 lg:grid-cols-2">
+      <article class="rounded-md border border-slate-200 bg-white p-5 shadow-soft">
+        <h3 class="text-xl font-black text-ink">单头光电门：遮光时间 Δt</h3>
+        <svg class="mt-5 w-full" viewBox="0 0 620 300" role="img" aria-label="单头光电门信号图，遮光时输出变化并记录遮光时间">
+          <rect x="0" y="0" width="620" height="300" rx="8" fill="#f5f8fb" />
+          <text x="36" y="48" fill="#102033" font-size="20" font-weight="700">光电信号</text>
+          <line x1="90" y1="110" x2="530" y2="110" stroke="#cbd5e1" stroke-width="2" />
+          <line x1="90" y1="200" x2="530" y2="200" stroke="#cbd5e1" stroke-width="2" />
+          <polyline points="90,110 230,110 230,200 390,200 390,110 530,110" fill="none" stroke="#0b63c7" stroke-width="5" stroke-linejoin="round" />
+          <line x1="230" y1="74" x2="230" y2="238" stroke="#f97316" stroke-width="2" stroke-dasharray="6 6" />
+          <line x1="390" y1="74" x2="390" y2="238" stroke="#f97316" stroke-width="2" stroke-dasharray="6 6" />
+          <line x1="230" y1="248" x2="390" y2="248" stroke="#f97316" stroke-width="3" />
+          <path d="M230 248 l14 -8 v16 z" fill="#f97316" />
+          <path d="M390 248 l-14 -8 v16 z" fill="#f97316" />
+          <text x="284" y="278" fill="#9a3412" font-size="20" font-weight="700">Δt</text>
+          <text x="120" y="88" fill="#475569" font-size="18">未遮挡</text>
+          <text x="276" y="226" fill="#475569" font-size="18">遮挡</text>
+          <text x="420" y="88" fill="#475569" font-size="18">未遮挡</text>
+        </svg>
+        <div class="mt-5 rounded-md bg-yucai-50 p-5">
+          <p class="font-mono text-2xl font-bold text-yucai-900">v = d / Δt</p>
+          <p class="mt-3 leading-7 text-slate-700">这里的 d 必须是物体穿过光束方向上的有效宽度。</p>
+        </div>
+      </article>
+
+      <article class="rounded-md border border-emerald-200 bg-emerald-50 p-5 shadow-soft">
+        <h3 class="text-xl font-black text-ink">双头光电门：两次遮挡的时间差</h3>
+        <svg class="mt-5 w-full" viewBox="0 0 620 300" role="img" aria-label="双头光电门两路信号图，上光路先触发，下光路后触发，时间差为两次触发间隔">
+          <rect x="0" y="0" width="620" height="300" rx="8" fill="#ffffff" />
+          <text x="34" y="58" fill="#102033" font-size="18" font-weight="700">上光路信号</text>
+          <text x="34" y="158" fill="#102033" font-size="18" font-weight="700">下光路信号</text>
+          <line x1="170" y1="88" x2="540" y2="88" stroke="#dbeafe" stroke-width="2" />
+          <line x1="170" y1="188" x2="540" y2="188" stroke="#fee2e2" stroke-width="2" />
+          <polyline points="170,88 270,88 270,122 540,122" fill="none" stroke="#2563eb" stroke-width="5" stroke-linejoin="round" />
+          <polyline points="170,188 410,188 410,222 540,222" fill="none" stroke="#ef4444" stroke-width="5" stroke-linejoin="round" />
+          <line x1="270" y1="58" x2="270" y2="248" stroke="#475569" stroke-width="2" stroke-dasharray="5 6" />
+          <line x1="410" y1="58" x2="410" y2="248" stroke="#475569" stroke-width="2" stroke-dasharray="5 6" />
+          <text x="256" y="42" fill="#102033" font-size="18" font-style="italic">t₁</text>
+          <text x="396" y="42" fill="#102033" font-size="18" font-style="italic">t₂</text>
+          <line x1="270" y1="260" x2="410" y2="260" stroke="#059669" stroke-width="3" />
+          <path d="M270 260 l14 -8 v16 z" fill="#059669" />
+          <path d="M410 260 l-14 -8 v16 z" fill="#059669" />
+          <text x="304" y="286" fill="#047857" font-size="20" font-weight="700">Δt = t₂ - t₁</text>
+          <text x="286" y="152" fill="#475569" font-size="17">开始计时</text>
+          <text x="426" y="252" fill="#475569" font-size="17">停止计时</text>
+        </svg>
+        <div class="mt-5 rounded-md bg-white p-5">
+          <p class="font-mono text-2xl font-bold text-emerald-900">v = L / Δt = 0.01 / Δt</p>
+          <p class="mt-3 leading-7 text-slate-700">L 是两束光的固定间距 1 cm，换算成国际单位是 0.01 m。</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section-band bg-lab">
+  <div class="page-shell">
+    <div class="grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center">
+      <div>
+        <p class="eyebrow">WHY DUAL GATE</p>
+        <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">为什么小球更适合用双头光电门？</h2>
+        <p class="mt-5 leading-8 text-slate-700">
+          单头光电门测小球时，公式需要的 d 应该是小球被光束切到的那条“弦长”。
+          如果光路没有穿过球心，这个弦长就小于直径，算出来的速度会偏大。
+        </p>
+        <p class="mt-4 leading-8 text-slate-700">
+          双头光电门不需要知道这条弦长。只要小球依次触发两束光，就可以用固定间距 L 和时间差 Δt 求速度。
+        </p>
+      </div>
+      <div class="sphere-error-visual rounded-md border border-slate-200 bg-white p-5 shadow-soft">
+        <div class="sphere-case">
+          <p class="case-title text-yucai-800">单头测小球：光路未过球心</p>
+          <div class="sphere-diagram single-sphere">
+            <div class="sphere"></div>
+            <div class="chord chord-center"></div>
+            <div class="chord chord-miss"></div>
+            <span class="case-note note-center">直径 d</span>
+            <span class="case-note note-miss">实际遮光宽度变小</span>
+          </div>
+        </div>
+        <div class="sphere-case mt-6">
+          <p class="case-title text-emerald-800">双头测小球：只看两次触发</p>
+          <div class="sphere-diagram dual-sphere">
+            <div class="dual-mini-beam upper"></div>
+            <div class="dual-mini-beam lower"></div>
+            <div class="mini-ball upper-position"></div>
+            <div class="mini-ball lower-position"></div>
+            <span class="mini-same-ball">同一小球的两个时刻</span>
+            <span class="mini-time upper-time">t₁</span>
+            <span class="mini-time lower-time">t₂</span>
+            <span class="mini-distance">L = 1 cm</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="comparison-table" class="section-band bg-white">
+  <div class="page-shell">
+    <div class="max-w-3xl">
+      <p class="eyebrow">SUMMARY</p>
+      <h2 class="mt-3 text-3xl font-black text-ink sm:text-4xl">一张表记住核心差异</h2>
+      <p class="mt-5 leading-8 text-slate-700">
+        如果测的是遮光片、挡光板，单头光电门已经够用；如果要测小球、滑块或不规则物体的瞬时速度，
+        双头光电门更直接、更稳定。
+      </p>
+    </div>
+
+    <div class="mt-10 hidden overflow-hidden rounded-md border border-slate-200 shadow-soft md:block">
+      <table class="w-full min-w-[720px] border-collapse bg-white text-left">
+        <thead class="bg-yucai-900 text-white">
+          <tr>
+            <th class="px-5 py-4 text-sm font-bold">对比项目</th>
+            <th class="px-5 py-4 text-sm font-bold">单头光电门</th>
+            <th class="px-5 py-4 text-sm font-bold">双头光电门</th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            comparisonRows.map(([label, single, dual]) => (
+              <tr class="border-t border-slate-200">
+                <th class="bg-slate-50 px-5 py-4 text-sm font-bold text-ink">{label}</th>
+                <td class="bg-yucai-50 px-5 py-4 leading-7 text-slate-700">{single}</td>
+                <td class="bg-emerald-50 px-5 py-4 leading-7 text-slate-700">{dual}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-10 grid gap-4 md:hidden">
+      {
+        comparisonRows.map(([label, single, dual]) => (
+          <article class="overflow-hidden rounded-md border border-slate-200 bg-white shadow-soft">
+            <h3 class="bg-yucai-900 px-4 py-3 text-base font-black text-white">{label}</h3>
+            <div class="grid divide-y divide-slate-200">
+              <div class="bg-yucai-50 p-4">
+                <p class="text-sm font-black text-yucai-800">单头光电门</p>
+                <p class="mt-2 leading-7 text-slate-700">{single}</p>
+              </div>
+              <div class="bg-emerald-50 p-4">
+                <p class="text-sm font-black text-emerald-800">双头光电门</p>
+                <p class="mt-2 leading-7 text-slate-700">{dual}</p>
+              </div>
+            </div>
+          </article>
+        ))
+      }
+    </div>
+
+  </div>
+</section>
+
+<script>
+  const demo = document.querySelector('[data-dual-demo]');
+  const buttons = Array.from(document.querySelectorAll('[data-stage-button]'));
+  const copy = document.querySelector('[data-stage-copy]');
+
+  const stageCopy: Record<string, string> = {
+    '1': '小球只遮挡上方光路，计时器从这一刻开始计时。',
+    '2': '小球继续运动，到达下方光路。此时第二次遮挡发生，计时器停止。',
+    '3': '两次遮挡之间的时间差就是 Δt。因为两束光间距固定为 L = 1 cm，所以速度 v = L / Δt。'
+  };
+
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const stage = button.getAttribute('data-stage-button') || '1';
+      demo?.classList.remove('stage-1', 'stage-2', 'stage-3');
+      demo?.classList.add(`stage-${stage}`);
+      buttons.forEach((item) => item.classList.toggle('is-active', item === button));
+      if (copy) copy.textContent = stageCopy[stage];
+    });
+  });
+</script>
+
+<style>
+  .single-path-visual {
+    position: relative;
+    min-height: 270px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #ffffff 0%, #eaf4ff 100%);
+    overflow: hidden;
+  }
+
+  .gate-post {
+    position: absolute;
+    bottom: 38px;
+    width: 52px;
+    height: 138px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #111827, #334155);
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.22);
+  }
+
+  .gate-post::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 54px;
+    width: 12px;
+    height: 12px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: #f97316;
+    box-shadow: 0 0 14px rgba(249, 115, 22, 0.78);
+  }
+
+  .gate-post::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: -18px;
+    width: 84px;
+    height: 18px;
+    transform: translateX(-50%);
+    border-radius: 4px;
+    background: #1f2937;
+  }
+
+  .gate-post span {
+    position: absolute;
+    left: 50%;
+    bottom: -42px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #102033;
+  }
+
+  .emitter {
+    left: 38px;
+  }
+
+  .receiver {
+    right: 38px;
+  }
+
+  .single-beam {
+    position: absolute;
+    left: 88px;
+    right: 88px;
+    top: 92px;
+    height: 3px;
+    background: repeating-linear-gradient(90deg, #ef4444 0 10px, transparent 10px 17px);
+  }
+
+  .moving-slab {
+    position: absolute;
+    left: 46%;
+    top: 50px;
+    width: 46px;
+    height: 76px;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #cbd5e1, #64748b);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.7), 0 14px 26px rgba(15, 23, 42, 0.22);
+  }
+
+  .moving-slab::before,
+  .moving-slab::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    height: 76px;
+    border-left: 2px solid #0b63c7;
+  }
+
+  .moving-slab::before {
+    left: 0;
+  }
+
+  .moving-slab::after {
+    right: 0;
+  }
+
+  .moving-slab span {
+    position: absolute;
+    right: -28px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 800;
+    color: #0b63c7;
+  }
+
+  .velocity-arrow {
+    position: absolute;
+    left: calc(46% + 60px);
+    top: 28px;
+    color: #047857;
+    font-style: italic;
+    font-weight: 800;
+  }
+
+  .velocity-arrow::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 24px;
+    width: 3px;
+    height: 58px;
+    transform: translateX(-50%);
+    background: #10b981;
+  }
+
+  .velocity-arrow::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 76px;
+    width: 13px;
+    height: 13px;
+    transform: translateX(-50%) rotate(45deg);
+    border-right: 3px solid #10b981;
+    border-bottom: 3px solid #10b981;
+  }
+
+  .dual-path-visual {
+    position: relative;
+    min-height: 250px;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #ffffff 0%, #ecfdf5 100%);
+    overflow: hidden;
+  }
+
+  .structure-photo-frame {
+    height: clamp(340px, 44vw, 560px);
+    padding: clamp(14px, 2vw, 22px);
+  }
+
+  .dual-board {
+    position: absolute;
+    top: 46px;
+    width: 78px;
+    height: 148px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #0f172a, #263445);
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.22);
+  }
+
+  .left-board {
+    left: 40px;
+  }
+
+  .right-board {
+    right: 40px;
+  }
+
+  .port {
+    position: absolute;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    background: #020617;
+  }
+
+  .port.top {
+    top: 38px;
+  }
+
+  .port.bottom {
+    bottom: 38px;
+  }
+
+  .emitter-port {
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.9);
+  }
+
+  .receiver-port {
+    box-shadow: inset 0 0 0 2px rgba(148, 163, 184, 0.7);
+  }
+
+  .dual-beam {
+    position: absolute;
+    left: 122px;
+    right: 122px;
+    height: 3px;
+  }
+
+  .dual-beam span {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -32px);
+    white-space: nowrap;
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #102033;
+  }
+
+  .top-beam {
+    top: 92px;
+    background: repeating-linear-gradient(90deg, #2563eb 0 12px, transparent 12px 20px);
+  }
+
+  .bottom-beam {
+    top: 148px;
+    background: repeating-linear-gradient(270deg, #ef4444 0 12px, transparent 12px 20px);
+  }
+
+  .distance-bracket {
+    position: absolute;
+    right: 138px;
+    top: 91px;
+    height: 60px;
+    border-right: 2px solid #102033;
+  }
+
+  .distance-bracket::before,
+  .distance-bracket::after {
+    content: '';
+    position: absolute;
+    right: -7px;
+    width: 14px;
+    border-top: 2px solid #102033;
+  }
+
+  .distance-bracket::before {
+    top: 0;
+  }
+
+  .distance-bracket::after {
+    bottom: 0;
+  }
+
+  .distance-bracket span {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-weight: 800;
+    color: #102033;
+  }
+
+  .dual-demo {
+    position: relative;
+    min-height: 430px;
+    overflow: hidden;
+    border-radius: 8px;
+    background:
+      linear-gradient(90deg, rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(11, 99, 199, 0.08) 1px, transparent 1px),
+      #ffffff;
+    background-size: 28px 28px;
+  }
+
+  .demo-board {
+    position: absolute;
+    top: 88px;
+    width: 76px;
+    height: 238px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #0f172a, #263445);
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.22);
+  }
+
+  .demo-left {
+    left: 56px;
+  }
+
+  .demo-right {
+    right: 56px;
+  }
+
+  .demo-port {
+    position: absolute;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.86);
+    background: #020617;
+  }
+
+  .demo-top {
+    top: 62px;
+  }
+
+  .demo-bottom {
+    top: 158px;
+  }
+
+  .demo-emitter {
+    box-shadow: 0 0 18px rgba(249, 115, 22, 0.9);
+  }
+
+  .demo-receiver {
+    box-shadow: inset 0 0 0 2px rgba(148, 163, 184, 0.7);
+  }
+
+  .demo-beam {
+    position: absolute;
+    left: 132px;
+    right: 132px;
+    height: 4px;
+    border-radius: 999px;
+    opacity: 0.9;
+  }
+
+  .demo-top-beam {
+    top: 158px;
+    background: repeating-linear-gradient(90deg, #2563eb 0 14px, transparent 14px 22px);
+  }
+
+  .demo-bottom-beam {
+    top: 254px;
+    background: repeating-linear-gradient(270deg, #ef4444 0 14px, transparent 14px 22px);
+  }
+
+  .demo-ball {
+    position: absolute;
+    left: 50%;
+    width: 42px;
+    height: 42px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: radial-gradient(circle at 32% 25%, #ffffff 0 8%, #94a3b8 18%, #334155 68%, #0f172a 100%);
+    box-shadow: 0 16px 24px rgba(15, 23, 42, 0.26);
+    transition: top 280ms ease;
+  }
+
+  .stage-1 .demo-ball {
+    top: 138px;
+  }
+
+  .stage-2 .demo-ball {
+    top: 234px;
+  }
+
+  .stage-3 .demo-ball {
+    top: 314px;
+  }
+
+  .stage-1 .demo-top-beam,
+  .stage-2 .demo-bottom-beam {
+    filter: drop-shadow(0 0 10px currentColor);
+  }
+
+  .stage-1 .label-top,
+  .stage-2 .label-bottom,
+  .stage-3 .demo-gap-label {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .stage-2 .label-top,
+  .stage-3 .label-top,
+  .stage-3 .label-bottom {
+    opacity: 0.56;
+  }
+
+  .demo-label {
+    position: absolute;
+    left: 156px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 8px 10px;
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #102033;
+    opacity: 0.72;
+    transform: translateY(3px);
+    transition: 180ms ease;
+  }
+
+  .label-top {
+    top: 106px;
+  }
+
+  .label-bottom {
+    top: 274px;
+  }
+
+  .demo-gap-label {
+    position: absolute;
+    right: 154px;
+    top: 182px;
+    height: 74px;
+    border-right: 2px solid #102033;
+    padding-right: 12px;
+    color: #102033;
+    font-weight: 900;
+    opacity: 0.7;
+    transition: 180ms ease;
+  }
+
+  .demo-gap-label::before,
+  .demo-gap-label::after {
+    content: '';
+    position: absolute;
+    right: -7px;
+    width: 14px;
+    border-top: 2px solid #102033;
+  }
+
+  .demo-gap-label::before {
+    top: 0;
+  }
+
+  .demo-gap-label::after {
+    bottom: 0;
+  }
+
+  .demo-flow-arrow {
+    position: absolute;
+    left: 50%;
+    top: 44px;
+    transform: translateX(-50%);
+    color: #047857;
+    font-size: 0.9rem;
+    font-weight: 900;
+  }
+
+  .demo-flow-arrow::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 28px;
+    height: 72px;
+    border-left: 3px solid #10b981;
+  }
+
+  .stage-button {
+    min-height: 48px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    padding: 0 12px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #334155;
+    transition: 160ms ease;
+  }
+
+  .stage-button:hover,
+  .stage-button:focus-visible {
+    border-color: #0b63c7;
+    color: #0b63c7;
+  }
+
+  .stage-button.is-active {
+    border-color: #047857;
+    background: #ecfdf5;
+    color: #047857;
+  }
+
+  .sphere-diagram {
+    position: relative;
+    min-height: 180px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #f8fafc;
+  }
+
+  .case-title {
+    margin-bottom: 10px;
+    font-weight: 900;
+  }
+
+  .sphere {
+    position: absolute;
+    left: 50%;
+    top: 42px;
+    width: 92px;
+    height: 92px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: radial-gradient(circle at 32% 25%, #ffffff 0 8%, #cbd5e1 24%, #64748b 72%, #1e293b 100%);
+  }
+
+  .chord {
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    height: 3px;
+    background: #ef4444;
+  }
+
+  .chord-center {
+    top: 88px;
+    opacity: 0.24;
+  }
+
+  .chord-miss {
+    top: 65px;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.35);
+  }
+
+  .case-note {
+    position: absolute;
+    right: 18px;
+    border-radius: 6px;
+    background: #ffffff;
+    padding: 8px 10px;
+    font-size: 0.84rem;
+    font-weight: 800;
+    color: #334155;
+  }
+
+  .note-center {
+    top: 100px;
+  }
+
+  .note-miss {
+    top: 24px;
+    color: #b91c1c;
+  }
+
+  .dual-mini-beam {
+    position: absolute;
+    left: 15%;
+    right: 15%;
+    height: 3px;
+    border-radius: 999px;
+  }
+
+  .dual-mini-beam.upper {
+    top: 62px;
+    background: repeating-linear-gradient(90deg, #2563eb 0 12px, transparent 12px 20px);
+  }
+
+  .dual-mini-beam.lower {
+    top: 118px;
+    background: repeating-linear-gradient(270deg, #ef4444 0 12px, transparent 12px 20px);
+  }
+
+  .mini-ball {
+    position: absolute;
+    left: 45%;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    background: radial-gradient(circle at 32% 25%, #ffffff 0 8%, #94a3b8 20%, #334155 74%, #0f172a 100%);
+  }
+
+  .upper-position {
+    top: 47px;
+  }
+
+  .lower-position {
+    top: 103px;
+    left: 61%;
+    opacity: 0.58;
+  }
+
+  .mini-same-ball {
+    position: absolute;
+    left: 16px;
+    top: 16px;
+    border-radius: 6px;
+    background: #ffffff;
+    padding: 7px 9px;
+    font-size: 0.82rem;
+    font-weight: 900;
+    color: #047857;
+  }
+
+  .mini-time {
+    position: absolute;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 900;
+    color: #102033;
+  }
+
+  .upper-time {
+    top: 26px;
+    left: 44%;
+  }
+
+  .lower-time {
+    top: 132px;
+    left: 60%;
+  }
+
+  .mini-distance {
+    position: absolute;
+    right: 16px;
+    top: 74px;
+    font-weight: 900;
+    color: #047857;
+  }
+
+  @media (max-width: 720px) {
+    .single-path-visual,
+    .dual-path-visual {
+      min-height: 250px;
+    }
+
+    .gate-post {
+      width: 42px;
+    }
+
+    .emitter {
+      left: 18px;
+    }
+
+    .receiver {
+      right: 18px;
+    }
+
+    .single-beam {
+      left: 58px;
+      right: 58px;
+    }
+
+    .dual-board {
+      width: 58px;
+    }
+
+    .left-board {
+      left: 18px;
+    }
+
+    .right-board {
+      right: 18px;
+    }
+
+    .dual-beam {
+      left: 78px;
+      right: 78px;
+    }
+
+    .dual-beam span {
+      transform: translate(-50%, -28px);
+      font-size: 0.75rem;
+    }
+
+    .distance-bracket {
+      right: 118px;
+    }
+
+    .distance-bracket span {
+      left: 10px;
+      font-size: 0.78rem;
+    }
+
+    .dual-demo {
+      min-height: 390px;
+    }
+
+    .demo-board {
+      width: 48px;
+    }
+
+    .demo-left {
+      left: 18px;
+    }
+
+    .demo-right {
+      right: 18px;
+    }
+
+    .demo-beam {
+      left: 66px;
+      right: 66px;
+    }
+
+    .demo-label {
+      left: 82px;
+      max-width: 190px;
+      font-size: 0.76rem;
+    }
+
+    .demo-gap-label {
+      right: 74px;
+      font-size: 0.78rem;
+    }
+
+    .mini-same-ball {
+      top: 12px;
+      max-width: 132px;
+      font-size: 0.72rem;
+    }
+
+    .upper-time {
+      top: 50px;
+      left: 48%;
+    }
+
+    .lower-time {
+      top: 138px;
+      left: 61%;
+    }
+
+    .velocity-arrow {
+      left: calc(46% + 52px);
+    }
+  }
+</style>

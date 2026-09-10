@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高考古诗鉴赏·锦囊 | 错题跳转 | 折叠答案 | 真题实战</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #eef0e5 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" opacity="0.06"><path fill="none" stroke="%2380623b" stroke-width="1.2" d="M100 200 L300 150 L450 220 L600 180 L750 250 M80 500 L200 450 L380 520 L550 470 L700 530 M120 800 L280 740 L420 820 L580 780 L710 850" stroke-dasharray="3 5"/></svg>');
+            font-family: 'Noto Serif SC', '华文楷书', 'Segoe UI', 'Microsoft YaHei', serif;
+            padding: 1.5rem 1rem;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: rgba(253, 250, 240, 0.96);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px rgba(70, 40, 20, 0.2);
+            border: 1px solid #ddd0b6;
+            overflow: hidden;
+        }
+
+        .hero {
+            background: linear-gradient(105deg, #2d4a2b 0%, #4b6e3b 50%, #2c5e3a 100%);
+            padding: 1.5rem 2rem;
+            text-align: center;
+            color: #fef3da;
+            border-bottom: 6px solid #cdb28b;
+        }
+        .hero h1 { font-size: 1.9rem; letter-spacing: 3px; }
+        .hero p { font-size: 0.9rem; margin-top: 0.3rem; }
+
+        .tab-bar {
+            display: flex;
+            background: #f4ebdb;
+            border-bottom: 2px solid #cfbc96;
+            padding: 0 2rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #5a4a2e;
+            border-radius: 20px 20px 0 0;
+        }
+        .tab-btn.active {
+            background: #fffaf2;
+            color: #8b5a2b;
+            border-bottom: 3px solid #b48c48;
+        }
+        .tab-content { display: none; padding: 1.5rem 2rem; background: #fffaf2; }
+        .tab-content.active { display: block; }
+
+        /* 方法指导 */
+        .guide-card { background: #fef7e8; border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 1.5rem; border-left: 8px solid #c4a35a; }
+        .method-step { background: #f3ecdb; padding: 0.8rem; border-radius: 1rem; margin: 0.8rem 0; }
+
+        /* 精讲课堂折叠答案（可折叠收回） */
+        .lecture-grid { display: flex; flex-wrap: wrap; gap: 2rem; }
+        .lecture-main { flex: 2; min-width: 280px; }
+        .lecture-card { background: #fef7e8; border-radius: 1.5rem; padding: 1.2rem; margin-bottom: 1.5rem; border-left: 8px solid #c4a35a; }
+        .example-box { background: #f3ecdb; border-radius: 1rem; padding: 0.8rem; margin: 0.8rem 0; }
+        .highlight { background: #ffe2aa; color: #a55217; font-weight: 600; border-radius: 6px; padding: 0 3px; }
+        .answer-fold { background: #e2d8c4; border-radius: 12px; margin-top: 10px; overflow: hidden; }
+        .answer-header { padding: 12px; cursor: pointer; background: #dacfae; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+        .answer-header:hover { background: #cfc094; }
+        .answer-points { padding: 12px; border-top: 1px solid #c2b28a; background: #fef2e0; display: none; }
+        .answer-points.show { display: block; }
+        .toggle-icon { font-size: 1.2rem; }
+
+        /* 锦囊丰富版 */
+        .tips-container { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+        .tips-category-box { background: #fef5e8; border-radius: 1.5rem; padding: 1rem; flex: 1 1 300px; border: 1px solid #e2cfb0; }
+        .tip-tag { background: #e9dccc; border-radius: 20px; padding: 3px 12px; font-size: 0.75rem; margin: 0 4px 6px 0; display: inline-block; cursor: pointer; transition: 0.1s; }
+        .tip-tag:hover { background: #dac29c; transform: scale(1.02); }
+        .tip-example-area { background: #fef3e0; border-radius: 14px; padding: 10px; margin-top: 15px; display: none; border-left: 4px solid #b48c48; }
+
+        /* 错题本 + 跳转 */
+        .mistake-controls { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: center; }
+        .mistake-list-table { width: 100%; border-collapse: collapse; background: #fefcf7; border-radius: 1rem; display: block; overflow-x: auto; }
+        .mistake-list-table th, .mistake-list-table td { border-bottom: 1px solid #e5d8c2; padding: 10px 6px; vertical-align: top; text-align: left; }
+        .btn-small { background: #cfb784; padding: 4px 12px; border-radius: 30px; border: none; cursor: pointer; margin: 2px; }
+        .btn-primary-new { background: #d9534f; color: white; border: none; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+        .btn-primary-new:hover { background: #c9302c; }
+        .btn-warning-new { background: #f0ad4e; color: white; border: none; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-weight: bold; }
+
+        /* 刷题面板 */
+        .unified-panel { display: flex; flex-wrap: wrap; gap: 1.8rem; }
+        .poem-preview-card { flex: 1; background: #fffcf5; border-radius: 1.8rem; padding: 1.3rem; border: 1px solid #e2d3bc; cursor: pointer; }
+        .poem-preview-card.active { background: #efe2cf; border-left: 8px solid #9b6e3e; }
+        .question-panel { flex: 2; background: #fefaf2; border-radius: 1.8rem; padding: 1.3rem; border: 1px solid #e9decb; }
+        .poem-fulltext { font-family: '华文楷书', 'KaiTi', serif; font-size: 0.9rem; white-space: pre-line; }
+        .timer-bar { background: #f3ecdb; border-radius: 40px; padding: 6px 16px; margin-bottom: 20px; display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .timer-clock { font-size: 1.6rem; font-family: monospace; background: #2f4227; color: #ffefb9; padding: 2px 14px; border-radius: 48px; }
+        .choice-question { background: #fcf3e6; border-radius: 1.2rem; padding: 0.8rem; margin: 0.5rem 0; }
+        .choice-option { background: #fef5ea; margin: 0.4rem 0; padding: 0.4rem 1rem; border-radius: 40px; cursor: pointer; border: 1px solid #eedbbc; }
+        .choice-option.selected { background: #dfcdad; }
+        textarea { width: 100%; border-radius: 1rem; border: 1px solid #dacaa8; padding: 12px; background: #fffcf5; resize: vertical; }
+        .answer-area { background: #fef2e2; border-left: 6px solid #c5a055; padding: 0.9rem; border-radius: 1rem; margin-top: 0.8rem; }
+        .tip-bubble { background: #e6f0fa; border-radius: 20px; padding: 6px 12px; font-size: 0.8rem; margin-top: 8px; color: #2c5e6e; border-left: 3px solid #5bc0de; }
+        @media (max-width: 800px) { .timer-clock { font-size: 1.2rem; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="hero">
+        <h1>🍃 高考古诗鉴赏 · 锦囊 + 错题跳转 + 真题实战</h1>
+        <p>答案可折叠｜丰富锦囊｜错题一键返回答题界面</p>
+    </div>
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="guide">📘 方法指导</button>
+        <button class="tab-btn" data-tab="lecture">📖 精讲课堂</button>
+        <button class="tab-btn" data-tab="tips">🧧 锦囊·词库</button>
+        <button class="tab-btn" data-tab="mistake">📓 错题本</button>
+        <button class="tab-btn" data-tab="practice">✍️ 真题刷题</button>
+    </div>
+
+    <!-- 方法指导 -->
+    <div id="guideTab" class="tab-content active">
+        <div class="guide-card"><h3>🎯 古诗鉴赏四步夺分法</h3>
+            <div class="method-step"><span class="highlight">❶ 读懂·明语境</span> —— 抓意象、辨题材、疏通大意，关注注释与背景。</div>
+            <div class="method-step"><span class="highlight">❷ 析技·定点突破</span> —— 识别修辞/表现手法/炼字，指出“为什么用这个手法”。</div>
+            <div class="method-step"><span class="highlight">❸ 悟情·知人论世</span> —— 结合创作背景、作者生平，定位情感主旨。</div>
+            <div class="method-step"><span class="highlight">❹ 规范·分层采分</span> —— “手法名称+诗句分析+情感效果”，分条作答，术语准确。</div>
+            <div class="tip-bubble">💡 答题提示：炼字题先解释字义+描绘画面+点出情感；选择题优先排除“手法/情感”明显错误项。</div>
+        </div>
+    </div>
+
+    <!-- 精讲课堂（答案可折叠收回） -->
+    <div id="lectureTab" class="tab-content">
+        <div class="lecture-grid"><div class="lecture-main">
+            <div class="lecture-card"><h3>❶ 解诗·明语境 <span class="badge">《登高》模拟</span></h3><div class="example-box"><strong>模拟题（2025杭州一模）</strong> 杜甫《登高》颔联意象分析<br><div class="answer-fold" id="answer1"><div class="answer-header"><span>📌 点击查看完整参考答案</span><span class="toggle-icon">▼</span></div><div class="answer-points"><div><span class="highlight">【完整答案】</span> “落木”“长江”营造雄浑苍凉意境，抒发韶光易逝、壮志难酬之悲；寓情于景。</div><div class="highlight">✨ 采分点：意象特征+意境+情感+手法</div></div></div></div><div class="tip-bubble">📖 背景：杜甫流寓夔州，登高抒怀。</div></div>
+            <div class="lecture-card"><h3>❷ 析技·炼字 <span class="badge">“软”“低”赏析</span></h3><div class="example-box"><strong>南京二模</strong> 赏析“野桥柳线斜风软”中“软”字<br><div class="answer-fold" id="answer2"><div class="answer-header"><span>📌 点击查看完整参考答案</span><span class="toggle-icon">▼</span></div><div class="answer-points"><div><span class="highlight">【完整答案】</span> 通感，写出柳丝轻柔飘拂，传达春日温煦闲适之感。</div><div class="highlight">✨ 采分点：炼字+通感+画面+情感</div></div></div></div></div>
+            <div class="lecture-card"><h3>❸ 悟情·用典 <span class="badge">辛弃疾怀古</span></h3><div class="example-box"><strong>济南一模</strong> “廉颇老矣”深意<br><div class="answer-fold" id="answer3"><div class="answer-header"><span>📌 点击查看完整参考答案</span><span class="toggle-icon">▼</span></div><div class="answer-points"><div><span class="highlight">【完整答案】</span> 廉颇自比，渴望报国却遭弃置，抒发壮志难酬的悲愤，暗讽朝廷。</div><div class="highlight">✨ 采分点：用典+情感(渴望/悲愤)+批判</div></div></div></div></div>
+            <div class="lecture-card"><h3>❹ 规范·反衬与情感变化</h3><div class="example-box"><strong>广州一模</strong> 周瑜形象作用<br><div class="answer-fold" id="answer4"><div class="answer-header"><span>📌 点击查看完整参考答案</span><span class="toggle-icon">▼</span></div><div class="answer-points"><div><span class="highlight">【完整答案】</span> 反衬自身失意，情感由仰慕英雄转为自嘲悲慨，终归于旷达。</div><div class="highlight">✨ 采分点：反衬手法+情感脉络+旷达</div></div></div></div></div>
+        </div></div>
+    </div>
+
+    <!-- 锦囊·丰富版 -->
+    <div id="tipsTab" class="tab-content">
+        <div class="tips-container">
+            <div class="tips-category-box"><h4>🌿 常用意象·象征义</h4><div><span class="tip-tag" data-term="月亮">月亮：思乡怀人</span><span class="tip-tag" data-term="流水">流水：时光易逝</span><span class="tip-tag" data-term="落木">落木：萧瑟/凋零</span><span class="tip-tag" data-term="大雁">大雁：思乡/羁旅</span><span class="tip-tag" data-term="柳">柳：惜别/留恋</span><span class="tip-tag" data-term="杜鹃">杜鹃：哀怨悲凄</span><span class="tip-tag" data-term="长亭">长亭：送别</span><span class="tip-tag" data-term="烽火">烽火：战乱</span><span class="tip-tag" data-term="舟船">舟船：漂泊/隐居</span><span class="tip-tag" data-term="梧桐">梧桐：孤独凄凉</span><span class="tip-tag" data-term="鸿雁">鸿雁：传书思乡</span></div></div>
+            <div class="tips-category-box"><h4>💭 诗人情感·四字词</h4><div><span class="tip-tag" data-term="壮志难酬">壮志难酬</span><span class="tip-tag" data-term="怀才不遇">怀才不遇</span><span class="tip-tag" data-term="忧国忧民">忧国忧民</span><span class="tip-tag" data-term="羁旅漂泊">羁旅漂泊</span><span class="tip-tag" data-term="思乡念亲">思乡念亲</span><span class="tip-tag" data-term="旷达乐观">旷达乐观</span><span class="tip-tag" data-term="闲适恬淡">闲适恬淡</span><span class="tip-tag" data-term="孤独寂寞">孤独寂寞</span><span class="tip-tag" data-term="愤世嫉俗">愤世嫉俗</span><span class="tip-tag" data-term="建功立业">建功立业</span></div></div>
+            <div class="tips-category-box"><h4>🎨 氛围/意境·形容词</h4><div><span class="tip-tag" data-term="雄浑苍凉">雄浑苍凉</span><span class="tip-tag" data-term="萧瑟凄清">萧瑟凄清</span><span class="tip-tag" data-term="清新明丽">清新明丽</span><span class="tip-tag" data-term="恬静优美">恬静优美</span><span class="tip-tag" data-term="壮阔豪迈">壮阔豪迈</span><span class="tip-tag" data-term="孤寂冷落">孤寂冷落</span><span class="tip-tag" data-term="空灵飘逸">空灵飘逸</span><span class="tip-tag" data-term="幽深含蓄">幽深含蓄</span></div></div>
+            <div class="tips-category-box"><h4>✍️ 高频手法术语</h4><div><span class="tip-tag" data-term="借景抒情">借景抒情</span><span class="tip-tag" data-term="虚实结合">虚实结合</span><span class="tip-tag" data-term="用典">用典</span><span class="tip-tag" data-term="对比">对比</span><span class="tip-tag" data-term="托物言志">托物言志</span><span class="tip-tag" data-term="动静结合">动静结合</span><span class="tip-tag" data-term="比喻">比喻</span><span class="tip-tag" data-term="拟人">拟人</span><span class="tip-tag" data-term="衬托">衬托</span></div></div>
+        </div>
+        <div id="tipExampleArea" class="tip-example-area"></div>
+    </div>
+
+    <!-- 错题本（支持点击跳转答题界面） -->
+    <div id="mistakeTab" class="tab-content">
+        <div class="mistake-controls"><div>🔍 关键词：<input type="text" id="searchKeyword" placeholder="标题/错因"></div><div>📅 日期：<input type="date" id="searchDate"></div><button id="searchMistakeBtn" class="btn-small">搜索</button><button id="resetSearchBtn" class="btn-small">重置</button><button id="batchDeleteBtn" class="btn-small" style="background:#b3592c;">批量删除</button></div>
+        <div class="batch-bar"><button id="batchSelectAll" class="btn-small">全选</button><button id="batchClearSelect" class="btn-small">取消全选</button></div>
+        <div id="mistakeListAdvanced" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- 刷题页面（真题+背景注释） -->
+    <div id="practiceTab" class="tab-content">
+        <div class="unified-panel">
+            <div class="poem-preview-card" id="poemListUnified"></div>
+            <div class="question-panel">
+                <div class="timer-bar"><span>⏳ 限时练兵</span><div class="timer-clock" id="timerDisplay">06:00</div><div><button id="startTimerBtn" class="btn-primary-new">▶ 开始计时</button><button id="resetTimerBtn" class="btn-warning-new">重置</button></div></div>
+                <div id="dynamicQuestionArea"></div>
+                <div id="essayQuestionContainer" style="background:#faf0e2; border-radius:1rem; padding:0.8rem; margin:0.5rem 0;"></div>
+                <div class="essay-input-area"><textarea id="essayUserAnswer" rows="4" placeholder="分点作答，使用术语……"></textarea><div><button id="submitEssayBtn" class="btn-primary-new" style="margin-right:8px;">📌 提交评分</button><button id="clearEssayBtn" class="btn-warning-new">清空</button></div><div id="essayFeedback" class="answer-area" style="display:none;"></div></div>
+                <div id="generalTip" class="tip-bubble">💡 答题提示：简答题按“手法+诗句分析+情感”三部分，选择题先排除绝对化选项。</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ---------- 高考真题库（含创作背景/注释/作者生平）----------
+    const poemsData = [
+        { id:1, title:"元珍以诗送绿石砚所谓玉堂新样者", author:"王安石", type:"2025全国Ⅰ卷", text:"玉堂新样世争传，况以蛮溪绿石镌。\n嗟我长来无异物，愧君持赠有佳篇。\n久埋瘴雾看犹湿，一取春波洗更鲜。\n还与故人袍色似，论心于此亦同坚。", 
+          background:"创作背景：王安石晚年闲居，友人赠砚，借诗明志。", authorIntro:"王安石(1021-1086)，北宋改革家，诗文峭拔。", annotations:"注释：玉堂：翰林院；蛮溪：南方溪流。",
+          choice:{ question:"下列对这首诗的理解和赏析，不正确的一项是（3分）", options:["A.诗歌开头开门见山，直接书写所咏之物。","B.诗人从样式、材料产地以及材质等方面鉴赏绿石砚。","C.朋友的馈赠及随砚诗作都令诗人心存感念。","D.石砚出自瘴雾之地，看起来水渍斑斑，但洗后就变得鲜亮了。"], correct:"D", explanation:"“久埋瘴雾看犹湿”意为砚台润泽，并非水渍斑斑。" },
+          essayFullQuestion:"【2025新高考Ⅰ卷·真题】尾联“还与故人袍色似，论心于此亦同坚”丰富了诗歌的情感内涵，请简要赏析。（6分）", officialAnswer:"①以砚喻人。②由石砚绿色联想到友人官位低微，暗含惋惜。③赞美友人节操坚贞。", extraPoints:"借物喻人、惋惜官微、赞美坚贞" },
+        { id:2, title:"咏省壁画鹤", author:"宋之问·陈子昂", type:"2025全国Ⅱ卷", text:"【宋之问】粉壁图仙鹤，昂藏真气多。鶱飞竟不去，当是恋恩波。\n\n【陈子昂】古壁仙人画，丹青尚有文。独舞纷如雪，孤飞暖似云。自矜彩色重，宁忆故池群。江海联翩翼，长鸣谁复闻。", 
+          background:"创作背景：唐代诗人题画鹤，借鹤抒怀。", authorIntro:"宋之问(约656-712)，格律诗重要诗人；陈子昂(661-702)，倡导复古革新。", annotations:"注释：恩波：帝王恩泽；鶱飞：飞腾。",
+          choice:{ question:"下列对这两首诗的理解和赏析，不正确的一项是（3分）", options:["A.两首诗题材相同，都以墙壁上的画鹤作为吟咏对象。","B.两首诗后半部分都发挥主观想象以表达情感。","C.宋诗第二句从外在形态与内在气质两方面展现仙鹤形象。","D.陈诗用'古壁'强调墙壁古旧，以衬托画鹤色彩鲜艳。"], correct:"D", explanation:"“古壁”意在强调年代久远，并非衬托色彩鲜艳。" },
+          essayFullQuestion:"【2025新高考Ⅱ卷·真题】两首诗各自展现出了什么样的思想境界？请简要分析。（6分）", officialAnswer:"①宋诗表达对皇恩的感念与忠诚；②陈诗以鹤自比，抒发怀才不遇的悲愤与孤高气节。", extraPoints:"忠君颂恩、孤高自许、怀才不遇" },
+        { id:3, title:"宿千岁庵听泉", author:"刘克庄", type:"2024新高考Ⅰ卷", text:"因爱庵前一脉泉，襥衾来此借房眠。\n骤闻将谓溪当户，久听翻疑屋是船。\n变作怒声犹壮伟，滴成细点更清圆。\n君看昔日兰亭帖，亦把湍流替管弦。",
+          background:"创作背景：刘克庄晚年借宿庵中，听泉抒怀。", authorIntro:"刘克庄(1187-1269)，南宋江湖派诗人，词风豪放。", annotations:"注释：襥衾：包裹被褥；兰亭帖：王羲之《兰亭序》。",
+          choice:{ question:"下列对这首诗的理解和赏析，不正确的一项是（3分）", options:["A.开头交代借宿千岁庵是出于对泉水的喜爱。","B.诗歌主要从听觉角度描写泉流，与题目“听泉”相切合。","C.诗人由听泉联想到兰亭雅集，雅趣与古人相通。","D.诗人与兰亭诸贤一样，都把对音乐之美的追求寄托于山水而摒弃了乐器。"], correct:"D", explanation:"“亦把湍流替管弦”是以自然之声代替音乐，并非摒弃乐器。" },
+          essayFullQuestion:"【2024新高考Ⅰ卷·真题】本诗采用了对比的手法，颈联写泉水的声音既响亮又微小，请结合诗句简要分析。（6分）", officialAnswer:"①“变作怒声犹壮伟”与“滴成细点更清圆”对比；②壮伟如怒号，清圆如细滴，展现泉声多变；③增强艺术表现力。", extraPoints:"壮伟与清圆对比、泉声多变" }
+    ];
+
+    // 错题存储
+    let mistakeItems = [];
+    function loadMistakes() { let stored = localStorage.getItem("poem_mistake_fold_v2"); if(stored) mistakeItems = JSON.parse(stored); else mistakeItems = []; renderMistakeTable(); }
+    function saveMistakes() { localStorage.setItem("poem_mistake_fold_v2", JSON.stringify(mistakeItems)); renderMistakeTable(); }
+    function addMistake(poem, type, userContent, standardAnswer, originalQText) {
+        if(mistakeItems.some(m => m.poemTitle===poem.title && m.questionType===type && m.userAnswer===userContent)) return;
+        mistakeItems.unshift({ id: Date.now(), poemTitle: poem.title, poemId: poem.id, questionType: type, originalQuestion: originalQText, userAnswer: userContent, standardAnswer: standardAnswer, timestamp: new Date().toISOString(), mastery: '未掌握', mistakeReason: '' });
+        if(mistakeItems.length>50) mistakeItems.pop();
+        saveMistakes();
+    }
+
+    function renderMistakeTable(filtered=null) {
+        let list = filtered || mistakeItems;
+        const container = document.getElementById('mistakeListAdvanced');
+        if(!container) return;
+        if(list.length===0){ container.innerHTML='<div class="extrainfo">暂无错题</div>'; return; }
+        let html = `<table class="mistake-list-table"><thead><th><input type="checkbox" id="batchMasterCheckAll"></th><th>标题/类型</th><th>原题</th><th>我的作答</th><th>标准答案</th><th>掌握程度</th><th>错因分析</th><th>时间</th><th>操作</th><th>跳转</th></thead><tbody>`;
+        list.forEach(item=>{ 
+            html += `<tr><td><input type="checkbox" class="mistake-checkbox" data-id="${item.id}"></td>
+                     <td><strong>${item.poemTitle}</strong><br>${item.questionType==='choice'?'选择题':'简答题'}</td>
+                     <td style="max-width:200px;">${item.originalQuestion.substring(0,70)}${item.originalQuestion.length>70?'…':''}</td>
+                     <td>${item.userAnswer.substring(0,60)}</td><td>${item.standardAnswer.substring(0,60)}</td>
+                     <td><select class="mastery-select" data-id="${item.id}"><option ${item.mastery==='未掌握'?'selected':''}>未掌握</option><option ${item.mastery==='部分掌握'?'selected':''}>部分掌握</option><option ${item.mastery==='已掌握'?'selected':''}>已掌握</option></select></td>
+                     <td><input type="text" class="reason-input" data-id="${item.id}" value="${item.mistakeReason.replace(/"/g,'&quot;')}" placeholder="错因" style="width:90px;"></td>
+                     <td>${new Date(item.timestamp).toLocaleDateString()}</td>
+                     <td><button class="btn-small delete-single" data-id="${item.id}">删除</button></td>
+                     <td><button class="btn-small jump-to-practice" data-poem-id="${item.poemId}" data-type="${item.questionType}">📖 答题</button></td>
+                    </tr>`;
+        });
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+        document.querySelectorAll('.mastery-select').forEach(sel=>{ sel.addEventListener('change',()=>{ let id=parseInt(sel.dataset.id); let m=mistakeItems.find(i=>i.id===id); if(m){ m.mastery=sel.value; saveMistakes(); } }); });
+        document.querySelectorAll('.reason-input').forEach(inp=>{ inp.addEventListener('change',()=>{ let id=parseInt(inp.dataset.id); let m=mistakeItems.find(i=>i.id===id); if(m){ m.mistakeReason=inp.value; saveMistakes(); } }); });
+        document.querySelectorAll('.delete-single').forEach(btn=>{ btn.addEventListener('click',()=>{ let id=parseInt(btn.dataset.id); mistakeItems=mistakeItems.filter(i=>i.id!==id); saveMistakes(); }); });
+        document.querySelectorAll('.jump-to-practice').forEach(btn=>{ btn.addEventListener('click',()=>{ let poemId=parseInt(btn.dataset.poemId); currentId=poemId; selectedChoice=null; renderUnifiedPoemList(); renderQuestionArea(); document.querySelector('.tab-btn[data-tab="practice"]').click(); resetTimer(); }); });
+        const checkAll = document.getElementById('batchMasterCheckAll'); if(checkAll) checkAll.onclick = (e)=>{ document.querySelectorAll('.mistake-checkbox').forEach(cb=>cb.checked=e.target.checked); };
+    }
+    function searchMistakes(){ let kw=document.getElementById('searchKeyword').value.toLowerCase(); let date=document.getElementById('searchDate').value; let filtered=mistakeItems.filter(i=>(!kw||i.poemTitle.toLowerCase().includes(kw)||i.mistakeReason.toLowerCase().includes(kw))&&(!date||new Date(i.timestamp).toISOString().slice(0,10)===date)); renderMistakeTable(filtered); }
+    document.getElementById('searchMistakeBtn')?.addEventListener('click',searchMistakes);
+    document.getElementById('resetSearchBtn')?.addEventListener('click',()=>{ document.getElementById('searchKeyword').value=''; document.getElementById('searchDate').value=''; renderMistakeTable(mistakeItems); });
+    document.getElementById('batchDeleteBtn')?.addEventListener('click',()=>{ let ids=[...document.querySelectorAll('.mistake-checkbox:checked')].map(cb=>parseInt(cb.dataset.id)); mistakeItems=mistakeItems.filter(i=>!ids.includes(i.id)); saveMistakes(); });
+    document.getElementById('batchSelectAll')?.addEventListener('click',()=>{ document.querySelectorAll('.mistake-checkbox').forEach(cb=>cb.checked=true); });
+    document.getElementById('batchClearSelect')?.addEventListener('click',()=>{ document.querySelectorAll('.mistake-checkbox').forEach(cb=>cb.checked=false); });
+
+    // 锦囊点击实例
+    const tipExamples = { "月亮":"杜甫《月夜忆舍弟》“月是故乡明”思乡","流水":"苏轼“大江东去”时光流逝","落木":"杜甫“无边落木萧萧下”苍凉","壮志难酬":"辛弃疾“可怜白发生”","怀才不遇":"李贺“何当金络脑”","借景抒情":"杜甫“感时花溅泪”","用典":"辛弃疾“廉颇老矣”","对比":"杜甫“朱门酒肉臭，路有冻死骨”","虚实结合":"李商隐“何当共剪西窗烛”" };
+    function showTipExample(term){ let area=document.getElementById('tipExampleArea'); if(area){ area.innerHTML=`<strong>📖 ${term}实例：</strong> ${tipExamples[term]||'高考常用此术语，结合诗句分析情感。'}`; area.style.display='block'; setTimeout(()=>{if(area)area.style.display='none';},4000);} }
+    document.querySelectorAll('.tip-tag').forEach(el=>{ let txt=el.innerText.split('：')[0]; el.setAttribute('data-term',txt); el.addEventListener('click',()=>showTipExample(txt)); });
+
+    // 折叠答案功能（支持展开/折叠收回）
+    function initFoldAnswers(){
+        document.querySelectorAll('.answer-fold').forEach(fold=>{
+            const header = fold.querySelector('.answer-header');
+            const pointsDiv = fold.querySelector('.answer-points');
+            const icon = header?.querySelector('.toggle-icon');
+            if(header && pointsDiv){
+                header.addEventListener('click',()=>{
+                    const isShow = pointsDiv.classList.contains('show');
+                    if(isShow){
+                        pointsDiv.classList.remove('show');
+                        if(icon) icon.innerHTML = '▼';
+                    } else {
+                        pointsDiv.classList.add('show');
+                        if(icon) icon.innerHTML = '▲';
+                    }
+                });
+            }
+        });
+    }
+
+    // 刷题页面逻辑
+    let currentId=1, selectedChoice=null, timerInterval=null, remainingSeconds=360, timerActive=false;
+    function formatTime(sec){ let m=Math.floor(sec/60),s=sec%60; return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; }
+    function updateTimerUI(){ document.getElementById('timerDisplay').innerText=formatTime(remainingSeconds); if(remainingSeconds<=0&&timerActive){clearInterval(timerInterval);timerActive=false;alert("时间到！");}}
+    function startTimer(){ if(timerInterval) clearInterval(timerInterval); timerActive=true; timerInterval=setInterval(()=>{ if(remainingSeconds>0&&timerActive){ remainingSeconds--; updateTimerUI(); if(remainingSeconds===0){ clearInterval(timerInterval); timerActive=false; alert("倒计时结束"); } } },1000); }
+    function resetTimer(){ if(timerInterval) clearInterval(timerInterval); timerActive=false; remainingSeconds=360; updateTimerUI(); }
+
+    function renderUnifiedPoemList(){ const container=document.getElementById('poemListUnified'); container.innerHTML=''; poemsData.forEach(p=>{ let card=document.createElement('div'); card.className='poem-preview-card'; if(p.id===currentId) card.classList.add('active'); card.innerHTML=`<div><strong>${p.title}</strong><span class="badge">${p.type}</span></div><div class="poem-text">${p.text.substring(0,70)}…</div><div class="tip-bubble" style="font-size:0.7rem;">👤 ${p.authorIntro?.substring(0,40)}</div>`; card.addEventListener('click',()=>{ currentId=p.id; selectedChoice=null; renderUnifiedPoemList(); renderQuestionArea(); if(timerActive) resetTimer(); else resetTimer(); }); container.appendChild(card); }); }
+    function renderQuestionArea(){ const poem=poemsData.find(p=>p.id===currentId); if(!poem) return; const fullHtml=`<div><div class="poem-fulltext">${poem.text.replace(/\n/g,'<br>')}</div><div class="tip-bubble">📜 ${poem.background}</div><div class="tip-bubble">🔍 ${poem.annotations}</div></div><div class="choice-question"><div>📌 ${poem.choice.question}</div><div id="choiceOptionsBox">${poem.choice.options.map((opt,i)=>{ let letter=String.fromCharCode(65+i); return `<div class="choice-option" data-opt="${letter}">${opt}</div>`; }).join('')}</div><div id="choiceInlineFeed"></div></div>`; document.getElementById('dynamicQuestionArea').innerHTML=fullHtml; document.querySelectorAll('.choice-option').forEach(el=>{ el.addEventListener('click',(e)=>{ selectedChoice=el.getAttribute('data-opt'); document.querySelectorAll('.choice-option').forEach(o=>o.classList.remove('selected')); el.classList.add('selected'); document.getElementById('choiceInlineFeed').innerHTML=''; }); }); document.getElementById('essayQuestionContainer').innerHTML=`<div>📝 ${poem.essayFullQuestion}</div>`; document.getElementById('essayUserAnswer').value=''; document.getElementById('essayFeedback').style.display='none'; }
+    function checkChoice(){ const poem=poemsData.find(p=>p.id===currentId); if(!selectedChoice){ alert("请选择"); return; } const isCorrect=(selectedChoice===poem.choice.correct); const feed=document.getElementById('choiceInlineFeed'); if(isCorrect){ feed.innerHTML=`✅ 正确！${poem.choice.explanation}`; } else { feed.innerHTML=`❌ 错误！正确答案${poem.choice.correct}。${poem.choice.explanation}`; addMistake(poem,'choice',`选择${selectedChoice}`, `正确答案${poem.choice.correct}: ${poem.choice.explanation}`, poem.choice.question); } }
+    function evaluateEssay(){ const poem=poemsData.find(p=>p.id===currentId); const ans=document.getElementById('essayUserAnswer').value.trim(); if(!ans){ alert("请作答"); return; } let score=4; if(ans.includes("①")||ans.includes("1.")) score=5; if(ans.includes(poem.extraPoints.split(",")[0])) score=6; if(score<5) addMistake(poem,'essay',ans,poem.officialAnswer,poem.essayFullQuestion); document.getElementById('essayFeedback').innerHTML=`<div>📊 评分: ${score}/6<br><span class="highlight">完整答案：</span>${poem.officialAnswer}</div><div class="highlight" style="margin-top:8px;">✨ 采分点：${poem.extraPoints}</div><button id="copyAnsBtn" class="btn-warning-new">一键订正</button>`; document.getElementById('essayFeedback').style.display='block'; document.getElementById('copyAnsBtn')?.addEventListener('click',()=>{ document.getElementById('essayUserAnswer').value=poem.officialAnswer; }); }
+    document.getElementById('submitEssayBtn')?.addEventListener('click',evaluateEssay);
+    document.getElementById('clearEssayBtn')?.addEventListener('click',()=>{ document.getElementById('essayUserAnswer').value=''; document.getElementById('essayFeedback').style.display='none'; });
+    document.getElementById('startTimerBtn')?.addEventListener('click',startTimer);
+    document.getElementById('resetTimerBtn')?.addEventListener('click',resetTimer);
+    setTimeout(()=>{ if(!document.getElementById('checkChoiceBtn')){ let btnDiv=document.createElement('div'); btnDiv.innerHTML=`<button id="checkChoiceBtn" class="btn-primary-new" style="margin-right:8px;">✅ 核对选择题</button><button id="resetChoiceBtn" class="btn-warning-new">🔄 重选</button>`; document.getElementById('dynamicQuestionArea')?.after(btnDiv); } document.getElementById('checkChoiceBtn')?.addEventListener('click',checkChoice); document.getElementById('resetChoiceBtn')?.addEventListener('click',()=>{ selectedChoice=null; renderQuestionArea(); }); },100);
+
+    // tab切换
+    const tabs=document.querySelectorAll('.tab-btn'), contents=document.querySelectorAll('.tab-content');
+    tabs.forEach(btn=>{ btn.addEventListener('click',()=>{ let id=btn.getAttribute('data-tab'); tabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active'); contents.forEach(c=>c.classList.remove('active')); document.getElementById(id+'Tab')?.classList.add('active'); if(id==='practice'){ renderUnifiedPoemList(); renderQuestionArea(); resetTimer(); } if(id==='mistake') renderMistakeTable(mistakeItems); if(id==='lecture') initFoldAnswers(); }); });
+    renderUnifiedPoemList(); renderQuestionArea(); resetTimer(); loadMistakes(); initFoldAnswers();
+</script>
+</body>
+</html>

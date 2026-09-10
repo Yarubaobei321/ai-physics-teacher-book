@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>遗传信息的转录与翻译 · 分步交互演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #0b1220; color: #dbe7f5; overflow: hidden;
+  }
+  header.topbar {
+    height: 60px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; background: linear-gradient(90deg,#101a2e,#1b2740);
+    border-bottom: 2px solid #2c4168;
+  }
+  header.topbar h1 { font-size: 1.25rem; color: #ffd54f; letter-spacing: 1px; }
+  #stepBadge {
+    padding: 6px 16px; border-radius: 20px; font-size: 0.95rem; font-weight: 600;
+    background: #1d3a5f; color: #8fd0ff; border: 1px solid #35608f;
+  }
+  main { display: flex; gap: 14px; padding: 12px; height: calc(100vh - 60px); }
+  .col-canvas {
+    flex: 1 1 0; min-width: 0; background: #101a2c; border: 1px solid #22304a;
+    border-radius: 10px; display: flex; flex-direction: column; align-items: center; padding: 8px;
+  }
+  canvas#scene {
+    width: 100%; height: calc(100% - 44px); max-width: 100%; max-height: 100%;
+    display: block; background: radial-gradient(circle at 50% 30%, #0e1a30 0%, #0a1120 100%);
+    border-radius: 8px; outline: none;
+  }
+  canvas#scene:focus { box-shadow: 0 0 0 2px #4fc3f7; }
+  #statusBar {
+    width: 100%; min-height: 34px; margin-top: 6px; padding: 6px 12px;
+    background: #16233f; border-radius: 8px; font-size: 0.85rem; color: #a9c2e0;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  #statusBar b { color: #ffd54f; }
+  .panel {
+    width: 320px; background: #111c30; border: 1px solid #22304a; border-radius: 10px;
+    padding: 14px; overflow-y: auto;
+  }
+  .panel h2 {
+    font-size: 0.95rem; color: #ffd54f; margin-bottom: 10px;
+    border-bottom: 1px solid #2a3f63; padding-bottom: 6px;
+  }
+  .btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  button {
+    font-size: 0.9rem; padding: 8px 6px; border-radius: 8px; cursor: pointer;
+    border: 1px solid #3a5b86; background: #1c2f4d; color: #e6f0fb; font-weight: 600;
+  }
+  button:hover { background: #274465; }
+  button:active { transform: translateY(1px); }
+  button#autoBtn.playing { background: #7a1f1f; border-color: #d64545; }
+  .kb-hint { font-size: 0.8rem; color: #8fa6c4; margin-top: 8px; line-height: 1.5; }
+  #infoText { font-size: 0.9rem; line-height: 1.65; color: #dce8f7; }
+  #infoText b { color: #ffd54f; }
+  .codon-tab { margin-top: 12px; }
+  .codon-tab table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .codon-tab th, .codon-tab td { border: 1px solid #2a3f63; padding: 4px 6px; text-align: center; }
+  .codon-tab th { background: #16233f; color: #8fd0ff; }
+  .codon-tab td.met { color: #7fe0a8; font-weight: 700; }
+  .codon-tab td.stop { color: #ff8a80; font-weight: 700; }
+  #resultCard {
+    margin-top: 12px; border: 1px solid #2e9e5b; border-radius: 8px; padding: 10px;
+    background: #123120; font-size: 0.83rem; line-height: 1.7; display: none;
+  }
+  #resultCard h3 { color: #7fe0a8; font-size: 0.9rem; margin-bottom: 4px; }
+  .base-A { color: #ef5350; } .base-U { color: #26a69a; } .base-G { color: #fdd835; } .base-C { color: #5c6bc0; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1>🧬 遗传信息的转录与翻译 · 分步交互演示</h1>
+  <span id="stepBadge" role="status">第 1 步 / 共 14 步</span>
+</header>
+<main>
+  <section class="col-canvas">
+    <canvas id="scene" width="700" height="780" tabindex="0"
+      aria-label="转录与翻译分步画布：细胞核内DNA模板链3'到5'转录出mRNA，mRNA出核后核糖体结合并从5'端按密码子读取，tRNA反密码子互补配对，肽链延伸。支持键盘左右方向键步进、R重置、A自动演示。"></canvas>
+    <div id="statusBar" role="status">
+      <span>转录产物（mRNA 5′→3′）：<b><span id="mRNAView">—</span></b></span>
+      <span>当前读取：<b id="codonView">—</b></span>
+      <span>多肽：<b id="peptideView">—</b></span>
+    </div>
+  </section>
+
+  <aside class="panel" aria-label="控制区">
+    <h2>🎛 控制区</h2>
+    <div class="btnrow">
+      <button id="prevBtn" aria-label="上一步">← 上一步</button>
+      <button id="nextBtn" aria-label="下一步">下一步 →</button>
+      <button id="resetBtn" aria-label="重置">↺ 重置</button>
+      <button id="autoBtn" aria-label="自动演示">▶ 自动演示</button>
+    </div>
+    <button id="resultBtn" style="width:100%;" aria-label="查看结果">👁 查看结果（跳到终点）</button>
+    <p class="kb-hint">⌨ 键盘：<b>←/→</b> 上/下一步 · <b>R</b> 重置 · <b>A</b> 自动演示</p>
+    <p class="kb-hint">💡 流程：DNA 解旋 → 模板链转录出 mRNA → mRNA 出核 → 核糖体结合 → tRNA 进 A/P/E 位 → 肽链延伸 → 终止。</p>
+    <div class="codon-tab">
+      <h2 style="margin-top:6px;">🧾 密码子表</h2>
+      <table>
+        <tr><th>密码子(mRNA)</th><th>氨基酸</th><th>反密码子(tRNA)</th></tr>
+        <tr><td>AUG</td><td class="met">Met 甲硫氨酸（起始）</td><td>UAC</td></tr>
+        <tr><td>CCU</td><td>Pro 脯氨酸</td><td>GGA</td></tr>
+        <tr><td>AAG</td><td>Lys 赖氨酸</td><td>UUC</td></tr>
+        <tr><td>UGA</td><td class="stop">终止（释放因子识别，无 tRNA）</td><td>—</td></tr>
+      </table>
+    </div>
+  </aside>
+
+  <aside class="panel" aria-label="信息栏">
+    <h2>📖 信息栏</h2>
+    <div id="infoText"></div>
+    <div id="resultCard">
+      <h3>✔ 终局结果</h3>
+      <div id="resultDetail"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  var cv = document.getElementById('scene');
+  var ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+
+  // ---------- 标准示例序列 ----------
+  var TEMPLATE = 'TACGGATTCACT';            // 模板链 3'→5'
+  var mRNA = 'AUGCCUAAGUGA';                // 5'→3'（模板互补，U 替 T）
+  var CODONS = ['AUG', 'CCU', 'AAG', 'UGA'];
+  var AA = { AUG: 'Met 甲硫氨酸', CCU: 'Pro 脯氨酸', AAG: 'Lys 赖氨酸', UGA: '终止' };
+  var ANTI = { AUG: 'UAC', CCU: 'GGA', AAG: 'UUC', UGA: null };
+  function comp(b) { return b === 'A' ? 'U' : b === 'U' ? 'A' : b === 'T' ? 'A' : b === 'G' ? 'C' : 'G'; }
+  function anticodon(codon) { return codon.split('').map(comp).join(''); }
+  // 自检：反密码子方向互补
+  console.log('[B02 自检] AUG→', anticodon('AUG'), '(期望UAC) CCU→', anticodon('CCU'), '(期望GGA) AAG→', anticodon('AAG'), '(期望UUC)');
+
+  var TOTAL = 14;
+  var step = 1;
+  var autoOn = false, autoTimer = null;
+
+  // 每步的 mRNA 已转录碱基数与说明
+  // 转录进度：step 1:0, 2:0, 3:1, 4:2, 5:3, 6:6, 7:9, 8:12；其后 12
+  function transcribedCount() {
+    if (step <= 2) return 0;
+    if (step === 3) return 1;
+    if (step === 4) return 2;
+    if (step === 5) return 3;
+    if (step === 6) return 6;
+    if (step === 7) return 9;
+    return 12;
+  }
+  // 翻译窗口（已读密码子数）：step<=10 为 0；11:0；12:1；13:2；14:3
+  function codonIndex() {
+    if (step <= 10) return -1;   // 核糖体尚未绑定
+    if (step === 11) return 0;   // 起始密码子 AUG 在窗口
+    if (step === 12) return 1;
+    if (step === 13) return 2;
+    return 3;                    // 终止 UGA
+  }
+  function peptide() {
+    if (step <= 10) return '';
+    if (step === 11) return 'Met';
+    if (step === 12) return 'Met-Pro';
+    if (step === 13) return 'Met-Pro-Lys';
+    return 'Met-Pro-Lys（已释放）';
+  }
+
+  var INFO = [
+    '',
+    '【第 1 步 · 解旋】DNA 双链在细胞核内解开，暴露出一条 <b>3′→5′</b> 的模板链：<b>TAC GGA TTC ACT</b>。转录以模板链为模板，不读编码链。',
+    '【第 2 步 · 转录起始】RNA 聚合酶结合到模板链上，准备沿模板链合成 RNA。',
+    '【第 3 步 · 转录延伸①】模板第 1 位 T → 新 mRNA 第 1 位 <b>A</b>（RNA 中 A—U、T—A 配对）。',
+    '【第 4 步 · 转录延伸②】模板 A → mRNA <b>U</b>；模板 C → mRNA <b>G</b>，拼出起始密码子 <b>AUG</b>。',
+    '【第 5 步 · 转录延伸③】mRNA 已合成 <b>AUG</b>（第 1–3 位）。',
+    '【第 6 步 · 转录延伸④】模板 GGA → mRNA <b>CCU</b>（第 4–6 位），一个密码子=3 个核苷酸。',
+    '【第 7 步 · 转录延伸⑤】模板 TTC → mRNA <b>AAG</b>（第 7–9 位）。',
+    '【第 8 步 · 转录延伸⑥】模板 ACT → mRNA <b>UGA</b>（第 10–12 位），转录完成。mRNA 全长 <b>AUG CCU AAG UGA</b>（5′→3′）。',
+    '【第 9 步 · mRNA 出核】mRNA 穿过核孔进入细胞质（翻译场所），由 5′ 端出发。',
+    '【第 10 步 · 核糖体结合】核糖体结合到 mRNA 5′ 端的起始密码子 <b>AUG</b> 上，准备翻译。',
+    '【第 11 步 · 翻译起始】tRNA（反密码子 <b>UAC</b>）进入 A 位，与 AUG 互补配对，携来 <b>Met 甲硫氨酸</b>。',
+    '【第 12 步 · 延伸①】核糖体向 3′ 端移动 1 个密码子（3 个核苷酸）；tRNA(GGA) 携 Pro 进入 A 位，Met 转移到 Pro 上，形成二肽 <b>Met-Pro</b>；原 tRNA 经 E 位离开。',
+    '【第 13 步 · 延伸②】核糖体再向 3′ 端移动 1 个密码子；tRNA(UUC) 携 Lys 进入 A 位，形成三肽 <b>Met-Pro-Lys</b>。',
+    '【第 14 步 · 终止】核糖体读到 <b>UGA</b> 终止密码子：<b>无 tRNA 与之配对</b>，由释放因子识别，多肽链释放。最终产物：<b>Met-Pro-Lys</b>。'
+  ];
+
+  function updateStatus() {
+    document.getElementById('stepBadge').textContent = '第 ' + step + ' 步 / 共 ' + TOTAL + ' 步';
+    var n = transcribedCount();
+    document.getElementById('mRNAView').innerHTML = n === 0 ? '—' : spanBases(mRNA.slice(0, n));
+    var ci = codonIndex();
+    document.getElementById('codonView').textContent = ci >= 0 ? CODONS[ci] + (ci === 3 ? '（终止）' : '') : '—';
+    var pv = document.getElementById('peptideView');
+    var pep = peptide();
+    pv.textContent = pep || '—';
+    document.getElementById('infoText').innerHTML = INFO[step] || '';
+    var rc = document.getElementById('resultCard');
+    rc.style.display = step === TOTAL ? 'block' : 'none';
+    if (step === TOTAL) renderResult();
+    document.getElementById('autoBtn').textContent = autoOn ? '⏸ 暂停演示' : '▶ 自动演示';
+    document.getElementById('autoBtn').classList.toggle('playing', autoOn);
+  }
+  function spanBases(s) {
+    return s.split('').map(function (b) { return '<span class="base-' + b + '">' + b + '</span>'; }).join('');
+  }
+  function renderResult() {
+    var d = document.getElementById('resultDetail');
+    d.innerHTML =
+      'mRNA（5′→3′）：<b>' + spanBases(mRNA) + '</b><br>' +
+      '密码子：AUG(起始) → CCU → AAG → <b>UGA(终止)</b><br>' +
+      '多肽产物：<b>Met — Pro — Lys</b>（甲硫氨酸—脯氨酸—赖氨酸）<br>' +
+      'UGA 为终止密码子：<b>不配 tRNA、不加氨基酸</b>，由释放因子识别。';
+  }
+
+  // ---------- 画布绘制 ----------
+  function baseColor(b) {
+    return b === 'A' ? '#ef5350' : b === 'U' ? '#26a69a' : b === 'T' ? '#80cbc4' : b === 'G' ? '#fdd835' : '#5c6bc0';
+  }
+  function drawBase(x, y, b, r) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = baseColor(b); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.3)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#0b1220'; ctx.font = 'bold 13px "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b, x, y + 0.5);
+  }
+  function rr(x, y, w, h, r, fill, stroke, lw) {
+    ctx.beginPath(); ctx.roundRect(x, y, w, h, r);
+    ctx.fillStyle = fill; ctx.fill();
+    if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw || 2; ctx.stroke(); }
+  }
+  function label(x, y, text, color, size, align) {
+    ctx.fillStyle = color || '#a9c2e0'; ctx.font = (size || 12) + 'px "PingFang SC", sans-serif';
+    ctx.textAlign = align || 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var n = transcribedCount();
+    var ci = codonIndex();
+
+    // ---- 细胞核 ----
+    rr(30, 40, 330, 300, 24, 'rgba(31,58,105,.35)', '#3a5b86', 2);
+    label(50, 62, '细胞核（转录场所）', '#8fd0ff', 13);
+    // 核孔
+    ctx.fillStyle = '#22304a';
+    ctx.fillRect(352, 250, 16, 34);
+
+    // ---- 编码链（非模板链）与模板链 ----
+    var x0 = 55, dx = 25;
+    var codingY = 200, templY = 240;
+    var codingSeq = TEMPLATE.split('').map(comp); // 编码链 5'→3'
+    var unwound = step >= 1;
+    // 编码链
+    drawStrandLine(x0, codingY, 12, dx, '#5c8fbe');
+    for (var i = 0; i < 12; i++) drawBase(x0 + i * dx, codingY, codingSeq[i], 10);
+    label(x0 - 20, codingY, '5′', '#8fd0ff', 12);
+    label(x0 + 11 * dx + 20, codingY, '3′', '#8fd0ff', 12);
+    label(x0 + 140, codingY + 20, '编码链（非模板链）', '#8fa6c4', 11);
+    // 模板链
+    drawStrandLine(x0, templY, 12, dx, '#ffb74d');
+    for (var j = 0; j < 12; j++) drawBase(x0 + j * dx, templY, TEMPLATE[j], 10);
+    label(x0 - 20, templY, '3′', '#ffd54f', 12);
+    label(x0 + 11 * dx + 20, templY, '5′', '#ffd54f', 12);
+    label(x0 + 140, templY + 20, '模板链（3′→5′）', '#ffd54f', 11);
+
+    // ---- RNA 聚合酶 ----
+    if (step >= 2 && step <= 8) {
+      var px = x0 + n * dx;
+      ctx.fillStyle = 'rgba(129,212,250,.3)';
+      ctx.beginPath(); ctx.ellipse(px + 10, templY - 20, 26, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#81d4fa'; ctx.lineWidth = 2; ctx.stroke();
+      label(px + 10, templY - 42, 'RNA聚合酶', '#81d4fa', 11);
+    }
+
+    // ---- mRNA（转录产物，5'→3'） ----
+    var mrnaY = 300;
+    var mrnaDraw = n;
+    if (step > 8) mrnaDraw = 12;
+    if (mrnaDraw > 0) {
+      var pts = [];
+      for (var k = 0; k < mrnaDraw; k++) pts.push({ x: x0 + k * dx, y: mrnaY });
+      drawStrandLine(x0, mrnaY, mrnaDraw, dx, '#26a69a');
+      for (var m = 0; m < mrnaDraw; m++) drawBase(x0 + m * dx, mrnaY, mRNA[m], 11);
+      label(x0 - 18, mrnaY, '5′', '#7fe0a8', 12);
+      label(x0 + (mrnaDraw - 1) * dx + 20, mrnaY, '3′', '#7fe0a8', 12);
+      if (n > 0 && n < 12) {
+        // 配对线：模板与 mRNA
+        for (var p = 0; p < n; p++) {
+          ctx.beginPath(); ctx.moveTo(x0 + p * dx, templY + 10); ctx.lineTo(x0 + p * dx, mrnaY - 11);
+          ctx.strokeStyle = 'rgba(255,183,77,.4)'; ctx.lineWidth = 1.5; ctx.stroke();
+        }
+      }
+      label(x0 + 140, mrnaY + 22, 'mRNA（5′→3′）', '#7fe0a8', 11);
+    }
+
+    // ---- mRNA 出核路径 ----
+    var mRNAExited = step >= 9;
+    if (step >= 8) {
+      var path = [
+        { x: x0 + 11 * dx, y: mrnaY },
+        { x: 365, y: mrnaY },
+        { x: 390, y: mrnaY },
+        { x: 390, y: 150 },
+        { x: 452, y: 150 }
+      ];
+      ctx.strokeStyle = '#26a69a'; ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(path[0].x, path[0].y);
+      ctx.lineTo(path[1].x, path[1].y);
+      ctx.lineTo(path[2].x, path[2].y);
+      ctx.lineTo(path[3].x, path[3].y);
+      ctx.lineTo(path[4].x, path[4].y);
+      ctx.stroke();
+    }
+
+    // ---- 细胞质与核糖体 ----
+    label(460, 40, '细胞质（翻译场所）', '#8fd0ff', 13);
+    // 核糖体
+    rr(430, 120, 250, 140, 20, 'rgba(90,70,160,.35)', '#ba68c8', 2);
+    label(555, 108, '核糖体', '#c39bff', 13, 'center');
+    // A/P/E 位
+    var sites = [['E', 475], ['P', 545], ['A', 615]];
+    for (var s = 0; s < 3; s++) {
+      rr(sites[s][1] - 30, 165, 60, 46, 8, 'rgba(20,30,50,.5)', '#3a5b86', 1);
+      label(sites[s][1], 154, sites[s][0] + ' 位', '#c39bff', 12, 'center');
+    }
+
+    // mRNA 穿过核糖体的水平段
+    var rnaY = 200;
+    if (step >= 9) {
+      ctx.strokeStyle = '#26a69a'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(452, 150); ctx.lineTo(452, rnaY); ctx.lineTo(660, rnaY); ctx.stroke();
+      // 核糖体内 mRNA 显示窗口（当前密码子）
+      if (ci >= 0) {
+        var cw = CODONS[ci];
+        for (var w = 0; w < 3; w++) {
+          var wx = 545 + w * 26;
+          drawBase(wx, rnaY, cw[w], 10);
+        }
+        label(620, rnaY - 18, ci === 3 ? '终止密码子' : '密码子', '#ffd54f', 11);
+      }
+      // 5'→3' 方向箭头
+      ctx.fillStyle = '#7fe0a8'; ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'right'; ctx.fillText('5′→3′', 452, rnaY + 26);
+      ctx.textAlign = 'left';
+    }
+
+    // ---- tRNA 与肽链 ----
+    if (step >= 11) {
+      // 各步骤 A/P/E 位 tRNA 与肽链状态
+      var pep = peptide();
+      var pepAa = pep.indexOf('-') >= 0 ? pep.split('-').length : (pep ? 1 : 0);
+      var Ptrna = null, Atrna = null, Etrna = null;
+      if (step === 11) { Atrna = { anti: 'UAC', aa: 'Met' }; }
+      if (step === 12) { Ptrna = { anti: 'GGA', aa: 'Pro' }; Etrna = { anti: 'UAC', aa: '' }; }
+      if (step === 13) { Ptrna = { anti: 'UUC', aa: 'Lys' }; Etrna = { anti: 'GGA', aa: '' }; }
+      if (step === 14) { Etrna = { anti: 'UUC', aa: '' }; }
+
+      if (Atrna) drawTRNA(sites[2][1], rnaY - 34, Atrna.anti, Atrna.aa, '#ff8a80');
+      if (Ptrna) drawTRNA(sites[1][1], rnaY - 34, Ptrna.anti, Ptrna.aa, '#7fe0a8');
+      if (Etrna) drawTRNA(sites[0][1], rnaY - 34, Etrna.anti, Etrna.aa, '#8fa6c4');
+
+      // 肽链（核糖体上方，不遮挡 mRNA）
+      if (pep && step < 14) {
+        for (var a = 0; a < pepAa; a++) {
+          var ay = 96 - a * 30;
+          var an = pep.split('-')[a];
+          ctx.beginPath(); ctx.arc(560, ay, 13, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffd54f'; ctx.fill();
+          ctx.strokeStyle = '#fff3c4'; ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.fillStyle = '#0b1220'; ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(an, 560, ay);
+        }
+        label(560, 96 - (pepAa - 1) * 30 - 26, '多肽链', '#ffd54f', 11, 'center');
+      }
+      if (step === 14) {
+        // 释放的三肽
+        for (var r = 0; r < 3; r++) {
+          var ay2 = 40 + r * 30;
+          var an2 = ['Met', 'Pro', 'Lys'][r];
+          ctx.beginPath(); ctx.arc(700 - r * 2, ay2, 13, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffd54f'; ctx.fill();
+          ctx.fillStyle = '#0b1220'; ctx.font = 'bold 11px sans-serif';
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillText(an2, 700 - r * 2, ay2);
+        }
+        label(660, 118, '已释放的三肽', '#ffd54f', 11, 'center');
+        // 释放因子
+        ctx.fillStyle = 'rgba(255,138,128,.35)';
+        ctx.beginPath(); ctx.moveTo(615, 180); ctx.lineTo(640, 150); ctx.lineTo(645, 196); ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#ff8a80'; ctx.lineWidth = 2; ctx.stroke();
+        label(640, 140, '释放因子（识别 UGA）', '#ff8a80', 10);
+      }
+    }
+
+    // 配对说明
+    if (step === 12 || step === 13) {
+      var c = CODONS[ci];
+      label(470, 250, '密码子 ' + c + ' ↔ 反密码子 ' + ANTI[c] + '（方向互补）', '#c39bff', 11);
+    }
+    if (step === 11) {
+      label(470, 250, '密码子 AUG ↔ 反密码子 UAC（方向互补）', '#c39bff', 11);
+    }
+  }
+
+  function drawStrandLine(x, y, count, dx, color) {
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y);
+    ctx.lineTo(x + (count - 1) * dx + 8, y);
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.stroke();
+  }
+
+  function drawTRNA(x, y, anti, aa, color) {
+    // tRNA 形状：茎环 + 反密码子 + 氨基酸
+    ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(x, y, 16, Math.PI * 0.15, Math.PI * 0.85, false);
+    ctx.stroke();
+    // 反密码子
+    for (var i = 0; i < 3; i++) {
+      var lx = x - 10 + i * 10;
+      ctx.fillStyle = color; ctx.font = 'bold 10px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(anti[i], lx, y - 4);
+    }
+    ctx.fillStyle = '#0b1220';
+    ctx.fillText('反密码子', x, y + 18);
+    // 氨基酸
+    if (aa) {
+      ctx.beginPath(); ctx.arc(x, y - 26, 11, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffd54f'; ctx.fill();
+      ctx.fillStyle = '#0b1220'; ctx.font = 'bold 10px sans-serif';
+      ctx.fillText(aa, x, y - 26);
+    }
+  }
+
+  // ---------- 步进控制 ----------
+  function goto(n) {
+    step = Math.max(1, Math.min(TOTAL, n));
+    draw();
+    updateStatus();
+  }
+  document.getElementById('prevBtn').addEventListener('click', function () { goto(step - 1); });
+  document.getElementById('nextBtn').addEventListener('click', function () { goto(step + 1); });
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    stopAuto(); goto(1);
+  });
+  document.getElementById('resultBtn').addEventListener('click', function () {
+    stopAuto(); goto(TOTAL);
+  });
+  function stopAuto() {
+    autoOn = false;
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+    updateStatus();
+  }
+  document.getElementById('autoBtn').addEventListener('click', function () {
+    if (autoOn) { stopAuto(); return; }
+    if (step >= TOTAL) goto(1);
+    autoOn = true; updateStatus();
+    autoTimer = setInterval(function () {
+      if (step >= TOTAL) { stopAuto(); return; }
+      goto(step + 1);
+    }, 1500);
+  });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.target && (ev.target.tagName === 'INPUT' || ev.target.tagName === 'BUTTON')) return;
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); goto(step + 1); }
+    else if (ev.key === 'ArrowLeft') { ev.preventDefault(); goto(step - 1); }
+    else if (ev.key === 'r' || ev.key === 'R') { stopAuto(); goto(1); }
+    else if (ev.key === 'a' || ev.key === 'A') {
+      document.getElementById('autoBtn').click();
+    }
+  });
+
+  // ---------- 初始化 ----------
+  goto(1);
+})();
+</script>
+</body>
+</html>

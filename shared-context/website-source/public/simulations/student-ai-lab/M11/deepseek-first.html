@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中数学：交互式函数求导演示 | 导数与切线斜率</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动干扰，但不影响输入 */
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f8 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .derivative-demo {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(0px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* 头部 */
+        .header {
+            background: #1e293b;
+            color: white;
+            padding: 1.2rem 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            margin: 0.5rem 0 0;
+            opacity: 0.85;
+            font-size: 0.95rem;
+        }
+
+        /* 主体两列布局：左控制区，右图表 */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 1.5rem;
+            gap: 1.8rem;
+        }
+
+        /* 左侧控制面板 */
+        .controls {
+            flex: 1.2;
+            min-width: 260px;
+            background: #ffffffdd;
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1.2rem 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .control-group {
+            margin-bottom: 1.6rem;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 0.7rem 1rem;
+            border-radius: 1rem;
+            border: 1px solid #cbd5e1;
+            background: #fefefe;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        select:focus, input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+        }
+
+        .param-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .param-row .param-item {
+            flex: 1;
+        }
+
+        .point-slider {
+            margin: 10px 0 5px;
+        }
+        input[type="range"] {
+            padding: 0;
+            cursor: pointer;
+            background: #e2e8f0;
+            height: 5px;
+            border-radius: 10px;
+        }
+        .x-value-display {
+            display: inline-block;
+            background: #eef2ff;
+            padding: 0.25rem 0.8rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .info-panel {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 1.2rem;
+            margin: 1.5rem 0 1rem;
+            text-align: center;
+        }
+        .derivative-result {
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: #0f172a;
+            color: #facc15;
+            display: inline-block;
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+            margin-top: 8px;
+        }
+        .formula {
+            font-family: 'Courier New', monospace;
+            background: #e9ecef;
+            padding: 6px 10px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .btn-reset {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            margin-top: 10px;
+        }
+        .btn-reset:hover {
+            background: #2563eb;
+            transform: scale(0.98);
+        }
+
+        .tips {
+            font-size: 0.75rem;
+            color: #475569;
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+            text-align: center;
+        }
+
+        /* 右侧图表区 */
+        .graph-area {
+            flex: 2.5;
+            min-width: 480px;
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 0.8rem;
+            border: 1px solid #eef2ff;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 0.85;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 1rem;
+            display: block;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 760px) {
+            .dashboard {
+                flex-direction: column;
+            }
+            .graph-area {
+                min-width: auto;
+            }
+            .header h1 {
+                font-size: 1.4rem;
+            }
+        }
+
+        button {
+            background: none;
+            border: none;
+        }
+        .badge {
+            font-size: 0.7rem;
+        }
+    </style>
+</head>
+<body>
+<div class="derivative-demo">
+    <div class="header">
+        <h1>📐 导数可视化 · 切线的斜率</h1>
+        <p>选择函数 | 拖动 x 点 | 观察切线变化 & 导数值</p>
+    </div>
+    <div class="dashboard">
+        <!-- 左侧控制栏 -->
+        <div class="controls">
+            <div class="control-group">
+                <label>🧮 选择函数 f(x)</label>
+                <select id="funcSelect">
+                    <option value="quadratic">🟢 f(x) = x²</option>
+                    <option value="cubic">🔵 f(x) = x³ - 3x</option>
+                    <option value="sine">🟠 f(x) = sin(x)</option>
+                    <option value="exponential">🟣 f(x) = e^x / 3 (缩放)</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>📍 当前点 x₀</label>
+                <div class="param-row">
+                    <div class="param-item" style="flex:3">
+                        <input type="range" id="xSlider" min="-3" max="3" step="0.02" value="1.0">
+                    </div>
+                    <div class="param-item" style="flex:1; text-align:right">
+                        <span class="x-value-display" id="xValue">x = 1.00</span>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color:#334155;">拖动滑块改变切点位置</div>
+            </div>
+
+            <div class="info-panel">
+                <div>📈 当前函数</div>
+                <div class="formula" id="funcFormula">f(x) = x²</div>
+                <div>🔍 导函数 f'(x)</div>
+                <div class="formula" id="derivFormula">f'(x) = 2x</div>
+                <div style="margin-top: 12px;">✨ 在 x₀ 处 导数 (斜率) =</div>
+                <div class="derivative-result" id="slopeValue">2.00</div>
+                <div style="font-size: 12px; margin-top: 8px;">切线方程: <span id="tangentEq">y = 2x -1</span></div>
+            </div>
+
+            <button id="resetViewBtn" class="btn-reset">⟳ 重置视图范围</button>
+            <div class="tips">
+                💡 提示：导数表示函数在该点的瞬时变化率，即切线的斜率。<br>
+                切换函数或拖动 x₀，观察切线与函数曲线的关系。
+            </div>
+        </div>
+
+        <!-- 右侧画布 -->
+        <div class="graph-area">
+            <div class="canvas-container">
+                <canvas id="functionCanvas" width="800" height="600" style="width:100%; height:auto; max-width:800px; aspect-ratio:800/600"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // 获取canvas元素
+        const canvas = document.getElementById('functionCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // DOM 元素绑定
+        const funcSelect = document.getElementById('funcSelect');
+        const xSlider = document.getElementById('xSlider');
+        const xValueSpan = document.getElementById('xValue');
+        const funcFormulaSpan = document.getElementById('funcFormula');
+        const derivFormulaSpan = document.getElementById('derivFormula');
+        const slopeValueSpan = document.getElementById('slopeValue');
+        const tangentEqSpan = document.getElementById('tangentEq');
+        const resetBtn = document.getElementById('resetViewBtn');
+
+        // 坐标系参数 (可动态调整范围，支持重置)
+        let xMin = -3.0;
+        let xMax = 3.0;
+        let yMin = -3.5;
+        let yMax = 3.5;
+
+        // 默认坐标范围约束 (针对不同函数不会超出太离谱，但是重置时恢复)
+        const DEFAULT_X_MIN = -3.0, DEFAULT_X_MAX = 3.0;
+        const DEFAULT_Y_MIN = -3.5, DEFAULT_Y_MAX = 3.5;
+
+        // 当前选择的函数类型
+        let currentFunc = 'quadratic';
+
+        // ---------- 函数库定义 (数值计算, 以及导数解析式展示) ----------
+        const functions = {
+            quadratic: {
+                name: 'f(x) = x²',
+                f: (x) => x * x,
+                derivative: (x) => 2 * x,
+                derivText: "f'(x) = 2x",
+                // 用于范围自适应 (可选, 但这里不动初始范围，重置即可)
+            },
+            cubic: {
+                name: 'f(x) = x³ - 3x',
+                f: (x) => x*x*x - 3*x,
+                derivative: (x) => 3*x*x - 3,
+                derivText: "f'(x) = 3x² - 3",
+            },
+            sine: {
+                name: 'f(x) = sin(x)',
+                f: (x) => Math.sin(x),
+                derivative: (x) => Math.cos(x),
+                derivText: "f'(x) = cos(x)",
+            },
+            exponential: {
+                name: 'f(x) = eˣ/3',
+                f: (x) => Math.exp(x) / 3,
+                derivative: (x) => Math.exp(x) / 3,
+                derivText: "f'(x) = eˣ/3",
+            }
+        };
+
+        // 更新公式显示
+        function updateFormulas() {
+            const fn = functions[currentFunc];
+            funcFormulaSpan.innerText = fn.name;
+            derivFormulaSpan.innerText = fn.derivText;
+        }
+
+        // 计算当前点切线的方程字符串
+        function getTangentEquation(x0, slope, y0) {
+            // 切线: y = slope * (x - x0) + y0
+            // 显示保留两位小数
+            const inter = y0 - slope * x0;
+            if (Math.abs(inter) < 1e-6) {
+                return `y = ${slope.toFixed(2)} · x`;
+            } else if (inter > 0) {
+                return `y = ${slope.toFixed(2)} · x + ${inter.toFixed(2)}`;
+            } else {
+                return `y = ${slope.toFixed(2)} · x - ${Math.abs(inter).toFixed(2)}`;
+            }
+        }
+
+        // 更新滑块显示及导数信息（数值、切线方程）
+        function updateDerivativeInfo() {
+            const x0 = parseFloat(xSlider.value);
+            xValueSpan.innerText = `x = ${x0.toFixed(3)}`;
+            const fn = functions[currentFunc];
+            const slope = fn.derivative(x0);
+            const y0 = fn.f(x0);
+            slopeValueSpan.innerText = slope.toFixed(4);
+            const eq = getTangentEquation(x0, slope, y0);
+            tangentEqSpan.innerText = eq;
+        }
+
+        // 绘制坐标系网格 + 曲线 + 切线 + 切点
+        function drawGraph() {
+            if (!ctx) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // 清理画布
+            ctx.clearRect(0, 0, width, height);
+            
+            // 辅助映射函数: x逻辑坐标 -> canvas x坐标
+            function toCanvasX(x) { return ((x - xMin) / (xMax - xMin)) * width; }
+            function toCanvasY(y) { return height - ((y - yMin) / (yMax - yMin)) * height; }
+            
+            // 1. 绘制浅色网格和坐标轴
+            ctx.save();
+            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.fillStyle = "#334155";
+            ctx.font = "12px 'Segoe UI'";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            // 网格步长 (动态适应)
+            const xStep = (xMax - xMin) / 8;
+            const yStep = (yMax - yMin) / 8;
+            const niceXStep = Math.pow(10, Math.floor(Math.log10(xStep))) * (xStep / Math.pow(10, Math.floor(Math.log10(xStep))) >= 5 ? 2 : 1);
+            const niceYStep = Math.pow(10, Math.floor(Math.log10(yStep))) * (yStep / Math.pow(10, Math.floor(Math.log10(yStep))) >= 5 ? 2 : 1);
+            
+            // 绘制竖线网格 & x轴刻度
+            let startX = Math.ceil(xMin / niceXStep) * niceXStep;
+            for (let x = startX; x <= xMax; x += niceXStep) {
+                const cx = toCanvasX(x);
+                if (cx >= 0 && cx <= width) {
+                    ctx.beginPath();
+                    ctx.moveTo(cx, 0);
+                    ctx.lineTo(cx, height);
+                    ctx.strokeStyle = "#e2e8f0";
+                    ctx.stroke();
+                    // 数字标注
+                    ctx.fillStyle = "#475569";
+                    ctx.fillText(x.toFixed(2), cx, toCanvasY(0) + (x === 0 ? 15 : 12));
+                }
+            }
+            
+            // 绘制横线网格 & y轴刻度
+            let startY = Math.ceil(yMin / niceYStep) * niceYStep;
+            for (let y = startY; y <= yMax; y += niceYStep) {
+                const cy = toCanvasY(y);
+                if (cy >= 0 && cy <= height) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, cy);
+                    ctx.lineTo(width, cy);
+                    ctx.strokeStyle = "#e2e8f0";
+                    ctx.stroke();
+                    ctx.fillStyle = "#475569";
+                    ctx.fillText(y.toFixed(2), toCanvasX(0) + 8, cy);
+                }
+            }
+            
+            // 绘制X轴 (加粗)
+            ctx.beginPath();
+            const axisY = toCanvasY(0);
+            ctx.moveTo(0, axisY);
+            ctx.lineTo(width, axisY);
+            ctx.strokeStyle = "#1e293b";
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+            // Y轴
+            const axisX = toCanvasX(0);
+            ctx.beginPath();
+            ctx.moveTo(axisX, 0);
+            ctx.lineTo(axisX, height);
+            ctx.stroke();
+            ctx.lineWidth = 0.8;
+            
+            // 绘制箭头简单装饰
+            ctx.fillStyle = "#1e293b";
+            ctx.beginPath(); // x箭头
+            ctx.moveTo(width-8, axisY-4);
+            ctx.lineTo(width, axisY);
+            ctx.lineTo(width-8, axisY+4);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(axisX-4, 8);
+            ctx.lineTo(axisX, 0);
+            ctx.lineTo(axisX+4, 8);
+            ctx.fill();
+            
+            // 2. 绘制函数曲线
+            const fn = functions[currentFunc];
+            const points = [];
+            const step = (xMax - xMin) / 800;
+            for (let x = xMin; x <= xMax; x += step) {
+                let y = fn.f(x);
+                if (isFinite(y)) {
+                    points.push({x, y});
+                } else {
+                    // 处理无穷大跳过
+                    if (points.length) points.push(null);
+                }
+            }
+            ctx.beginPath();
+            ctx.lineWidth = 2.8;
+            ctx.strokeStyle = "#3b82f6";
+            ctx.shadowBlur = 0;
+            let first = true;
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                if (p === null) {
+                    first = true;
+                    continue;
+                }
+                const canvasX = toCanvasX(p.x);
+                const canvasY = toCanvasY(p.y);
+                if (canvasY < 0 || canvasY > height || !isFinite(canvasY)) {
+                    first = true;
+                    continue;
+                }
+                if (first) {
+                    ctx.moveTo(canvasX, canvasY);
+                    first = false;
+                } else {
+                    ctx.lineTo(canvasX, canvasY);
+                }
+            }
+            ctx.stroke();
+            
+            // 3. 绘制切点位置以及切线
+            const x0 = parseFloat(xSlider.value);
+            let y0 = fn.f(x0);
+            let slope = fn.derivative(x0);
+            
+            // 确保切点坐标在可视区域内（即便超出也可画切线，但限制绘制避免诡异）
+            const cpX = toCanvasX(x0);
+            const cpY = toCanvasY(y0);
+            
+            // 绘制切点大圆点
+            ctx.beginPath();
+            ctx.fillStyle = "#ef4444";
+            ctx.arc(cpX, cpY, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.fillStyle = "white";
+            ctx.arc(cpX, cpY, 2.5, 0, 2*Math.PI);
+            ctx.fill();
+            
+            // 绘制切线: 从 xMin 到 xMax 范围内计算直线两点
+            // 切线方程 y = slope*(x - x0) + y0
+            let tX1 = xMin;
+            let tY1 = slope * (tX1 - x0) + y0;
+            let tX2 = xMax;
+            let tY2 = slope * (tX2 - x0) + y0;
+            let canvasX1 = toCanvasX(tX1);
+            let canvasY1 = toCanvasY(tY1);
+            let canvasX2 = toCanvasX(tX2);
+            let canvasY2 = toCanvasY(tY2);
+            
+            // 如果切线点超出屏幕，截取边缘部分仅显示合理线段
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#f97316";
+            ctx.setLineDash([8, 6]);
+            ctx.moveTo(canvasX1, canvasY1);
+            ctx.lineTo(canvasX2, canvasY2);
+            ctx.stroke();
+            ctx.setLineDash([]); // 恢复实线
+            
+            // 额外添加一条极短辅助说明（标注斜率文字位置）
+            ctx.font = "bold 13px 'Segoe UI'";
+            ctx.fillStyle = "#e11d48";
+            ctx.shadowBlur = 0;
+            ctx.fillText(`斜率 = ${slope.toFixed(3)}`, cpX + 10, cpY - 8);
+            
+            // 标记切点坐标文字
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#0f172a";
+            ctx.fillText(`(${x0.toFixed(2)}, ${y0.toFixed(2)})`, cpX + 8, cpY + 15);
+            
+            // 4. 在顶部或底部显示当前函数文字 + 帮助
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#1e293b";
+            ctx.fillText(`📌 ${fn.name}`, 15, 30);
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#4b5563";
+            ctx.fillText(`导数: ${fn.derivText}`, 15, 52);
+            ctx.restore();
+        }
+        
+        // 重置视图 (原始范围)
+        function resetView() {
+            xMin = DEFAULT_X_MIN;
+            xMax = DEFAULT_X_MAX;
+            yMin = DEFAULT_Y_MIN;
+            yMax = DEFAULT_Y_MAX;
+            // 重新绘制
+            drawGraph();
+        }
+        
+        // 智能自适应范围：当用户选择的函数在某些x点超出范围太多，但是为了体验，简单提供一个智能调节阈值(但保留重置)
+        // 可选：根据当前切点和曲线极值动态微调，为了简单，不做自动，而是提醒重置，但更好的体验：如果y值超出范围，重置可见区域。
+        // 但这里为了防止某些函数（比如指数函数）在x>2时y很大，我们检测后自动调整一次y范围？
+        // 为了简洁，不自动缩放，但重置按钮可帮助。或者增加初次加载和函数切换时校准范围：针对指数函数，显示主要区域
+        function smartAdjustOnFuncChange() {
+            // 针对指数函数，若当前范围 -3~3 ，e^3/3 ≈ 6.69 超出yMax=3.5 太多，提供稍微扩大的建议但不强制，用户重置或体验可手动
+            if(currentFunc === 'exponential') {
+                // 如果当前默认y范围上边界3.5太小，轻微扩展到[-1, 7]区间。
+                if(yMax < 5.0 && xMin === DEFAULT_X_MIN) {
+                    yMin = -1.2;
+                    yMax = 7.2;
+                } else if (currentFunc !== 'exponential' && (yMax > 5.0)) {
+                    // 切换走指数，重置回默认范围以更好显示二次函数
+                    yMin = DEFAULT_Y_MIN;
+                    yMax = DEFAULT_Y_MAX;
+                }
+            } 
+            else if(currentFunc === 'cubic') {
+                // 三次函数范围 -3~3值域约[-18,18]，但为了视觉，略微放大默认范围不够，建议用户重置时手动扩
+                if(yMin > -6 || yMax < 6) {
+                    yMin = -6.5;
+                    yMax = 6.5;
+                } else {
+                    // 保留
+                }
+            }
+            else if(currentFunc === 'quadratic') {
+                if(yMin > -2) yMin = -2.5;
+                if(yMax < 5) yMax = 5;
+            }
+            else if(currentFunc === 'sine') {
+                if(yMin > -2) yMin = -2.2;
+                if(yMax < 2.2) yMax = 2.2;
+            }
+            // 确保坐标一致性，不至于太离谱
+            if(xMin === DEFAULT_X_MIN && xMax === DEFAULT_X_MAX) {
+                // 好
+            }
+            drawGraph();
+        }
+        
+        // 更新所有: 公式显示，导数信息，重绘图形
+        function refreshAll() {
+            updateFormulas();
+            updateDerivativeInfo();
+            drawGraph();
+        }
+        
+        // 处理函数切换
+        function onFuncChange() {
+            currentFunc = funcSelect.value;
+            // 调整坐标范围以便舒服显示常用区域（但不是强制的），以免新函数超出屏幕
+            if(currentFunc === 'exponential') {
+                if(xMin === DEFAULT_X_MIN && xMax === DEFAULT_X_MAX) {
+                    yMin = -1.2;
+                    yMax = 7.2;
+                }
+            } else if (currentFunc === 'cubic') {
+                yMin = -6.5;
+                yMax = 6.5;
+            } else if (currentFunc === 'quadratic') {
+                yMin = -2.2;
+                yMax = 5.2;
+            } else if (currentFunc === 'sine') {
+                yMin = -2.2;
+                yMax = 2.2;
+            } else {
+                // reset Y to default if needed
+                if(yMin < -4 || yMax > 5) {
+                    yMin = DEFAULT_Y_MIN;
+                    yMax = DEFAULT_Y_MAX;
+                }
+            }
+            // 确保x范围不变保持-3~3，比较直观
+            xMin = DEFAULT_X_MIN;
+            xMax = DEFAULT_X_MAX;
+            refreshAll();
+        }
+        
+        // 滑块变化事件
+        function onXChange() {
+            updateDerivativeInfo();
+            drawGraph();
+        }
+        
+        // 窗口大小自适应 canvas 分辨率 (保持清晰)
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const w = container.clientWidth;
+            // 根据container宽度设置canvas的实际分辨率，上限800px保持比例
+            let targetWidth = Math.min(800, w - 20);
+            if(targetWidth < 300) targetWidth = 300;
+            canvas.width = targetWidth;
+            canvas.height = targetWidth * 0.75; // 保持4:3比例
+            canvas.style.width = `${targetWidth}px`;
+            canvas.style.height = `${targetWidth * 0.75}px`;
+            drawGraph();
+        }
+        
+        // 监听resize
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+        });
+        
+        // 绑定事件
+        funcSelect.addEventListener('change', onFuncChange);
+        xSlider.addEventListener('input', onXChange);
+        resetBtn.addEventListener('click', () => {
+            // 重置坐标范围为最佳通用
+            xMin = DEFAULT_X_MIN;
+            xMax = DEFAULT_X_MAX;
+            yMin = DEFAULT_Y_MIN;
+            yMax = DEFAULT_Y_MAX;
+            // 如果当前是指数函数，重置范围后还是稍微调整更美观
+            if(currentFunc === 'exponential') {
+                yMin = -1.2;
+                yMax = 7.2;
+            } else if(currentFunc === 'cubic') {
+                yMin = -6.5;
+                yMax = 6.5;
+            } else if(currentFunc === 'quadratic') {
+                yMin = -2.2;
+                yMax = 5.2;
+            } else if(currentFunc === 'sine') {
+                yMin = -2.2;
+                yMax = 2.2;
+            }
+            refreshAll();
+        });
+        
+        // 初始化 
+        function init() {
+            resizeCanvas();
+            currentFunc = funcSelect.value;
+            updateFormulas();
+            updateDerivativeInfo();
+            drawGraph();
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>康乾盛世：繁华背后的暗流</title>
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --panel-bg: #16213e;
+            --card-bg: #0f3460;
+            --gold: #d4a745;
+            --gold-light: #e8c978;
+            --text: #e0d5c1;
+            --text-dim: #a89b82;
+            --accent: #c0392b;
+            --accent-hover: #e74c3c;
+            --border: #2a3a5c;
+            --highlight: #f39c12;
+            --success-bg: #1a3a2a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', 'STSong', 'Songti SC', 'SimSun', 'KaiTi', '楷体', serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(ellipse at 50% 0%, rgba(180, 140, 60, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 80%, rgba(180, 140, 60, 0.05) 0%, transparent 50%);
+        }
+
+        /* 顶部装饰 */
+        .top-ornament {
+            text-align: center;
+            padding: 20px 0 10px;
+            font-size: 14px;
+            letter-spacing: 4px;
+            color: var(--gold);
+            opacity: 0.7;
+        }
+        .top-ornament::before,
+        .top-ornament::after {
+            content: '◆';
+            margin: 0 16px;
+            font-size: 10px;
+            opacity: 0.5;
+        }
+
+        /* 标题区域 */
+        .header {
+            text-align: center;
+            padding: 0 20px 30px;
+        }
+        .header .main-title {
+            font-size: clamp(28px, 5vw, 48px);
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 6px;
+            text-shadow: 0 0 40px rgba(212, 167, 69, 0.3);
+            margin-bottom: 8px;
+        }
+        .header .subtitle {
+            font-size: 15px;
+            color: var(--text-dim);
+            letter-spacing: 2px;
+        }
+
+        /* 主布局 */
+        .main-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 0 20px 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+        }
+
+        /* 上半部分：盛世概况 */
+        .prosperity-section {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px 32px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .prosperity-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--gold), transparent);
+            border-radius: 4px 0 0 4px;
+        }
+        .prosperity-badge {
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: var(--gold);
+            background: rgba(212, 167, 69, 0.08);
+            animation: pulse-gold 3s ease-in-out infinite;
+        }
+        @keyframes pulse-gold {
+            0%,
+            100% {
+                box-shadow: 0 0 20px rgba(212, 167, 69, 0.2);
+            }
+            50% {
+                box-shadow: 0 0 40px rgba(212, 167, 69, 0.5);
+            }
+        }
+        .prosperity-text {
+            flex: 1;
+            min-width: 250px;
+        }
+        .prosperity-text h3 {
+            font-size: 20px;
+            color: var(--gold-light);
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+        .prosperity-text .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 14px;
+            color: var(--text-dim);
+            line-height: 1.8;
+        }
+        .prosperity-text .stats strong {
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        /* 下半部分左侧：危机卡片 */
+        .crisis-cards-section {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .crisis-cards-section h3 {
+            text-align: center;
+            color: var(--accent);
+            letter-spacing: 3px;
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .crisis-card {
+            background: var(--card-bg);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 16px 18px;
+            cursor: pointer;
+            transition: all 0.35s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .crisis-card:hover,
+        .crisis-card.active {
+            border-color: var(--accent);
+            background: #132040;
+            box-shadow: 0 0 24px rgba(192, 57, 43, 0.2);
+            transform: translateX(4px);
+        }
+        .crisis-card .card-icon {
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(192, 57, 43, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            transition: all 0.3s;
+        }
+        .crisis-card:hover .card-icon,
+        .crisis-card.active .card-icon {
+            background: rgba(192, 57, 43, 0.3);
+            box-shadow: 0 0 16px rgba(192, 57, 43, 0.3);
+        }
+        .crisis-card .card-info h4 {
+            font-size: 16px;
+            color: #e8c978;
+            letter-spacing: 1px;
+            margin-bottom: 3px;
+        }
+        .crisis-card .card-info .tagline {
+            font-size: 12px;
+            color: #a89b82;
+        }
+
+        /* 下半部分右侧：详情面板 */
+        .detail-panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            min-height: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            position: relative;
+        }
+        .detail-panel .panel-placeholder {
+            text-align: center;
+            color: var(--text-dim);
+            padding-top: 80px;
+            font-size: 15px;
+            letter-spacing: 2px;
+            opacity: 0.6;
+        }
+        .detail-panel .detail-title {
+            font-size: 22px;
+            color: var(--accent-hover);
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+        .detail-panel .detail-body {
+            font-size: 15px;
+            line-height: 1.9;
+            color: var(--text);
+        }
+        .detail-panel .detail-body .highlight-num {
+            display: inline-block;
+            background: rgba(212, 167, 69, 0.2);
+            color: var(--gold-light);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 0 2px;
+        }
+        .detail-panel .detail-body .danger-tag {
+            display: inline-block;
+            background: rgba(192, 57, 43, 0.2);
+            color: var(--accent-hover);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 0 2px;
+        }
+        .detail-panel .impact-chain {
+            margin-top: 14px;
+            padding: 14px 18px;
+            background: rgba(192, 57, 43, 0.08);
+            border-left: 3px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            color: #e0c8a0;
+            line-height: 1.8;
+        }
+        .detail-panel .impact-chain strong {
+            color: var(--accent-hover);
+        }
+
+        /* 底部时间线 */
+        .timeline-section {
+            max-width: 1300px;
+            margin: 20px auto 40px;
+            padding: 0 20px;
+        }
+        .timeline-section h3 {
+            text-align: center;
+            color: var(--gold-light);
+            letter-spacing: 3px;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        .timeline {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            position: relative;
+            justify-content: center;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), var(--accent), var(--accent-hover), transparent);
+            z-index: 0;
+            display: none;
+        }
+        @media (min-width: 700px) {
+            .timeline::before {
+                display: block;
+            }
+        }
+        .timeline-item {
+            flex: 1 1 160px;
+            text-align: center;
+            padding: 16px 12px;
+            position: relative;
+            z-index: 1;
+            min-width: 140px;
+        }
+        .timeline-item .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--gold);
+            margin: 0 auto 8px;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s;
+        }
+        .timeline-item:nth-child(n+4) .dot {
+            background: var(--accent-hover);
+        }
+        .timeline-item:hover .dot {
+            box-shadow: 0 0 16px rgba(212, 167, 69, 0.6);
+            transform: scale(1.5);
+        }
+        .timeline-item .year {
+            font-size: 13px;
+            color: var(--gold-light);
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .timeline-item .event {
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.5;
+        }
+
+        /* 底部提示 */
+        .footer-note {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: var(--text-dim);
+            opacity: 0.6;
+            letter-spacing: 1px;
+        }
+
+        /* 过渡动画 */
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部装饰 -->
+    <div class="top-ornament">以 史 为 鉴 · 知 盛 衰 之 理</div>
+
+    <!-- 标题 -->
+    <div class="header">
+        <h1 class="main-title">康乾盛世</h1>
+        <p class="subtitle">繁华背后的暗流 —— 点击卡片，揭开盛世面纱下的危机</p>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-container">
+
+        <!-- 盛世概况 -->
+        <div class="prosperity-section" id="prosperitySection">
+            <div class="prosperity-badge">🏛️</div>
+            <div class="prosperity-text">
+                <h3>盛世表象：传统社会的最后辉煌</h3>
+                <div class="stats">
+                    <span>人口达 <strong>3亿</strong>（约占世界1/3）</span>
+                    <span>耕地 <strong>10.5亿亩</strong></span>
+                    <span>粮食年产 <strong>2040亿斤</strong></span>
+                    <span>户部存银峰值 <strong>7894万两</strong></span>
+                    <span>疆域 <strong>1310万平方公里</strong></span>
+                </div>
+                <p style="margin-top:10px;font-size:13px;color:var(--text-dim);">康熙·雍正·乾隆三朝（1662—1795），历时134年，是中国封建社会最后一个盛世，经济总量居世界第一。</p>
+            </div>
+        </div>
+
+        <!-- 危机卡片（左侧） -->
+        <div class="crisis-cards-section" id="cardsContainer">
+            <h3>⚠ 盛世暗藏的四大隐患</h3>
+            <div class="crisis-card" data-crisis="population" id="cardPop">
+                <div class="card-icon">📈</div>
+                <div class="card-info">
+                    <h4>人口爆炸与人地矛盾</h4>
+                    <p class="tagline">3亿张嘴 · 人均耕地不足3亩</p>
+                </div>
+            </div>
+            <div class="crisis-card" data-crisis="tax" id="cardTax">
+                <div class="card-icon">💰</div>
+                <div class="card-info">
+                    <h4>税制僵化与财政隐患</h4>
+                    <p class="tagline">"永不加赋"的甜蜜陷阱</p>
+                </div>
+            </div>
+            <div class="crisis-card" data-crisis="isolation" id="cardIso">
+                <div class="card-icon">🚪</div>
+                <div class="card-info">
+                    <h4>闭关锁国与认知滞后</h4>
+                    <p class="tagline">马戛尔尼使团 · 一口通商</p>
+                </div>
+            </div>
+            <div class="crisis-card" data-crisis="silver" id="cardSilver">
+                <div class="card-icon">⚖️</div>
+                <div class="card-info">
+                    <h4>白银依赖与鸦片陷阱</h4>
+                    <p class="tagline">贸易顺差→白银外流→国力崩溃</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详情面板（右侧） -->
+        <div class="detail-panel" id="detailPanel">
+            <div class="panel-placeholder" id="placeholder">
+                👈 点击左侧任意一张危机卡片<br>查看详细解读
+            </div>
+            <div id="detailContent" style="display:none;"></div>
+        </div>
+    </div>
+
+    <!-- 时间线 -->
+    <div class="timeline-section">
+        <h3>▎盛世 → 危机：关键时间节点</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="dot"></div>
+                <div class="year">1712年</div>
+                <div class="event">"滋生人丁永不加赋"<br>人口统计松绑</div>
+            </div>
+            <div class="timeline-item">
+                <div class="dot"></div>
+                <div class="year">1724年</div>
+                <div class="event">"摊丁入亩"全面推行<br>人头税并入田赋</div>
+            </div>
+            <div class="timeline-item">
+                <div class="dot"></div>
+                <div class="year">1757年</div>
+                <div class="event">关闭其他口岸<br>仅留广州"一口通商"</div>
+            </div>
+            <div class="timeline-item">
+                <div class="dot"></div>
+                <div class="year">1793年</div>
+                <div class="event">马戛尔尼使团访华<br>外交失败</div>
+            </div>
+            <div class="timeline-item">
+                <div class="dot"></div>
+                <div class="year">1796年</div>
+                <div class="event">嘉庆即位<br>盛世余辉消散</div>
+            </div>
+            <div class="timeline-item">
+                <div class="dot"></div>
+                <div class="year">1840年</div>
+                <div class="event">鸦片战争爆发<br>近代屈辱史开端</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        康乾盛世结束不到半个世纪，中国便被迫打开了国门。盛世中的隐患，最终在近代百年中逐一爆发。
+    </div>
+
+    <script>
+        // 知识点数据
+        const crisisData = {
+            population: {
+                title: '人口爆炸与人地矛盾',
+                body: `
+                    <p>康熙平定"三藩之乱"后，社会进入长期稳定，人口急剧增长。康熙六十一年（1722年），全国人口突破<span class="highlight-num">1.5亿</span>；到乾隆五十五年（1790年），人口突破<span class="highlight-num">3亿</span>，约占当时世界人口的<span class="highlight-num">三分之一</span>。</p>
+                    <p>然而，可耕地面积已近开垦极限。乾隆中叶以后，内地可耕地基本开发殆尽。据学者统计，晚清南方需人均<span class="highlight-num">3亩</span>土地方可维持一家五口生计，而乾隆四十一年全国人均耕地仅<span class="highlight-num">2.66亩</span>，温州地区更是低至<span class="highlight-num">1.5亩</span>。</p>
+                    <p>大量剩余劳动力沦为游民、流民，社会动荡加剧。<span class="danger-tag">人地比例失调</span>成为贯穿晚清的基本矛盾，也是白莲教起义、太平天国运动等大规模民变的重要土壤。</p>
+                `,
+                impact: '人口压力→人均耕地不足→流民激增→社会动荡→大规模民变（太平天国等）→清政府统治力削弱→无力应对外部侵略',
+            },
+            tax: {
+                title: '税制僵化与财政隐患',
+                body: `
+                    <p>康熙五十一年（1712年）颁布<span class="highlight-num">"滋生人丁永不加赋"</span>，以康熙五十年全国人丁数2462万余为定额，丁银总额固定为335万两，此后新增人口不再加征丁银。雍正时期进一步推行<span class="highlight-num">"摊丁入亩"</span>，将丁税并入田赋。</p>
+                    <p>这些改革短期内减轻了农民负担，促进了人口统计的准确性。但长期来看，<span class="danger-tag">赋税总额被锁定</span>，国家财政收入无法随人口增长而增长。人口从1亿增至3亿，税基却原地踏步。</p>
+                    <p>地方政府为维持运转，不得不依赖"火耗"等额外加派，腐败滋生。到嘉庆、道光时期，财政日益枯竭，面对鸦片战争等外部危机时<span class="danger-tag">国家几乎无力应对</span>。</p>
+                `,
+                impact: '赋税定额化→财政收入无法增长→地方政府加派腐败→国库空虚→鸦片战争赔款压力→财政崩溃→半殖民地化加深',
+            },
+            isolation: {
+                title: '闭关锁国与认知滞后',
+                body: `
+                    <p>1757年，乾隆帝下令关闭江、浙、闽三海关，仅留广州<span class="highlight-num">"一口通商"</span>，实行严格的闭关锁国政策。1793年，英国马戛尔尼使团以贺寿为名访华，提出通商、设使馆等要求，乾隆帝以<span class="danger-tag">"天朝物产丰盈，无所不有"</span>为由断然拒绝。</p>
+                    <p>马戛尔尼使团带来了天体运行仪、地球仪、望远镜等当时最先进的科技产品，但清廷仅将其视为<span class="highlight-num">"奇技淫巧"</span>，置之高阁。使团成员通过观察，对清朝军事实力有了准确评估，为日后侵华埋下了情报基础。</p>
+                    <p>当西方在蒸汽机轰鸣中迈向工业文明时，清朝精英阶层仍沉浸在<span class="danger-tag">"天朝上国"</span>的迷梦中，错失了了解世界、学习先进技术的关键窗口期。</p>
+                `,
+                impact: '闭关锁国→拒绝外交通商→错失科技革命窗口→与西方差距急剧拉大→鸦片战争中惨败→被迫打开国门→沦为半殖民地',
+            },
+            silver: {
+                title: '白银依赖与鸦片陷阱',
+                body: `
+                    <p>康乾盛世时期，中国凭借茶叶、丝绸、瓷器的大量出口，成为全球最大的<span class="highlight-num">白银流入国</span>，吸纳了当时世界白银总量的<span class="highlight-num">75%以上</span>。巨额白银输入带来了表面的繁荣，也造成了长期的慢性通货膨胀。</p>
+                    <p>然而，清政府从未将积累的白银转化为资本积累或技术创新，<span class="danger-tag">财富仅作为贵金属被囤积</span>。英国为扭转贸易逆差，开始向中国大量输入鸦片。道光年间，鸦片进口急剧上升，中国由贸易顺差转为逆差，白银<span class="danger-tag">大规模外流</span>。</p>
+                    <p>白银外流导致"银贵钱贱"——雍正年间1两白银可兑1石大米，乾隆晚期仅能兑半石。通货膨胀加上人口压力，最终酿成严重的财政危机与社会危机，直接触发了鸦片战争。</p>
+                `,
+                impact: '白银大量流入→通货膨胀→未形成资本积累→鸦片扭转贸易流向→白银外流→银贵钱贱→财政危机→林则徐禁烟→鸦片战争爆发',
+            },
+        };
+
+        // 获取DOM元素
+        const cards = document.querySelectorAll('.crisis-card');
+        const detailPanel = document.getElementById('detailPanel');
+        const detailContent = document.getElementById('detailContent');
+        const placeholder = document.getElementById('placeholder');
+
+        // 当前激活的卡片
+        let activeCard = null;
+
+        // 点击卡片事件
+        cards.forEach(card => {
+            card.addEventListener('click', function() {
+                const crisisKey = this.dataset.crisis;
+
+                // 切换激活状态
+                if (activeCard === this) {
+                    // 再次点击同一卡片：取消选中
+                    this.classList.remove('active');
+                    activeCard = null;
+                    detailContent.style.display = 'none';
+                    placeholder.style.display = 'block';
+                    placeholder.classList.add('fade-in');
+                    setTimeout(() => placeholder.classList.remove('fade-in'), 500);
+                } else {
+                    // 取消之前的激活状态
+                    if (activeCard) {
+                        activeCard.classList.remove('active');
+                    }
+                    // 激活新卡片
+                    this.classList.add('active');
+                    activeCard = this;
+                    // 显示详情
+                    showDetail(crisisKey);
+                }
+            });
+
+            // 移动端触摸支持
+            card.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                this.click();
+            });
+        });
+
+        function showDetail(key) {
+            const data = crisisData[key];
+            if (!data) return;
+
+            placeholder.style.display = 'none';
+            detailContent.style.display = 'block';
+            detailContent.innerHTML = `
+                <div class="detail-title fade-in">${data.title}</div>
+                <div class="detail-body fade-in">${data.body}</div>
+                <div class="impact-chain fade-in">
+                    <strong>🔗 后世影响链：</strong><br>
+                    ${data.impact}
+                </div>
+            `;
+            // 重新触发动画
+            detailContent.querySelectorAll('.fade-in').forEach(el => {
+                el.classList.remove('fade-in');
+                void el.offsetWidth;
+                el.classList.add('fade-in');
+            });
+        }
+
+        // 默认激活第一张卡片（人口问题——最重要的隐患）
+        setTimeout(() => {
+            const firstCard = document.getElementById('cardPop');
+            if (firstCard) {
+                firstCard.click();
+            }
+        }, 600);
+
+        // 键盘导航支持（1-4键切换卡片）
+        document.addEventListener('keydown', function(e) {
+            const keys = ['1', '2', '3', '4'];
+            const idx = keys.indexOf(e.key);
+            if (idx >= 0 && idx < cards.length) {
+                cards[idx].click();
+                cards[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+
+        console.log('🏛️  康乾盛世：繁华背后的暗流 —— 交互知识页面已就绪');
+        console.log('   💡 提示：点击左侧卡片查看详细解读 | 按键盘 1-4 快速切换');
+        console.log('   📚 数据来源：清代档案、《清实录》、学者研究（戴逸、郭成康等）');
+    </script>
+</body>
+</html>

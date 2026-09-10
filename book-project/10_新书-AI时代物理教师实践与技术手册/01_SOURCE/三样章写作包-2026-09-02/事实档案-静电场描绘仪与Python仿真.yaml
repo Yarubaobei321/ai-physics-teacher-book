@@ -1,0 +1,262 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "exp-efield-water-tank-python-001",
+  "title": "静电场描绘仪与有限水槽Python数值对照",
+  "status": "pending",
+  "facts": [
+    {
+      "fact_id": "fact-device-exists",
+      "statement": "黄灿斌已制作浅水槽静电场描绘装置，并保存装置、五类可更换电极与测量模式的第一方图文材料。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-h11-card", "src-provincial-manuscript"]
+    },
+    {
+      "fact_id": "fact-five-electrode-configurations",
+      "statement": "现有材料展示单个中心电极与外环、有限平行板、点电极与板、同种双点、异种双点五类组合；各组合的真实尺寸和完整接线表尚未统一登记。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-provincial-manuscript", "src-five-config-image"]
+    },
+    {
+      "fact_id": "fact-old-comsol-output",
+      "statement": "旧项目留下COMSOL Multiphysics操作笔记和数值输出图，但当前没有找到可直接复算的.mph工程文件。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-comsol-note", "src-old-comsol-image", "src-author-current-statement"]
+    },
+    {
+      "fact_id": "fact-python-prototype-new",
+      "statement": "2026-09-02新建的Python原型求解内部有限平行板、外壁绝缘的二维Laplace边值问题；当前几何尺寸是方法演示值，未按实物测绘定标，也不含实测点。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-python-config", "src-python-code", "src-python-report", "src-python-readme"]
+    },
+    {
+      "fact_id": "fact-ai-python-distinction",
+      "statement": "Python是数值计算载体；本案例的AI应用来自生成式AI参与需求澄清、代码生成、测试草案与纠错，最终物理模型、边界和验收仍由教师裁决。",
+      "status": "inferred",
+      "canonical": false,
+      "source_ids": ["src-ye-yang-paper", "src-ai-collaboration-record"]
+    },
+    {
+      "fact_id": "fact-no-measurement-comparison-yet",
+      "statement": "本轮尚无带坐标的原始重复测点，因此不能报告Python预测与实物测量的一致程度。",
+      "status": "verified",
+      "canonical": false,
+      "source_ids": ["src-h11-deep-dive"]
+    }
+  ],
+  "formulas": [
+    {
+      "formula_id": "formula-current-density",
+      "expression": "J = -sigma * grad(V)",
+      "variables": {
+        "J": "水层中的电流密度",
+        "sigma": "介质电导率",
+        "V": "电势"
+      },
+      "scope": "均匀各向同性导电介质中的稳恒电流场；符号方向按电势降低方向。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-h11-deep-dive"]
+    },
+    {
+      "formula_id": "formula-laplace",
+      "expression": "div(sigma * grad(V)) = 0; constant sigma -> laplacian(V) = 0",
+      "variables": {
+        "sigma": "电导率",
+        "V": "电势"
+      },
+      "scope": "稳恒、无内源且水层厚度与电导率近似均匀；厚度或电导率变化明显时需改模型。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-h11-deep-dive", "src-python-code"]
+    },
+    {
+      "formula_id": "formula-electric-field",
+      "expression": "E = -grad(V)",
+      "variables": {
+        "E": "由电势梯度得到的场矢量",
+        "V": "电势"
+      },
+      "scope": "电场指向电势降低最快的方向；绘图箭头不得使用正梯度。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-ye-yang-paper", "src-python-test"]
+    }
+  ],
+  "apparatus": [
+    {
+      "apparatus_id": "apparatus-water-tank-device",
+      "name": "浅水槽静电场描绘装置",
+      "model": "作者自制装置，具体尺寸待统一测绘",
+      "status": "verified",
+      "source_ids": ["src-provincial-manuscript", "src-device-image"]
+    },
+    {
+      "apparatus_id": "apparatus-electrode-set",
+      "name": "五类可更换电极",
+      "model": "轮廓、尺寸与材料待逐组登记",
+      "status": "pending",
+      "source_ids": ["src-five-config-image"]
+    },
+    {
+      "apparatus_id": "apparatus-meter-probe",
+      "name": "供电、电压表与探针",
+      "model": "型号、量程、参考端与探针深度待核",
+      "status": "pending",
+      "source_ids": ["src-provincial-manuscript"]
+    }
+  ],
+  "wiring": [
+    {
+      "wiring_id": "wiring-parallel-plates-actual",
+      "connection": "实物平行板组合的电源正负端、电压值与参考端尚待现场登记。",
+      "status": "pending",
+      "source_ids": ["src-five-config-image"]
+    },
+    {
+      "wiring_id": "wiring-python-demo",
+      "connection": "Python示例把左侧有限电极设为+5 V、右侧有限电极设为-5 V，水槽外壁设为绝缘；这是示范边界，不是实物接线记录。",
+      "status": "verified",
+      "source_ids": ["src-python-config", "src-python-code", "src-python-report"]
+    }
+  ],
+  "protocols": [
+    {
+      "protocol_id": "protocol-old-comsol",
+      "description": "旧COMSOL静电场建模与输出流程；该历史路线与Python新路线不建立替代关系。工程文件和完整参数链缺失，笔记中的表面电荷、无限元边界也未证明对应水槽边界，目前不能复做。",
+      "status": "pending",
+      "source_ids": ["src-comsol-note", "src-old-comsol-image"]
+    },
+    {
+      "protocol_id": "protocol-python-fd-v1",
+      "description": "在规则网格上用红黑SOR求解二维Laplace方程，自由节点以固定边界电势均值为初值；保存配置、图件、残差、解析解、三档网格收敛、电势参考点平移与错误注入结果。对称性先判断固定边界是否具备相应镜像关系，左右项使用两极电势中值中心化；5 V/2 V与左右不对称配置均有完整流程回归测试。当前状态只表示内部数值检查通过，尚未完成实物外部验证。",
+      "status": "verified",
+      "source_ids": ["src-python-code", "src-python-test", "src-python-report"]
+    },
+    {
+      "protocol_id": "protocol-measurement-comparison",
+      "description": "在同一坐标系记录重复测点，并在测点坐标插值Python预测，比较归一化电势、偏差及重复波动。",
+      "status": "pending",
+      "source_ids": ["src-h11-deep-dive"]
+    }
+  ],
+  "teaching_notes": [
+    {
+      "note_id": "note-prediction-is-not-answer",
+      "statement": "预测图只用于提出测点与偏差问题；没有原始测量时不得写成对实验正确性的验证。",
+      "status": "verified",
+      "source_ids": ["src-h11-deep-dive", "src-python-readme"]
+    },
+    {
+      "note_id": "note-streamline-density",
+      "statement": "streamplot使用统一线宽，线条疏密仍受绘图播种参数影响，不能直接作为场强的定量证据。电极节点及一格邻域不绘制场线。",
+      "status": "verified",
+      "source_ids": ["src-python-code"]
+    },
+    {
+      "note_id": "note-classroom-effect",
+      "statement": "当前只能提出预测—测量—解释—修正的课堂任务设计，尚无本轮课堂实施与学习效果证据。",
+      "status": "pending",
+      "source_ids": ["src-h11-deep-dive"]
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-h11-card",
+      "title": "H11静电场描绘仪材料卡",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/材料卡/H11-静电场描绘仪.md"
+    },
+    {
+      "source_id": "src-h11-deep-dive",
+      "title": "H11静电场描绘仪首轮深挖",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/价值增量挖掘/H11-静电场描绘仪首轮深挖-2026-08-30.md"
+    },
+    {
+      "source_id": "src-provincial-manuscript",
+      "title": "简易静电场描绘仪说明文稿省赛版",
+      "path": "/Users/yaril/个人文档/0 物理实验项目课题/1 我的课题论文/专利申请/模拟静电场描绘仪-技术资料/简易静电场描绘仪 说明文稿（省赛版）.docx"
+    },
+    {
+      "source_id": "src-device-image",
+      "title": "静电场描绘装置实物图",
+      "path": "/Users/yaril/个人文档/0 物理实验项目课题/1 我的课题论文/专利申请/模拟静电场描绘仪-技术资料/文稿宣发/装置.jpg"
+    },
+    {
+      "source_id": "src-five-config-image",
+      "title": "五种典型电极与等势线图",
+      "path": "/Users/yaril/个人文档/0 物理实验项目课题/1 我的课题论文/专利申请/模拟静电场描绘仪-技术资料/文稿宣发/五种典型电极+等势线.jpg"
+    },
+    {
+      "source_id": "src-comsol-note",
+      "title": "COMSOL操作笔记",
+      "path": "/Users/yaril/个人文档/大黄的OB/10 项目/创新实验比赛/COMSOL.md"
+    },
+    {
+      "source_id": "src-old-comsol-image",
+      "title": "旧COMSOL五联输出图",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/旧版图书/从用到造：高中物理可视化教学的自研之路 V1/02_MANUSCRIPT/assets/ch03/static-comsol.png"
+    },
+    {
+      "source_id": "src-author-current-statement",
+      "title": "作者在2026-09-02任务中确认旧模型源文件当前找不到",
+      "path": "current-task-author-statement-2026-09-02"
+    },
+    {
+      "source_id": "src-ye-yang-paper",
+      "title": "叶张胜、杨树林：生成式人工智能在物理教学中的应用研究——以Python编程实现静电场仿真为例，《物理与工程》2025年第35卷第5期，169—173页（本地剪藏页为2026年转载）",
+      "path": "/Users/yaril/个人文档/大黄的OB/Clippings/生成式人工智能在物理教学中的应用研究 以 Python 编程实现静电场仿真为例.md"
+    },
+    {
+      "source_id": "src-ai-collaboration-record",
+      "title": "本轮AI协作开发与纠错记录",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/三样章写作包-2026-09-02/03_静电场AI协作与提示词记录.md"
+    },
+    {
+      "source_id": "src-python-config",
+      "title": "Python有限平行板示例配置",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/三样章写作包-2026-09-02/python_static_field/case_finite_parallel_plates.json"
+    },
+    {
+      "source_id": "src-python-code",
+      "title": "Python有限水槽数值原型源码",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/三样章写作包-2026-09-02/python_static_field/electrostatic_field.py"
+    },
+    {
+      "source_id": "src-python-test",
+      "title": "Python原型单元测试",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/三样章写作包-2026-09-02/python_static_field/test_electrostatic_field.py"
+    },
+    {
+      "source_id": "src-python-report",
+      "title": "Python原型验收报告",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/三样章写作包-2026-09-02/python_static_field/output/静电场_验收报告.json"
+    },
+    {
+      "source_id": "src-python-readme",
+      "title": "Python原型复做说明",
+      "path": "/Users/yaril/个人文档/3 写作/图书出版/10_新书-AI时代物理教师实践与技术手册/01_SOURCE/三样章写作包-2026-09-02/python_static_field/README.md"
+    }
+  ],
+  "conflicts": [
+    {
+      "conflict_id": "conflict-comsol-water-boundary",
+      "statement": "旧COMSOL笔记采用静电场、表面电荷密度和无限元边界；实物水槽新模型需要定电势电极与绝缘槽壁。两者对象和边界未建立定量同一性。",
+      "record_ids": ["protocol-old-comsol", "protocol-python-fd-v1"],
+      "status": "verified",
+      "resolution": "旧图只作历史输出证据；Python另起版本，从实物接线和边界重新建模。",
+      "source_ids": ["src-comsol-note", "src-h11-deep-dive", "src-python-readme"]
+    },
+    {
+      "conflict_id": "conflict-geometry-scale",
+      "statement": "Python示例尺寸与实物平行板照片只有拓扑对应，尚未完成同尺度测绘。",
+      "record_ids": ["fact-python-prototype-new", "apparatus-electrode-set"],
+      "status": "pending",
+      "resolution": "下一轮记录水槽内尺寸、电极轮廓、位置与电压，再生成同尺度配置。",
+      "source_ids": ["src-python-readme", "src-five-config-image"]
+    }
+  ],
+  "supersedes": []
+}

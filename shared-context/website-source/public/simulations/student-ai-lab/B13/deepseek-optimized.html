@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>光合作用 · 叶绿体五阶段预习讲学</title>
+<style>
+  :root{
+    --bg:#f4fbf5; --card:#ffffff; --ink:#1c2733; --sub:#5b6b7a;
+    --line:#dbe4ee; --accent:#16a34a; --accent2:#f59e0b;
+    --ok:#16a34a; --err:#dc2626;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:0.95rem; line-height:1.55;
+  }
+  header{
+    background:linear-gradient(120deg,#14532d,#16a34a 55%,#84cc16);
+    color:#fff; padding:16px 24px;
+  }
+  header h1{font-size:1.35rem;}
+  header p{font-size:.9rem; opacity:.92; margin-top:2px;}
+  .layout{
+    display:grid; grid-template-columns:1fr 1fr; gap:14px;
+    padding:14px 18px; max-width:1500px; margin:0 auto; align-items:start;
+  }
+  @media (max-width:1100px){ .layout{grid-template-columns:1fr;} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; box-shadow:0 1px 3px rgba(16,42,67,.06);}
+  .card h2{font-size:1.02rem; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:10px;}
+  .full{grid-column:1 / -1;}
+  button{
+    font-family:inherit; font-size:.9rem; border:1px solid var(--line); background:#fff;
+    color:var(--ink); border-radius:8px; padding:7px 12px; cursor:pointer; transition:all .15s;
+  }
+  button:hover:not(:disabled){border-color:var(--accent); color:var(--accent);}
+  button:disabled{opacity:.45; cursor:not-allowed;}
+  button.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  button.primary:hover:not(:disabled){background:#15803d; color:#fff;}
+  button.stage-on{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+  .row{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
+  .hint{font-size:.88rem; color:var(--sub); background:#f0fdf4; border-radius:8px; padding:8px 10px; margin:6px 0;}
+  canvas{display:block; width:100%; border:1px solid var(--line); border-radius:10px; background:#fff; max-width:900px;}
+  .altbox{font-size:.88rem; color:#14532d; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:8px 12px; margin-top:8px;}
+  .q{margin:10px 0; padding:9px; border:1px solid var(--line); border-radius:8px; background:#fff;}
+  .q .stem{font-size:.9rem; font-weight:600; margin-bottom:6px;}
+  .q .opts{display:flex; flex-direction:column; gap:5px;}
+  .q .opt{text-align:left; width:100%;}
+  .q .opt.correct{border-color:var(--ok); background:#f0fdf4; color:#14532d;}
+  .q .opt.wrong{border-color:var(--err); background:#fef2f2; color:#7f1d1d;}
+  .feedback{font-size:.88rem; margin-top:6px; padding:6px 9px; border-radius:8px; display:none;}
+  .feedback.good{background:#f0fdf4; color:#14532d; border:1px solid #bbf7d0;}
+  .feedback.bad{background:#fef2f2; color:#7f1d1d; border:1px solid #fecaca;}
+  .eq{font-size:.95rem; font-weight:600; color:#14532d; margin:6px 0;}
+  .trap{border:1px dashed #86efac; border-radius:10px; padding:9px 12px; background:#fafffb; font-size:.9rem; margin:8px 0;}
+  .trap b{color:#15803d;}
+  table{border-collapse:collapse; width:100%; font-size:.9rem;}
+  th,td{border:1px solid var(--line); padding:6px 8px; text-align:left;}
+  th{background:#f0fdf4;}
+  .scoreline{font-size:.92rem; font-weight:700; color:#15803d; margin-top:6px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌱 光合作用预习讲学</h1>
+  <p>叶绿体五阶段动画 · 光反应 / 暗反应 · 总反应式 · 同位素标记实验 · 与呼吸作用关联</p>
+</header>
+
+<div class="layout">
+
+  <!-- ============ 叶绿体动画区（通栏） ============ -->
+  <section class="card full" aria-label="叶绿体五阶段动画区">
+    <h2>🌿 叶绿体五阶段动画</h2>
+    <div class="row" id="stageRow">
+      <button class="primary">阶段0 · 类囊体受光</button>
+      <button>阶段1 · 水光解放氧</button>
+      <button>阶段2 · ATP/NADPH 形成</button>
+      <button>阶段3 · 基质中 CO₂ 固定</button>
+      <button>阶段4 · 糖合成</button>
+    </div>
+    <div class="row">
+      <button id="btnReset">↺ 重置动画</button>
+    </div>
+    <canvas id="chloro" width="900" height="420" aria-label="叶绿体结构与光合作用五阶段动画画布，当前阶段与可见物质见下方文字描述"></canvas>
+    <div class="altbox" id="altBox" aria-live="polite">阶段0 · 类囊体受光：光照射到叶绿体的类囊体薄膜上，为光反应提供能量。</div>
+  </section>
+
+  <!-- ============ 即时题与练习区 ============ -->
+  <section class="card" aria-label="即时题与课后练习">
+    <h2>✅ 阶段即时题（阶段1–4 各一题）</h2>
+    <div id="instantArea"></div>
+
+    <h2 style="margin-top:14px;">📝 课后练习（3 题，提交后计分）</h2>
+    <div id="hwArea"></div>
+    <p class="scoreline" id="hwScore"></p>
+    <div class="row"><button id="btnSubmit" class="primary">提交练习</button></div>
+  </section>
+
+  <!-- ============ 总结区 ============ -->
+  <section class="card" aria-label="常考点易错点与总结">
+    <h2>💡 常考点 / 易错点</h2>
+    <div class="trap"><b>易错 1</b>：光合作用释放的 O₂ <u>全部来自 H₂O（水）</u>，不是来自 CO₂——记住"水的光解放氧"。</div>
+    <div class="trap"><b>易错 2</b>：¹⁸O 是<b>稳定同位素</b>（非放射性），用 H₂¹⁸O 标记后，释放的 O₂ 带 ¹⁸O 标记、可被质谱检测，但不能说 ¹⁸O"有放射性"。</div>
+    <div class="trap"><b>易错 3</b>：光反应场所是<b>类囊体薄膜/类囊体膜</b>，暗反应（卡尔文循环）场所是<b>叶绿体基质</b>，不要张冠李戴。</div>
+    <div class="trap"><b>易错 4</b>：能量流动方向为 光能 → ATP/NADPH 中活跃化学能 → 糖类等有机物中稳定化学能，<u>方向不可反</u>。</div>
+
+    <h2 style="margin-top:12px;">🔬 光反应 / 暗反应 / 总反应式</h2>
+    <table>
+      <thead><tr><th>过程</th><th>场所</th><th>主要变化</th></tr></thead>
+      <tbody>
+        <tr><td>光反应</td><td>类囊体薄膜（类囊体膜）</td><td>水光解：2H₂O → O₂ + 4H⁺ + 4e⁻（O₂ 全部来自水）；同时合成 ATP 与 NADPH（[H]）。</td></tr>
+        <tr><td>暗反应（卡尔文循环）</td><td>叶绿体基质</td><td>CO₂ 固定：CO₂ + C₅ → 2C₃；C₃ 还原（消耗 ATP 与 NADPH）→ 糖类等有机物。</td></tr>
+      </tbody>
+    </table>
+    <p class="eq">总反应式：6CO₂ + 12H₂O —光/叶绿体→ C₆H₁₂O₆ + 6O₂ + 6H₂O</p>
+    <p style="font-size:.88rem; color:var(--sub);">配平检查：C 6=6；H 24=12+12；O 24=6+6+12。能量来自光能、储存在有机物中，方向不可反。</p>
+
+    <h2 style="margin-top:12px;">🔗 与呼吸作用的关联</h2>
+    <p style="font-size:.9rem;">光合作用把光能固定为有机物中的化学能，并释放 O₂；呼吸作用分解有机物释放能量，供生命活动利用，并释放 CO₂。二者物质与能量上相互联系：光合作用产生的 O₂ 可供呼吸作用利用，呼吸作用产生的 CO₂ 又可作为光合作用的原料。</p>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  /* ===== 五阶段动画 ===== */
+  const cv = document.getElementById("chloro");
+  const ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height;
+  const stageBtns = document.getElementById("stageRow").children;
+  const altBox = document.getElementById("altBox");
+  let stage = 0;
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+  }
+  function drawThylakoidStack(cx, cy, w, h){
+    /* 类囊体堆叠（基粒） */
+    for(let i=0;i<4;i++){
+      ctx.fillStyle = "#4ade80";
+      ctx.strokeStyle = "#166534";
+      ctx.lineWidth = 1.5;
+      roundRect(cx - w/2, cy - h/2 + i*18, w, h - i*8, 8);
+      ctx.fill(); ctx.stroke();
+    }
+  }
+  function drawLabel(text, x, y, color, size){
+    ctx.fillStyle = color;
+    ctx.font = "bold " + (size||14) + "px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(text, x, y);
+  }
+  function drawArrow(x1,y1,x2,y2,color){
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    /* 箭头 */
+    const ang = Math.atan2(y2-y1, x2-x1);
+    ctx.beginPath();
+    ctx.moveTo(x2,y2);
+    ctx.lineTo(x2 - 12*Math.cos(ang-0.4), y2 - 12*Math.sin(ang-0.4));
+    ctx.lineTo(x2 - 12*Math.cos(ang+0.4), y2 - 12*Math.sin(ang+0.4));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#fbfefc";
+    ctx.fillRect(0,0,W,H);
+
+    /* 叶绿体外膜 */
+    ctx.strokeStyle = "#14532d";
+    ctx.lineWidth = 3;
+    roundRect(120, 60, W-240, H-130, 40);
+    ctx.stroke();
+    drawLabel("叶绿体", 120, 42, "#14532d", 16);
+
+    /* 类囊体堆叠（基粒） */
+    drawThylakoidStack(300, 240, 190, 130);
+    drawLabel("类囊体薄膜", 300, 350, "#15803d", 13);
+    /* 基质区 */
+    drawLabel("基质", 640, 300, "#15803d", 13);
+
+    /* 阶段0：受光 */
+    if(stage >= 0){
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = 3;
+      for(let k=0;k<5;k++){
+        const x = 230 + k*38;
+        ctx.beginPath();
+        ctx.moveTo(x, 20); ctx.lineTo(x, 60);
+        ctx.stroke();
+        /* 光箭头 */
+        ctx.beginPath();
+        ctx.moveTo(x, 20); ctx.lineTo(x+6, 32); ctx.lineTo(x-6, 32);
+        ctx.closePath();
+        ctx.fillStyle = "#facc15";
+        ctx.fill();
+      }
+      drawLabel("光", 300, 12, "#ca8a04", 15);
+    }
+    /* 阶段1：水光解 + O₂ */
+    if(stage >= 1){
+      drawArrow(150, 380, 250, 300, "#0ea5e9");
+      drawLabel("H₂O", 130, 392, "#0284c7", 13);
+      for(let k=0;k<4;k++){
+        ctx.strokeStyle = "#16a34a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(340 + k*22, 200 - k*26, 14, 0, Math.PI*2);
+        ctx.stroke();
+      }
+      drawLabel("O₂（来自水）", 400, 96, "#15803d", 14);
+    }
+    /* 阶段2：ATP / NADPH 形成并供暗反应 */
+    if(stage >= 2){
+      for(let k=0;k<3;k++){
+        drawArrow(390 + k*55, 260, 470 + k*45, 330, "#f59e0b");
+      }
+      drawLabel("ATP / NADPH", 560, 250, "#b45309", 14);
+      drawLabel("(活跃化学能)", 560, 272, "#b45309", 12);
+    }
+    /* 阶段3：CO₂ 固定生成 C₃ */
+    if(stage >= 3){
+      drawArrow(760, 90, 640, 220, "#64748b");
+      drawLabel("CO₂", 790, 76, "#475569", 14);
+      /* C₃ 小圆点 */
+      ctx.fillStyle = "#3b82f6";
+      for(let k=0;k<6;k++){
+        const a = k/6*Math.PI*2;
+        ctx.beginPath();
+        ctx.arc(620 + Math.cos(a)*40, 320 + Math.sin(a)*34, 7, 0, Math.PI*2);
+        ctx.fill();
+      }
+      drawLabel("C₃（CO₂ 固定产物）", 620, 372, "#2563eb", 13);
+    }
+    /* 阶段4：糖合成 */
+    if(stage >= 4){
+      /* 葡萄糖六边形 */
+      ctx.strokeStyle = "#7c3aed";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      for(let k=0;k<6;k++){
+        const a = k/6*Math.PI*2 - Math.PI/2;
+        const px = 700 + Math.cos(a)*26;
+        const py = 110 + Math.sin(a)*26;
+        if(k===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      drawLabel("C₆H₁₂O₆（糖类）", 700, 160, "#6d28d9", 14);
+      drawLabel("(稳定化学能)", 700, 182, "#6d28d9", 12);
+    }
+  }
+
+  const STAGE_TEXTS = [
+    "阶段0 · 类囊体受光：光照射到叶绿体的类囊体薄膜上，为光反应提供能量。可见物质：光。",
+    "阶段1 · 水光解放氧：类囊体薄膜上水光解 2H₂O → O₂ + 4H⁺ + 4e⁻，O₂ 全部来自水并释放出去。可见物质：H₂O、O₂。",
+    "阶段2 · ATP/NADPH 形成：光反应同时合成 ATP 与 NADPH（[H]），为暗反应提供能量与还原剂。可见物质：ATP、NADPH。",
+    "阶段3 · 基质中 CO₂ 固定：CO₂ 进入叶绿体基质，与 C₅ 结合生成 2C₃（CO₂ 固定）。可见物质：CO₂、C₃。",
+    "阶段4 · 糖合成：C₃ 还原（消耗 ATP 与 NADPH）生成糖类等有机物，光能最终储存在有机物中。可见物质：糖类（C₆H₁₂O₆）。"
+  ];
+  function setStage(s){
+    stage = s;
+    for(let k=0;k<stageBtns.length;k++){
+      stageBtns[k].classList.toggle("stage-on", k === s);
+    }
+    altBox.textContent = STAGE_TEXTS[s];
+    cv.setAttribute("aria-label", "叶绿体结构与光合作用五阶段动画画布：" + STAGE_TEXTS[s]);
+    render();
+    /* 即时题按阶段显示 */
+    document.querySelectorAll(".iq").forEach(function(el){
+      const need = Number(el.dataset.stage);
+      el.style.display = (s >= need) ? "block" : "none";
+    });
+  }
+  for(let k=0;k<stageBtns.length;k++){
+    stageBtns[k].addEventListener("click", function(){ setStage(k); });
+  }
+  document.getElementById("btnReset").addEventListener("click", function(){ setStage(0); });
+
+  /* ===== 阶段即时题 ===== */
+  const INSTANT = [
+    {stage:1, stem:"【阶段1 即时题】光合作用释放的 O₂ 全部来自哪种物质？",
+     opts:["CO₂","H₂O（水）","C₆H₁₂O₆","ATP"],
+     correct:1,
+     explain:"O₂ 全部来自水的光解（2H₂O → O₂ + 4H⁺ + 4e⁻），与 CO₂ 无关。",
+     result:"光合作用释放的 O₂ 全部来自水（H₂O）。"},
+    {stage:2, stem:"【阶段2 即时题】光反应产生 ATP 和 NADPH 的场所是？",
+     opts:["叶绿体基质","类囊体薄膜（类囊体膜）","线粒体基质","细胞质基质"],
+     correct:1,
+     explain:"光反应发生在类囊体薄膜上；暗反应才发生在叶绿体基质。",
+     result:"光反应的场所是类囊体薄膜（类囊体膜）。"},
+    {stage:3, stem:"【阶段3 即时题】暗反应中 CO₂ 固定发生的场所与产物是？",
+     opts:["类囊体薄膜，生成 O₂","叶绿体基质，CO₂ + C₅ → 2C₃","线粒体内膜，生成 ATP","细胞核，生成糖"],
+     correct:1,
+     explain:"CO₂ 固定在叶绿体基质进行：CO₂ + C₅ → 2C₃。",
+     result:"CO₂ 固定在叶绿体基质进行，首先生成 C₃。"},
+    {stage:4, stem:"【阶段4 即时题】C₃ 还原生成糖类，消耗的物质是？",
+     opts:["光和水","ATP 和 NADPH（[H]）","CO₂ 和 O₂","只消耗 ATP 不消耗 NADPH"],
+     correct:1,
+     explain:"C₃ 还原需要暗反应消耗 ATP（提供能量）与 NADPH（提供还原的[H]）。",
+     result:"C₃ 还原消耗 ATP 与 NADPH（[H]）。"}
+  ];
+  const iArea = document.getElementById("instantArea");
+  INSTANT.forEach(function(q, qi){
+    const d = document.createElement("div");
+    d.className = "q iq";
+    d.dataset.stage = q.stage;
+    d.style.display = "none";
+    const stem = document.createElement("p");
+    stem.className = "stem";
+    stem.textContent = q.stem;
+    d.appendChild(stem);
+    const opts = document.createElement("div");
+    opts.className = "opts";
+    q.opts.forEach(function(t, oi){
+      const b = document.createElement("button");
+      b.className = "opt";
+      b.textContent = "○ " + t;
+      b.addEventListener("click", function(){
+        const btns = d.querySelectorAll(".opt");
+        for(let k=0;k<btns.length;k++){
+          btns[k].disabled = true;
+          if(k === q.correct){
+            btns[k].classList.add("correct");
+            btns[k].textContent = "● " + q.opts[k] + "（正确答案）";
+          }else if(k === oi){
+            btns[k].classList.add("wrong");
+            btns[k].textContent = "● " + q.opts[k];
+          }else{
+            btns[k].textContent = "○ " + q.opts[k];
+          }
+        }
+        const fb = d.querySelector(".feedback");
+        const ok = oi === q.correct;
+        fb.className = "feedback " + (ok ? "good" : "bad");
+        fb.textContent = (ok ? "✅ 回答正确！" : "❌ 回答错误。") + q.explain;
+        fb.style.display = "block";
+      });
+      opts.appendChild(b);
+    });
+    d.appendChild(opts);
+    const fb = document.createElement("div");
+    fb.className = "feedback";
+    d.appendChild(fb);
+    iArea.appendChild(d);
+  });
+
+  /* ===== 课后练习 3 题 ===== */
+  const HW = [
+    {stem:"① 光合作用释放的 O₂ 全部来自？",
+     opts:["CO₂","H₂O（水）","C₅","葡萄糖"],
+     correct:1,
+     explain:"O₂ 全部来自水的光解（H₂O），这是常考易错点。"},
+    {stem:"② 暗反应过程中被消耗的物质包括？",
+     opts:["光、H₂O、O₂","CO₂、ATP、NADPH（[H]）","C₃、糖类","ATP、O₂、CO₂"],
+     correct:1,
+     explain:"暗反应消耗 CO₂（CO₂ 固定）以及 ATP 与 NADPH（C₃ 还原时提供能量和[H]）。"},
+    {stem:"③ 用 ¹⁴C 标记 CO₂，最先出现放射性的物质是？",
+     opts:["C₃","C₅","C₆H₁₂O₆","O₂"],
+     correct:0,
+     explain:"CO₂ 固定首先生成 2C₃，所以 ¹⁴C 标记最先出现在 C₃ 中。C₅ 是固定 CO₂ 后被消耗再生的受体。"}
+  ];
+  const hwArea = document.getElementById("hwArea");
+  HW.forEach(function(q, qi){
+    const d = document.createElement("div");
+    d.className = "q";
+    const stem = document.createElement("p");
+    stem.className = "stem";
+    stem.textContent = q.stem;
+    d.appendChild(stem);
+    const opts = document.createElement("div");
+    opts.className = "opts";
+    q.opts.forEach(function(t, oi){
+      const b = document.createElement("button");
+      b.className = "opt hwopt";
+      b.dataset.q = qi;
+      b.dataset.oi = oi;
+      b.textContent = "○ " + t;
+      b.addEventListener("click", function(){
+        const box = d.querySelectorAll(".hwopt");
+        for(let k2=0;k2<box.length;k2++){
+          box[k2].classList.remove("picked");
+          box[k2].textContent = "○ " + q.opts[k2];
+        }
+        b.classList.add("picked");
+        b.textContent = "● " + q.opts[oi];
+      });
+      opts.appendChild(b);
+    });
+    d.appendChild(opts);
+    const fb = document.createElement("div");
+    fb.className = "feedback";
+    fb.id = "hwfb" + qi;
+    d.appendChild(fb);
+    hwArea.appendChild(d);
+  });
+  document.getElementById("btnSubmit").addEventListener("click", function(){
+    let score = 0;
+    HW.forEach(function(q, qi){
+      const picked = hwArea.querySelector(".hwopt.picked[data-q='" + qi + "']");
+      const fb = document.getElementById("hwfb" + qi);
+      fb.style.display = "block";
+      if(picked){
+        const oi = Number(picked.dataset.oi);
+        if(oi === q.correct){
+          score++;
+          fb.className = "feedback good";
+          fb.textContent = "✅ 第 " + (qi+1) + " 题正确。解析：" + q.explain;
+        }else{
+          fb.className = "feedback bad";
+          fb.textContent = "❌ 第 " + (qi+1) + " 题错误，正确答案是「" + q.opts[q.correct] + "」。解析：" + q.explain;
+        }
+      }else{
+        fb.className = "feedback bad";
+        fb.textContent = "⚠️ 第 " + (qi+1) + " 题未作答，正确答案是「" + q.opts[q.correct] + "」。解析：" + q.explain;
+      }
+    });
+    document.getElementById("hwScore").textContent = "练习得分：" + score + " / 3 题";
+  });
+
+  /* 初始 */
+  setStage(0);
+})();
+</script>
+</body>
+</html>

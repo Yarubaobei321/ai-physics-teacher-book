@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>01-上-样张-旧课件增强版</title>
+  <style>
+    :root {
+      --ink: #122033;
+      --muted: #5d6b7f;
+      --soft: #eef4fb;
+      --paper: #f7fafc;
+      --blue: #1257b8;
+      --deep-blue: #0b3474;
+      --teal: #0b8c8c;
+      --amber: #e59b22;
+      --red: #cf3f3f;
+      --line: #d7e1ed;
+      --shadow: 0 20px 48px rgba(21, 48, 82, .16);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow: hidden;
+      color: var(--ink);
+      background: #d8e2ed;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", Arial, sans-serif;
+    }
+
+    .deck {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 22px;
+    }
+
+    .stage {
+      width: min(100vw - 44px, calc((100vh - 44px) * 16 / 9));
+      aspect-ratio: 16 / 9;
+      position: relative;
+      background: #fff;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: 52px 62px 42px;
+      background:
+        linear-gradient(90deg, rgba(18, 87, 184, .08) 0 10px, transparent 10px),
+        radial-gradient(circle at 96% 5%, rgba(11, 140, 140, .14), transparent 30%),
+        linear-gradient(180deg, #fbfdff 0%, #f5f9fe 100%);
+    }
+
+    .slide.active { display: block; }
+
+    .topbar,
+    .footer {
+      position: absolute;
+      left: 62px;
+      right: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #6f7d90;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .topbar {
+      top: 30px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid rgba(18, 87, 184, .12);
+    }
+
+    .footer {
+      bottom: 22px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: var(--deep-blue);
+    }
+
+    .brand-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 7px;
+      background:
+        linear-gradient(135deg, var(--blue), var(--teal));
+      box-shadow: 0 8px 18px rgba(18, 87, 184, .22);
+    }
+
+    .page {
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    h1,
+    h2,
+    h3,
+    p { margin: 0; }
+
+    h1 {
+      font-size: 58px;
+      line-height: 1.08;
+      letter-spacing: 0;
+      color: var(--ink);
+      font-weight: 850;
+    }
+
+    h2 {
+      font-size: 40px;
+      line-height: 1.18;
+      color: var(--ink);
+      font-weight: 850;
+    }
+
+    .kicker {
+      color: var(--blue);
+      font-size: 22px;
+      line-height: 1.3;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .lead {
+      font-size: 23px;
+      line-height: 1.6;
+      color: #314258;
+      font-weight: 500;
+    }
+
+    .accent {
+      color: var(--blue);
+      font-weight: 850;
+    }
+
+    .content {
+      position: absolute;
+      inset: 92px 62px 72px;
+    }
+
+    .cover-grid {
+      display: grid;
+      grid-template-columns: 1fr 520px;
+      gap: 44px;
+      height: 100%;
+      align-items: center;
+    }
+
+    .cover-title {
+      display: grid;
+      gap: 24px;
+    }
+
+    .tagline {
+      width: fit-content;
+      padding: 9px 14px;
+      border-radius: 6px;
+      color: var(--deep-blue);
+      background: #e8f1ff;
+      border: 1px solid #bad2f4;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .cover-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .mini-card {
+      min-height: 104px;
+      padding: 15px 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 10px 22px rgba(18, 49, 85, .08);
+    }
+
+    .mini-card b {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 18px;
+      color: var(--deep-blue);
+    }
+
+    .mini-card span {
+      display: block;
+      font-size: 16px;
+      line-height: 1.35;
+      color: #526176;
+      font-weight: 600;
+    }
+
+    .browser-mock {
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid #c8d7e9;
+      box-shadow: 0 22px 44px rgba(16, 54, 96, .18);
+    }
+
+    .browser-top {
+      height: 38px;
+      background: #e9f0f8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 15px;
+      border-bottom: 1px solid #d2dfec;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #9eb0c4;
+    }
+
+    .address {
+      margin-left: 10px;
+      flex: 1;
+      height: 18px;
+      border-radius: 4px;
+      background: #f8fbff;
+      color: #607187;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      padding-left: 10px;
+      font-weight: 700;
+    }
+
+    .browser-body {
+      padding: 22px;
+      background:
+        linear-gradient(135deg, #f8fbff 0%, #edf6f6 100%);
+    }
+
+    .site-hero {
+      height: 145px;
+      border-radius: 9px;
+      background:
+        linear-gradient(135deg, rgba(18, 87, 184, .95), rgba(11, 140, 140, .92));
+      color: #fff;
+      padding: 22px;
+      display: grid;
+      align-content: center;
+      gap: 10px;
+    }
+
+    .site-hero strong {
+      font-size: 28px;
+      line-height: 1.15;
+    }
+
+    .site-hero span {
+      font-size: 15px;
+      line-height: 1.45;
+      opacity: .9;
+      font-weight: 650;
+    }
+
+    .site-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .site-card {
+      min-height: 86px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #d8e4f0;
+    }
+
+    .site-card b {
+      display: block;
+      color: var(--deep-blue);
+      font-size: 17px;
+      margin-bottom: 6px;
+    }
+
+    .site-card span {
+      color: #5b697b;
+      font-size: 14px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 32px;
+      height: 100%;
+    }
+
+    .side-title {
+      padding-top: 10px;
+      display: grid;
+      align-content: start;
+      gap: 18px;
+    }
+
+    .summary-box {
+      border-left: 8px solid var(--blue);
+      padding: 18px 20px;
+      background: #eaf2fd;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .summary-box b {
+      display: block;
+      font-size: 22px;
+      color: var(--deep-blue);
+      margin-bottom: 8px;
+    }
+
+    .summary-box span {
+      display: block;
+      font-size: 18px;
+      line-height: 1.45;
+      color: #34465d;
+      font-weight: 650;
+    }
+
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .problem-card {
+      position: relative;
+      padding: 18px 20px 18px 78px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #d7e2ef;
+      box-shadow: 0 10px 24px rgba(26, 55, 91, .08);
+    }
+
+    .problem-card::before {
+      content: attr(data-no);
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 850;
+      background: var(--blue);
+    }
+
+    .problem-card.outside::before { background: var(--teal); }
+
+    .problem-card h3 {
+      color: var(--deep-blue);
+      font-size: 23px;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      font-weight: 850;
+    }
+
+    .problem-card p {
+      font-size: 17px;
+      line-height: 1.42;
+      color: #46576d;
+      font-weight: 600;
+    }
+
+    .takeaway {
+      position: absolute;
+      left: 62px;
+      right: 62px;
+      bottom: 72px;
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 18px;
+      align-items: center;
+      padding: 18px 22px;
+      border-radius: 8px;
+      background: #102f62;
+      color: #fff;
+      box-shadow: 0 16px 32px rgba(16, 47, 98, .22);
+    }
+
+    .takeaway .label {
+      color: #9ed7ff;
+      font-size: 19px;
+      font-weight: 850;
+    }
+
+    .takeaway .text {
+      font-size: 28px;
+      line-height: 1.25;
+      font-weight: 850;
+    }
+
+    .slide.problem .content {
+      bottom: 160px;
+    }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 420px;
+      gap: 28px;
+      height: 100%;
+      align-items: stretch;
+    }
+
+    .slide.media .content {
+      inset: 88px 62px 66px;
+    }
+
+    .slide.media h2 {
+      font-size: 36px;
+      line-height: 1.16;
+    }
+
+    .slide.media .kicker {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .screen-panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .screen-caption {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 0 12px;
+      color: #526176;
+      font-size: 16px;
+      font-weight: 750;
+    }
+
+    .demo-screen {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #c8d7e9;
+      background: #fff;
+      box-shadow: 0 20px 40px rgba(20, 50, 84, .16);
+    }
+
+    .demo-nav {
+      height: 48px;
+      background: #0e3d83;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 22px;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .demo-main {
+      height: calc(100% - 48px);
+      display: grid;
+      grid-template-columns: 230px 1fr;
+      background: #f6f9fc;
+    }
+
+    .demo-side {
+      padding: 18px;
+      background: #eaf2fd;
+      border-right: 1px solid #d2dfec;
+    }
+
+    .demo-side b {
+      display: block;
+      color: var(--deep-blue);
+      font-size: 19px;
+      margin-bottom: 14px;
+    }
+
+    .demo-side span {
+      display: block;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      background: #fff;
+      color: #496078;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .demo-work {
+      padding: 20px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+    }
+
+    .equation-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .metric {
+      padding: 12px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #d8e4f0;
+    }
+
+    .metric b {
+      display: block;
+      color: var(--blue);
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .metric span {
+      color: #5f6e80;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .lab-area {
+      position: relative;
+      border-radius: 10px;
+      border: 1px solid #d8e4f0;
+      background:
+        linear-gradient(90deg, rgba(18, 87, 184, .08) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(18, 87, 184, .08) 1px, transparent 1px),
+        #fff;
+      background-size: 32px 32px;
+      overflow: hidden;
+    }
+
+    .wave {
+      position: absolute;
+      left: 48px;
+      right: 48px;
+      top: 50%;
+      height: 4px;
+      background: var(--blue);
+      border-radius: 999px;
+    }
+
+    .wave::before,
+    .wave::after {
+      content: "";
+      position: absolute;
+      top: -55px;
+      width: 150px;
+      height: 110px;
+      border: 5px solid var(--teal);
+      border-color: var(--teal) transparent transparent transparent;
+      border-radius: 50%;
+    }
+
+    .wave::before { left: 60px; }
+    .wave::after { right: 60px; transform: scaleX(-1); border-color: var(--amber) transparent transparent transparent; }
+
+    .lab-note {
+      position: absolute;
+      right: 18px;
+      bottom: 16px;
+      width: 260px;
+      padding: 14px;
+      border-radius: 8px;
+      color: #193452;
+      background: rgba(255, 255, 255, .92);
+      border: 1px solid #d5e1ef;
+      font-size: 15px;
+      line-height: 1.4;
+      font-weight: 700;
+    }
+
+    .exercise-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .exercise {
+      padding: 11px 12px;
+      border-radius: 8px;
+      color: #26384d;
+      background: #fff;
+      border: 1px solid #d8e4f0;
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 700;
+    }
+
+    .right-panel {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+    }
+
+    .checklist {
+      display: grid;
+      gap: 10px;
+    }
+
+    .check {
+      padding: 13px 16px;
+      border-radius: 8px;
+      background: #fff;
+      border: 1px solid #d7e2ef;
+      box-shadow: 0 8px 18px rgba(24, 54, 87, .06);
+    }
+
+    .check b {
+      display: block;
+      font-size: 19px;
+      color: var(--deep-blue);
+      margin-bottom: 5px;
+    }
+
+    .check p {
+      font-size: 15px;
+      line-height: 1.36;
+      color: #4b5c72;
+      font-weight: 650;
+    }
+
+    .recording-cue {
+      padding: 14px 16px;
+      border-radius: 8px;
+      background: #fff7e8;
+      border: 1px solid #f0cc8f;
+      color: #5e3b00;
+      font-size: 16px;
+      line-height: 1.38;
+      font-weight: 750;
+    }
+
+    .dots {
+      position: absolute;
+      left: 50%;
+      bottom: 25px;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 20;
+    }
+
+    .dots button {
+      width: 34px;
+      height: 6px;
+      border: 0;
+      border-radius: 999px;
+      background: #aeb9c6;
+      padding: 0;
+      cursor: pointer;
+    }
+
+    .dots button.active { background: var(--blue); }
+
+    @media (max-width: 900px) {
+      .deck { padding: 0; }
+      .stage { width: 100vw; }
+    }
+  </style>
+</head>
+<body>
+  <main class="deck">
+    <section class="stage" aria-label="01-上 样张旧课件增强版">
+      <article class="slide active">
+        <div class="topbar">
+          <div class="brand"><span class="brand-mark"></span><span>深圳市中小幼教师继续教育课程</span></div>
+          <div class="page">01 / 03</div>
+        </div>
+        <div class="content cover-grid">
+          <div class="cover-title">
+            <div class="tagline">第1课时上 · 问题聚焦</div>
+            <div>
+              <div class="kicker">AI时代，教师从资源使用者到校本资源开发者</div>
+              <h1>AI赋能教学<br>资源开发</h1>
+            </div>
+            <p class="lead">
+              零基础教师的教学网页设计与网站建设，以高中物理
+              <span class="accent">“数智育才”</span>网站为例。
+            </p>
+            <div class="cover-meta">
+              <div class="mini-card">
+                <b>课程路线</b>
+                <span>问题聚焦 → 筑基 → 实战 → 发布闭环</span>
+              </div>
+              <div class="mini-card">
+                <b>结业成果</b>
+                <span>一个自己学科的教学网页，含原理、交互和习题</span>
+              </div>
+              <div class="mini-card">
+                <b>本节目标</b>
+                <span>看清课堂资源的真实缺口，建立开发动机</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="browser-mock" aria-label="数智育才网站示意">
+            <div class="browser-top">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <div class="address">shuzhiyucai.cn / teaching-lab</div>
+            </div>
+            <div class="browser-body">
+              <div class="site-hero">
+                <strong>数智育才 · 在线实验室</strong>
+                <span>把物理实验、交互演示和分层练习沉淀为可复用的校本资源。</span>
+              </div>
+              <div class="site-grid">
+                <div class="site-card"><b>原理讲解</b><span>关键概念、推导路径、常见误区</span></div>
+                <div class="site-card"><b>交互演示</b><span>参数可调，学生课上课后都能操作</span></div>
+                <div class="site-card"><b>分层习题</b><span>基础、提升、迁移，配套反馈</span></div>
+                <div class="site-card"><b>学情沉淀</b><span>从一次课件变成可迭代资源库</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>数智育才 · AI赋能教学资源开发</span>
+          <span>20分钟上半课时</span>
+        </div>
+      </article>
+
+      <article class="slide problem">
+        <div class="topbar">
+          <div class="brand"><span class="brand-mark"></span><span>第1节 · 双重困境</span></div>
+          <div class="page">02 / 03</div>
+        </div>
+        <div class="content section-grid">
+          <div class="side-title">
+            <div>
+              <div class="kicker">不是“网上资源不够多”</div>
+              <h2>真正缺的是<br>贴合本校课堂的资源</h2>
+            </div>
+            <p class="lead">
+              旧课件把课堂内外分成两页。新版合并到一页讲清楚：问题不是单点故障，而是
+              <span class="accent">课上、课后、沉淀</span>连续断开。
+            </p>
+            <div class="summary-box">
+              <b>讲述锚点</b>
+              <span>先让老师代入自己的班级，再推出“校本资源建设”的必要性。</span>
+            </div>
+          </div>
+
+          <div class="problem-grid">
+            <div class="problem-card" data-no="课">
+              <h3>资源不匹配</h3>
+              <p>现成课件与本校学情、进度对不上。能用，但不好用，课前还要大改。</p>
+            </div>
+            <div class="problem-card" data-no="课">
+              <h3>平台贵且固化</h3>
+              <p>商用 DIS 与仿真平台功能固定，不会为某个班的学习卡点重写逻辑。</p>
+            </div>
+            <div class="problem-card" data-no="课">
+              <h3>有创意没技术</h3>
+              <p>最懂学生难点的是教师，但想把想法做成网页，过去会被编程门槛挡住。</p>
+            </div>
+            <div class="problem-card outside" data-no="后">
+              <h3>课后延伸难</h3>
+              <p>学生回家有手机和平板，却没有与本校课堂进度匹配的在线学习资源。</p>
+            </div>
+            <div class="problem-card outside" data-no="后">
+              <h3>反馈滞后</h3>
+              <p>学生学得怎么样，要等作业或考试才知道，反馈周期太长。</p>
+            </div>
+            <div class="problem-card outside" data-no="后">
+              <h3>资源难沉淀</h3>
+              <p>好课件、好素材散落在个人电脑里，没有形成可复用、可迭代的资源库。</p>
+            </div>
+          </div>
+        </div>
+        <div class="takeaway">
+          <div class="label">一句话</div>
+          <div class="text">资源的价值，不在于“看起来很全”，而在于正好解决我的课堂问题。</div>
+        </div>
+        <div class="footer">
+          <span>课堂内外：三重困境 + 三重断点</span>
+          <span>从问题引出教师自建资源</span>
+        </div>
+      </article>
+
+      <article class="slide media">
+        <div class="topbar">
+          <div class="brand"><span class="brand-mark"></span><span>眼见为实 · 数智育才网站</span></div>
+          <div class="page">03 / 03</div>
+        </div>
+        <div class="content media-grid">
+          <div class="screen-panel">
+            <div class="screen-caption">
+              <span>录屏页建议：这里后续替换为真实网站截图或直接切浏览器实操</span>
+              <span>约 8-10 分钟</span>
+            </div>
+            <div class="demo-screen">
+              <div class="demo-nav">
+                <span>数智育才 · 波的叠加与驻波</span>
+                <span>原理 · 交互 · 习题</span>
+              </div>
+              <div class="demo-main">
+                <div class="demo-side">
+                  <b>页面结构</b>
+                  <span>1. 物理情境</span>
+                  <span>2. 参数调节</span>
+                  <span>3. 动态演示</span>
+                  <span>4. 分层练习</span>
+                  <span>5. 学生反馈</span>
+                </div>
+                <div class="demo-work">
+                  <div class="equation-strip">
+                    <div class="metric"><b>λ</b><span>波长可调</span></div>
+                    <div class="metric"><b>f</b><span>频率可调</span></div>
+                    <div class="metric"><b>A</b><span>振幅可调</span></div>
+                    <div class="metric"><b>题</b><span>28道分层题</span></div>
+                  </div>
+                  <div class="lab-area">
+                    <div class="wave"></div>
+                    <div class="lab-note">学生不只是在“看动画”，而是在用参数变化理解物理关系。</div>
+                  </div>
+                  <div class="exercise-row">
+                    <div class="exercise">基础：识别波峰、波谷、节点和腹点</div>
+                    <div class="exercise">提升：解释参数变化后的图像差异</div>
+                    <div class="exercise">迁移：联系实验数据和误差分析</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="right-panel">
+            <div>
+              <div class="kicker">插入内容不再只是装饰图</div>
+              <h2>每个画面都服务于讲解动作</h2>
+            </div>
+            <div class="checklist">
+              <div class="check">
+                <b>看一个真实页面</b>
+                <p>在线实验室不是概念展示，而是学生能打开、能操作、能回家继续用的页面。</p>
+              </div>
+              <div class="check">
+                <b>拆一个页面结构</b>
+                <p>原理、交互、习题、反馈四块，后续课时会一步步做出来。</p>
+              </div>
+              <div class="check">
+                <b>留下结业想象</b>
+                <p>老师最终不是学代码，而是把自己的学科难点变成一个可发布的教学网页。</p>
+              </div>
+            </div>
+            <div class="recording-cue">
+              录制动作：从 PPT 切到浏览器，打开数智育才网站，按“在线实验室 → 模拟实验室 → 学生作品”导览。
+            </div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>样张页：真实截图位 + 讲述清单 + 录制动作</span>
+          <span>后续可替换为 GPT Image 2 配图或网站实拍截图</span>
+        </div>
+      </article>
+
+      <nav class="dots" aria-label="页码">
+        <button class="active" type="button" aria-label="第1页"></button>
+        <button type="button" aria-label="第2页"></button>
+        <button type="button" aria-label="第3页"></button>
+      </nav>
+    </section>
+  </main>
+
+  <script>
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const dots = Array.from(document.querySelectorAll(".dots button"));
+    let current = 0;
+
+    function show(index) {
+      current = (index + slides.length) % slides.length;
+      slides.forEach((slide, i) => slide.classList.toggle("active", i === current));
+      dots.forEach((dot, i) => dot.classList.toggle("active", i === current));
+    }
+
+    dots.forEach((dot, index) => dot.addEventListener("click", () => show(index)));
+
+    window.addEventListener("keydown", (event) => {
+      if (["ArrowRight", "PageDown", " "].includes(event.key)) show(current + 1);
+      if (["ArrowLeft", "PageUp"].includes(event.key)) show(current - 1);
+    });
+  </script>
+</body>
+</html>

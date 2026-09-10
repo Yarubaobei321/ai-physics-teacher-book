@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>物理圆周运动：转盘+绳连接体模型 | 角速度增大与物块滑动临界问题</title>
+    <style>
+        * {
+            user-select: none; /* 避免拖动干扰，但保留文本选择 */
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #f0f4fa 0%, #d9e2ec 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .sim-card {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 3rem;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2), 0 5px 12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 1.5rem 1.8rem 2rem 1.8rem;
+            transition: all 0.2s;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin: 0 0 0.3rem 0;
+            color: #1a2c3e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        h1 small {
+            font-size: 0.85rem;
+            font-weight: normal;
+            background: #2c5282;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+
+        .sub {
+            color: #2c3e66;
+            border-left: 4px solid #e67e22;
+            padding-left: 14px;
+            margin: 10px 0 20px 0;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        /* 两列布局 */
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            justify-content: space-between;
+        }
+
+        .canvas-area {
+            flex: 2;
+            min-width: 280px;
+            background: #fef9ef;
+            border-radius: 2rem;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            background: #fdf8ed;
+            border-radius: 28px;
+            box-shadow: inset 0 0 0 2px rgba(255,255,200,0.8), 0 10px 20px rgba(0,0,0,0.1);
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+        }
+
+        .control-panel {
+            flex: 1.2;
+            min-width: 250px;
+            background: #ffffffcc;
+            backdrop-filter: blur(4px);
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.5rem;
+            box-shadow: 0 10px 18px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        .param-group {
+            margin-bottom: 1.4rem;
+        }
+
+        label {
+            font-weight: 600;
+            color: #1f3a4b;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            border-radius: 10px;
+            background: #cbd5e0;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #e67e22;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        .value-display {
+            background: #edf2f7;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        .critical-alert {
+            background: #fff3e0;
+            border-left: 6px solid #e67e22;
+            padding: 12px 14px;
+            border-radius: 1.2rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #2c5282;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+            font-size: 0.85rem;
+        }
+
+        button:hover {
+            background: #1e3a5f;
+            transform: scale(0.97);
+        }
+
+        .reset-btn {
+            background: #e67e22;
+        }
+        .reset-btn:hover {
+            background: #b45f1b;
+        }
+
+        .formula-note {
+            font-size: 0.75rem;
+            color: #4a5568;
+            margin-top: 1rem;
+            border-top: 1px solid #ddd;
+            padding-top: 0.8rem;
+            text-align: center;
+        }
+
+        @media (max-width: 750px) {
+            .sim-card {
+                padding: 1rem;
+            }
+            .control-panel {
+                padding: 1rem;
+            }
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1rem;
+            color: #5c6b7a;
+        }
+    </style>
+</head>
+<body>
+<div class="sim-card">
+    <h1>
+        ⚙️ 圆周运动 · 绳连物块临界模型
+        <small>ω ↑ 滑动临界</small>
+    </h1>
+    <div class="sub">📐 转盘粗糙表面 | 轻绳连接物块 | 增大角速度直至物块相对滑动</div>
+
+    <div class="row">
+        <!-- Canvas 绘图区 -->
+        <div class="canvas-area">
+            <canvas id="simCanvas" width="600" height="500" style="width:100%; height:auto; max-width:600px; aspect-ratio:600/500"></canvas>
+            <div class="formula-note" style="margin-top: 12px;">
+                🧪 临界角速度 ω<sub>c</sub> = √(μg / r) &nbsp;&nbsp; | &nbsp; 绳拉力 T = m·ω²·r - f<sub>静,max</sub>
+            </div>
+        </div>
+
+        <!-- 右侧控制区 -->
+        <div class="control-panel">
+            <div class="param-group">
+                <label>🔘 角速度 ω <span id="omegaVal" class="value-display">0.00 rad/s</span></label>
+                <input type="range" id="omegaSlider" min="0" max="8.0" step="0.01" value="2.2">
+                <div style="display: flex; justify-content: space-between; font-size:0.7rem;">
+                    <span>静止</span><span>临界区</span><span>高速滑动</span>
+                </div>
+            </div>
+
+            <div class="param-group">
+                <label>⚖️ 物块质量 m <span id="massVal" class="value-display">0.50 kg</span></label>
+                <input type="range" id="massSlider" min="0.2" max="1.5" step="0.01" value="0.5">
+            </div>
+
+            <div class="param-group">
+                <label>📏 转动半径 r <span id="radiusVal" class="value-display">1.20 m</span></label>
+                <input type="range" id="radiusSlider" min="0.6" max="1.8" step="0.01" value="1.2">
+            </div>
+
+            <div class="param-group">
+                <label>🧲 摩擦系数 μ <span id="muVal" class="value-display">0.35</span></label>
+                <input type="range" id="muSlider" min="0.1" max="0.9" step="0.01" value="0.35">
+            </div>
+
+            <div class="critical-alert" id="criticalMsg">
+                💡 当前角速度: <strong id="currentOmegaStat">--</strong> &nbsp; | 临界角速度: <strong id="criticalOmegaStat">--</strong><br>
+                <span id="motionStateMsg">⚪ 随转盘同步转动 (静摩擦力提供向心力)</span>
+            </div>
+
+            <div class="btn-group">
+                <button id="autoIncBtn">▶ 逐渐增大 ω</button>
+                <button id="stopIncBtn">⏸ 停止增加</button>
+                <button id="resetDefaultBtn" class="reset-btn">⟳ 重置默认</button>
+            </div>
+            <div class="formula-note">
+                💠 绳连接体: 当所需向心力超过最大静摩擦力时，绳开始张紧提供拉力，物块仍可同步；<br>
+                当所需向心力 <strong>＞ 最大静摩擦力+最大绳拉力(假设绳不断)</strong> 时发生相对滑动。本模型展示临界滑动的开始时刻。
+            </div>
+        </div>
+    </div>
+    <footer>※ 模拟轻绳 + 粗糙转盘：角速度增大 → 静摩擦力不足 → 绳拉力参与 → 最终相对滑动 (红闪表示即将滑动/已滑动)</footer>
+</div>
+
+<script>
+    (function(){
+        // ----- DOM 元素绑定 -----
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 滑块
+        const omegaSlider = document.getElementById('omegaSlider');
+        const massSlider = document.getElementById('massSlider');
+        const radiusSlider = document.getElementById('radiusSlider');
+        const muSlider = document.getElementById('muSlider');
+
+        // 数值显示
+        const omegaVal = document.getElementById('omegaVal');
+        const massVal = document.getElementById('massVal');
+        const radiusVal = document.getElementById('radiusVal');
+        const muVal = document.getElementById('muVal');
+
+        // 状态显示
+        const currentOmegaStat = document.getElementById('currentOmegaStat');
+        const criticalOmegaStat = document.getElementById('criticalOmegaStat');
+        const motionStateMsg = document.getElementById('motionStateMsg');
+        const criticalMsgDiv = document.getElementById('criticalMsg');
+
+        // 按钮
+        const autoIncBtn = document.getElementById('autoIncBtn');
+        const stopIncBtn = document.getElementById('stopIncBtn');
+        const resetDefaultBtn = document.getElementById('resetDefaultBtn');
+
+        // ----- 物理参数 -----
+        let omega = 2.2;          // rad/s
+        let mass = 0.5;           // kg
+        let radius = 1.2;         // m
+        let mu = 0.35;            // 摩擦系数
+
+        // 重力加速度
+        const g = 9.8;
+
+        // 辅助变量: 自动增加角速度的定时器
+        let autoInterval = null;
+        let isAutoIncreasing = false;
+
+        // 绳的最大抗拉强度 (模型假设绳子不会断，但可提供极大拉力，不过为了展示滑动，我们设置一个“最大静摩擦力+绳最大拉力”超过则滑动)
+        // 物理上，绳拉力可以无限增大？实际上高中模型如果绳子足够结实会一直提供拉力直到转速极高。
+        // 为突出“临界滑动”现象，设定当所需向心力超过最大静摩擦力+绳最大承载力时滑动，但我们可以展示“绳拉力介入后仍能同步直到某个极限”
+        // 为了演示效果和避免无限滑动，设定当所需向心力 > 最大静摩擦力 + 绳拉力上限 (设为20N) 则滑动，但实际极少达到。更简单: 我们直接计算
+        // 是否“静摩擦力不足” -> 绳提供额外拉力，但绳拉力无上限，理论上永远不会滑动？ 但实际中学通常认为绳提供拉力后仍可同步,除非绳断。
+        // 为了让临界演示更明显，模拟一个“最大静摩擦力和绳合力极限”的滑动条件，当所需向心力超过最大静摩擦力+最大绳张力(设定12N)时相对滑动。
+        // 但为了更符合高中认知：绳被拉紧后能提供任意拉力维持圆周，但超过某个极大值后物块会打滑。或者我们设定临界就是静摩擦力达到最大后绳开始受力，
+        // 物块仍然能维持圆周但绳拉力增加。高中临界问题常是“刚好要滑动时绳的拉力”。我们这里视觉演示当角速度超过一个阈值后，物块开始“预警/打滑”动画。
+        // 为了交互清晰：当所需向心力 F_needed = m * omega^2 * r 
+        // 最大静摩擦力 f_max = mu * m * g
+        // 临界点1: omega_c1 = sqrt(mu*g / r) 此时静摩擦力达到最大，再增大omega绳开始产生拉力。
+        // 临界点2: 实际上绳子可提供拉力，但假设绳子提供的拉力达到某一最大值T_max时物块滑动（或者类比绳子断裂）。为了展示滑动临界，我们定义当绳拉力> T_max时发生相对滑动，
+        // 但为了让滑动手感明显，可设T_max = 8N。若拉力超过则开始打滑（物块脱离圆周规律）。或者模拟滑动后物块飞离。
+        // 为了使物理直观，滑动条件： 当 omega > omega_c1 并且 绳拉力 T = m*omega^2*r - mu*m*g > T_max (设定10N) 时发生不可逆滑动。
+        // 另外重置时可恢复同步。我们将滑动状态进行标记，如果滑动则轨迹偏移并闪烁红色。
+
+        // 设定绳子的最大拉力极限 T_limit (超过这个力物块将相对转盘滑动，不再保持同步)
+        const T_MAX_LIMIT = 10.0;   // N  超过此值将滑动
+        
+        // 滑动标志
+        let isSlipping = false;     // true时表示物块已经相对转盘滑动飞出（模拟圆周运动脱离，显示乱飞效果或离心效果）
+        let slipTimer = 0;          // 用于滑动动画效果
+        
+        // 辅助计算当前所需向心力及绳拉力
+        function computeForces() {
+            const f_needed = mass * omega * omega * radius;       // 所需向心力
+            const f_max_static = mu * mass * g;                   // 最大静摩擦力
+            let ropeTension = 0;
+            let isRopeActive = false;
+            if (f_needed <= f_max_static) {
+                ropeTension = 0;
+                isRopeActive = false;
+            } else {
+                ropeTension = f_needed - f_max_static;
+                isRopeActive = true;
+            }
+            return { f_needed, f_max_static, ropeTension, isRopeActive };
+        }
+        
+        // 检查是否发生滑动 (不可逆的脱离圆周运动)
+        function checkSlip() {
+            if (isSlipping) return true; // 已经滑出
+            const { f_needed, f_max_static, ropeTension } = computeForces();
+            // 临界判断：如果绳拉力超过最大承受极限，则发生滑动 (或者 如果角速度超高超出物理极限)
+            if (ropeTension > T_MAX_LIMIT) {
+                return true;
+            }
+            // 附加：当角速度过大超过安全阈值(10 rad/s)也视为极端滑动，但可以防止无限增加
+            if (omega > 10.5) return true;
+            return false;
+        }
+        
+        // 更新滑动状态并触发效果
+        function updateSlipStatus() {
+            const wasSlipping = isSlipping;
+            const nowSlip = checkSlip();
+            if (nowSlip && !wasSlipping) {
+                isSlipping = true;
+                slipTimer = 1.0;   // 用于过渡动画闪烁
+                // 停止自动增加因为滑动后物理崩溃了
+                stopAutoIncrease();
+                // 更新消息
+                motionStateMsg.innerHTML = "⚠️ 相对滑动！物块已脱离圆周运动 (离心飞出) ⚠️";
+                criticalMsgDiv.style.background = "#ffe0e0";
+                criticalMsgDiv.style.borderLeftColor = "#e53e3e";
+            } else if (!nowSlip && wasSlipping) {
+                // 重置参数时可能恢复同步，重置滑动状态
+                isSlipping = false;
+                slipTimer = 0;
+                criticalMsgDiv.style.background = "#fff3e0";
+                criticalMsgDiv.style.borderLeftColor = "#e67e22";
+            }
+        }
+        
+        // 获取临界角速度 omega_c1 (最大静摩擦力达到极限时)
+        function getCriticalOmega1() {
+            return Math.sqrt(mu * g / radius);
+        }
+        
+        // 获取绳拉力达到T_MAX时的极限角速度 (二次方程)
+        function getCriticalOmegaSlip() {
+            // 绳拉力 = m*omega^2*r - mu*m*g = T_MAX_LIMIT 
+            // => omega^2 = (T_MAX_LIMIT + mu*m*g) / (m*r)
+            if (mass <= 0) return 100;
+            const val = (T_MAX_LIMIT + mu * mass * g) / (mass * radius);
+            if (val < 0) return 0;
+            return Math.sqrt(val);
+        }
+        
+        // 刷新显示文字
+        function updateUIAndText() {
+            const omega_c1 = getCriticalOmega1();
+            const omega_slip = getCriticalOmegaSlip();
+            const criticalForShow = omega_slip;
+            currentOmegaStat.innerText = omega.toFixed(3) + " rad/s";
+            criticalOmegaStat.innerText = criticalForShow.toFixed(3) + " rad/s";
+            
+            const { f_needed, f_max_static, ropeTension, isRopeActive } = computeForces();
+            
+            if (!isSlipping) {
+                if (omega < omega_c1 - 0.01) {
+                    motionStateMsg.innerHTML = `🔵 静摩擦力提供向心力 (f = ${f_needed.toFixed(2)} N) &nbsp; 未达最大静摩擦`;
+                } else if (omega >= omega_c1 && ropeTension <= T_MAX_LIMIT) {
+                    motionStateMsg.innerHTML = `🟠 绳已张紧！拉力 T = ${ropeTension.toFixed(2)} N &nbsp; 仍同步转动 | 即将接近滑动极限 (T_max = ${T_MAX_LIMIT} N)`;
+                } else if (ropeTension > T_MAX_LIMIT && !isSlipping) {
+                    motionStateMsg.innerHTML = `🔴 超过绳拉力极限，即将滑动！`;
+                } else {
+                    motionStateMsg.innerHTML = `🟢 同步转动 | 静摩擦力或绳拉力维持圆周`;
+                }
+            } else {
+                motionStateMsg.innerHTML = `💨 相对滑动状态！物块脱离转盘，离心飞出 💨 (请重置)`;
+            }
+            
+            // 附加临界样式
+            if (!isSlipping && omega >= omega_c1) {
+                criticalMsgDiv.style.background = "#fff1c1";
+            } else if (!isSlipping) {
+                criticalMsgDiv.style.background = "#fff3e0";
+            }
+        }
+        
+        // 绘制转盘和物块 (包括绳的绘制，滑动飞出特效)
+        let animationFrameId = null;
+        function drawScene() {
+            if (!canvas || !ctx) return;
+            const w = canvas.width = 600;
+            const h = canvas.height = 500;
+            ctx.clearRect(0, 0, w, h);
+            
+            // 中心点坐标
+            const centerX = w/2;
+            const centerY = h/2;
+            // 半径映射（像素）：显示半径最大180px，对应物理半径最大2.0米左右，缩放因子
+            const maxPhysicalRadius = 2.2;
+            const pxPerMeter = 130 / 1.8;  // 约 72.2, 使得1.2m→86px 美观
+            const displayRadius = Math.min(radius * pxPerMeter, 210);
+            
+            // 绘制转盘底色阴影
+            ctx.save();
+            ctx.shadowBlur = 0;
+            // 绘制圆盘
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 210, 0, Math.PI*2);
+            ctx.fillStyle = "#E8DEC9";
+            ctx.fill();
+            ctx.strokeStyle = "#b59a6b";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            // 画刻度
+            for(let ang=0; ang<360; ang+=30){
+                let rad = ang * Math.PI/180;
+                let x1 = centerX + 190*Math.cos(rad);
+                let y1 = centerY + 190*Math.sin(rad);
+                let x2 = centerX + 200*Math.cos(rad);
+                let y2 = centerY + 200*Math.sin(rad);
+                ctx.beginPath();
+                ctx.moveTo(x1,y1);
+                ctx.lineTo(x2,y2);
+                ctx.strokeStyle="#ccb28b";
+                ctx.stroke();
+            }
+            
+            // 绘制绳 (如果物块尚未滑动则绘制绳子连接中心到物块，如果滑动则绳可能不画或者画断裂)
+            // 当前物块角度：按照时间实时角度，为了动画增加转动效果
+            const currentAngle = performance.now() / 500 * omega; // 动态旋转角度
+            const blockAngle = isSlipping ? (currentAngle*1.5) : currentAngle;
+            const blockX = centerX + displayRadius * Math.cos(blockAngle);
+            const blockY = centerY + displayRadius * Math.sin(blockAngle);
+            
+            // 绘制绳 (只有在未滑动或滑动刚开始仍绘制但半透明)
+            if (!isSlipping) {
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(blockX, blockY);
+                ctx.strokeStyle = "#6f4e2e";
+                ctx.lineWidth = 3;
+                ctx.setLineDash([5, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // 绳结小圆
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 8, 0, 2*Math.PI);
+                ctx.fillStyle = "#ad8b5a";
+                ctx.fill();
+            } else {
+                // 滑动状态：绳子断裂效果绘制虚线断线
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.lineTo(centerX + (blockX-centerX)*0.6, centerY + (blockY-centerY)*0.6);
+                ctx.strokeStyle = "#aa2e2e";
+                ctx.lineWidth = 2.5;
+                ctx.setLineDash([8, 8]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // 断裂红点
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 6, 0, 2*Math.PI);
+                ctx.fillStyle = "#a54444";
+                ctx.fill();
+            }
+            
+            // 绘制物块 (带阴影闪烁效果)
+            let blockColor = "#3b82f6";
+            let blockSize = 24;
+            if (isSlipping) {
+                blockColor = "#e53e3e";
+                blockSize = 28;
+                // 增加粒子飞出效果，拖尾
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = "red";
+            } else {
+                const { ropeTension } = computeForces();
+                if (ropeTension > 0.1) {
+                    blockColor = "#f39c12";  // 绳受力状态橙色
+                } else {
+                    blockColor = "#3498db";
+                }
+                ctx.shadowBlur = 0;
+            }
+            ctx.beginPath();
+            ctx.arc(blockX, blockY, blockSize*0.6, 0, 2*Math.PI);
+            ctx.fillStyle = blockColor;
+            ctx.fill();
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            // 画高光
+            ctx.beginPath();
+            ctx.arc(blockX-3, blockY-3, 4, 0, 2*Math.PI);
+            ctx.fillStyle = "#ffffffaa";
+            ctx.fill();
+            
+            // 绘制摩擦系数与力指示
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#2d3748";
+            ctx.fillText(`μ = ${mu}`, centerX+140, centerY-140);
+            ctx.fillText(`ω = ${omega.toFixed(2)} rad/s`, centerX+140, centerY-120);
+            if(!isSlipping){
+                const {f_needed, f_max_static, ropeTension} = computeForces();
+                ctx.fillStyle = "#1e466e";
+                ctx.fillText(`向心力 ${f_needed.toFixed(1)}N`, centerX+140, centerY-100);
+                ctx.fillStyle = "#8b5a2b";
+                if(ropeTension>0) ctx.fillText(`绳拉力 ${ropeTension.toFixed(1)}N`, centerX+140, centerY-80);
+                else ctx.fillText(`静摩擦 ${f_needed.toFixed(1)}N / ${f_max_static.toFixed(1)}N`, centerX+140, centerY-80);
+            } else {
+                ctx.fillStyle = "#b91c1c";
+                ctx.fillText("⚡ 滑动脱离！", centerX+130, centerY-70);
+            }
+            
+            // 临界指示环
+            const omega_c1 = getCriticalOmega1();
+            if (omega >= omega_c1 && !isSlipping) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, displayRadius+5, 0, 2*Math.PI);
+                ctx.strokeStyle = "#e67e22";
+                ctx.lineWidth = 3;
+                ctx.setLineDash([8, 12]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            ctx.restore();
+        }
+        
+        // 整体刷新所有参数与画布
+        function refreshAll() {
+            // 同步滑块值到参数
+            omega = parseFloat(omegaSlider.value);
+            mass = parseFloat(massSlider.value);
+            radius = parseFloat(radiusSlider.value);
+            mu = parseFloat(muSlider.value);
+            
+            // 限制omega防止太大
+            if(omega > 11) omegaSlider.value = 11;
+            omega = parseFloat(omegaSlider.value);
+            
+            // 更新显示值
+            omegaVal.innerText = omega.toFixed(2) + " rad/s";
+            massVal.innerText = mass.toFixed(2) + " kg";
+            radiusVal.innerText = radius.toFixed(2) + " m";
+            muVal.innerText = mu.toFixed(3);
+            
+            // 更新滑动状态检测前先强制恢复状态如果重置时通过重置程序
+            updateSlipStatus();
+            updateUIAndText();
+            drawScene();
+        }
+        
+        // 重置所有默认参数且停止自动增加，清除滑动标志
+        function resetToDefault() {
+            stopAutoIncrease();
+            omegaSlider.value = "2.2";
+            massSlider.value = "0.5";
+            radiusSlider.value = "1.2";
+            muSlider.value = "0.35";
+            isSlipping = false;
+            slipTimer = 0;
+            // 强制重新同步值
+            omega = 2.2;
+            mass = 0.5;
+            radius = 1.2;
+            mu = 0.35;
+            // 再次更新滑动状态
+            updateSlipStatus();
+            refreshAll();
+            criticalMsgDiv.style.background = "#fff3e0";
+            criticalMsgDiv.style.borderLeftColor = "#e67e22";
+        }
+        
+        function startAutoIncrease() {
+            if (isAutoIncreasing) return;
+            if (isSlipping) {
+                // 如果已经滑动，不允许自动增加，提醒重置
+                motionStateMsg.innerHTML = "⚠️ 已滑动，请先重置再进行实验 ⚠️";
+                return;
+            }
+            stopAutoIncrease();
+            isAutoIncreasing = true;
+            autoInterval = setInterval(() => {
+                if (!isAutoIncreasing) return;
+                if (isSlipping) {
+                    stopAutoIncrease();
+                    return;
+                }
+                let newOmega = parseFloat(omegaSlider.value);
+                newOmega += 0.045;
+                if (newOmega > 10.8) newOmega = 10.8;
+                omegaSlider.value = newOmega;
+                refreshAll();
+                // 若滑动,自动停止增加
+                if (isSlipping) {
+                    stopAutoIncrease();
+                }
+            }, 60);
+        }
+        
+        function stopAutoIncrease() {
+            if (autoInterval) {
+                clearInterval(autoInterval);
+                autoInterval = null;
+            }
+            isAutoIncreasing = false;
+        }
+        
+        // 绑定事件
+        function bindEvents() {
+            omegaSlider.addEventListener('input', () => { stopAutoIncrease(); refreshAll(); });
+            massSlider.addEventListener('input', () => { stopAutoIncrease(); refreshAll(); });
+            radiusSlider.addEventListener('input', () => { stopAutoIncrease(); refreshAll(); });
+            muSlider.addEventListener('input', () => { stopAutoIncrease(); refreshAll(); });
+            autoIncBtn.addEventListener('click', startAutoIncrease);
+            stopIncBtn.addEventListener('click', stopAutoIncrease);
+            resetDefaultBtn.addEventListener('click', resetToDefault);
+        }
+        
+        function animate() {
+            drawScene();
+            requestAnimationFrame(animate);
+        }
+        
+        function init() {
+            bindEvents();
+            refreshAll();
+            animate();
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

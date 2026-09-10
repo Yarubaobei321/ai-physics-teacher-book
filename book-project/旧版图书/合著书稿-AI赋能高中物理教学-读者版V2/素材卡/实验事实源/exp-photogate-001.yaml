@@ -1,0 +1,174 @@
+{
+  "schema_version": "1.0",
+  "experiment_id": "exp-photogate-001",
+  "title": "ESP32光电门与网页版DIS测量链",
+  "status": "inferred",
+  "facts": [
+    {
+      "fact_id": "fact-photogate-single-measure-001",
+      "statement": "单头光电门直接记录遮光持续时间，网页结合用户输入的遮光物宽度计算区间平均速度。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-site-ble-protocol", "src-site-online-lab"]
+    },
+    {
+      "fact_id": "fact-photogate-dual-measure-001",
+      "statement": "双头光电门记录同一物体前缘依次通过两探头的时间差，结合固定探头间距得到两探头之间的区间平均速度。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-site-online-lab"]
+    },
+    {
+      "fact_id": "fact-web-dis-capability-001",
+      "statement": "数智育才网站网页版DIS通过Web Bluetooth连接ESP32 BLE设备，可显示光电门数据、绘图、记录测量并导出CSV。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-site-online-lab"]
+    },
+    {
+      "fact_id": "fact-blockly-photogate-integration-001",
+      "statement": "把本章光电门采集链写成ESP32Blockly已完成的专用光电门积木和课堂流程，当前证据不足。",
+      "status": "pending",
+      "canonical": false,
+      "source_ids": ["src-esp32blockly-overview"]
+    },
+    {
+      "fact_id": "fact-classroom-use-001",
+      "statement": "本章所述光电门硬件版本、班级使用次数和真实课堂数据尚待作者以器材、固件和记录补证。",
+      "status": "pending",
+      "canonical": false,
+      "source_ids": ["src-v2-outline"]
+    }
+  ],
+  "formulas": [
+    {
+      "formula_id": "formula-photogate-single-001",
+      "expression": "v_bar = d / delta_t",
+      "variables": {
+        "v_bar": "遮光区间平均速度，单位m/s",
+        "d": "遮光物有效宽度，单位m",
+        "delta_t": "单束光被遮挡的持续时间，单位s"
+      },
+      "scope": "遮光物有效宽度沿运动方向定义；所得量首先是遮光时间区间内的平均速度。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-site-online-lab", "src-site-ble-protocol"]
+    },
+    {
+      "formula_id": "formula-photogate-dual-001",
+      "expression": "v_bar = L / delta_t",
+      "variables": {
+        "v_bar": "两探头区间平均速度，单位m/s",
+        "L": "两探头固定间距，单位m",
+        "delta_t": "同一前缘依次触发两探头的时间差，单位s"
+      },
+      "scope": "物体运动方向与探头间距方向一致，且两次触发来自同一物体特征。",
+      "status": "verified",
+      "canonical": true,
+      "source_ids": ["src-site-online-lab"]
+    }
+  ],
+  "apparatus": [
+    {
+      "apparatus_id": "apparatus-photogate-single-001",
+      "name": "单头光电门与遮光物",
+      "model": "具体发射、接收器型号及有效宽度待核验",
+      "status": "pending",
+      "source_ids": ["src-site-online-lab"]
+    },
+    {
+      "apparatus_id": "apparatus-photogate-dual-001",
+      "name": "双头光电门",
+      "model": "网站案例记录两探头间距L=1.0 cm；实物批次和公差待核验",
+      "status": "inferred",
+      "source_ids": ["src-site-online-lab"]
+    },
+    {
+      "apparatus_id": "apparatus-esp32-001",
+      "name": "ESP32数据采集端",
+      "model": "具体开发板、固件版本和外壳待核验",
+      "status": "pending",
+      "source_ids": ["src-site-online-lab", "src-esp32blockly-overview"]
+    }
+  ],
+  "wiring": [
+    {
+      "wiring_id": "wiring-photogate-esp32-001",
+      "connection": "光电门输出引脚、电平、供电、上拉和ESP32 GPIO连接待按实际硬件版本核验。",
+      "status": "pending",
+      "source_ids": ["src-v2-outline"]
+    }
+  ],
+  "protocols": [
+    {
+      "protocol_id": "protocol-photogate-device-name-001",
+      "description": "BLE默认名称前缀：单头ESP32-sgate，双头ESP32-gate，两单头ESP32-2sgate，两双头ESP32-2gate。",
+      "status": "verified",
+      "source_ids": ["src-site-ble-protocol"]
+    },
+    {
+      "protocol_id": "protocol-photogate-single-frame-001",
+      "description": "单头基础模式每次通知发送两个32位小端浮点数：挡光时间/s、设备时间/s；网页用输入的遮光物宽度计算速度。",
+      "status": "verified",
+      "source_ids": ["src-site-ble-protocol"]
+    },
+    {
+      "protocol_id": "protocol-photogate-dual-frame-001",
+      "description": "双头基础模式每次通知发送两个32位小端浮点数：速度/(m/s)、设备时间/s；速度的固件计算版本与探头间距参数仍须随固件核验。",
+      "status": "inferred",
+      "source_ids": ["src-site-ble-protocol"]
+    }
+  ],
+  "teaching_notes": [
+    {
+      "note_id": "note-photogate-average-001",
+      "statement": "单头和双头读数都先解释为有限时间或空间区间内的平均速度；何时可近似某时刻瞬时速度必须说明运动条件与赋值位置。",
+      "status": "inferred",
+      "source_ids": ["src-site-online-lab", "src-restructured-ch7"]
+    },
+    {
+      "note_id": "note-photogate-raw-data-001",
+      "statement": "课堂记录应同时保留设备时间、原始时间差、宽度或门距参数、处理速度和设备/固件版本。",
+      "status": "inferred",
+      "source_ids": ["src-site-ble-protocol", "src-v2-outline"]
+    }
+  ],
+  "sources": [
+    {
+      "source_id": "src-site-online-lab",
+      "path": "项目资源库/数智育才网站/文档副本/docs-网站正文快照/在线实验室.md",
+      "locator": "网页版DIS、光电门对比教程、曲面下滑与气垫导轨方案"
+    },
+    {
+      "source_id": "src-site-ble-protocol",
+      "path": "项目资源库/数智育才网站/文档副本/docs-顶层文档/dis-ble-devices.md",
+      "locator": "设备名称前缀、BLE数据格式与连接策略"
+    },
+    {
+      "source_id": "src-esp32blockly-overview",
+      "path": "项目资源库/ESP32Blockly/ESP32Blockly-项目总览.md",
+      "locator": "三种传输模式与物理数据采集边界"
+    },
+    {
+      "source_id": "src-restructured-ch7",
+      "path": "图书出版/合著书稿-AI赋能高中物理教学-重构版/分章稿/第07章-自制教具光电门与网页DIS.md",
+      "locator": "单头、双头光电门测量模型"
+    },
+    {
+      "source_id": "src-v2-outline",
+      "path": "图书出版/合著书稿-AI赋能高中物理教学-读者版V2/00-第二版总纲.md",
+      "locator": "第14章章节发动机"
+    }
+  ],
+  "conflicts": [
+    {
+      "conflict_id": "conflict-photogate-integration-001",
+      "statement": "网站已记录网页版DIS光电门模式，ESP32Blockly总览只证明通用传感器采集与传输能力；二者是否已形成同一套光电门课堂工作流尚未核验。",
+      "record_ids": ["fact-blockly-photogate-integration-001", "fact-web-dis-capability-001"],
+      "status": "pending",
+      "resolution": "第二轮按实际固件、Blockly块、网页版本和课堂记录逐项核对，不在正文中写成已完成整合。",
+      "source_ids": ["src-site-online-lab", "src-esp32blockly-overview"]
+    }
+  ],
+  "supersedes": []
+}

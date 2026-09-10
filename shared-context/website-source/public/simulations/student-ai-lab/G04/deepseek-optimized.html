@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>产业区位因素 · 交互网页</title>
+<style>
+:root{
+  --bg1:#f5f3ff; --bg2:#ede9fe; --card:#fff; --ink:#1e293b; --muted:#64748b;
+  --border:#ddd6fe; --shadow:0 4px 14px rgba(109,40,217,.10);
+  --agri:#15803d; --indus:#b45309; --serv:#7c3aed;
+  --accent:#6d28d9;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink); background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  font-size:0.95rem; line-height:1.65;
+}
+header{background:linear-gradient(135deg,#4c1d95,#7c3aed); color:#fff; padding:1rem 1.5rem; box-shadow:var(--shadow)}
+header h1{margin:0; font-size:1.25rem; font-weight:600}
+header p{margin:.2rem 0 0; font-size:.85rem; opacity:.92}
+.wrap{max-width:1420px; margin:1rem auto; padding:0 1.5rem 2rem}
+.card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:1rem; box-shadow:var(--shadow)}
+.card h2{margin:.2rem 0 .7rem; color:var(--accent); font-size:1.12rem; border-left:4px solid var(--accent); padding-left:.6rem}
+.card h3{font-size:1rem; margin:.7rem 0 .35rem}
+
+/* 三产业标签 */
+.ind-tabs{display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem}
+.ind-tabs button{font-family:inherit; font-size:.95rem; padding:.5rem 1.1rem; border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:10px; cursor:pointer; transition:all .15s}
+.ind-tabs button.active{color:#fff; box-shadow:0 3px 10px rgba(109,40,217,.3)}
+.ind-tabs button[data-ind="agri"].active{background:var(--agri); border-color:var(--agri)}
+.ind-tabs button[data-ind="indus"].active{background:var(--indus); border-color:var(--indus)}
+.ind-tabs button[data-ind="serv"].active{background:var(--serv); border-color:var(--serv)}
+.ind-panel{display:none}
+.ind-panel.active{display:block}
+.ind-panel[data-ind="agri"] h3{color:var(--agri)}
+.ind-panel[data-ind="indus"] h3{color:var(--indus)}
+.ind-panel[data-ind="serv"] h3{color:var(--serv)}
+
+table{border-collapse:collapse; width:100%; font-size:.86rem; margin-top:.3rem}
+th,td{border:1px solid var(--border); padding:.38rem .5rem; text-align:center}
+th{background:#ede9fe; color:var(--accent)}
+.lead-tag{display:inline-block; padding:.05rem .5rem; border-radius:8px; font-size:.74rem; color:#fff; margin-right:.2rem}
+.lead-tag.a{background:var(--agri)} .lead-tag.b{background:var(--indus)} .lead-tag.c{background:var(--serv)}
+
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+.case-box{background:#fafaf9; border:1px solid var(--border); border-radius:8px; padding:.7rem .8rem; margin-top:.4rem}
+.case-box h4{margin:.1rem 0 .3rem; font-size:.9rem}
+.case-box svg{max-width:240px; height:auto; margin:.2rem auto; display:block}
+details{margin-top:.5rem}
+details summary{cursor:pointer; color:var(--accent); font-size:.88rem; font-weight:600}
+
+/* 练习 */
+.quiz-item{background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:.6rem .8rem; margin-top:.5rem}
+.quiz-item .q{font-weight:500; margin-bottom:.3rem}
+.quiz-item label{display:block; margin:.15rem 0; cursor:pointer}
+.quiz-item .exp{font-size:.82rem; color:var(--muted); display:none; margin-top:.3rem; border-top:1px dashed var(--border); padding-top:.3rem}
+.quiz-item.correct{border-color:#16a34a; background:#f0fdf4}
+.quiz-item.wrong{border-color:#dc2626; background:#fef2f2}
+.quiz-item.revealed .exp{display:block}
+.quiz-item.correct .exp{color:#166534}
+textarea{width:100%; min-height:90px; font-family:inherit; font-size:.9rem; border:1px solid var(--border); border-radius:8px; padding:.5rem .6rem}
+.btn{font-family:inherit; font-size:.88rem; padding:.35rem .85rem; border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:8px; cursor:pointer; margin:.2rem .3rem .2rem 0}
+.btn:hover{background:#ede9fe}
+.grade-result{margin-top:.5rem; padding:.6rem .8rem; border-radius:8px; font-size:.9rem}
+.grade-result.full{background:#f0fdf4; border:1px solid #86efac; color:#166534}
+.grade-result.part{background:#fffbeb; border:1px solid #fde68a; color:#92400e}
+.grade-result.zero{background:#fef2f2; border:1px solid #fecaca; color:#991b1b}
+
+/* 检索 */
+.search-box{display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap}
+.search-box input{flex:1 1 260px; max-width:380px; padding:.45rem .6rem; font-family:inherit; font-size:.9rem; border:1px solid var(--border); border-radius:8px}
+.search-res{margin-top:.5rem; background:#f0fdf4; border:1px solid #a7f3d0; border-radius:8px; padding:.6rem .8rem; font-size:.9rem}
+.search-res .hit{font-weight:600; color:#065f46}
+.search-res.empty{background:#fef2f2; border-color:#fecaca; color:#991b1b}
+.chips{display:flex; gap:.4rem; flex-wrap:wrap; margin-top:.5rem}
+.chips span{cursor:pointer; background:#ede9fe; color:var(--accent); border-radius:12px; padding:.1rem .6rem; font-size:.78rem}
+.chips span:hover{background:#ddd6fe}
+
+footer{background:#4c1d95; color:#ede9fe; padding:.8rem 1.5rem; border-radius:12px; font-size:.8rem; margin-top:1rem}
+@media(max-width:900px){ .two-col{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+<header>
+  <h1>产业区位因素 · 交互网页</h1>
+  <p>高中地理｜农业 · 工业 · 服务业三大产业 · 区位因素 · 指向类型 · 案例检索 · 智能批改</p>
+</header>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>① 三大产业分区</h2>
+    <div class="ind-tabs">
+      <button type="button" data-ind="agri" class="active">🌾 农业区位</button>
+      <button type="button" data-ind="indus">🏭 工业区位</button>
+      <button type="button" data-ind="serv">🏢 服务业区位</button>
+    </div>
+
+    <!-- ============ 农业 ============ -->
+    <div class="ind-panel active" data-ind="agri">
+      <div class="card" style="box-shadow:none">
+        <h3>① 区位因素速览（农业）</h3>
+        <table>
+          <thead><tr><th>区位因素</th><th>主导导向类型</th><th>典型案例</th></tr></thead>
+          <tbody>
+            <tr><td>气候（热量、水分、光照）</td><td><span class="lead-tag a">自然主导</span>对农业布局起基础作用</td><td>水稻喜温喜湿，种在湿润地区</td></tr>
+            <tr><td>地形</td><td><span class="lead-tag a">自然主导</span>坡度影响耕作方式</td><td>梯田分布在缓坡丘陵</td></tr>
+            <tr><td>土壤</td><td><span class="lead-tag a">自然主导</span>肥力影响作物产量</td><td>东北黑土地适合种粮</td></tr>
+            <tr><td>市场</td><td><span class="lead-tag b">社会经济主导</span>决定农业类型与规模</td><td>城郊发展乳畜业、花卉业</td></tr>
+            <tr><td>交通</td><td><span class="lead-tag b">社会经济主导</span>影响易腐产品运销</td><td>果蔬基地靠近高速公路/机场</td></tr>
+          </tbody>
+        </table>
+        <h3>② 分步详解：某因素如何影响布局</h3>
+        <p><b>第 1 步（自然因素）：</b>先看气候——热量决定作物种类（如柑橘在亚热带）、水分决定是否灌溉；再看地形（平原宜大规模机械化，山区发展林牧业）；土壤与水源决定精细化布局。</p>
+        <p><b>第 2 步（社会经济因素）：</b>市场决定"种什么、种多少"（城郊农业受城市市场吸引）；交通与保鲜技术扩大销售半径；政策（补贴、粮食安全）引导种植结构。</p>
+        <p><b>第 3 步（综合判断）：</b>把自然因素与社会经济因素叠加，找出<u>主导因素</u>——如潘帕斯大牧场放牧业的主导因素是"气候温和+地广人稀+距海港近"。</p>
+
+        <h3>③ 真实地区案例</h3>
+        <div class="two-col">
+          <div class="case-box">
+            <h4>地中海沿岸 · 地中海农业</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="地中海沿岸位置示意图">
+              <rect width="240" height="100" fill="#f0fdf4"/>
+              <path d="M20,60 L120,55 L130,80 L15,85 Z" fill="#7dd3fc"/>
+              <circle cx="70" cy="48" r="6" fill="#dc2626"/>
+              <text x="70" y="38" text-anchor="middle" font-size="9" fill="#991b1b">地中海沿岸</text>
+              <text x="120" y="92" text-anchor="middle" font-size="8" fill="#78350f">油橄榄 · 葡萄 · 柑橘（夏季炎热干燥）</text>
+            </svg>
+          </div>
+          <div class="case-box">
+            <h4>墨累-达令盆地 · 混合农业</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="墨累-达令盆地位置示意图">
+              <rect width="240" height="100" fill="#f0fdf4"/>
+              <path d="M170,20 Q210,60 180,95 Q120,90 130,40 Z" fill="#a7f3d0" opacity="0.7"/>
+              <circle cx="165" cy="55" r="6" fill="#dc2626"/>
+              <text x="165" y="45" text-anchor="middle" font-size="9" fill="#991b1b">墨累-达令盆地</text>
+              <text x="120" y="92" text-anchor="middle" font-size="8" fill="#78350f">小麦-绵羊混合经营，轮作休耕</text>
+            </svg>
+          </div>
+          <div class="case-box">
+            <h4>潘帕斯 · 大牧场放牧业</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="潘帕斯草原位置示意图">
+              <rect width="240" height="100" fill="#f0fdf4"/>
+              <path d="M40,20 Q90,30 100,80 Q55,90 30,55 Z" fill="#a7f3d0" opacity="0.7"/>
+              <circle cx="65" cy="52" r="6" fill="#dc2626"/>
+              <text x="65" y="42" text-anchor="middle" font-size="9" fill="#991b1b">潘帕斯</text>
+              <text x="120" y="92" text-anchor="middle" font-size="8" fill="#78350f">草类茂盛 · 地广人稀 · 距海港近，牛肉出口</text>
+            </svg>
+          </div>
+          <details>
+            <summary>折叠 · 案例探究（先列再整合）</summary>
+            <p style="font-size:.86rem">分析思路：<b>先列</b>影响案例的自然因素（气候/地形/土壤/水源）与社会经济因素（市场/交通/政策），<b>再整合</b>判断主导因素。例如潘帕斯：列出"温和湿润气候+广袤草场"→ 整合出"大牧场放牧业"主导因素为气候与土地资源。</p>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 工业 ============ -->
+    <div class="ind-panel" data-ind="indus">
+      <div class="card" style="box-shadow:none">
+        <h3>① 区位因素速览（工业）</h3>
+        <table>
+          <thead><tr><th>企业</th><th>主导导向类型</th><th>布局逻辑</th></tr></thead>
+          <tbody>
+            <tr><td>制糖厂</td><td><span class="lead-tag b">原料指向型</span></td><td>原料易腐、运输损耗大，8 吨甘蔗≈1 吨糖，宜近原料地</td></tr>
+            <tr><td>啤酒厂</td><td><span class="lead-tag b">市场指向型</span></td><td>保质期短、运输成本高，宜近消费市场</td></tr>
+            <tr><td>炼铝厂</td><td><span class="lead-tag b">动力指向型</span></td><td>高耗能（电解铝），宜近电力基地</td></tr>
+            <tr><td>服装厂</td><td><span class="lead-tag b">劳动力指向型</span></td><td>手工组装工序多，宜布局在劳动力充足廉价地区</td></tr>
+            <tr><td>集成电路</td><td><span class="lead-tag c">技术指向型</span></td><td>高技术、高附加值，宜近高校科研院所</td></tr>
+          </tbody>
+        </table>
+        <h3>② 分步详解：某因素如何影响布局</h3>
+        <p><b>第 1 步（原料指数）：</b>韦伯区位论中，原料指数 = 原料重量 ÷ 产品重量。指数 &gt; 1 → 原料导向（如制糖）；&lt; 1 → 市场导向（如啤酒）。</p>
+        <p><b>第 2 步（动力与劳动力）：</b>炼铝等高耗能产业布局在廉价电力地；劳动密集型产业布局在劳动力充足、工资低的地区。</p>
+        <p><b>第 3 步（市场与交通）：</b>产品不便于长距离运输或运输成本高的产业近市场；临港、临铁路布局利于大宗原料与产品运输（钢铁由"近原料"转向"临海市场交通"）。</p>
+
+        <h3>③ 真实地区案例</h3>
+        <div class="two-col">
+          <div class="case-box">
+            <h4>鲁尔区 · 传统煤铁复合体</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="鲁尔区位置示意图">
+              <rect width="240" height="100" fill="#fff7ed"/>
+              <path d="M60,25 L110,30 L105,75 L50,70 Z" fill="#fcd34d"/>
+              <circle cx="82" cy="50" r="6" fill="#dc2626"/>
+              <text x="82" y="40" text-anchor="middle" font-size="9" fill="#991b1b">鲁尔区</text>
+              <text x="120" y="92" text-anchor="middle" font-size="8" fill="#78350f">煤炭丰富 + 水陆交通便利 → 钢铁/机械/化工</text>
+            </svg>
+          </div>
+          <div class="case-box">
+            <h4>中国四大工业基地</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="中国四大工业基地位置示意图">
+              <rect width="240" height="100" fill="#fff7ed"/>
+              <path d="M150,15 Q195,30 185,70 Q150,85 130,60 Q110,70 95,58 Q80,60 70,45 Q90,15 150,15 Z" fill="#a7f3d0"/>
+              <circle cx="155" cy="28" r="4" fill="#dc2626"/><text x="164" y="30" font-size="8" fill="#991b1b">辽中南</text>
+              <circle cx="140" cy="45" r="4" fill="#dc2626"/><text x="112" y="47" font-size="8" fill="#991b1b">京津唐</text>
+              <circle cx="128" cy="62" r="4" fill="#dc2626"/><text x="96" y="64" font-size="8" fill="#991b1b">沪宁杭</text>
+              <circle cx="132" cy="76" r="4" fill="#dc2626"/><text x="140" y="80" font-size="8" fill="#991b1b">珠三角</text>
+              <text x="120" y="94" text-anchor="middle" font-size="8" fill="#78350f">辽中南(重) · 京津唐(综合) · 沪宁杭(最大综合) · 珠三角(轻)</text>
+            </svg>
+          </div>
+          <details>
+            <summary>折叠 · 案例探究（钢铁布局的演变）</summary>
+            <p style="font-size:.86rem">鞍钢早期布局在辽宁铁矿附近（原料导向）；宝钢选址上海临海（市场与交通导向），说明工业区位因素随技术进步与运输条件改变而变化——由"近原料"转向"临海、临市场"。</p>
+          </details>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 服务业 ============ -->
+    <div class="ind-panel" data-ind="serv">
+      <div class="card" style="box-shadow:none">
+        <h3>① 区位因素速览（服务业）</h3>
+        <table>
+          <thead><tr><th>因素</th><th>主导导向类型</th><th>典型案例</th></tr></thead>
+          <tbody>
+            <tr><td>市场（人口与购买力）</td><td><span class="lead-tag c">市场导向</span></td><td>商业中心布局在人口密集区</td></tr>
+            <tr><td>交通</td><td><span class="lead-tag c">交通导向</span></td><td>物流园依托港口、枢纽机场</td></tr>
+            <tr><td>劳动力与人才</td><td><span class="lead-tag c">人才导向</span></td><td>科技金融集聚于高校人才密集区</td></tr>
+            <tr><td>政策与信息</td><td><span class="lead-tag c">政策导向</span></td><td>自贸区、高新区享受政策集聚</td></tr>
+          </tbody>
+        </table>
+        <h3>② 分步详解：某因素如何影响布局</h3>
+        <p><b>第 1 步（市场）：</b>服务业必须贴近消费市场——商业、餐饮看人口密度与购买力，金融看商务集聚度。</p>
+        <p><b>第 2 步（交通与信息）：</b>物流、外贸依赖港口机场与通关效率；金融、科技对信息网络要求极高。</p>
+        <p><b>第 3 步（人才与政策）：</b>生产性服务业（金融、咨询、科技）高度依赖人才，政府规划（自贸区、高新区）会放大集聚效应。</p>
+
+        <h3>③ 真实地区案例</h3>
+        <div class="two-col">
+          <div class="case-box">
+            <h4>上海陆家嘴 · 金融</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="陆家嘴金融中心示意图">
+              <rect width="240" height="100" fill="#f5f3ff"/>
+              <rect x="60" y="40" width="26" height="40" fill="#a78bfa"/><rect x="70" y="30" width="6" height="12" fill="#7c3aed"/>
+              <rect x="95" y="45" width="30" height="35" fill="#8b5cf6"/>
+              <rect x="130" y="38" width="20" height="42" fill="#7c3aed"/>
+              <circle cx="150" cy="50" r="6" fill="#dc2626"/>
+              <text x="150" y="32" text-anchor="middle" font-size="9" fill="#5b21b6">陆家嘴</text>
+              <text x="120" y="94" text-anchor="middle" font-size="8" fill="#6d28d9">金融要素集聚 · 面向全球的金融中心</text>
+            </svg>
+          </div>
+          <div class="case-box">
+            <h4>深圳前海 · 物流/贸易</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="深圳前海位置示意图">
+              <rect width="240" height="100" fill="#f5f3ff"/>
+              <rect x="0" y="70" width="240" height="30" fill="#7dd3fc"/>
+              <path d="M150,70 L190,70 L175,40 L160,40 Z" fill="#a78bfa"/>
+              <rect x="145" y="35" width="30" height="5" fill="#6d28d9"/>
+              <circle cx="160" cy="55" r="6" fill="#dc2626"/>
+              <text x="160" y="26" text-anchor="middle" font-size="9" fill="#5b21b6">前海（深港合作）</text>
+              <text x="120" y="94" text-anchor="middle" font-size="8" fill="#6d28d9">港口 + 自贸区政策 → 现代物流与跨境贸易</text>
+            </svg>
+          </div>
+          <div class="case-box">
+            <h4>北京中关村 · 科技</h4>
+            <svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="北京中关村示意图">
+              <rect width="240" height="100" fill="#f5f3ff"/>
+              <rect x="70" y="30" width="80" height="16" fill="#8b5cf6"/>
+              <rect x="80" y="48" width="60" height="14" fill="#a78bfa"/>
+              <rect x="90" y="64" width="40" height="12" fill="#7c3aed"/>
+              <circle cx="120" cy="50" r="8" fill="#dc2626"/>
+              <text x="120" y="26" text-anchor="middle" font-size="9" fill="#5b21b6">中关村"中国硅谷"</text>
+              <text x="120" y="94" text-anchor="middle" font-size="8" fill="#6d28d9">高校院所集聚 → 科技与人才主导</text>
+            </svg>
+          </div>
+          <details>
+            <summary>折叠 · 案例探究（生产性服务业 vs 生活性服务业）</summary>
+            <p style="font-size:.86rem">金融、科技、咨询等<b>生产性服务业</b>为生产服务，主导因素是人才、信息与市场；餐饮、零售等<b>生活性服务业</b>面向居民生活，主导因素是人口密度与购买力。陆家嘴属于前者，社区便利店属于后者。</p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>④ 地区检索窗口</h2>
+    <p class="note">输入地区名称（如"地中海沿岸""鲁尔区""陆家嘴"），回车或点击按钮返回对应产业的区位文本。</p>
+    <div class="search-box">
+      <input id="searchInput" type="text" placeholder="例如：地中海沿岸 / 鲁尔区 / 北京中关村" aria-label="地区名称检索">
+      <button type="button" class="btn" id="searchBtn">检索</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="search-res" id="searchRes" style="display:none"></div>
+  </section>
+
+  <section class="card">
+    <h2>⑤ 练习与批改区</h2>
+
+    <!-- 农业练习 -->
+    <div class="ind-panel active" data-ind="agri" style="display:block">
+      <h3>农业 · 选择题（3 道）</h3>
+      <div class="quiz-item" data-q="agri0">
+        <div class="q">1. 影响水稻种植业区位选择的最主要自然因素是：</div>
+        <label><input type="radio" name="agri0" value="A"> A. 市场</label>
+        <label><input type="radio" name="agri0" value="B"> B. 气候与地形</label>
+        <label><input type="radio" name="agri0" value="C"> C. 政策</label>
+        <label><input type="radio" name="agri0" value="D"> D. 交通</label>
+        <div class="exp">答案：B。水稻喜温喜湿，需要充足的热量与水分，平原利于灌溉与耕作。</div>
+      </div>
+      <div class="quiz-item" data-q="agri1">
+        <div class="q">2. 地中海沿岸的农业地域类型是：</div>
+        <label><input type="radio" name="agri1" value="A"> A. 混合农业</label>
+        <label><input type="radio" name="agri1" value="B"> B. 大牧场放牧业</label>
+        <label><input type="radio" name="agri1" value="C"> C. 地中海农业</label>
+        <label><input type="radio" name="agri1" value="D"> D. 种植园农业</label>
+        <div class="exp">答案：C。地中海气候夏季炎热干燥，发展耐旱的园艺业（油橄榄、葡萄、柑橘）。</div>
+      </div>
+      <div class="quiz-item" data-q="agri2">
+        <div class="q">3. 墨累-达令盆地实行小麦种植与绵羊放牧相结合，属于：</div>
+        <label><input type="radio" name="agri2" value="A"> A. 混合农业</label>
+        <label><input type="radio" name="agri2" value="B"> B. 商品谷物农业</label>
+        <label><input type="radio" name="agri2" value="C"> C. 乳畜业</label>
+        <label><input type="radio" name="agri2" value="D"> D. 地中海农业</label>
+        <div class="exp">答案：A。种植业与畜牧业并重，农场实行轮作与休耕，是典型的混合农业。</div>
+      </div>
+
+      <h3>农业 · 综合题（采分关键词批改）</h3>
+      <p class="note">题目：结合所学，分析影响农业区位选择的主要自然因素。</p>
+      <textarea id="essay-agri" aria-label="农业综合题作答区" placeholder="作答时先列出自然因素（气候、地形、土壤、水源等），再整合分析……"></textarea>
+      <div><button type="button" class="btn" data-essay="agri">提交批改</button><button type="button" class="btn" data-toggle="agri">答题模板</button></div>
+      <div class="grade-result" id="grade-agri"></div>
+      <details id="tpl-agri" style="display:none">
+        <summary>答题模板（先列再整合）</summary>
+        <p style="font-size:.86rem">① 先列出区位因素：<b>气候</b>（热量/水分/光照）、<b>地形</b>、<b>土壤</b>、<b>水源</b>；② 再整合：指出主导因素并结合具体作物说明。</p>
+      </details>
+    </div>
+
+    <!-- 工业练习 -->
+    <div class="ind-panel" data-ind="indus">
+      <h3>工业 · 选择题（3 道）</h3>
+      <div class="quiz-item" data-q="indus0">
+        <div class="q">1. 下列产业与指向类型对应正确的是：</div>
+        <label><input type="radio" name="indus0" value="A"> A. 制糖厂—动力指向、啤酒厂—原料指向</label>
+        <label><input type="radio" name="indus0" value="B"> B. 啤酒厂—市场指向、炼铝厂—动力指向</label>
+        <label><input type="radio" name="indus0" value="C"> C. 炼铝厂—技术指向、服装厂—原料指向</label>
+        <label><input type="radio" name="indus0" value="D"> D. 集成电路—劳动力指向、制糖厂—市场指向</label>
+        <div class="exp">答案：B。制糖=原料指向、啤酒=市场指向、炼铝=动力指向、服装=劳动力指向、集成电路=技术指向。</div>
+      </div>
+      <div class="quiz-item" data-q="indus1">
+        <div class="q">2. 啤酒厂因保质期短、运输成本高，宜布局在：</div>
+        <label><input type="radio" name="indus1" value="A"> A. 原料地</label>
+        <label><input type="radio" name="indus1" value="B"> B. 消费市场</label>
+        <label><input type="radio" name="indus1" value="C"> C. 能源基地</label>
+        <label><input type="radio" name="indus1" value="D"> D. 港口</label>
+        <div class="exp">答案：B。啤酒保质期短、不宜长距离运输，靠近消费市场可降低成本。</div>
+      </div>
+      <div class="quiz-item" data-q="indus2">
+        <div class="q">3. 集成电路（芯片）产业的主导区位因素是：</div>
+        <label><input type="radio" name="indus2" value="A"> A. 原料</label>
+        <label><input type="radio" name="indus2" value="B"> B. 廉价劳动力</label>
+        <label><input type="radio" name="indus2" value="C"> C. 技术</label>
+        <label><input type="radio" name="indus2" value="D"> D. 能源</label>
+        <div class="exp">答案：C。集成电路为高技术产业，主导区位因素是科技与人才。</div>
+      </div>
+
+      <h3>工业 · 综合题（采分关键词批改）</h3>
+      <p class="note">题目：分析影响工业区位选择的主导因素，并说明其与指向类型的关系。</p>
+      <textarea id="essay-indus" aria-label="工业综合题作答区" placeholder="作答时先列出因素（原料、市场、动力、劳动力、技术等），再说明指向类型……"></textarea>
+      <div><button type="button" class="btn" data-essay="indus">提交批改</button><button type="button" class="btn" data-toggle="indus">答题模板</button></div>
+      <div class="grade-result" id="grade-indus"></div>
+      <details id="tpl-indus" style="display:none">
+        <summary>答题模板（先列再整合）</summary>
+        <p style="font-size:.86rem">① 先列出区位因素：<b>原料</b>、<b>市场</b>、<b>动力</b>（能源）、<b>劳动力</b>、<b>技术</b>；② 再整合判断指向类型：原料指数&gt;1 为原料导向、产品不宜远运为市场导向、高耗能为动力导向等。</p>
+      </details>
+    </div>
+
+    <!-- 服务业练习 -->
+    <div class="ind-panel" data-ind="serv">
+      <h3>服务业 · 选择题（3 道）</h3>
+      <div class="quiz-item" data-q="serv0">
+        <div class="q">1. 上海陆家嘴发展成为金融中心，主导区位因素是：</div>
+        <label><input type="radio" name="serv0" value="A"> A. 市场与信息</label>
+        <label><input type="radio" name="serv0" value="B"> B. 原料</label>
+        <label><input type="radio" name="serv0" value="C"> C. 动力</label>
+        <label><input type="radio" name="serv0" value="D"> D. 矿产资源</label>
+        <div class="exp">答案：A。金融业需要广阔的市场与高效的信息网络，集聚形成规模效应。</div>
+      </div>
+      <div class="quiz-item" data-q="serv1">
+        <div class="q">2. 深圳前海发展现代物流与跨境贸易，主要依托：</div>
+        <label><input type="radio" name="serv1" value="A"> A. 科技园区</label>
+        <label><input type="radio" name="serv1" value="B"> B. 港口与综合交通</label>
+        <label><input type="radio" name="serv1" value="C"> C. 大型矿山</label>
+        <label><input type="radio" name="serv1" value="D"> D. 地热能源</label>
+        <div class="exp">答案：B。物流与贸易高度依赖港口、交通枢纽与自贸区政策。</div>
+      </div>
+      <div class="quiz-item" data-q="serv2">
+        <div class="q">3. 北京中关村被誉为"中国硅谷"，其主导区位因素是：</div>
+        <label><input type="radio" name="serv2" value="A"> A. 廉价劳动力</label>
+        <label><input type="radio" name="serv2" value="B"> B. 能源资源</label>
+        <label><input type="radio" name="serv2" value="C"> C. 科技与人才</label>
+        <label><input type="radio" name="serv2" value="D"> D. 平坦地形</label>
+        <div class="exp">答案：C。高校科研院所密集，科技与人才是高新技术产业的核心区位因素。</div>
+      </div>
+
+      <h3>服务业 · 综合题（采分关键词批改）</h3>
+      <p class="note">题目：说明影响服务业区位选择的主要因素，并比较生产性服务业与生活性服务业的差异。</p>
+      <textarea id="essay-serv" aria-label="服务业综合题作答区" placeholder="作答时先列出因素（市场、交通、人才、政策等），再比较两类服务业……"></textarea>
+      <div><button type="button" class="btn" data-essay="serv">提交批改</button><button type="button" class="btn" data-toggle="serv">答题模板</button></div>
+      <div class="grade-result" id="grade-serv"></div>
+      <details id="tpl-serv" style="display:none">
+        <summary>答题模板（先列再整合）</summary>
+        <p style="font-size:.86rem">① 先列出区位因素：<b>市场</b>、<b>交通</b>、<b>人才</b>（劳动力）、<b>政策</b>；② 再整合比较：生产性服务业主导因素为人才与信息，生活性服务业主导因素为人口密度与购买力。</p>
+      </details>
+    </div>
+  </section>
+
+  <footer>
+    数据与案例出处：参考人教版高中地理必修二（农业生产与区位、工业区位因素及其变化、服务业区位因素及其变化）及近年高考地理真题；地区案例与指向类型均依据现行教材表述。
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============ 三产业标签切换 ============
+  document.querySelectorAll('.ind-tabs button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.ind-tabs button').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      var ind = btn.getAttribute('data-ind');
+      document.querySelectorAll('.ind-panel').forEach(function(p){
+        p.classList.toggle('active', p.getAttribute('data-ind') === ind);
+      });
+    });
+  });
+
+  // ============ 选择题 ============
+  var QUIZ_ANSWERS = {
+    agri0:'B', agri1:'C', agri2:'A',
+    indus0:'B', indus1:'B', indus2:'C',
+    serv0:'A', serv1:'B', serv2:'C'
+  };
+  document.querySelectorAll('.quiz-item').forEach(function(item){
+    var q = item.getAttribute('data-q');
+    item.querySelectorAll('input[type=radio]').forEach(function(radio){
+      radio.addEventListener('change', function(){
+        var correct = radio.value === QUIZ_ANSWERS[q];
+        item.classList.remove('correct', 'wrong');
+        item.classList.add(correct ? 'correct' : 'wrong');
+        item.classList.add('revealed');
+      });
+    });
+  });
+
+  // ============ 综合题批改 ============
+  var ESSAY_KEYWORDS = {
+    agri:  {kw:['气候','地形','土壤','水源'], title:'农业综合题'},
+    indus: {kw:['原料','市场','动力','劳动力'], title:'工业综合题'},
+    serv:  {kw:['市场','交通','人才','政策'], title:'服务业综合题'}
+  };
+  function normText(s){ return String(s || '').replace(/[\s，。,、；;：:（）()]/g, ''); }
+  function gradeEssay(ind){
+    var cfg = ESSAY_KEYWORDS[ind];
+    var text = normText(document.getElementById('essay-' + ind).value);
+    var matched = cfg.kw.filter(function(k){ return text.indexOf(k) >= 0; });
+    var score = matched.length, total = cfg.kw.length;
+    var box = document.getElementById('grade-' + ind);
+    box.classList.remove('full', 'part', 'zero');
+    if(text.length === 0 || score === 0){
+      box.classList.add('zero');
+      box.innerHTML = '<b>' + cfg.title + '：' + score + '/' + total + ' 分</b>。未命中采分关键词。改进建议：先列区位因素（' + cfg.kw.join('、') + '），再结合题目逐一展开分析。';
+    } else if(score === total){
+      box.classList.add('full');
+      box.innerHTML = '<b>' + cfg.title + '：' + score + '/' + total + ' 分（满分）</b>。🎉 采分关键词全部命中，逻辑完整！可对照答题模板检查表达。';
+    } else {
+      box.classList.add('part');
+      box.innerHTML = '<b>' + cfg.title + '：' + score + '/' + total + ' 分</b>。已命中：' + matched.join('、') + '；缺少：' +
+        cfg.kw.filter(function(k){ return matched.indexOf(k) < 0; }).join('、') + '。改进建议：补充遗漏因素并整合说明其影响。';
+    }
+  }
+  document.querySelectorAll('button[data-essay]').forEach(function(btn){
+    btn.addEventListener('click', function(){ gradeEssay(btn.getAttribute('data-essay')); });
+  });
+
+  // 答题模板显隐
+  document.querySelectorAll('button[data-toggle]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var tpl = document.getElementById('tpl-' + btn.getAttribute('data-toggle'));
+      tpl.open = !tpl.open;
+      tpl.style.display = tpl.open ? 'block' : 'none';
+      btn.textContent = tpl.open ? '收起模板' : '答题模板';
+    });
+  });
+
+  // ============ 地区检索 ============
+  var REGION_DB = [
+    {key:'地中海沿岸', ind:'农业', note:'地中海农业：夏季炎热干燥、冬季温和多雨，发展园艺业与耐旱作物（油橄榄、葡萄、柑橘）。'},
+    {key:'墨累-达令盆地', ind:'农业', note:'混合农业：种植小麦与放牧绵羊结合，农场实行轮作与休耕，注重生态与市场兼顾。'},
+    {key:'潘帕斯', ind:'农业', note:'大牧场放牧业：气候温和草类茂盛，地广人稀、土地租金低，距海港近，牛肉大量出口。'},
+    {key:'鲁尔区', ind:'工业', note:'传统煤铁复合体：煤炭资源丰富、水陆交通便利、劳动力充足，形成钢铁—机械—化工复合工业区。'},
+    {key:'沪宁杭', ind:'工业', note:'我国最大的综合性工业基地：区位优越，工农业基础好，科技力量雄厚，轻重工业齐全。'},
+    {key:'京津唐', ind:'工业', note:'北方最大的综合性工业基地：靠近原料燃料基地，水陆交通便利，依托首都科技与人才。'},
+    {key:'辽中南', ind:'工业', note:'以重工业为主的工业基地：煤铁资源丰富，形成钢铁、机械、石油化工等重工业体系。'},
+    {key:'珠三角', ind:'工业', note:'以轻工业为主的出口加工工业基地：毗邻港澳、劳动力充足，外向型经济发达。'},
+    {key:'上海陆家嘴', ind:'服务业', note:'金融业中心：金融要素高度集聚，依托市场与信息网络，面向全国与全球。'},
+    {key:'深圳前海', ind:'服务业', note:'物流/贸易：深港合作、港口与自贸区政策优势，现代物流与跨境贸易发达。'},
+    {key:'北京中关村', ind:'服务业', note:'科技产业：高校科研院所密集，"中国硅谷"，科技与人才为主导区位因素。'}
+  ];
+  var res = document.getElementById('searchRes');
+  function doSearch(raw){
+    var q = String(raw || '').trim();
+    if(!q){ res.style.display = 'none'; return; }
+    var hit = null;
+    for(var i = 0; i < REGION_DB.length; i++){
+      var r = REGION_DB[i];
+      if(q.indexOf(r.key) >= 0 || r.key.indexOf(q) >= 0){ hit = r; break; }
+    }
+    res.style.display = 'block';
+    if(hit){
+      res.classList.remove('empty');
+      res.innerHTML = '命中：<span class="hit">' + hit.key + '</span> → ' + hit.ind + ' · ' + hit.note;
+    } else {
+      res.classList.add('empty');
+      res.innerHTML = '未找到"' + q + '"的匹配地区。可尝试：地中海沿岸 / 墨累-达令盆地 / 潘帕斯 / 鲁尔区 / 四大工业基地 / 上海陆家嘴 / 深圳前海 / 北京中关村。';
+    }
+  }
+  document.getElementById('searchBtn').addEventListener('click', function(){
+    doSearch(document.getElementById('searchInput').value);
+  });
+  document.getElementById('searchInput').addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); doSearch(document.getElementById('searchInput').value); }
+  });
+  // 快捷标签
+  var chips = document.getElementById('chips');
+  ['地中海沿岸', '鲁尔区', '北京中关村', '辽中南'].forEach(function(name){
+    var s = document.createElement('span');
+    s.textContent = name;
+    s.addEventListener('click', function(){ document.getElementById('searchInput').value = name; doSearch(name); });
+    chips.appendChild(s);
+  });
+})();
+</script>
+</body>
+</html>

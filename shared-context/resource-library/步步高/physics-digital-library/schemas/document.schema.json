@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/document.schema.json",
+  "title": "步步高文档提取记录",
+  "type": "object",
+  "required": ["id", "source_id", "relative_path", "source_relative_path", "content_path", "title", "status", "extraction_profile", "asset_paths"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^doc\\.bbg\\.[a-z0-9][a-z0-9._-]*$"},
+    "source_id": {"type": "string", "pattern": "^src\\.bbg\\.[0-9a-f]{64}$"},
+    "relative_path": {"$ref": "#/$defs/relativePath"},
+    "source_relative_path": {"$ref": "#/$defs/rawRelativePath"},
+    "content_path": {"$ref": "#/$defs/relativePath"},
+    "title": {"type": "string", "minLength": 1},
+    "status": {"$ref": "#/$defs/status"},
+    "extraction_profile": {"enum": ["teacher", "gaokao", "textbook"]},
+    "asset_paths": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/relativePath"}
+    },
+    "issues": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "status": {"enum": ["discovered", "raw_extracted", "ai_structured", "pending_manual_review", "reviewed", "published", "blocked"]},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"},
+    "rawRelativePath": {"allOf": [{"$ref": "#/$defs/relativePath"}, {"pattern": "^raw/"}]}
+  }
+}

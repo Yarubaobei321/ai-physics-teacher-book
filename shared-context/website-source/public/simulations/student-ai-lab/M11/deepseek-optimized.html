@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>求导工坊 · 导数交互学习页</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#2b3a4a; --sub:#64748b;
+    --accent:#d97706; --accent-soft:#fef3c7; --line:#e2e8f0;
+    --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-border:#fcd34d;
+    --ok-bg:#dcfce7; --ok-ink:#15803d;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink);}
+  header.app{background:linear-gradient(120deg,#b45309,#d97706); color:#fff; padding:18px 28px;}
+  header.app h1{font-size:22px; letter-spacing:1px;}
+  header.app p{font-size:13px; opacity:.92; margin-top:4px;}
+  .start-screen{max-width:560px; margin:60px auto; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:40px; text-align:center; box-shadow:0 8px 24px rgba(15,23,42,.08);}
+  .start-screen h2{font-size:20px; margin-bottom:10px; color:var(--ink);}
+  .start-screen p{font-size:14px; color:var(--sub); margin-bottom:24px; line-height:1.8;}
+  button.btn{appearance:none; border:none; border-radius:10px; padding:12px 26px; font-size:15px; cursor:pointer; color:#fff; background:var(--accent); transition:filter .15s;}
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.sm{font-size:13px; padding:8px 14px; border-radius:8px;}
+  button.btn.ghost{background:#fff; color:var(--accent); border:1px solid var(--accent);}
+  button.btn.active{background:#92400e; box-shadow:0 0 0 2px #fbbf24 inset;}
+  .wrap{display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:16px; padding:16px 20px; max-width:1440px; margin:0 auto; align-items:start;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(15,23,42,.05);}
+  .panel h2{font-size:15px; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:12px;}
+  .panel h3{font-size:13px; color:var(--ink); margin:12px 0 6px;}
+  .panel p, .panel li{font-size:13px; line-height:1.7;}
+  .panel ul{padding-left:18px;}
+  .formula{background:var(--accent-soft); border-radius:8px; padding:9px 12px; margin:7px 0; font-family:"Cambria Math",Georgia,serif; font-size:14px; color:#92400e; text-align:center; word-break:break-all;}
+  .warn{background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-ink); border-radius:8px; padding:10px 12px; margin-top:10px; font-size:12.5px; line-height:1.6;}
+  .warn b{display:block; margin-bottom:4px; font-size:13px;}
+  .tabs{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+  .demo-box{background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:14px; min-height:190px;}
+  .demo-step{font-size:14px; line-height:2; color:#78350f;}
+  .demo-step b{color:#b45309;}
+  .demo-result{font-size:18px; font-weight:700; color:#92400e; margin-top:8px; font-family:"Cambria Math",Georgia,serif;}
+  .field{margin-top:10px;}
+  .field label{display:block; font-size:12.5px; color:var(--sub); margin-bottom:4px;}
+  .field input[type=number]{width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#f8fafc;}
+  .field input[type=number]:focus{outline:2px solid var(--accent); background:#fff;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  .quiz-q{margin-top:10px; background:#fff7ed; border:1px solid #fed7aa; border-radius:10px; padding:12px;}
+  .quiz-q b{font-size:13.5px; color:#7c2d12;}
+  .opt{display:block; width:100%; text-align:left; margin-top:6px; padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:#fff; font-size:13px; cursor:pointer;}
+  .opt:hover{border-color:var(--accent);}
+  .opt.correct{background:#dcfce7; border-color:#16a34a; color:#14532d;}
+  .opt.wrong{background:#fee2e2; border-color:#dc2626; color:#7f1d1d;}
+  .opt:disabled{cursor:default;}
+  .quiz-feedback{margin-top:8px; font-size:12.5px; padding:8px; border-radius:8px; display:none;}
+  .quiz-feedback.show{display:block;}
+  .quiz-feedback.good{background:var(--ok-bg); color:var(--ok-ink);}
+  .quiz-feedback.bad{background:#fee2e2; color:#7f1d1d;}
+  .quiz-nav{display:flex; gap:8px; margin-top:12px;}
+  .canvas-box{background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px; margin-top:10px;}
+  canvas#graph{display:block; width:100%; height:auto; border-radius:6px;}
+  .status-msg{margin-top:8px; font-size:13px; min-height:20px;}
+  .status-msg.ok{color:#16a34a;}
+  @media(max-width:1180px){ .wrap{grid-template-columns:1fr 1fr;} }
+  @media(max-width:760px){ .wrap{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>∂ 求导工坊 · 导函数交互学习页</h1>
+  <p>基本初等函数求导法则 → 逐步演示 → 参数实验 → 自测问答，四栏联动的导数学习空间</p>
+</header>
+
+<!-- 起始页 -->
+<div class="start-screen" id="startScreen">
+  <div style="font-size:44px;">📚</div>
+  <h2>欢迎来到求导工坊</h2>
+  <p>这里你将学习导函数 f′(x) 的定义与求法：<br>
+  <b>幂函数</b> (xⁿ)′=n·xⁿ⁻¹ · <b>正弦</b> (sin x)′=cos x · <b>指数</b> (eˣ)′=eˣ 等，<br>
+  并通过过程演示、参数实验与自测问答熟练掌握基本求导法则。</p>
+  <button type="button" class="btn" id="btnEnter">🚀 进入求导工坊</button>
+</div>
+
+<!-- 工坊主界面 -->
+<div class="wrap" id="workshop" style="display:none;">
+
+  <!-- 讲解区 -->
+  <section class="panel" aria-label="讲解区">
+    <h2>一、求导法则讲解</h2>
+    <h3>基本初等函数</h3>
+    <div class="formula">(c)′ = 0（常数的导数为 0）</div>
+    <div class="formula">(xⁿ)′ = n·xⁿ⁻¹<small style="display:block;font-size:11px;">如 (x²)′=2x、(x³)′=3x²、(√x)′=(x^½)′=1/(2√x)</small></div>
+    <div class="formula">(sin x)′ = cos x</div>
+    <div class="formula">(cos x)′ = −sin x</div>
+    <div class="formula">(eˣ)′ = eˣ</div>
+    <div class="formula">(ln x)′ = 1/x</div>
+    <h3>求导法则</h3>
+    <div class="formula">(u ± v)′ = u′ ± v′（和差）</div>
+    <div class="formula">(c·u)′ = c·u′（常数倍）</div>
+    <div class="warn">
+      <b>⚠️ 注意事项</b>
+      <ul style="padding-left:16px;">
+        <li>术语：导函数记作 <b>f′(x)</b>，其值即曲线在该点的<b>切线斜率</b>。</li>
+        <li>f′(x₀)=0 不一定取极值，须配合左右导数<b>符号变化</b>检验。</li>
+        <li>定义域：ln x 要求 x&gt;0，1/x 要求 x≠0。</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 过程演示区 -->
+  <section class="panel" aria-label="过程演示区">
+    <h2>二、求导过程演示</h2>
+    <div class="tabs" id="demoTabs">
+      <button type="button" class="btn sm ghost active" data-f="x2">f=x²</button>
+      <button type="button" class="btn sm ghost" data-f="x3">f=x³</button>
+      <button type="button" class="btn sm ghost" data-f="sin">f=sin x</button>
+      <button type="button" class="btn sm ghost" data-f="cos">f=cos x</button>
+      <button type="button" class="btn sm ghost" data-f="exp">f=eˣ</button>
+      <button type="button" class="btn sm ghost" data-f="ln">f=ln x</button>
+    </div>
+    <div class="demo-box" id="demoBox">
+      <div class="demo-step" id="demoStep"></div>
+      <div class="demo-result" id="demoResult"></div>
+    </div>
+    <div class="controls" style="margin-top:10px;">
+      <button type="button" class="btn sm" id="btnStep">▶ 逐步演示</button>
+      <button type="button" class="btn sm ghost" id="btnReplay">↺ 重放</button>
+    </div>
+    <div class="canvas-box">
+      <canvas id="graph" width="760" height="340" aria-label="函数与其导函数图像画布"></canvas>
+    </div>
+  </section>
+
+  <!-- 参数区 -->
+  <section class="panel" aria-label="参数区">
+    <h2>三、参数实验</h2>
+    <p style="font-size:12.5px;">修改系数 c 与指数 n，观察幂函数导数变化（常数倍法则）。</p>
+    <div class="row2">
+      <div class="field">
+        <label for="pCoeff">系数 c</label>
+        <input type="number" id="pCoeff" min="0.5" max="5" step="0.5" value="1">
+      </div>
+      <div class="field">
+        <label for="pPower">指数 n</label>
+        <input type="number" id="pPower" min="1" max="5" step="1" value="2">
+      </div>
+    </div>
+    <div class="readout" style="background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px;">
+      <p style="font-size:13px;">f(x) = c·x<sup>n</sup> = <b id="paramF">x²</b></p>
+      <p style="font-size:13px;margin-top:6px;">f′(x) = c·n·x<sup>n−1</sup> = <b id="paramD" style="color:#b45309;">2x</b></p>
+      <p style="font-size:12px;color:#64748b;margin-top:6px;" id="paramRule">规则：常数倍法则 (c·u)′=c·u′，幂函数 (xⁿ)′=n·xⁿ⁻¹</p>
+    </div>
+    <div class="canvas-box">
+      <canvas id="graph2" width="760" height="340" aria-label="参数化幂函数与其导数图像"></canvas>
+    </div>
+  </section>
+
+  <!-- 问答区 -->
+  <section class="panel" aria-label="问答区">
+    <h2>四、简易问答自测</h2>
+    <div id="quizContainer">
+      <div class="quiz-q">
+        <b id="qTitle">Q1：f(x)=x² 的导函数是？</b>
+        <div id="qOptions"></div>
+        <div class="quiz-feedback" id="qFeedback"></div>
+      </div>
+      <div class="quiz-nav">
+        <button type="button" class="btn sm" id="qPrev">← 上一题</button>
+        <button type="button" class="btn sm ghost" id="qNext">下一题 →</button>
+      </div>
+    </div>
+    <div class="status-msg" id="quizStatus" role="status"></div>
+
+    <div class="panel" style="box-shadow:none;padding:0;margin-top:16px;border:none;">
+      <h3>🧭 观察与结论</h3>
+      <p>幂函数求导规律：<b>指数 n 降为 n−1，系数 n 乘以前方</b>。即 (xⁿ)′=n·xⁿ⁻¹——每求导一次，次数减一，这就是多项式求导的「降次」本质。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- 判空工具 ----------
+  function setText(el, t){ if (el) el.textContent = t; }
+  function setHTML(el, h){ if (el) el.innerHTML = h; }
+
+  // ---------- 起始页 ----------
+  var startScreen = document.getElementById('startScreen');
+  var workshop = document.getElementById('workshop');
+  var btnEnter = document.getElementById('btnEnter');
+  btnEnter.addEventListener('click', function(){
+    if (startScreen) startScreen.style.display = 'none';
+    if (workshop) workshop.style.display = '';
+  });
+
+  // ---------- 演示数据（写死标准过程与结果，不依赖随机拼字符串） ----------
+  var DEMOS = {
+    x2: {
+      label:'f = x²',
+      steps:[
+        '识别函数类型：幂函数 f(x)=x²',
+        '应用幂函数法则：(xⁿ)′=n·xⁿ⁻¹，其中 n=2',
+        '代入：f′(x) = 2·x²⁻¹ = 2·x¹',
+        '化简得最终结果'
+      ],
+      result:'f′(x) = 2x',
+      fn:'f(x)=x²'
+    },
+    x3: {
+      label:'f = x³',
+      steps:[
+        '识别函数类型：幂函数 f(x)=x³',
+        '应用幂函数法则：(xⁿ)′=n·xⁿ⁻¹，其中 n=3',
+        '代入：f′(x) = 3·x³⁻¹ = 3·x²',
+        '化简得最终结果'
+      ],
+      result:'f′(x) = 3x²',
+      fn:'f(x)=x³'
+    },
+    sin: {
+      label:'f = sin x',
+      steps:[
+        '识别函数类型：正弦函数 f(x)=sin x',
+        '应用正弦求导公式：(sin x)′=cos x',
+        '无需化简，直接写出结果'
+      ],
+      result:'f′(x) = cos x',
+      fn:'f(x)=sin x'
+    },
+    cos: {
+      label:'f = cos x',
+      steps:[
+        '识别函数类型：余弦函数 f(x)=cos x',
+        '应用余弦求导公式：(cos x)′=−sin x',
+        '注意负号，直接写出结果'
+      ],
+      result:'f′(x) = −sin x',
+      fn:'f(x)=cos x'
+    },
+    exp: {
+      label:'f = eˣ',
+      steps:[
+        '识别函数类型：指数函数 f(x)=eˣ',
+        '应用指数求导公式：(eˣ)′=eˣ',
+        '指数函数的导数等于其自身'
+      ],
+      result:'f′(x) = eˣ',
+      fn:'f(x)=eˣ'
+    },
+    ln: {
+      label:'f = ln x',
+      steps:[
+        '识别函数类型：对数函数 f(x)=ln x（定义域 x>0）',
+        '应用对数求导公式：(ln x)′=1/x',
+        '直接写出结果'
+      ],
+      result:'f′(x) = 1/x（x>0）',
+      fn:'f(x)=ln x'
+    }
+  };
+
+  var currentDemo = 'x2';
+  var demoStepIdx = 0;
+  var demoStepEl = document.getElementById('demoStep');
+  var demoResultEl = document.getElementById('demoResult');
+  var demoBtns = document.querySelectorAll('#demoTabs button');
+
+  function demoFn(d){
+    // 返回函数数值实现，用于画图
+    var fns = {
+      x2:function(x){ return x*x; }, dfn:function(x){ return 2*x; },
+      x3:function(x){ return x*x*x; }, dfn3:function(x){ return 3*x*x; },
+      sin:function(x){ return Math.sin(x); }, dfns:function(x){ return Math.cos(x); },
+      cos:function(x){ return Math.cos(x); }, dfnc:function(x){ return -Math.sin(x); },
+      exp:function(x){ return Math.exp(x); }, dfne:function(x){ return Math.exp(x); },
+      ln:function(x){ return Math.log(x); }, dfnl:function(x){ return 1/x; }
+    };
+    return fns;
+  }
+
+  function showDemo(key){
+    currentDemo = key;
+    demoStepIdx = 0;
+    var d = DEMOS[key];
+    for (var i = 0; i < demoBtns.length; i++){
+      demoBtns[i].classList.toggle('active', demoBtns[i].getAttribute('data-f') === key);
+      demoBtns[i].classList.toggle('ghost', demoBtns[i].getAttribute('data-f') !== key);
+    }
+    setText(demoStepEl, '');
+    setText(demoResultEl, d.result);
+    setText(document.getElementById('demoStep'), '点击「逐步演示」查看 ' + d.label + ' 的求导步骤。');
+    drawGraph('graph', d.fn, key, {xmin:-4, xmax:4, ymin:-8, ymax:8});
+  }
+
+  function stepDemo(){
+    var d = DEMOS[currentDemo];
+    if (demoStepIdx < d.steps.length){
+      var lines = d.steps.slice(0, demoStepIdx + 1);
+      setHTML(demoStepEl, lines.map(function(s){ return '· ' + s; }).join('<br>'));
+      demoStepIdx++;
+      if (demoStepIdx >= d.steps.length){
+        setText(demoResultEl, d.result);
+      }
+    }
+  }
+
+  var btnStep = document.getElementById('btnStep');
+  var btnReplay = document.getElementById('btnReplay');
+  btnStep.addEventListener('click', stepDemo);
+  btnReplay.addEventListener('click', function(){
+    demoStepIdx = 0;
+    setText(demoStepEl, '点击「逐步演示」重新查看步骤。');
+  });
+  for (var bi = 0; bi < demoBtns.length; bi++){
+    demoBtns[bi].addEventListener('click', function(){
+      showDemo(this.getAttribute('data-f'));
+    });
+  }
+
+  // ---------- 参数实验 ----------
+  var pCoeff = document.getElementById('pCoeff');
+  var pPower = document.getElementById('pPower');
+  var paramF = document.getElementById('paramF');
+  var paramD = document.getElementById('paramD');
+
+  function updateParam(){
+    var c = parseFloat(pCoeff.value);
+    var n = parseFloat(pPower.value);
+    if (isNaN(c)) c = 1;
+    if (isNaN(n)) n = 2;
+    // 系数与指数展示
+    var cStr = (Math.abs(c - 1) < 1e-9) ? '' : fmt(c,1);
+    var fStr = (cStr === '' ? '' : cStr + '·') + 'x' + sup(n);
+    setText(paramF, fStr);
+    // 导数 = c·n·x^(n-1)
+    var cn = c * n;
+    var cnStr = (Math.abs(cn - 1) < 1e-9) ? '' : fmt(cn,2);
+    var dStr = (cnStr === '' ? '' : cnStr + '·') + 'x' + sup(n - 1);
+    setText(paramD, dStr);
+    if (n === 1){
+      setText(paramD, (Math.abs(cn - 1) < 1e-9 ? '' : fmt(cn,2)) || '1');
+    }
+    drawGraph('graph2', fStr, 'power', {xmin:-3, xmax:3, ymin:-12, ymax:12});
+  }
+  function sup(v){
+    if (v === 2) return '²';
+    if (v === 3) return '³';
+    if (v === 4) return '⁴';
+    if (v === 5) return '⁵';
+    if (v === 1) return '';
+    if (v === 0) return '';
+    return '<sup>' + v + '</sup>';
+  }
+  function fmt(v, d){ return v.toFixed(d); }
+
+  pCoeff.addEventListener('input', updateParam);
+  pPower.addEventListener('input', updateParam);
+
+  // ---------- 画图 ----------
+  function drawGraph(canvasId, fnLabel, key, range){
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var W = 760, H = 340;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+
+    var xmin = range.xmin, xmax = range.xmax, ymin = range.ymin, ymax = range.ymax;
+    var M = {l:46, r:20, t:16, b:30};
+    var pw = W - M.l - M.r, ph = H - M.t - M.b;
+    function px(x){ return M.l + (x - xmin)/(xmax - xmin)*pw; }
+    function py(y){ return M.t + (ymax - y)/(ymax - ymin)*ph; }
+
+    // 网格
+    ctx.strokeStyle = '#f1f5f9'; ctx.lineWidth = 1;
+    for (var gx = Math.ceil(xmin); gx <= Math.floor(xmax); gx++){
+      ctx.beginPath(); ctx.moveTo(px(gx), M.t); ctx.lineTo(px(gx), M.t+ph); ctx.stroke();
+    }
+    for (var gy = Math.ceil(ymin); gy <= Math.floor(ymax); gy++){
+      ctx.beginPath(); ctx.moveTo(M.l, py(gy)); ctx.lineTo(M.l+pw, py(gy)); ctx.stroke();
+    }
+    // 轴
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(M.l, py(0)); ctx.lineTo(M.l+pw, py(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px(0), M.t); ctx.lineTo(px(0), M.t+ph); ctx.stroke();
+    ctx.fillStyle = '#64748b'; ctx.font = '11px sans-serif';
+    ctx.fillText('x', M.l+pw-14, py(0)+16);
+    ctx.fillText('y', px(0)+6, M.t+12);
+
+    // 函数（蓝）与导数（橙）
+    var c = parseFloat(pCoeff.value); var n = parseFloat(pPower.value);
+    if (isNaN(c)) c = 1; if (isNaN(n)) n = 2;
+
+    function plot(color, f, width){
+      ctx.strokeStyle = color; ctx.lineWidth = width;
+      ctx.beginPath();
+      var first = true;
+      for (var i = 0; i <= 400; i++){
+        var x = xmin + (xmax - xmin)*i/400;
+        var y = f(x);
+        if (!isFinite(y) || y < ymin - 5 || y > ymax + 5){
+          first = true; continue;
+        }
+        if (first){ ctx.moveTo(px(x), py(y)); first = false; }
+        else ctx.lineTo(px(x), py(y));
+      }
+      ctx.stroke();
+    }
+
+    // 主函数
+    var fMain = {
+      x2:function(x){ return x*x; },
+      x3:function(x){ return x*x*x; },
+      sin:function(x){ return Math.sin(x); },
+      cos:function(x){ return Math.cos(x); },
+      exp:function(x){ return Math.exp(x); },
+      ln:function(x){ return Math.log(x); }
+    };
+    var dMain = {
+      x2:function(x){ return 2*x; },
+      x3:function(x){ return 3*x*x; },
+      sin:function(x){ return Math.cos(x); },
+      cos:function(x){ return -Math.sin(x); },
+      exp:function(x){ return Math.exp(x); },
+      ln:function(x){ return 1/x; }
+    };
+    if (key === 'power'){
+      plot('#2563eb', function(x){ return c*Math.pow(x, n); }, 2.5);
+      plot('#d97706', function(x){ return c*n*Math.pow(x, n-1); }, 2);
+    } else if (fMain[key]){
+      plot('#2563eb', fMain[key], 2.5);
+      plot('#d97706', dMain[key], 2);
+    }
+    // 图例
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#2563eb'; ctx.fillRect(10, 10, 16, 4);
+    ctx.fillText('f(x)', 30, 14);
+    ctx.fillStyle = '#d97706'; ctx.fillRect(10, 22, 16, 4);
+    ctx.fillText("f′(x)", 30, 26);
+
+    canvas.setAttribute('aria-label', '函数与导函数图像：' + fnLabel + '，蓝色为原函数，橙色为导函数');
+  }
+
+  // ---------- 问答（全部写死标准答案与解析） ----------
+  var QUIZ = [
+    {
+      q:'Q1：f(x)=x² 的导函数是？',
+      opts:['A. x','B. 2x','C. x²/2','D. 2'],
+      answer:1,
+      explain:'幂函数 (xⁿ)′=n·xⁿ⁻¹，n=2 故 (x²)′=2x'
+    },
+    {
+      q:'Q2：f(x)=x³ 的导函数是？',
+      opts:['A. 3x²','B. 2x³','C. x²','D. 3x'],
+      answer:0,
+      explain:'幂函数 (xⁿ)′=n·xⁿ⁻¹，n=3 故 (x³)′=3x²'
+    },
+    {
+      q:'Q3：f(x)=sin x 的导函数是？',
+      opts:['A. −cos x','B. sin x','C. cos x','D. −sin x'],
+      answer:2,
+      explain:'正弦求导公式：(sin x)′=cos x'
+    },
+    {
+      q:'Q4：f(x)=cos x 的导函数是？',
+      opts:['A. sin x','B. −sin x','C. −cos x','D. cos x'],
+      answer:1,
+      explain:'余弦求导公式：(cos x)′=−sin x'
+    },
+    {
+      q:'Q5：f(x)=2x² 的导函数是？',
+      opts:['A. 2x','B. 4x','C. 4x²','D. x'],
+      answer:1,
+      explain:'常数倍法则 (c·u)′=c·u′：2·(x²)′=2·2x=4x'
+    },
+    {
+      q:'Q6：f(x)=eˣ 的导函数是？',
+      opts:['A. eˣ','B. xeˣ⁻¹','C. eˣ⁻¹','D. 1'],
+      answer:0,
+      explain:'指数函数求导：(eˣ)′=eˣ'
+    }
+  ];
+  var quizIdx = 0;
+  var quizDone = false;
+  var qTitle = document.getElementById('qTitle');
+  var qOptions = document.getElementById('qOptions');
+  var qFeedback = document.getElementById('qFeedback');
+  var qPrev = document.getElementById('qPrev');
+  var qNext = document.getElementById('qNext');
+  var quizStatus = document.getElementById('quizStatus');
+
+  function renderQuiz(){
+    var item = QUIZ[quizIdx];
+    setText(qTitle, item.q);
+    quizDone = false;
+    var html = '';
+    for (var i = 0; i < item.opts.length; i++){
+      html += '<button type="button" class="opt" data-i="' + i + '">' + item.opts[i] + '</button>';
+    }
+    setHTML(qOptions, html);
+    if (qFeedback){ qFeedback.className = 'quiz-feedback'; qFeedback.textContent = ''; }
+    // 绑定选项
+    var opts = qOptions.querySelectorAll('.opt');
+    for (var j = 0; j < opts.length; j++){
+      opts[j].addEventListener('click', function(){
+        if (quizDone) return;
+        quizDone = true;
+        var idx = parseInt(this.getAttribute('data-i'), 10);
+        var all = qOptions.querySelectorAll('.opt');
+        for (var k = 0; k < all.length; k++){ all[k].disabled = true; }
+        if (idx === item.answer){
+          this.classList.add('correct');
+          if (qFeedback){ qFeedback.className = 'quiz-feedback show good'; qFeedback.textContent = '✅ 答对了！解析：' + item.explain; }
+          if (quizStatus){ quizStatus.className = 'status-msg ok'; quizStatus.textContent = '✓ 回答正确。'; }
+        } else {
+          this.classList.add('wrong');
+          all[item.answer].classList.add('correct');
+          if (qFeedback){ qFeedback.className = 'quiz-feedback show bad'; qFeedback.textContent = '❌ 正确答案是 ' + item.opts[item.answer] + '。解析：' + item.explain; }
+          if (quizStatus){ quizStatus.className = 'status-msg'; quizStatus.textContent = '可点击「下一题」继续练习。'; }
+        }
+      });
+    }
+  }
+
+  qPrev.addEventListener('click', function(){
+    if (quizIdx > 0){ quizIdx--; renderQuiz(); }
+  });
+  qNext.addEventListener('click', function(){
+    if (quizIdx < QUIZ.length - 1){ quizIdx++; renderQuiz(); }
+  });
+
+  // ---------- 初始化 ----------
+  showDemo('x2');
+  updateParam();
+  renderQuiz();
+  setText(quizStatus, '提示：选择选项后查看解析，题目均有固定标准答案。');
+})();
+</script>
+</body>
+</html>

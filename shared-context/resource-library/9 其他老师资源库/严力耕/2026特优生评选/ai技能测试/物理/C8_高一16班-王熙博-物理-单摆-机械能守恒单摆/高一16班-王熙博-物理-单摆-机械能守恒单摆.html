@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证机械能守恒定律 — 单摆模拟实验（完整版）</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel-bg: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent2: #f472b6;
+            --accent3: #4ade80;
+            --accent4: #fbbf24;
+            --border: #334155;
+            --slider-track: #475569;
+            --btn-bg: #334155;
+            --btn-hover: #475569;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1100px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .canvas-wrapper {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        canvas { display: block; }
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 20px;
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .panel h2 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+        .panel h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent2);
+            text-align: center;
+            margin-bottom: -4px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .control-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .control-group label span.val {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.9rem;
+            min-width: 48px;
+            text-align: right;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--slider-track);
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 3px solid var(--panel-bg);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:active { transform: scale(1.15); }
+        input[type="number"] {
+            width: 60px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            padding: 4px 6px;
+            font-size: 0.8rem;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            text-align: center;
+            outline: none;
+        }
+        input[type="number"]:focus {
+            border-color: var(--accent);
+        }
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        button {
+            flex: 1;
+            min-width: 60px;
+            padding: 10px 8px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--btn-bg);
+            color: var(--text);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        button:hover {
+            background: var(--btn-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        button:active { transform: scale(0.96); }
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #0f172a;
+        }
+        button.primary:hover { background: #7dd3fc; border-color: #7dd3fc; }
+        button.toggle {
+            border: 2px solid var(--border);
+            background: var(--btn-bg);
+            color: var(--text-secondary);
+        }
+        button.toggle.active {
+            background: var(--accent2);
+            border-color: var(--accent2);
+            color: #0f172a;
+            font-weight: 700;
+        }
+        .data-display {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid var(--border);
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        .data-row .label { color: var(--text-secondary); }
+        .data-row .value {
+            font-weight: 700;
+            font-size: 1rem;
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+        .data-row .value.ke { color: var(--accent4); }
+        .data-row .value.pe { color: var(--accent3); }
+        .data-row .value.te { color: var(--accent); }
+        .data-row .value.speed { color: #f8b500; }
+        .data-row .value.height { color: #60a5fa; }
+        .data-row .value.error { color: #fbbf24; }
+        .bar-container {
+            display: flex;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #0f172a;
+        }
+        .bar-ke { background: var(--accent4); transition: flex 0.08s linear; }
+        .bar-pe { background: var(--accent3); transition: flex 0.08s linear; }
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .legend span { display: flex; align-items: center; gap: 5px; }
+        .legend .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+            font-style: italic;
+        }
+        #conclusion {
+            font-style: normal;
+            font-weight: 600;
+            min-height: 20px;
+        }
+        @media (max-width: 860px) {
+            .main-container { flex-direction: column; align-items: center; }
+            .panel { width: 100%; max-width: 500px; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="canvas-wrapper">
+        <canvas id="canvas" width="600" height="500"></canvas>
+    </div>
+    <div class="panel">
+        <h2>⚡ 机械能守恒 · 单摆模拟</h2>
+
+        <div class="control-group">
+            <label>初始角度 <span class="val" id="valAngle">45°</span></label>
+            <div class="input-row">
+                <input type="range" id="sliderAngle" min="5" max="75" value="45" step="1">
+                <input type="number" id="inputAngle" min="5" max="75" value="45" step="1">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>摆长 L <span class="val" id="valLength">1.50 m</span></label>
+            <div class="input-row">
+                <input type="range" id="sliderLength" min="0.5" max="2.5" value="1.5" step="0.01">
+                <input type="number" id="inputLength" min="0.5" max="2.5" value="1.5" step="0.01">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>小球质量 m <span class="val" id="valMass">1.00 kg</span></label>
+            <div class="input-row">
+                <input type="range" id="sliderMass" min="0.1" max="3.0" value="1.0" step="0.01">
+                <input type="number" id="inputMass" min="0.1" max="3.0" value="1.0" step="0.01">
+            </div>
+        </div>
+        <div class="control-group">
+            <label>空气阻力系数 <span class="val" id="valDamping">0.000</span></label>
+            <div class="input-row">
+                <input type="range" id="sliderDamping" min="0" max="0.02" value="0" step="0.0005">
+                <input type="number" id="inputDamping" min="0" max="0.02" value="0" step="0.0005">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label style="justify-content:flex-start; gap:8px;">⏸️ 自动暂停条件</label>
+            <div class="btn-row">
+                <button id="btnPauseLowest" class="toggle">最低点</button>
+                <button id="btnPauseHighest" class="toggle">最高点</button>
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button id="btnStart" class="primary">▶ 释放</button>
+            <button id="btnPause">⏸ 暂停</button>
+            <button id="btnReset">↺ 重置</button>
+        </div>
+
+        <div class="data-display">
+            <h3>📊 实时数据</h3>
+            <div class="data-row">
+                <span class="label">⚡ 动能 Eₖ</span>
+                <span class="value ke" id="valKE">0.000 J</span>
+            </div>
+            <div class="data-row">
+                <span class="label">🌍 重力势能 Eₚ</span>
+                <span class="value pe" id="valPE">0.000 J</span>
+            </div>
+            <div class="data-row">
+                <span class="label">📐 总机械能 E</span>
+                <span class="value te" id="valTE">0.000 J</span>
+            </div>
+            <div class="data-row">
+                <span class="label">🚀 速度 v</span>
+                <span class="value speed" id="valSpeed">0.000 m/s</span>
+            </div>
+            <div class="data-row">
+                <span class="label">📏 相对高度 h</span>
+                <span class="value height" id="valHeight">0.000 m</span>
+            </div>
+            <div class="data-row">
+                <span class="label">📊 机械能误差</span>
+                <span class="value error" id="valEnergyError">—</span>
+            </div>
+            <div class="bar-container">
+                <div class="bar-ke" id="barKE" style="flex:0;"></div>
+                <div class="bar-pe" id="barPE" style="flex:0;"></div>
+            </div>
+            <div class="legend">
+                <span><span class="dot" style="background:var(--accent4);"></span> 动能</span>
+                <span><span class="dot" style="background:var(--accent3);"></span> 势能</span>
+            </div>
+            <div class="hint">💡 调节参数观察能量变化</div>
+            <div class="hint" id="conclusion" style="color:var(--accent3);">点击"释放"开始实验</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+
+        // 悬挂点位置（固定）
+        const pivotX = W / 2;
+        const pivotY = 70;
+
+        // DOM 元素（滑块及输入框）
+        const sliderAngle = document.getElementById('sliderAngle');
+        const sliderLength = document.getElementById('sliderLength');
+        const sliderMass = document.getElementById('sliderMass');
+        const sliderDamping = document.getElementById('sliderDamping');
+        const inputAngle = document.getElementById('inputAngle');
+        const inputLength = document.getElementById('inputLength');
+        const inputMass = document.getElementById('inputMass');
+        const inputDamping = document.getElementById('inputDamping');
+
+        const btnStart = document.getElementById('btnStart');
+        const btnPause = document.getElementById('btnPause');
+        const btnReset = document.getElementById('btnReset');
+        const btnPauseLowest = document.getElementById('btnPauseLowest');
+        const btnPauseHighest = document.getElementById('btnPauseHighest');
+
+        const valAngle = document.getElementById('valAngle');
+        const valLength = document.getElementById('valLength');
+        const valMass = document.getElementById('valMass');
+        const valDamping = document.getElementById('valDamping');
+        const valKE = document.getElementById('valKE');
+        const valPE = document.getElementById('valPE');
+        const valTE = document.getElementById('valTE');
+        const valSpeed = document.getElementById('valSpeed');
+        const valHeight = document.getElementById('valHeight');
+        const valEnergyError = document.getElementById('valEnergyError');
+        const barKE = document.getElementById('barKE');
+        const barPE = document.getElementById('barPE');
+        const conclusion = document.getElementById('conclusion');
+
+        // 物理常量
+        const g = 9.8;
+
+        // 可调参数（内部存储）
+        let angle0, L, m, damping;
+        // 动态缩放比例（像素/米），根据画布和当前参数自动计算
+        let pixelsPerMeter = 180;
+
+        // 模拟状态
+        let theta, omega;
+        let prevTheta = undefined;
+        let prevOmega = undefined;
+        let isRunning = false;
+        let isPaused = false;
+        let animId = null;
+        let lastTime = null;
+        let initialPE = 0;
+        let trailPoints = [];
+        const MAX_TRAIL = 200;
+
+        let pauseAtLowest = false;
+        let pauseAtHighest = false;
+
+        // ---------- 工具函数：钳位并更新滑块与输入框 ----------
+        function clampAndSync(slider, input, min, max) {
+            let val = parseFloat(input.value);
+            if (isNaN(val)) val = parseFloat(slider.value);
+            val = Math.min(max, Math.max(min, val));
+            slider.value = val;
+            input.value = val;
+            return val;
+        }
+
+        // 同步所有输入到滑块（读取滑块设置内部变量）
+        function syncAllFromSliders() {
+            angle0 = parseFloat(sliderAngle.value) * Math.PI / 180;
+            L = parseFloat(sliderLength.value);
+            m = parseFloat(sliderMass.value);
+            damping = parseFloat(sliderDamping.value);
+            // 同步输入框显示
+            inputAngle.value = parseFloat(sliderAngle.value);
+            inputLength.value = L;
+            inputMass.value = m;
+            inputDamping.value = damping;
+        }
+
+        // ---------- 自适应缩放计算 ----------
+        function calculateScale() {
+            // 当前参数（角度可能来自滑块，保证最大幅度为当前设定的初始角度）
+            const maxAngle = parseFloat(sliderAngle.value) * Math.PI / 180;
+            const currentL = parseFloat(sliderLength.value);
+            const currentM = parseFloat(sliderMass.value);
+            const ballRadius = Math.max(14, currentM * 14);
+            const margin = 25; // 安全边距
+
+            // 水平方向约束：最大水平偏移 = L * sin(maxAngle)，左右各留margin
+            const maxDx = currentL * Math.sin(maxAngle);
+            // 可用的最大缩放： (pivotX - margin) / maxDx  和  (W - pivotX - margin) / maxDx
+            let scaleX = Infinity;
+            if (maxDx > 0.001) {
+                scaleX = Math.min((pivotX - margin) / maxDx, (W - pivotX - margin) / maxDx);
+            }
+            // 垂直方向约束：最低点 y = pivotY + currentL * scale + ballRadius < H - margin
+            const scaleY = (H - pivotY - margin - ballRadius) / currentL;
+            let scale = Math.min(scaleX, scaleY, 250); // 上限250，防止过大
+            if (scale < 30) scale = 30; // 最小不低于30，避免太小
+            pixelsPerMeter = scale;
+        }
+
+        // ---------- 参数读取与应用 ----------
+        function readParams() {
+            syncAllFromSliders();
+            calculateScale();
+        }
+
+        function applyParamsToSim() {
+            theta = angle0;
+            omega = 0;
+            prevTheta = theta;
+            prevOmega = omega;
+            initialPE = m * g * L * (1 - Math.cos(angle0));
+            trailPoints = [];
+        }
+
+        function resetAll() {
+            readParams();
+            applyParamsToSim();
+            isRunning = false;
+            isPaused = false;
+            if (animId) cancelAnimationFrame(animId);
+            animId = null;
+            lastTime = null;
+            updateUI();
+            draw();
+        }
+
+        // ---------- 自动暂停检测 ----------
+        function checkAutoPause(oldTheta, oldOmega, newTheta, newOmega) {
+            if (!isRunning || isPaused) return false;
+            let triggered = false;
+            if (pauseAtLowest && oldTheta !== undefined && newTheta * oldTheta < 0) {
+                isPaused = true;
+                triggered = true;
+            }
+            if (pauseAtHighest && oldOmega !== undefined && newOmega * oldOmega < 0 && Math.abs(newTheta) > 0.08) {
+                isPaused = true;
+                triggered = true;
+            }
+            if (triggered) {
+                btnPause.textContent = '▶ 继续';
+                updateUI();
+            }
+            return triggered;
+        }
+
+        // ---------- 物理更新 ----------
+        function updatePhysics(dt) {
+            if (!isRunning || isPaused) return;
+            if (dt <= 0) return;
+            const maxDt = 0.016;
+            let remaining = dt;
+            while (remaining > 0) {
+                const step = Math.min(remaining, maxDt);
+                const oldTheta = theta;
+                const oldOmega = omega;
+                const alpha = -(g / L) * Math.sin(theta) - damping * omega;
+                omega += alpha * step;
+                theta += omega * step;
+                if (checkAutoPause(oldTheta, oldOmega, theta, omega)) {
+                    remaining = 0;
+                    break;
+                }
+                remaining -= step;
+            }
+            const bx = pivotX + L * pixelsPerMeter * Math.sin(theta);
+            const by = pivotY + L * pixelsPerMeter * Math.cos(theta);
+            trailPoints.push({ x: bx, y: by });
+            if (trailPoints.length > MAX_TRAIL) trailPoints.shift();
+        }
+
+        function getEnergies() {
+            const h = L * (1 - Math.cos(theta));
+            const PE = m * g * h;
+            const v = L * Math.abs(omega);
+            const KE = 0.5 * m * v * v;
+            return { KE, PE, TE: KE + PE, v, h };
+        }
+
+        // ---------- 绘制 ----------
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+
+            // 网格
+            ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+            ctx.lineWidth = 0.5;
+            for (let x = 40; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+            for (let y = 40; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+            // 悬挂点
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath(); ctx.arc(pivotX, pivotY, 8, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#94a3b8';
+            ctx.beginPath(); ctx.arc(pivotX, pivotY, 5, 0, Math.PI*2); ctx.fill();
+
+            const bx = pivotX + L * pixelsPerMeter * Math.sin(theta);
+            const by = pivotY + L * pixelsPerMeter * Math.cos(theta);
+
+            // 竖直参考线
+            ctx.setLineDash([6, 8]);
+            ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(pivotX, pivotY + L * pixelsPerMeter); ctx.stroke();
+            ctx.setLineDash([]);
+
+            // 摆线
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(pivotX, pivotY); ctx.lineTo(bx, by); ctx.stroke();
+
+            // 轨迹
+            if (trailPoints.length > 1) {
+                ctx.strokeStyle = 'rgba(56,189,248,0.25)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+                for (let i = 1; i < trailPoints.length; i++) ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+                ctx.stroke();
+            }
+
+            // 小球
+            const ballRadius = Math.max(14, m * 14);
+            const grad = ctx.createRadialGradient(bx - ballRadius*0.3, by - ballRadius*0.3, ballRadius*0.1, bx, by, ballRadius);
+            grad.addColorStop(0, '#fbbf24'); grad.addColorStop(0.6, '#f59e0b'); grad.addColorStop(1, '#b45309');
+            ctx.fillStyle = grad;
+            ctx.beginPath(); ctx.arc(bx, by, ballRadius, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#92400e'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.beginPath(); ctx.arc(bx - ballRadius*0.28, by - ballRadius*0.28, ballRadius*0.28, 0, Math.PI*2); ctx.fill();
+
+            // 能量柱（左侧）
+            const energies = getEnergies();
+            const barX = 25, barW = 18, barMaxH = 200, barY = pivotY + 50;
+            const maxE = initialPE > 0 ? initialPE : 1;
+            ctx.fillStyle = 'rgba(148,163,184,0.1)';
+            ctx.fillRect(barX-2, barY, barW+4, barMaxH);
+            ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+            ctx.strokeRect(barX-2, barY, barW+4, barMaxH);
+            const keH = (energies.KE / maxE) * barMaxH;
+            const peH = (energies.PE / maxE) * barMaxH;
+            ctx.fillStyle = '#fbbf24'; ctx.fillRect(barX, barY+barMaxH-keH, barW, keH);
+            ctx.fillStyle = '#4ade80'; ctx.fillRect(barX, barY+barMaxH-keH-peH, barW, peH);
+            ctx.setLineDash([3,5]);
+            ctx.strokeStyle = 'rgba(56,189,248,0.5)';
+            ctx.beginPath(); ctx.moveTo(barX-2, barY); ctx.lineTo(barX+barW+2, barY); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#94a3b8'; ctx.font = '10px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('Eₖ', barX+barW/2, barY+barMaxH+14);
+            ctx.fillText('Eₚ', barX+barW/2, barY-8);
+
+            ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 16px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.textAlign = 'left';
+            ctx.fillText('单摆 · 机械能守恒演示', 20, 40);
+        }
+
+        // ---------- UI 更新 ----------
+        function updateUI() {
+            valAngle.textContent = parseFloat(sliderAngle.value) + '°';
+            valLength.textContent = parseFloat(sliderLength.value).toFixed(2) + ' m';
+            valMass.textContent = parseFloat(sliderMass.value).toFixed(2) + ' kg';
+            valDamping.textContent = parseFloat(sliderDamping.value).toFixed(3);
+
+            const e = getEnergies();
+            valKE.textContent = e.KE.toFixed(3) + ' J';
+            valPE.textContent = e.PE.toFixed(3) + ' J';
+            valTE.textContent = e.TE.toFixed(3) + ' J';
+            valSpeed.textContent = e.v.toFixed(3) + ' m/s';
+            valHeight.textContent = e.h.toFixed(3) + ' m';
+
+            if (isRunning && initialPE > 0) {
+                const errorPercent = ((e.TE - initialPE) / initialPE) * 100;
+                valEnergyError.textContent = errorPercent.toFixed(3) + '%';
+                const absErr = Math.abs(errorPercent);
+                valEnergyError.style.color = absErr < 0.5 ? '#4ade80' : (absErr < 2 ? '#fbbf24' : '#f472b6');
+            } else {
+                valEnergyError.textContent = '—';
+                valEnergyError.style.color = '#94a3b8';
+            }
+
+            const total = e.KE + e.PE;
+            if (total > 0) {
+                barKE.style.flex = (e.KE / total) * 100;
+                barPE.style.flex = (e.PE / total) * 100;
+            } else {
+                barKE.style.flex = 0; barPE.style.flex = 100;
+            }
+
+            if (isRunning && damping === 0) {
+                const drift = Math.abs(e.TE - initialPE) / Math.max(initialPE, 0.001);
+                conclusion.textContent = drift < 0.02 ? '✅ 总机械能几乎不变 — 守恒！' : '⚠️ 能量有漂移（数值精度）';
+                conclusion.style.color = drift < 0.02 ? '#4ade80' : '#fbbf24';
+            } else if (damping > 0 && isRunning) {
+                conclusion.textContent = '🔍 有阻力时机械能逐渐减小';
+                conclusion.style.color = '#f472b6';
+            } else if (!isRunning) {
+                conclusion.textContent = '点击"释放"开始实验';
+                conclusion.style.color = '#94a3b8';
+            }
+            if (isPaused && isRunning) conclusion.textContent += ' (已暂停)';
+        }
+
+        // ---------- 动画循环 ----------
+        function animate(timestamp) {
+            if (!isRunning) { animId = null; return; }
+            if (!lastTime) lastTime = timestamp;
+            let dt = (timestamp - lastTime) / 1000;
+            if (dt > 0.1) dt = 0.016;
+            lastTime = timestamp;
+
+            updatePhysics(dt);
+            updateUI();
+            draw();
+
+            animId = requestAnimationFrame(animate);
+        }
+
+        // ---------- 控制按钮 ----------
+        function startSimulation() {
+            // 读取最新参数并重新计算缩放
+            readParams();
+            if (!isRunning) {
+                applyParamsToSim();
+                isRunning = true;
+                isPaused = false;
+                lastTime = null;
+                btnPause.textContent = '⏸ 暂停';
+                if (animId) cancelAnimationFrame(animId);
+                animId = requestAnimationFrame(animate);
+            } else {
+                // 重启
+                resetAll();
+                startSimulation();
+            }
+            btnStart.textContent = '⟳ 重启';
+        }
+
+        function togglePause() {
+            if (!isRunning) return;
+            isPaused = !isPaused;
+            btnPause.textContent = isPaused ? '▶ 继续' : '⏸ 暂停';
+            if (!isPaused) {
+                lastTime = null;
+                prevTheta = theta;
+                prevOmega = omega;
+                if (!animId) animId = requestAnimationFrame(animate);
+            }
+            updateUI();
+        }
+
+        function resetSimulation() {
+            if (animId) cancelAnimationFrame(animId);
+            animId = null;
+            isRunning = false;
+            isPaused = false;
+            lastTime = null;
+            readParams();
+            applyParamsToSim();
+            btnStart.textContent = '▶ 释放';
+            btnPause.textContent = '⏸ 暂停';
+            updateUI();
+            draw();
+        }
+
+        function togglePauseLowest() {
+            pauseAtLowest = !pauseAtLowest;
+            btnPauseLowest.classList.toggle('active', pauseAtLowest);
+            if (pauseAtLowest) { pauseAtHighest = false; btnPauseHighest.classList.remove('active'); }
+        }
+        function togglePauseHighest() {
+            pauseAtHighest = !pauseAtHighest;
+            btnPauseHighest.classList.toggle('active', pauseAtHighest);
+            if (pauseAtHighest) { pauseAtLowest = false; btnPauseLowest.classList.remove('active'); }
+        }
+
+        // ---------- 滑块变化处理（运行中仅更新显示，不改变物理）----------
+        function onSliderChange(source) {
+            if (!isRunning) {
+                // 未运行时：读取参数，重新计算缩放，更新模拟状态并重绘
+                readParams();
+                applyParamsToSim();
+                updateUI();
+                draw();
+            } else {
+                // 运行中：只更新显示的数值，不改变正在进行的物理参数
+                valAngle.textContent = parseFloat(sliderAngle.value) + '°';
+                valLength.textContent = parseFloat(sliderLength.value).toFixed(2) + ' m';
+                valMass.textContent = parseFloat(sliderMass.value).toFixed(2) + ' kg';
+                valDamping.textContent = parseFloat(sliderDamping.value).toFixed(3);
+                // 阻力系数运行中可即时调整
+                damping = parseFloat(sliderDamping.value);
+            }
+        }
+
+        // ---------- 输入框处理（失去焦点或回车时钳位并同步）----------
+        function setupInputSync(slider, input, min, max, onChangeCallback) {
+            input.addEventListener('change', () => {
+                const val = clampAndSync(slider, input, min, max);
+                if (!isRunning) {
+                    readParams();
+                    applyParamsToSim();
+                    updateUI();
+                    draw();
+                } else {
+                    // 运行中只允许调整阻尼
+                    if (slider === sliderDamping) {
+                        damping = val;
+                    }
+                }
+                if (onChangeCallback) onChangeCallback(val);
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
+            });
+            // 滑块变化时同步输入框
+            slider.addEventListener('input', () => {
+                input.value = parseFloat(slider.value);
+                onSliderChange(slider);
+            });
+        }
+
+        // 绑定所有滑块-输入框
+        setupInputSync(sliderAngle, inputAngle, 5, 75);
+        setupInputSync(sliderLength, inputLength, 0.5, 2.5);
+        setupInputSync(sliderMass, inputMass, 0.1, 3.0);
+        setupInputSync(sliderDamping, inputDamping, 0, 0.02);
+
+        // 按钮事件
+        btnStart.addEventListener('click', startSimulation);
+        btnPause.addEventListener('click', togglePause);
+        btnReset.addEventListener('click', resetSimulation);
+        btnPauseLowest.addEventListener('click', togglePauseLowest);
+        btnPauseHighest.addEventListener('click', togglePauseHighest);
+
+        // 初始设置
+        readParams();
+        applyParamsToSim();
+        updateUI();
+        draw();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>看起来像物理 · Grok 4.6 全书总览</title>
+  <style>
+    :root {
+      --yucai-50: #eef7ff; --yucai-100: #d8ecff; --yucai-200: #b7dcff; --yucai-300: #85c6ff;
+      --yucai-600: #0b63c7; --yucai-700: #074f9f; --yucai-800: #0a437f; --yucai-900: #0d3969;
+      --ink: #102033; --lab: #f5f8fb; --signal: #f4a51c;
+      --shadow-soft: 0 18px 60px rgba(16, 32, 51, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; min-width: 320px; background: var(--lab); color: var(--ink);
+      font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", Inter, ui-sans-serif, system-ui, sans-serif;
+      line-height: 1.7;
+    }
+    ::selection { background: #b7dcff; color: #102033; }
+    a { color: var(--yucai-700); font-weight: 700; text-decoration: none; }
+    a:hover { color: var(--yucai-800); }
+    a:focus-visible { outline: 3px solid #85c6ff; outline-offset: 3px; }
+    .page-shell { width: min(1120px, calc(100% - 32px)); margin-inline: auto; }
+    header {
+      position: sticky; top: 0; z-index: 50;
+      border-bottom: 1px solid #e2e8f0; background: #fff;
+    }
+    header .inner { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 12px 0; }
+    nav { display: flex; flex-wrap: wrap; gap: 6px; }
+    nav a {
+      border-radius: 6px; padding: 6px 12px; font-size: 14px; font-weight: 600; color: #334155;
+    }
+    nav a:hover { background: #f1f5f9; color: var(--yucai-800); }
+    .hero {
+      position: relative; overflow: hidden; background: var(--ink); color: #fff;
+    }
+    .hero::before {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgba(16,32,51,.94) 0%, rgba(11,99,199,.72) 48%, rgba(16,32,51,.28) 100%);
+    }
+    .hero .page-shell { position: relative; padding: 56px 0 64px; }
+    .eyebrow { color: #d8ecff; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+    .hero h1 { margin: 12px 0 0; font-size: clamp(28px, 4vw, 48px); font-weight: 900; line-height: 1.2; }
+    .hero p.lead { margin-top: 20px; max-width: 46rem; font-size: 18px; line-height: 1.8; color: #eff6ff; }
+    section { padding: 64px 0; }
+    .bg-white { background: #fff; }
+    h2 { margin: 8px 0 0; font-size: 28px; font-weight: 900; }
+    .sub { color: #475569; margin-top: 12px; max-width: 42rem; }
+    .spine {
+      margin-top: 32px; display: grid; gap: 16px;
+    }
+    @media (min-width: 800px) {
+      .spine { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    .move {
+      background: #fff; border: 1px solid rgba(16,32,51,.1); border-radius: 8px;
+      box-shadow: var(--shadow-soft); overflow: hidden;
+    }
+    .move header.mh {
+      padding: 14px 18px; background: var(--yucai-900); color: #fff;
+      font-weight: 800; font-size: 15px; position: static; border: 0;
+    }
+    .move.m2 header.mh { background: var(--yucai-700); }
+    .move.m3 header.mh { background: var(--yucai-600); }
+    .move ol { margin: 0; padding: 12px 18px 18px 36px; }
+    .move li { margin: 8px 0; font-size: 14px; }
+    .move li strong { display: block; font-size: 15px; }
+    .move .tag { font-size: 12px; color: #64748b; }
+    .heart {
+      margin-top: 20px; padding: 16px 18px; border-left: 4px solid var(--signal);
+      background: var(--yucai-50); border-radius: 0 8px 8px 0;
+    }
+    table { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    th { background: var(--yucai-50); font-size: 13px; color: var(--yucai-800); }
+    .cmp td:last-child { font-weight: 700; color: var(--yucai-800); }
+    .cards { display: grid; gap: 16px; margin-top: 24px; }
+    @media (min-width: 700px) { .cards { grid-template-columns: 1fr 1fr 1fr; } }
+    .card {
+      background: #fff; border: 1px solid rgba(16,32,51,.1); border-radius: 8px; padding: 18px;
+      box-shadow: var(--shadow-soft);
+    }
+    .card h3 { margin: 0 0 8px; font-size: 16px; }
+    .decide { background: var(--yucai-50); border-radius: 8px; padding: 16px 18px; margin-top: 12px; }
+    footer { background: #fff; border-top: 1px solid #e2e8f0; padding: 28px 0 48px; color: #475569; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="page-shell inner">
+      <strong>Grok 4.6 · 平行 B1/B2</strong>
+      <nav>
+        <a href="#spine">三篇骨架</a>
+        <a href="#compare">四套对照</a>
+        <a href="#decide">三项裁决</a>
+        <a href="./index.html">按章细看</a>
+        <a href="./README.md">Markdown 入口</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="page-shell">
+      <p class="eyebrow">WORKING TITLE · 2026-08-30</p>
+      <h1>看起来像物理</h1>
+      <p class="lead">AI 把“看起来像物理”的东西变得极便宜。这本书教一线教师做自己最熟的事：让装置、数据、学生和会动的页面，对上同一件物理的事。造是为下一次对质准备一种新说法。</p>
+    </div>
+  </div>
+
+  <section id="spine">
+    <div class="page-shell">
+      <p class="eyebrow">BOOK SPINE</p>
+      <h2>三篇十章</h2>
+      <p class="sub">每一章是一个对质现场。第 6 章是心脏，也是首个样章建议。</p>
+      <div class="spine">
+        <article class="move">
+          <header class="mh">上篇 · 听见第二种说法</header>
+          <ol>
+            <li><strong>1 页面替学生改了数据</strong><span class="tag">v₁ 时刻 · 立约</span></li>
+            <li><strong>2 课堂里已经有好几种说法</strong><span class="tag">四位教师各带一个对象</span></li>
+            <li><strong>3 一条曲线凭什么支持一个规律</strong><span class="tag">王硕主场 · 完整实验说法</span></li>
+            <li><strong>4 体重秤的示数到底是什么力</strong><span class="tag">丁龙 × 严力耕 · 完整概念与测量</span></li>
+          </ol>
+        </article>
+        <article class="move m2">
+          <header class="mh">中篇 · 放进同一间教室</header>
+          <ol start="5">
+            <li><strong>5 页面会动，说的是同一件事吗</strong><span class="tag">H04 数字说法</span></li>
+            <li><strong>6 六个小组、三种装置、一个网页</strong><span class="tag">公开课 · 样章首选</span></li>
+            <li><strong>7 二十五份会动的作业</strong><span class="tag">学生与 AI 一起说</span></li>
+            <li><strong>8 系统说学生薄弱，这句话是谁说的</strong><span class="tag">P0 · 方法演示</span></li>
+          </ol>
+        </article>
+        <article class="move m3">
+          <header class="mh">下篇 · 你也可以添一种</header>
+          <ol start="9">
+            <li><strong>9 你要添进课堂的那一种说法</strong><span class="tag">任务 · 退回 · 四门 · 零基础入口</span></li>
+            <li><strong>10 做完了，你能主张什么</strong><span class="tag">证据上限 · 未完成的对质</span></li>
+          </ol>
+        </article>
+      </div>
+      <p class="heart">和另外三套方案的根本差别：创造和裁决共同服务“多种说法碰面”。合著者不是基线、不是黄金标准、不是物理门候补，而是平等的完整说法。先看见现场，再决定添哪一种。</p>
+    </div>
+  </section>
+
+  <section id="compare" class="bg-white">
+    <div class="page-shell">
+      <p class="eyebrow">COMPARE</p>
+      <h2>四套平行答案</h2>
+      <p class="sub">共用同一批材料、同一套证据红线。分歧在更高一层的共同目标。</p>
+      <table class="cmp">
+        <thead>
+          <tr>
+            <th>方案</th>
+            <th>重心</th>
+            <th>密度</th>
+            <th>合著者</th>
+            <th>造与用</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>5.6 sol</td>
+            <td>判 · 审核</td>
+            <td>8 章</td>
+            <td>基线／条件章</td>
+            <td>先造后验</td>
+          </tr>
+          <tr>
+            <td>GLM 5.3</td>
+            <td>造 · 造物日志</td>
+            <td>11＋尾声</td>
+            <td>黄金标准／眼力</td>
+            <td>先看后造</td>
+          </tr>
+          <tr>
+            <td>qwen 3.8</td>
+            <td>门 · 过关</td>
+            <td>13 章</td>
+            <td>物理门的由来</td>
+            <td>运行→物理→教学</td>
+          </tr>
+          <tr>
+            <td>Grok 4.6</td>
+            <td>对质 · 多种说法碰面</td>
+            <td>10 章</td>
+            <td>平等的完整说法</td>
+            <td>先现场，后添说法</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="decide">
+    <div class="page-shell">
+      <p class="eyebrow">AUTHOR DECISIONS</p>
+      <h2>请先裁三件事</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>1. 骨架</h3>
+          <p>是否采用三篇十章、对质现场。可收紧到九章（第 8 并入第 7），可把第 9 章拆成十一章。</p>
+        </div>
+        <div class="card">
+          <h3>2. 合著身份</h3>
+          <p>第 3、4 章按完整说法主场独立保留，不补写 AI，不做通行证式对照实验。</p>
+        </div>
+        <div class="card">
+          <h3>3. 样章</h3>
+          <p>首推第 6 章公开课——测骨架命门，不测已知长板。两章预算则加第 4 章。</p>
+        </div>
+      </div>
+      <div class="decide">
+        详细价值卡、节级细纲、突破清单见 <a href="./index.html">index.html</a> 与
+        <a href="./04-我的B2-全书大纲.md">04-我的B2-全书大纲.md</a>。
+        本页不代替证据核验。
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="page-shell">
+      平行候选，不覆盖官方 B1/B2。若整体否决，删除 <code>grok 4.6/</code> 即可回滚。
+    </div>
+  </footer>
+</body>
+</html>

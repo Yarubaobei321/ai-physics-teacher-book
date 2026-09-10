@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>地月系统 → 多星系统 | 物理课堂3D演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(145deg, #030711 0%, #0b1320 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Roboto', 'Noto Sans', 'Microsoft YaHei', system-ui, sans-serif;
+      padding: 20px;
+    }
+    .container {
+      background: rgba(12, 20, 38, 0.8);
+      backdrop-filter: blur(24px);
+      border-radius: 2.5rem;
+      padding: 1.8rem 2rem 2rem;
+      box-shadow: 0 35px 65px rgba(0, 0, 0, 0.9), inset 0 0 35px rgba(70, 120, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 1150px;
+      width: fit-content;
+      margin: auto;
+    }
+    .tab-nav {
+      display: flex;
+      gap: 0.8rem;
+      margin-bottom: 0.8rem;
+      background: rgba(0,0,0,0.5);
+      padding: 0.4rem 1.2rem;
+      border-radius: 40px;
+      border: 1px solid #4a6090;
+    }
+    .tab-btn {
+      background: transparent;
+      border: 2px solid transparent;
+      color: #ccdcff;
+      font-weight: 600;
+      padding: 0.5rem 1.5rem;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+    .tab-btn.active {
+      background: rgba(70, 120, 210, 0.5);
+      border-color: #8ab4ff;
+      color: #ffffff;
+      box-shadow: 0 0 18px #3b6eff88;
+    }
+    .tab-btn:hover {
+      border-color: #6d9eff;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 0.4rem;
+    }
+    h1 {
+      color: #e8f0ff;
+      font-weight: 500;
+      letter-spacing: 3px;
+      font-size: 2rem;
+      text-shadow: 0 4px 22px #3b6eff;
+    }
+    .system-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: rgba(0, 0, 0, 0.55);
+      padding: 0.3rem 1.4rem;
+      border-radius: 40px;
+      border: 1px solid #4a6090;
+    }
+    .system-selector label {
+      color: #ccdcff;
+      font-weight: 600;
+      font-size: 0.95rem;
+      letter-spacing: 1px;
+    }
+    select {
+      background: #1a2745;
+      border: 1px solid #5b7fc0;
+      color: #f5e56c;
+      padding: 0.45rem 1.5rem;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      outline: none;
+      backdrop-filter: blur(10px);
+    }
+    canvas {
+      display: block;
+      margin: 0.5rem auto;
+      border-radius: 24px;
+      background: radial-gradient(circle at 30% 30%, #0a1220, #010309);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9), inset 0 0 65px rgba(25, 80, 170, 0.4);
+      width: 100%;
+      height: auto;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
+    }
+    .control-panel {
+      width: 100%;
+      margin-top: 0.8rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 1rem;
+      color: #cfdefa;
+    }
+    .mass-control {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: rgba(8, 16, 32, 0.7);
+      padding: 0.7rem 1.3rem;
+      border-radius: 22px;
+      backdrop-filter: blur(12px);
+      border: 1px solid #3e5588;
+    }
+    .mass-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .mass-item label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      min-width: 65px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .mass-item input[type="range"] {
+      width: 80px;
+      height: 6px;
+      accent-color: #5b9cf5;
+    }
+    .mass-item input[type="number"] {
+      width: 60px;
+      background: #0c1428;
+      border: 1px solid #4a6090;
+      color: #ffdb5c;
+      padding: 0.2rem 0.4rem;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      text-align: center;
+      outline: none;
+    }
+    .mass-item input[type="number"]:focus {
+      border-color: #f5e56c;
+      box-shadow: 0 0 10px #f5e56c55;
+    }
+    .param-control {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      background: rgba(8, 16, 32, 0.7);
+      padding: 0.7rem 1.3rem;
+      border-radius: 22px;
+      backdrop-filter: blur(12px);
+      border: 1px solid #3e5588;
+      min-width: 220px;
+    }
+    .param-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .param-item label {
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: #bcc8ee;
+      white-space: nowrap;
+    }
+    .param-item input[type="number"] {
+      width: 65px;
+      background: #0c1428;
+      border: 1px solid #4a6090;
+      color: #ffdb5c;
+      padding: 0.2rem 0.4rem;
+      border-radius: 10px;
+      font-weight: bold;
+      font-size: 0.8rem;
+      text-align: center;
+      outline: none;
+    }
+    .param-item input[type="number"]:focus {
+      border-color: #f5e56c;
+      box-shadow: 0 0 10px #f5e56c55;
+    }
+    .param-hint {
+      font-size: 0.65rem;
+      color: #8899bb;
+      font-style: italic;
+      margin-left: 0.2rem;
+      white-space: nowrap;
+    }
+    .button-group {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    button {
+      background: rgba(45, 80, 145, 0.5);
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 0.45rem 1.1rem;
+      border-radius: 22px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      border: 1px solid #6d8cc0;
+      transition: all 0.3s;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    button:hover {
+      background: rgba(70, 125, 215, 0.7);
+      border-color: #b0cbff;
+      box-shadow: 0 0 18px #2f62b0;
+    }
+    button.pause-btn {
+      background: rgba(180, 130, 40, 0.5);
+      border-color: #d4a843;
+    }
+    .dynamic-board {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.8rem;
+      margin-top: 0.8rem;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(14px);
+      border-radius: 30px;
+      padding: 0.6rem 1.5rem;
+      color: #dae5ff;
+      font-size: 0.8rem;
+      border: 1px solid #40567a;
+      align-items: center;
+    }
+    .info-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 0.3rem 0.8rem;
+      min-width: 75px;
+    }
+    .info-cell .lbl {
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: #a4bfee;
+      margin-bottom: 0.05rem;
+    }
+    .info-cell .val {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #ffdb7c;
+    }
+    .formula-section {
+      width: 100%;
+      margin-top: 0.8rem;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(16px);
+      border-radius: 22px;
+      padding: 0.8rem 1.4rem;
+      border: 1px solid #3e5580;
+      color: #d3e0ff;
+      font-size: 0.8rem;
+    }
+    .formula-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+      justify-content: center;
+    }
+    .formula-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 0.6rem 0.9rem;
+      min-width: 150px;
+      flex: 1;
+    }
+    .formula-card h4 {
+      color: #f5e56c;
+      margin-bottom: 0.3rem;
+      font-weight: 500;
+      font-size: 0.9rem;
+      border-bottom: 1px solid #4a5f88;
+      padding-bottom: 0.2rem;
+    }
+    .formula {
+      font-family: 'Courier New', monospace;
+      background: #0b1322;
+      padding: 0.2rem 0.5rem;
+      border-radius: 7px;
+      margin: 0.25rem 0;
+      color: #ffd966;
+      font-size: 0.75rem;
+    }
+    .example {
+      color: #bcc8ee;
+      font-size: 0.7rem;
+      margin-top: 0.25rem;
+      font-style: italic;
+    }
+    .teaching-tip {
+      color: #9ab3e6;
+      font-size: 0.75rem;
+      margin-top: 0.4rem;
+      text-align: center;
+      border-top: 1px dashed #4a6090;
+      padding-top: 0.4rem;
+    }
+    @media (max-width: 900px) {
+      .container { padding: 0.8rem; }
+      .control-panel { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="tab-nav">
+    <button class="tab-btn active" id="tabEarthMoon">🌍🌙 地月系统（引入）</button>
+    <button class="tab-btn" id="tabMultiStar">✨ 多星系统（深入）</button>
+  </div>
+  
+  <div class="header" id="headerArea">
+    <h1 id="titleText">🌍 地月系统 · 质心演示</h1>
+    <div class="system-selector" id="systemSelectorArea" style="display:none;">
+      <label>🌌 系统：</label>
+      <select id="systemSelect">
+        <option value="2">🔵🔴 双星</option>
+        <option value="3" selected>🔵🔴🟢 三星</option>
+        <option value="4">🔵🔴🟢🟡 四星</option>
+      </select>
+    </div>
+  </div>
+  
+  <canvas id="threeCanvas" width="800" height="460" aria-label="3D天文演示"></canvas>
+  
+  <div class="control-panel" id="controlPanelArea"></div>
+  
+  <div class="dynamic-board" id="infoBoard"></div>
+
+  <div class="formula-section" id="formulaSection"></div>
+  <div class="teaching-tip" id="teachingTip">
+    💡 地月系统：地球和月球绕共同质心转动。质心位于地球内部（距地心约4670km）。这是理解双星系统的第一步。
+  </div>
+</div>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.157.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.157.0/examples/jsm/"
+    }
+  }
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+  const textureLoader = new THREE.TextureLoader();
+  
+  const earthMapUrl = 'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg';
+  const earthSpecularUrl = 'https://threejs.org/examples/textures/planets/earth_specular_2048.jpg';
+  const earthNormalUrl = 'https://threejs.org/examples/textures/planets/earth_normal_2048.jpg';
+  const cloudMapUrl = 'https://threejs.org/examples/textures/planets/earth_clouds_1024.png';
+  const moonMapUrl = 'https://threejs.org/examples/textures/planets/moon_1024.jpg';
+  
+  const earthMap = textureLoader.load(earthMapUrl);
+  const earthSpecular = textureLoader.load(earthSpecularUrl);
+  const earthNormal = textureLoader.load(earthNormalUrl);
+  const cloudMap = textureLoader.load(cloudMapUrl);
+  const moonMap = textureLoader.load(moonMapUrl);
+
+  let currentMode = 'earthMoon';
+  let currentSystem = 3;
+  let starMasses = [1.0, 1.0, 1.0, 1.0];
+  let angularSpeed = 0.02;
+  let isPaused = false;
+  let G = 200;
+  let avgRadiusTarget = 85;
+  
+  const earthMass = 81.3;
+  const moonMass = 1.0;
+  const earthMoonDistance = 130;
+  
+  const canvas = document.getElementById('threeCanvas');
+  const W = 800, H = 460;
+  
+  const scene = new THREE.Scene();
+  
+  const camera = new THREE.PerspectiveCamera(50, W / H, 10, 2000);
+  camera.position.set(100, 140, 260);
+  camera.lookAt(0, 0, 0);
+  
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setSize(W, H);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  
+  const labelRenderer = new CSS2DRenderer();
+  labelRenderer.setSize(W, H);
+  labelRenderer.domElement.style.position = 'absolute';
+  labelRenderer.domElement.style.top = '0';
+  labelRenderer.domElement.style.pointerEvents = 'none';
+  canvas.parentElement.style.position = 'relative';
+  canvas.parentElement.appendChild(labelRenderer.domElement);
+  
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 60;
+  controls.maxDistance = 800;
+  controls.target.set(0, 0, 0);
+  controls.update();
+  
+  const ambientLight = new THREE.AmbientLight(0x334466, 2.5);
+  scene.add(ambientLight);
+  const sunLight = new THREE.DirectionalLight(0xffffff, 3.0);
+  sunLight.position.set(200, 100, 150);
+  sunLight.castShadow = true;
+  sunLight.shadow.mapSize.width = 1024;
+  sunLight.shadow.mapSize.height = 1024;
+  sunLight.shadow.camera.near = 10;
+  sunLight.shadow.camera.far = 800;
+  sunLight.shadow.camera.left = -200;
+  sunLight.shadow.camera.right = 200;
+  sunLight.shadow.camera.top = 150;
+  sunLight.shadow.camera.bottom = -150;
+  scene.add(sunLight);
+  
+  const pointLight = new THREE.PointLight(0xffffff, 20, 400);
+  pointLight.position.set(0, 40, 80);
+  scene.add(pointLight);
+  
+  function createStarField() {
+    const starsGeo = new THREE.BufferGeometry();
+    const starCount = 1000;
+    const positions = new Float32Array(starCount * 3);
+    const colors = new Float32Array(starCount * 3);
+    for (let i = 0; i < starCount; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 1200;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 700;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 900;
+      const brightness = 0.5 + Math.random() * 0.5;
+      colors[i * 3] = brightness;
+      colors[i * 3 + 1] = brightness;
+      colors[i * 3 + 2] = brightness;
+    }
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    starsGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    const starsMat = new THREE.PointsMaterial({
+      size: 0.9, vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending
+    });
+    scene.add(new THREE.Points(starsGeo, starsMat));
+  }
+  createStarField();
+  
+  const dynamicGroup = new THREE.Group();
+  scene.add(dynamicGroup);
+  
+  let cmGroup, starObjects = [], orbitRings = [], labelObjects = [];
+  let cloudMesh = null;
+  
+  const starColors3D = [
+    { main: 0xffaa4e, glow: 0xe06b20, label: '甲' },
+    { main: 0x6ec8ff, glow: 0x1f5faa, label: '乙' },
+    { main: 0x6fef8f, glow: 0x1f8b4c, label: '丙' },
+    { main: 0xf5e56c, glow: 0xc9a820, label: '丁' }
+  ];
+  
+  function createStarMesh(colorMain, colorGlow, mass) {
+    const radius = 4 + mass * 3.5;
+    const group = new THREE.Group();
+    const geo = new THREE.SphereGeometry(radius, 48, 48);
+    const mat = new THREE.MeshStandardMaterial({
+      color: colorMain, emissive: colorGlow, emissiveIntensity: 1.5, roughness: 0.3, metalness: 0.1
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    group.add(mesh);
+    const glowGeo = new THREE.SphereGeometry(radius * 1.6, 32, 32);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: colorGlow, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending
+    });
+    group.add(new THREE.Mesh(glowGeo, glowMat));
+    return group;
+  }
+  
+  function createOrbitRing(radius, color) {
+    const points = [];
+    for (let i = 0; i <= 256; i++) {
+      const angle = (i / 256) * Math.PI * 2;
+      points.push(new THREE.Vector3(radius * Math.cos(angle), 0, radius * Math.sin(angle)));
+    }
+    const geo = new THREE.BufferGeometry().setFromPoints(points);
+    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5 });
+    return new THREE.Line(geo, mat);
+  }
+  
+  function createLabel(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    div.style.color = '#ffffff';
+    div.style.fontFamily = '"Microsoft YaHei", sans-serif';
+    div.style.fontSize = '14px';
+    div.style.fontWeight = 'bold';
+    div.style.textShadow = '1px 1px 4px black';
+    div.style.background = 'rgba(0,0,0,0.7)';
+    div.style.padding = '3px 12px';
+    div.style.borderRadius = '14px';
+    return new CSS2DObject(div);
+  }
+  
+  function createCMGroup() {
+    const group = new THREE.Group();
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(2.2, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+    group.add(sphere);
+    const glow = new THREE.Mesh(new THREE.SphereGeometry(4.5, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 }));
+    group.add(glow);
+    const crossMat = new THREE.LineBasicMaterial({ color: 0xcccccc });
+    const len = 11;
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-len,0,0), new THREE.Vector3(len,0,0)]), crossMat));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-len,0), new THREE.Vector3(0,len,0)]), crossMat));
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,-len), new THREE.Vector3(0,0,len)]), crossMat));
+    return group;
+  }
+  
+  function createRealisticEarth() {
+    const group = new THREE.Group();
+    const radius = 13;
+    const geo = new THREE.SphereGeometry(radius, 72, 72);
+    const mat = new THREE.MeshPhongMaterial({
+      map: earthMap,
+      specularMap: earthSpecular,
+      specular: new THREE.Color('grey'),
+      shininess: 10,
+      normalMap: earthNormal,
+      normalScale: new THREE.Vector2(0.8, 0.8),
+    });
+    const earthMesh = new THREE.Mesh(geo, mat);
+    earthMesh.castShadow = true;
+    earthMesh.receiveShadow = true;
+    group.add(earthMesh);
+    
+    const cloudGeo = new THREE.SphereGeometry(radius + 0.3, 72, 72);
+    const cloudMat = new THREE.MeshPhongMaterial({
+      map: cloudMap,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      side: THREE.FrontSide
+    });
+    cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
+    group.add(cloudMesh);
+    
+    const atmoGeo = new THREE.SphereGeometry(radius + 1.2, 64, 64);
+    const atmoMat = new THREE.MeshBasicMaterial({
+      color: 0x4488ff, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending
+    });
+    group.add(new THREE.Mesh(atmoGeo, atmoMat));
+    return group;
+  }
+  
+  function createRealisticMoon() {
+    const group = new THREE.Group();
+    const radius = 4.8;
+    const geo = new THREE.SphereGeometry(radius, 48, 48);
+    const mat = new THREE.MeshStandardMaterial({
+      map: moonMap,
+      roughness: 0.8,
+      metalness: 0.05,
+    });
+    const moonMesh = new THREE.Mesh(geo, mat);
+    moonMesh.castShadow = true;
+    moonMesh.receiveShadow = true;
+    group.add(moonMesh);
+    return group;
+  }
+  
+  function clearDynamicGroup() {
+    while(dynamicGroup.children.length > 0) {
+      dynamicGroup.remove(dynamicGroup.children[0]);
+    }
+    starObjects = [];
+    orbitRings = [];
+    labelObjects = [];
+    cmGroup = null;
+    cloudMesh = null;
+  }
+  
+  function buildEarthMoonSystem(em = earthMass, mm = moonMass, dist = earthMoonDistance) {
+    clearDynamicGroup();
+    const totalMass = em + mm;
+    const rEarth = (mm / totalMass) * dist;
+    const rMoon = (em / totalMass) * dist;
+    
+    cmGroup = createCMGroup();
+    cmGroup.position.set(0, 0, 0);
+    dynamicGroup.add(cmGroup);
+    
+    const earthGroup = createRealisticEarth();
+    earthGroup.position.set(-rEarth, 0, 0);
+    dynamicGroup.add(earthGroup);
+    starObjects = [earthGroup];
+    
+    const moonGroup = createRealisticMoon();
+    moonGroup.position.set(rMoon, 0, 0);
+    dynamicGroup.add(moonGroup);
+    starObjects.push(moonGroup);
+    
+    const earthOrbit = createOrbitRing(rEarth, 0x4488ff);
+    dynamicGroup.add(earthOrbit);
+    orbitRings = [earthOrbit];
+    
+    const moonOrbit = createOrbitRing(rMoon, 0xcccccc);
+    dynamicGroup.add(moonOrbit);
+    orbitRings.push(moonOrbit);
+    
+    const earthLabel = createLabel('🌍 地球');
+    earthLabel.position.set(-rEarth, 18, 0);
+    dynamicGroup.add(earthLabel);
+    labelObjects = [earthLabel];
+    
+    const moonLabel = createLabel('🌙 月球');
+    moonLabel.position.set(rMoon, 7, 0);
+    dynamicGroup.add(moonLabel);
+    labelObjects.push(moonLabel);
+    
+    const cmLabel = createLabel('⊕ 质心');
+    cmLabel.position.set(0, -5, 0);
+    dynamicGroup.add(cmLabel);
+    
+    angularSpeed = 0.014;
+    updateEarthMoonInfo(rEarth, rMoon, em, mm);
+    updateEarthMoonFormula(rEarth, rMoon, em, mm);
+  }
+  
+  function updateEarthMoonInfo(rEarth, rMoon, em, mm) {
+    const infoBoard = document.getElementById('infoBoard');
+    infoBoard.innerHTML = `
+      <div class="info-cell"><span class="lbl">⚡ 角速度 ω</span><span class="val">${angularSpeed.toFixed(4)}</span><span style="font-size:0.6rem;">弧度/帧</span></div>
+      <div class="info-cell"><span class="lbl">🌍 地球轨道半径</span><span class="val">${rEarth.toFixed(1)} px</span></div>
+      <div class="info-cell"><span class="lbl">🌙 月球轨道半径</span><span class="val">${rMoon.toFixed(1)} px</span></div>
+      <div class="info-cell"><span class="lbl">📐 质量比</span><span class="val">${em.toFixed(1)} : ${mm.toFixed(1)}</span></div>
+      <div class="info-cell"><span class="lbl">📍 质心位置</span><span class="val">距地心 ${rEarth.toFixed(1)} px</span></div>
+    `;
+  }
+  
+  function updateEarthMoonFormula(rEarth, rMoon, em, mm) {
+    const formulaSection = document.getElementById('formulaSection');
+    const ratio = (em / mm).toFixed(1);
+    formulaSection.innerHTML = `
+      <div class="formula-grid">
+        <div class="formula-card">
+          <h4>📐 质心公式</h4>
+          <div class="formula">M₁·r₁ = M₂·r₂</div>
+          <div class="formula">r₁ + r₂ = d</div>
+          <div class="formula">r₁ = d · M₂/(M₁+M₂)</div>
+          <div class="formula">ω² = G(M₁+M₂)/d³</div>
+        </div>
+        <div class="formula-card">
+          <h4>🌍 真实数据</h4>
+          <div class="formula">地球质量 ≈ 5.97×10²⁴ kg</div>
+          <div class="formula">月球质量 ≈ 7.34×10²² kg</div>
+          <div class="formula">质量比 ≈ 81.3 : 1</div>
+          <div class="formula">地月距离 ≈ 384,400 km</div>
+          <div class="formula">质心距地心 ≈ 4,670 km</div>
+          <div class="example">💡 质心位于地球内部！地球并非静止，而是绕共同质心转动。</div>
+        </div>
+        <div class="formula-card">
+          <h4>🧮 当前模拟 (质量比 ${ratio}:1)</h4>
+          <div class="formula">地球轨道半径 = ${rEarth.toFixed(1)} px</div>
+          <div class="formula">月球轨道半径 = ${rMoon.toFixed(1)} px</div>
+          <div class="formula">半径比 = ${(rMoon/rEarth).toFixed(1)} : 1</div>
+          <div class="formula">角速度 ω = ${angularSpeed.toFixed(4)} rad/帧</div>
+        </div>
+      </div>
+    `;
+  }
+  
+  function buildMultiStarSystem() {
+    clearDynamicGroup();
+    cmGroup = createCMGroup();
+    cmGroup.position.set(0, 0, 0);
+    dynamicGroup.add(cmGroup);
+    
+    for (let i = 0; i < currentSystem; i++) {
+      const col = starColors3D[i];
+      const starGroup = createStarMesh(col.main, col.glow, starMasses[i]);
+      starGroup.position.set(50, 0, 0);
+      dynamicGroup.add(starGroup);
+      starObjects.push(starGroup);
+      
+      const ring = createOrbitRing(50, col.main);
+      dynamicGroup.add(ring);
+      orbitRings.push(ring);
+      
+      const label = createLabel(`恒星${col.label}`);
+      label.position.set(55, 8, 0);
+      dynamicGroup.add(label);
+      labelObjects.push(label);
+    }
+    updatePhysicsAndUI();
+  }
+  
+  function computeOrbitalParameters(masses, starCount) {
+    const activeMasses = masses.slice(0, starCount);
+    const phases = [];
+    for (let i = 0; i < starCount; i++) phases.push((i * 2 * Math.PI) / starCount);
+    
+    let tempRadii = activeMasses.map(m => 1.0 / m);
+    const sumInv = tempRadii.reduce((s, v) => s + v, 0);
+    const baseScale = (avgRadiusTarget * starCount) / sumInv;
+    let radii = tempRadii.map(r => r * baseScale);
+    const maxLimit = avgRadiusTarget * 1.8;
+    const minLimit = 25;
+    radii = radii.map(r => Math.min(maxLimit, Math.max(minLimit, r)));
+    
+    const i = 0;
+    let forceSum = 0;
+    for (let j = 1; j < starCount; j++) {
+      const angleDiff = phases[j] - phases[i];
+      const d = Math.sqrt(radii[i]*radii[i] + radii[j]*radii[j] - 2*radii[i]*radii[j]*Math.cos(angleDiff));
+      const cosPhi = (radii[i] - radii[j] * Math.cos(angleDiff)) / d;
+      forceSum += activeMasses[j] * cosPhi / (d * d);
+    }
+    let omega = Math.sqrt(G * forceSum / radii[i]);
+    if (isNaN(omega) || omega <= 0) omega = 0.02;
+    omega = Math.min(0.05, Math.max(0.005, omega));
+    return { radii, omega, phases };
+  }
+  
+  function updatePhysicsAndUI() {
+    const { radii, omega } = computeOrbitalParameters(starMasses, currentSystem);
+    angularSpeed = omega;
+    
+    for (let i = 0; i < currentSystem; i++) {
+      if (i < orbitRings.length) {
+        dynamicGroup.remove(orbitRings[i]);
+        const newRing = createOrbitRing(radii[i], starColors3D[i].main);
+        dynamicGroup.add(newRing);
+        orbitRings[i] = newRing;
+      }
+    }
+    updateMultiStarInfo(radii);
+    updateMultiStarFormula(radii);
+  }
+  
+  function updateMultiStarInfo(radii) {
+    const infoBoard = document.getElementById('infoBoard');
+    let html = `<div class="info-cell"><span class="lbl">⚡ 角速度 ω</span><span class="val">${angularSpeed.toFixed(4)}</span><span style="font-size:0.6rem;">弧度/帧</span></div>`;
+    for (let i = 0; i < currentSystem; i++) {
+      const acc = angularSpeed * angularSpeed * radii[i];
+      const v = angularSpeed * radii[i];
+      const col = starColors3D[i];
+      html += `<div class="info-cell">
+        <span class="lbl" style="color:#${col.main.toString(16).padStart(6, '0')}">● 恒星${col.label}</span>
+        <span class="val">a_c=${acc.toFixed(3)}</span><span style="font-size:0.6rem;">v=${v.toFixed(2)}</span>
+      </div>`;
+    }
+    html += `<div class="info-cell"><span class="lbl">📏 轨道半径</span><span class="val">${radii.map(r=>r.toFixed(0)).join(' , ')}</span></div>`;
+    infoBoard.innerHTML = html;
+  }
+  
+  function updateMultiStarFormula(radii) {
+    const count = currentSystem;
+    const masses = starMasses.slice(0, count);
+    const totalMass = masses.reduce((a,b)=>a+b, 0);
+    const formulaSection = document.getElementById('formulaSection');
+    let html = '<div class="formula-grid">';
+    html += `<div class="formula-card"><h4>📐 核心公式</h4>
+      <div class="formula">万有引力：F = G·M·m / r²</div>
+      <div class="formula">质心定理：Σ mᵢ·rᵢ = 0</div>
+      <div class="formula">向心力：F_c = m·ω²·r</div>
+      <div class="formula">ω² = G·M_eff / r³</div></div>`;
+    
+    if (count === 2) {
+      html += `<div class="formula-card"><h4>🔵🔴 双星系统</h4>
+        <div class="formula">m₁·r₁ = m₂·r₂</div>
+        <div class="formula">ω² = G(m₁+m₂)/d³</div>
+        <div class="example">🌌 天狼星双星：周期≈50年</div></div>`;
+    } else if (count === 3) {
+      html += `<div class="formula-card"><h4>🔵🔴🟢 三星系统</h4>
+        <div class="formula">正三角形对称分布</div>
+        <div class="formula">m₁r₁ = m₂r₂ = m₃r₃</div>
+        <div class="example">🌠 北极星三星系统</div></div>`;
+    } else {
+      html += `<div class="formula-card"><h4>🔵🔴🟢🟡 四星系统</h4>
+        <div class="formula">正方形顶点分布</div>
+        <div class="formula">半径与质量成反比</div>
+        <div class="example">🌟 天津四疑似四星</div></div>`;
+    }
+    html += `<div class="formula-card"><h4>🧮 当前数值</h4>
+      <div class="formula">总质量 M = ${totalMass.toFixed(2)}</div>
+      <div class="formula">G = ${G} | ω = ${angularSpeed.toFixed(4)}</div>`;
+    for (let i = 0; i < count; i++) {
+      html += `<div class="formula">恒星${starColors3D[i].label}: r=${radii[i].toFixed(1)}</div>`;
+    }
+    html += '</div></div>';
+    formulaSection.innerHTML = html;
+  }
+  
+  const controlPanelArea = document.getElementById('controlPanelArea');
+  
+  function renderMultiStarControls() {
+    controlPanelArea.innerHTML = `
+      <div class="mass-control" id="massControlContainer"></div>
+      <div class="param-control">
+        <div class="param-item">
+          <label>🔭 G =</label>
+          <input type="number" id="gConstantInput" value="${G}" min="50" max="500" step="10">
+          <span class="param-hint">引力强度</span>
+        </div>
+        <div class="param-item">
+          <label>📐 R̄ =</label>
+          <input type="number" id="avgRadiusInput" value="${avgRadiusTarget}" min="40" max="150" step="5">
+          <span class="param-hint">轨道尺度</span>
+        </div>
+        <div class="button-group">
+          <button id="applyParamsBtn">✓ 应用</button>
+          <button id="pauseBtn" class="pause-btn">⏯️ 暂停</button>
+          <button id="resetBtn">↺ 重置</button>
+          <button id="resetViewBtn">🏠 视角</button>
+        </div>
+      </div>
+    `;
+    
+    const massContainer = document.getElementById('massControlContainer');
+    for (let i = 0; i < currentSystem; i++) {
+      const col = starColors3D[i];
+      const div = document.createElement('div');
+      div.className = 'mass-item';
+      div.innerHTML = `
+        <label style="color:#${col.main.toString(16).padStart(6, '0')}">● 恒星${col.label}</label>
+        <input type="range" id="massSlider${i}" min="0.5" max="2.5" value="${starMasses[i].toFixed(2)}" step="0.05">
+        <input type="number" id="massInput${i}" value="${starMasses[i].toFixed(2)}" min="0.5" max="2.5" step="0.01">
+      `;
+      massContainer.appendChild(div);
+    }
+    
+    for (let i = 0; i < currentSystem; i++) {
+      document.getElementById(`massSlider${i}`).addEventListener('input', (e) => {
+        starMasses[i] = parseFloat(e.target.value);
+        document.getElementById(`massInput${i}`).value = starMasses[i].toFixed(2);
+        updatePhysicsAndUI();
+      });
+      document.getElementById(`massInput${i}`).addEventListener('change', (e) => {
+        let v = parseFloat(e.target.value) || 1.0;
+        v = Math.min(2.5, Math.max(0.5, v));
+        starMasses[i] = v;
+        document.getElementById(`massSlider${i}`).value = v;
+        e.target.value = v.toFixed(2);
+        updatePhysicsAndUI();
+      });
+    }
+    
+    document.getElementById('applyParamsBtn').addEventListener('click', () => {
+      G = parseFloat(document.getElementById('gConstantInput').value) || 200;
+      avgRadiusTarget = parseFloat(document.getElementById('avgRadiusInput').value) || 85;
+      updatePhysicsAndUI();
+    });
+    
+    document.getElementById('pauseBtn').addEventListener('click', function() {
+      isPaused = !isPaused;
+      this.innerHTML = isPaused ? '▶️ 播放' : '⏯️ 暂停';
+    });
+    
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      starMasses = [1.0, 1.0, 1.0, 1.0];
+      G = 200; avgRadiusTarget = 85;
+      document.getElementById('gConstantInput').value = G;
+      document.getElementById('avgRadiusInput').value = avgRadiusTarget;
+      for (let i = 0; i < currentSystem; i++) {
+        document.getElementById(`massSlider${i}`).value = 1.0;
+        document.getElementById(`massInput${i}`).value = '1.00';
+      }
+      updatePhysicsAndUI();
+    });
+    
+    document.getElementById('resetViewBtn').addEventListener('click', () => {
+      camera.position.set(120, 160, 280);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    });
+  }
+  
+  function renderEarthMoonControls() {
+    controlPanelArea.innerHTML = `
+      <div class="param-control" style="min-width:260px;">
+        <div class="param-item"><label>🌍 地球质量</label><input type="number" id="earthMassInput" value="${earthMass.toFixed(1)}" min="10" max="200" step="1"></div>
+        <div class="param-item"><label>🌙 月球质量</label><input type="number" id="moonMassInput" value="${moonMass.toFixed(1)}" min="0.5" max="10" step="0.5"></div>
+        <div class="param-item"><label>📏 地月距离</label><input type="number" id="distanceInput" value="${earthMoonDistance}" min="80" max="200" step="5"></div>
+        <div class="button-group">
+          <button id="applyEarthMoonBtn">✓ 应用</button>
+          <button id="pauseBtn" class="pause-btn">⏯️ 暂停</button>
+          <button id="resetEarthMoonBtn">↺ 重置</button>
+          <button id="resetViewBtn">🏠 视角</button>
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('applyEarthMoonBtn').addEventListener('click', () => {
+      const em = parseFloat(document.getElementById('earthMassInput').value) || 81.3;
+      const mm = parseFloat(document.getElementById('moonMassInput').value) || 1.0;
+      const dist = parseFloat(document.getElementById('distanceInput').value) || 130;
+      window._earthMass = em;
+      window._moonMass = mm;
+      window._earthMoonDistance = dist;
+      buildEarthMoonSystem(em, mm, dist);
+    });
+    
+    document.getElementById('resetEarthMoonBtn').addEventListener('click', () => {
+      document.getElementById('earthMassInput').value = '81.3';
+      document.getElementById('moonMassInput').value = '1.0';
+      document.getElementById('distanceInput').value = '130';
+      window._earthMass = 81.3;
+      window._moonMass = 1.0;
+      window._earthMoonDistance = 130;
+      buildEarthMoonSystem(81.3, 1.0, 130);
+    });
+    
+    document.getElementById('pauseBtn').addEventListener('click', function() {
+      isPaused = !isPaused;
+      this.innerHTML = isPaused ? '▶️ 播放' : '⏯️ 暂停';
+    });
+    
+    document.getElementById('resetViewBtn').addEventListener('click', () => {
+      camera.position.set(100, 140, 260);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    });
+  }
+  
+  window._earthMass = earthMass;
+  window._moonMass = moonMass;
+  window._earthMoonDistance = earthMoonDistance;
+  
+  function switchMode(mode) {
+    currentMode = mode;
+    isPaused = false;
+    
+    document.getElementById('tabEarthMoon').classList.toggle('active', mode === 'earthMoon');
+    document.getElementById('tabMultiStar').classList.toggle('active', mode === 'multiStar');
+    
+    if (mode === 'earthMoon') {
+      document.getElementById('titleText').textContent = '🌍 地月系统 · 质心演示';
+      document.getElementById('systemSelectorArea').style.display = 'none';
+      document.getElementById('teachingTip').innerHTML = '💡 地月系统：地球和月球绕共同质心转动。质心位于地球内部（距地心约4670km）。这是理解双星系统的第一步。';
+      renderEarthMoonControls();
+      buildEarthMoonSystem();
+      camera.position.set(100, 140, 260);
+      controls.target.set(0, 0, 0);
+    } else {
+      document.getElementById('titleText').textContent = '✦ 多星系统 · 科学演示';
+      document.getElementById('systemSelectorArea').style.display = 'flex';
+      document.getElementById('teachingTip').innerHTML = '💡 3D操作：鼠标拖拽旋转视角 | 滚轮缩放 | 右键平移 | 所有恒星绕共同质心转动，角速度由万有引力精确计算';
+      renderMultiStarControls();
+      buildMultiStarSystem();
+      camera.position.set(120, 160, 280);
+      controls.target.set(0, 0, 0);
+    }
+    controls.update();
+  }
+  
+  document.getElementById('tabEarthMoon').addEventListener('click', () => switchMode('earthMoon'));
+  document.getElementById('tabMultiStar').addEventListener('click', () => switchMode('multiStar'));
+  
+  document.getElementById('systemSelect').addEventListener('change', (e) => {
+    currentSystem = parseInt(e.target.value);
+    while(starMasses.length < 4) starMasses.push(1.0);
+    buildMultiStarSystem();
+    renderMultiStarControls();
+  });
+  
+  let angle = 0;
+  const clock = new THREE.Clock();
+  
+  function animate() {
+    requestAnimationFrame(animate);
+    const delta = clock.getDelta();
+    
+    if (!isPaused) {
+      angle += angularSpeed;
+      if (angle > Math.PI * 2) angle -= Math.PI * 2;
+    }
+    
+    if (currentMode === 'earthMoon' && starObjects.length >= 2) {
+      const em = window._earthMass || earthMass;
+      const mm = window._moonMass || moonMass;
+      const dist = window._earthMoonDistance || earthMoonDistance;
+      const totalMass = em + mm;
+      const rEarth = (mm / totalMass) * dist;
+      const rMoon = (em / totalMass) * dist;
+      
+      starObjects[0].position.set(-rEarth * Math.cos(angle), 0, -rEarth * Math.sin(angle));
+      starObjects[1].position.set(rMoon * Math.cos(angle), 0, rMoon * Math.sin(angle));
+      
+      if (starObjects[0].children[0]) {
+        starObjects[0].children[0].rotation.y += 0.008;
+      }
+      if (cloudMesh) {
+        cloudMesh.rotation.y += 0.01;
+      }
+      if (starObjects[1].children[0]) {
+        starObjects[1].children[0].rotation.y += 0.002;
+      }
+      
+      if (labelObjects.length >= 2) {
+        labelObjects[0].position.copy(starObjects[0].position).add(new THREE.Vector3(0, 18, 0));
+        labelObjects[1].position.copy(starObjects[1].position).add(new THREE.Vector3(0, 7, 0));
+      }
+    } else if (currentMode === 'multiStar' && starObjects.length > 0) {
+      const { radii, phases } = computeOrbitalParameters(starMasses, currentSystem);
+      for (let i = 0; i < currentSystem; i++) {
+        if (i >= starObjects.length) continue;
+        const theta = angle + phases[i];
+        const x = radii[i] * Math.cos(theta);
+        const z = radii[i] * Math.sin(theta);
+        starObjects[i].position.set(x, 0, z);
+        if (i < labelObjects.length) {
+          labelObjects[i].position.set(x, 7 + starMasses[i] * 2.5, z);
+        }
+      }
+    }
+    
+    if (cmGroup && cmGroup.children.length > 1) {
+      const t = Date.now() * 0.001;
+      cmGroup.children[1].scale.setScalar(1 + Math.sin(t * 3) * 0.15);
+    }
+    
+    controls.update();
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+  }
+  
+  switchMode('earthMoon');
+  animate();
+  
+  window.addEventListener('resize', () => {
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (w > 0 && h > 0) {
+      renderer.setSize(w, h);
+      labelRenderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+  });
+</script>
+</body>
+</html>

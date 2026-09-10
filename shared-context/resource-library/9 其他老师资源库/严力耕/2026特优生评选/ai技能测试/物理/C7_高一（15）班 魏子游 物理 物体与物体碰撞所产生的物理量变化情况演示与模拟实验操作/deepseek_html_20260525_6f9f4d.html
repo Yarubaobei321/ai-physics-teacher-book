@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>物理碰撞模拟器 · 动量守恒定律 | 高中物理动量单元</title>
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --text-secondary: #5a6c7d;
+            --accent1: #4a6cf7;
+            --accent2: #f06b4e;
+            --accent1-light: #e8edff;
+            --accent2-light: #fff0ec;
+            --gold: #f0a500;
+            --green: #38a169;
+            --red: #e53e3e;
+            --border: #e2e8f0;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #e8eef5 0%, #f0f4f8 30%, #eaf0f6 60%, #f2f5f9 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px 16px 40px;
+            color: var(--text);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .main-container {
+            width: 100%;
+            max-width: 1150px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 18px 28px;
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            border: 1px solid var(--border);
+        }
+        .header .title-group {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .header .icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #4a6cf7, #6d8aff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: #fff;
+            flex-shrink: 0;
+            box-shadow: 0 4px 14px rgba(74, 108, 247, 0.3);
+        }
+        .header h1 {
+            font-size: 1.55rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #1a202c;
+            line-height: 1.25;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            letter-spacing: 0.2px;
+        }
+        .header .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            background: #fef3c7;
+            color: #b45309;
+            white-space: nowrap;
+        }
+        .content-row {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .sim-panel {
+            flex: 1 1 680px;
+            min-width: 440px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px 20px 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .sim-panel .panel-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sim-panel .panel-label::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            animation: pulse-dot 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(1.7); }
+        }
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            background: #fafbfc;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.03);
+        }
+        canvas#simCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: default;
+        }
+        .control-panel {
+            flex: 0 0 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 20px;
+            border: 1px solid var(--border);
+        }
+        .card h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: #1a202c;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card h3 .dot {
+            width: 10px; height: 10px; border-radius: 3px; display: inline-block;
+        }
+        .dot.blue { background: var(--accent1); }
+        .dot.orange { background: var(--accent2); }
+        .dot.gold { background: var(--gold); }
+        .dot.green { background: var(--green); }
+
+        .slider-group { margin-bottom: 14px; }
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 5px;
+            letter-spacing: 0.2px;
+        }
+        .val-input {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--accent1);
+            background: var(--accent1-light);
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: none;
+            width: 75px;
+            text-align: center;
+            outline: none;
+            transition: var(--transition);
+        }
+        .slider-group.orange .val-input {
+            color: var(--accent2);
+            background: var(--accent2-light);
+        }
+        .val-input:focus {
+            box-shadow: 0 0 0 2px rgba(74,108,247,0.4);
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 7px;
+            border-radius: 10px;
+            background: #e8ecf1;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        input[type="range"]:hover { background: #dce1e8; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2.5px solid var(--accent1);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+            transition: var(--transition);
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.12);
+            box-shadow: 0 4px 16px rgba(74,108,247,0.3);
+        }
+        input[type="range"].orange-slider::-webkit-slider-thumb { border-color: var(--accent2); }
+        input[type="range"].orange-slider::-webkit-slider-thumb:hover {
+            box-shadow: 0 4px 16px rgba(240,107,78,0.35);
+        }
+        .restitution-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+        .restitution-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+        .restitution-presets button {
+            padding: 5px 12px; border-radius: 16px; border: 1.5px solid #dde3ea;
+            background: #fff; cursor: pointer; font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 0.3px; transition: var(--transition); color: #4a5568;
+        }
+        .restitution-presets button:hover { background: #f7fafc; border-color: #bcc5d0; }
+        .restitution-presets button.active {
+            background: #4a6cf7; color: #fff; border-color: #4a6cf7;
+            box-shadow: 0 2px 10px rgba(74,108,247,0.3);
+        }
+        .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn {
+            padding: 10px 20px; border-radius: 25px; border: none; font-weight: 700;
+            font-size: 0.88rem; letter-spacing: 0.3px; cursor: pointer;
+            transition: var(--transition); display: flex; align-items: center; gap: 7px;
+        }
+        .btn-primary { background: var(--accent1); color: #fff; box-shadow: 0 4px 14px rgba(74,108,247,0.3); }
+        .btn-primary:hover { background: #3b5de7; box-shadow: 0 6px 20px rgba(74,108,247,0.4); transform: translateY(-1px); }
+        .btn-reset { background: #fff; color: #4a5568; border: 2px solid #dde3ea; }
+        .btn-reset:hover { background: #f7fafc; border-color: #bcc5d0; }
+        .btn-sm { padding: 6px 14px; font-size: 0.75rem; border-radius: 18px; font-weight: 600; }
+
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .data-item { background: #f8fafc; border-radius: 10px; padding: 12px 14px; text-align: center; border: 1px solid #edf2f7; }
+        .data-item .data-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-secondary); font-weight: 600; margin-bottom: 3px; }
+        .data-item .data-value { font-family: var(--font-mono); font-weight: 700; font-size: 1.15rem; color: #1a202c; }
+        .data-item.blue-accent .data-value { color: var(--accent1); }
+        .data-item.orange-accent .data-value { color: var(--accent2); }
+        .data-item.highlight { background: #fffbeb; border-color: #fde68a; grid-column: 1 / -1; }
+        .data-item.highlight .data-value { color: #b45309; font-size: 1.2rem; }
+
+        .chart-panel { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 20px; border: 1px solid var(--border); }
+        .chart-panel .chart-title { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.5px; color: #1a202c; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+        .chart-row { display: flex; gap: 16px; flex-wrap: wrap; }
+        .chart-col { flex: 1; min-width: 200px; text-align: center; }
+        .chart-col h4 { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.3px; color: #4a5568; margin-bottom: 4px; }
+        canvas.chart-canvas { display: block; width: 100%; height: auto; max-height: 240px; border-radius: 8px; background: #fafbfc; }
+
+        .knowledge-panel { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; border: 1px solid var(--border); }
+        .knowledge-panel h2 { font-size: 1.1rem; font-weight: 700; color: #1a202c; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .knowledge-grid { display: flex; flex-wrap: wrap; gap: 20px; }
+        .knowledge-col { flex: 1 1 280px; }
+        .formula-card { background: #f9fafb; border-radius: 12px; padding: 15px 18px; border: 1px solid #edf2f7; margin-bottom: 12px; }
+        .formula-card h4 { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.4px; color: #2d3748; margin-bottom: 8px; }
+        .formula { font-family: var(--font-mono); background: #fff; padding: 8px 12px; border-radius: 8px; display: inline-block; font-size: 0.95rem; font-weight: 600; color: #1a202c; margin: 4px 0; border: 1px solid #e8ecf1; }
+        .dynamic-values { font-size: 0.82rem; color: #4a5568; line-height: 1.7; margin-top: 6px; }
+        .dynamic-values span { font-weight: 700; color: #1a202c; background: #f0f4ff; padding: 1px 6px; border-radius: 4px; margin: 0 2px; }
+        .check-mark { color: #38a169; font-weight: bold; }
+        .loss-indicator { color: #e53e3e; font-weight: bold; }
+
+        .replay-container {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-radius: 20px;
+        }
+        .replay-container label { font-size: 0.78rem; font-weight: 600; color: #4a5568; }
+        .replay-container input[type=range] { flex: 1; }
+        .replay-time { font-family: var(--font-mono); font-size: 0.8rem; }
+
+        @media (max-width: 1000px) {
+            .content-row { flex-direction: column; }
+            .control-panel { flex: 1 1 auto; flex-direction: row; flex-wrap: wrap; }
+            .control-panel .card { flex: 1 1 260px; }
+            .sim-panel { min-width: auto; }
+            .knowledge-grid { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="header">
+        <div class="title-group">
+            <div class="icon-box">⚛️</div>
+            <div><h1>动量守恒 · 碰撞模拟器</h1><div class="subtitle">一维碰撞 | 动量 · 动能 · 速度 实时可视化</div></div>
+        </div>
+        <span class="badge">📐 高中物理 · 动量单元</span>
+    </div>
+
+    <div class="content-row">
+        <div class="sim-panel">
+            <div class="panel-label">🔬 实时模拟观测</div>
+            <div class="canvas-wrapper" id="canvasWrapper">
+                <canvas id="simCanvas"></canvas>
+                <div class="flash-overlay" id="flashOverlay"></div>
+            </div>
+            <div class="replay-container" id="replayContainer">
+                <label>⏪ 回放进度</label>
+                <input type="range" id="replaySlider" min="0" max="1" step="0.001" value="1">
+                <span class="replay-time" id="replayTime">0.00 s</span>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <div class="card">
+                <h3><span class="dot blue"></span> 球 1（蓝色）参数</h3>
+                <div class="slider-group">
+                    <label>质量 m₁ <input type="number" id="valM1" class="val-input" value="3.0" step="0.1" min="0.5" max="15"></label>
+                    <input type="range" id="sliderM1" min="0.5" max="15" step="0.1" value="3">
+                </div>
+                <div class="slider-group">
+                    <label>初速度 v₁ <input type="number" id="valV1" class="val-input" value="4.0" step="0.1" min="-12" max="12"></label>
+                    <input type="range" id="sliderV1" min="-12" max="12" step="0.1" value="4">
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="dot orange"></span> 球 2（橙色）参数</h3>
+                <div class="slider-group orange">
+                    <label>质量 m₂ <input type="number" id="valM2" class="val-input" value="2.0" step="0.1" min="0.5" max="15"></label>
+                    <input type="range" class="orange-slider" id="sliderM2" min="0.5" max="15" step="0.1" value="2">
+                </div>
+                <div class="slider-group orange">
+                    <label>初速度 v₂ <input type="number" id="valV2" class="val-input" value="-2.0" step="0.1" min="-12" max="12"></label>
+                    <input type="range" class="orange-slider" id="sliderV2" min="-12" max="12" step="0.1" value="-2">
+                </div>
+            </div>
+            <div class="card">
+                <h3><span class="dot gold"></span> 碰撞弹性程度 e</h3>
+                <div class="restitution-row">
+                    <span class="label-text">弹性度 e =</span>
+                    <input type="number" id="valE" class="val-input" style="width:70px;" value="1.00" step="0.01" min="0" max="1">
+                </div>
+                <input type="range" id="sliderE" min="0" max="1" step="0.01" value="1" style="margin-bottom:10px;">
+                <div class="restitution-presets">
+                    <button data-e="1" class="active" id="presetElastic">🔵 完全弹性</button>
+                    <button data-e="0.5" id="presetPartial">🟡 部分弹性</button>
+                    <button data-e="0" id="presetInelastic">🔴 完全非弹性</button>
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-primary" id="btnStart">▶ 开始模拟</button>
+                <button class="btn btn-reset" id="btnReset">↻ 重置</button>
+                <button class="btn btn-sm btn-reset" id="btnQuickPreset">📋 经典场景</button>
+            </div>
+            <div class="card" id="dataCard">
+                <h3>📊 实时数据</h3>
+                <div class="data-grid">
+                    <div class="data-item blue-accent"><div class="data-label">球1 速度 v₁'</div><div class="data-value" id="dataV1after">— m/s</div></div>
+                    <div class="data-item orange-accent"><div class="data-label">球2 速度 v₂'</div><div class="data-value" id="dataV2after">— m/s</div></div>
+                    <div class="data-item blue-accent"><div class="data-label">球1 动量 p₁</div><div class="data-value" id="dataP1">— kg·m/s</div></div>
+                    <div class="data-item orange-accent"><div class="data-label">球2 动量 p₂</div><div class="data-value" id="dataP2">— kg·m/s</div></div>
+                    <div class="data-item blue-accent"><div class="data-label">球1 动能 Eₖ₁</div><div class="data-value" id="dataK1">— J</div></div>
+                    <div class="data-item orange-accent"><div class="data-label">球2 动能 Eₖ₂</div><div class="data-value" id="dataK2">— J</div></div>
+                    <div class="data-item highlight"><div class="data-label">⚡ 系统总动量</div><div class="data-value" id="dataTotalP">— kg·m/s</div></div>
+                    <div class="data-item highlight" style="background:#fff5f5;border-color:#fed7d7;"><div class="data-label">🔥 系统总动能</div><div class="data-value" id="dataTotalK" style="color:#c53030;">— J</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-panel">
+        <div class="chart-title">📈 碰撞前后对比柱状图</div>
+        <div class="chart-row">
+            <div class="chart-col"><h4>📐 总动量对比 (kg·m/s)</h4><canvas class="chart-canvas" id="chartMomentum" height="240"></canvas></div>
+            <div class="chart-col"><h4>⚡ 总动能对比 (J)</h4><canvas class="chart-canvas" id="chartKinetic" height="240"></canvas></div>
+        </div>
+    </div>
+
+    <div class="knowledge-panel" id="knowledgePanel">
+        <h2><span class="dot green"></span> 物理原理解析 · 各物体动量/动能明细</h2>
+        <div class="knowledge-grid">
+            <div class="knowledge-col">
+                <div class="formula-card">
+                    <h4>📐 动量守恒定律</h4>
+                    <div class="formula">m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'</div>
+                    <div class="dynamic-values" id="momentumDetail">
+                        碰撞前：球1动量 <span id="p1Before">—</span>，球2动量 <span id="p2Before">—</span>，总动量 <span id="pTotalBefore">—</span><br>
+                        碰撞后：球1动量 <span id="p1After">—</span>，球2动量 <span id="p2After">—</span>，总动量 <span id="pTotalAfter">—</span>
+                        <span id="pEqualMark"></span>
+                    </div>
+                </div>
+                <div class="formula-card">
+                    <h4>💥 碰撞后速度公式</h4>
+                    <div class="formula" style="font-size:0.85rem;">v₁' = (m₁v₁+m₂v₂−e·m₂(v₁−v₂))/(m₁+m₂)<br>v₂' = (m₁v₁+m₂v₂+e·m₁(v₁−v₂))/(m₁+m₂)</div>
+                    <div class="dynamic-values">计算：v₁' = <span id="calcV1">—</span> m/s，v₂' = <span id="calcV2">—</span> m/s</div>
+                </div>
+            </div>
+            <div class="knowledge-col">
+                <div class="formula-card">
+                    <h4>⚡ 动能分析 (Eₖ=½mv²)</h4>
+                    <div class="dynamic-values" id="energyDetail">
+                        碰撞前：球1动能 <span id="k1Before">—</span>，球2动能 <span id="k2Before">—</span>，总动能 <span id="kTotalBefore">—</span><br>
+                        碰撞后：球1动能 <span id="k1After">—</span>，球2动能 <span id="k2After">—</span>，总动能 <span id="kTotalAfter">—</span>
+                        <span id="energyLossText"></span>
+                    </div>
+                </div>
+                <div class="formula-card" style="background:#f0fdf4;border-color:#bbf7d0;">
+                    <h4>🧠 解题思路</h4>
+                    <ul style="font-size:0.78rem;color:#2d3748;padding-left:18px;line-height:1.6;">
+                        <li><strong>1. 选系统，定方向</strong>：明确系统，规定正方向（如向右为正）。</li>
+                        <li><strong>2. 写守恒方程</strong>：m₁v₁+m₂v₂ = m₁v₁'+m₂v₂'。</li>
+                        <li><strong>3. 区分碰撞类型</strong>：完全弹性可补动能守恒；非完全弹性需知 e 或碰后速度。</li>
+                        <li><strong>4. 注意矢量性</strong>：速度代入方程必须带正负号。</li>
+                        <li><strong>5. 检验合理性</strong>：碰后速度是否合理，动能是否不增加。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const simCanvas = document.getElementById('simCanvas');
+    const simCtx = simCanvas.getContext('2d');
+    const flashOverlay = document.getElementById('flashOverlay');
+    const replayContainer = document.getElementById('replayContainer');
+    const replaySlider = document.getElementById('replaySlider');
+    const replayTimeLabel = document.getElementById('replayTime');
+
+    const sliderM1 = document.getElementById('sliderM1');
+    const sliderV1 = document.getElementById('sliderV1');
+    const sliderM2 = document.getElementById('sliderM2');
+    const sliderV2 = document.getElementById('sliderV2');
+    const sliderE = document.getElementById('sliderE');
+    const inputM1 = document.getElementById('valM1');
+    const inputV1 = document.getElementById('valV1');
+    const inputM2 = document.getElementById('valM2');
+    const inputV2 = document.getElementById('valV2');
+    const inputE = document.getElementById('valE');
+
+    const btnStart = document.getElementById('btnStart');
+    const btnReset = document.getElementById('btnReset');
+    const btnQuickPreset = document.getElementById('btnQuickPreset');
+    const presetElastic = document.getElementById('presetElastic');
+    const presetPartial = document.getElementById('presetPartial');
+    const presetInelastic = document.getElementById('presetInelastic');
+
+    const dataV1after = document.getElementById('dataV1after');
+    const dataV2after = document.getElementById('dataV2after');
+    const dataP1 = document.getElementById('dataP1');
+    const dataP2 = document.getElementById('dataP2');
+    const dataK1 = document.getElementById('dataK1');
+    const dataK2 = document.getElementById('dataK2');
+    const dataTotalP = document.getElementById('dataTotalP');
+    const dataTotalK = document.getElementById('dataTotalK');
+
+    const chartMomentum = document.getElementById('chartMomentum');
+    const chartKinetic = document.getElementById('chartKinetic');
+    const chartCtxM = chartMomentum.getContext('2d');
+    const chartCtxK = chartKinetic.getContext('2d');
+
+    // 知识点明细元素
+    const p1Before = document.getElementById('p1Before');
+    const p2Before = document.getElementById('p2Before');
+    const pTotalBefore = document.getElementById('pTotalBefore');
+    const p1After = document.getElementById('p1After');
+    const p2After = document.getElementById('p2After');
+    const pTotalAfter = document.getElementById('pTotalAfter');
+    const pEqualMark = document.getElementById('pEqualMark');
+    const k1Before = document.getElementById('k1Before');
+    const k2Before = document.getElementById('k2Before');
+    const kTotalBefore = document.getElementById('kTotalBefore');
+    const k1After = document.getElementById('k1After');
+    const k2After = document.getElementById('k2After');
+    const kTotalAfter = document.getElementById('kTotalAfter');
+    const energyLossText = document.getElementById('energyLossText');
+    const calcV1Span = document.getElementById('calcV1');
+    const calcV2Span = document.getElementById('calcV2');
+
+    let mass1 = 3.0, vel1_init = 4.0, mass2 = 2.0, vel2_init = -2.0, restitution = 1.0;
+    const SIM_STATE = { IDLE: 'idle', RUNNING: 'running', COLLIDED: 'collided', FINISHED: 'finished' };
+    let simState = SIM_STATE.IDLE;
+    let animId = null;
+    let ball1_x, ball2_x, ball1_v, ball2_v, ball1_r, ball2_r;
+    const TRACK_LEFT = 40, TRACK_RIGHT = 560;
+    let preCollisionData = null, postCollisionData = null;
+    let collisionOccurred = false, collisionPointX = 0;
+    let particles = [];
+    const MAX_PARTICLES = 70;
+    const VEL_SCALE = 26;
+    let canvasW, canvasH, trackY, trackLeft, trackRight, trackLen;
+    const trailPositions1 = [], trailPositions2 = [];
+    const MAX_TRAIL = 10;
+    let statusDescription = '';
+    let history = [];
+    let simTotalTime = 0;
+    let isReplaying = false;
+
+    function resizeCanvas() {
+        const rect = canvasWrapper.getBoundingClientRect();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const displayW = rect.width;
+        const displayH = Math.max(380, displayW * 0.58);
+        canvasW = Math.floor(displayW * dpr);
+        canvasH = Math.floor(displayH * dpr);
+        simCanvas.width = canvasW; simCanvas.height = canvasH;
+        simCanvas.style.width = displayW + 'px'; simCanvas.style.height = displayH + 'px';
+        trackLeft = Math.floor(TRACK_LEFT / 600 * canvasW);
+        trackRight = Math.floor(TRACK_RIGHT / 600 * canvasW);
+        trackLen = trackRight - trackLeft;
+        trackY = Math.floor(canvasH * 0.48);
+        ball1_r = Math.max(10, Math.min(55, Math.floor((14 + mass1 * 2.5) / 600 * canvasW)));
+        ball2_r = Math.max(10, Math.min(55, Math.floor((14 + mass2 * 2.5) / 600 * canvasW)));
+        if (simState === SIM_STATE.IDLE || simState === SIM_STATE.FINISHED) resetBallPositions();
+    }
+
+    function resetBallPositions() {
+        ball1_x = trackLeft + ball1_r + trackLen * 0.08;
+        ball2_x = trackRight - ball2_r - trackLen * 0.08;
+        ball1_v = vel1_init * VEL_SCALE;
+        ball2_v = vel2_init * VEL_SCALE;
+        collisionOccurred = false; preCollisionData = null; postCollisionData = null;
+        particles = []; collisionPointX = 0;
+        trailPositions1.length = 0; trailPositions2.length = 0;
+        history = []; simTotalTime = 0; isReplaying = false;
+        replayContainer.style.display = 'none';
+        updateStatusText(); updateDataDisplayPre(); drawChartsPre(); updateKnowledgePre();
+    }
+
+    function readInputs() {
+        mass1 = parseFloat(inputM1.value) || 3.0;
+        vel1_init = parseFloat(inputV1.value) || 0;
+        mass2 = parseFloat(inputM2.value) || 2.0;
+        vel2_init = parseFloat(inputV2.value) || 0;
+        restitution = parseFloat(inputE.value) || 1.0;
+        sliderM1.value = mass1; sliderV1.value = vel1_init;
+        sliderM2.value = mass2; sliderV2.value = vel2_init;
+        sliderE.value = restitution;
+        updatePresetButtons();
+    }
+
+    function syncFromSliders() {
+        mass1 = parseFloat(sliderM1.value); vel1_init = parseFloat(sliderV1.value);
+        mass2 = parseFloat(sliderM2.value); vel2_init = parseFloat(sliderV2.value);
+        restitution = parseFloat(sliderE.value);
+        inputM1.value = mass1.toFixed(1); inputV1.value = vel1_init.toFixed(1);
+        inputM2.value = mass2.toFixed(1); inputV2.value = vel2_init.toFixed(1);
+        inputE.value = restitution.toFixed(2);
+        updatePresetButtons();
+    }
+
+    function updatePresetButtons() {
+        const e = parseFloat(sliderE.value);
+        presetElastic.classList.toggle('active', e >= 0.99);
+        presetPartial.classList.toggle('active', e > 0.35 && e < 0.65);
+        presetInelastic.classList.toggle('active', e <= 0.01);
+    }
+
+    function updateStatusText() {
+        const v1 = ball1_v / VEL_SCALE;
+        const v2 = ball2_v / VEL_SCALE;
+        if (simState === SIM_STATE.IDLE || simState === SIM_STATE.FINISHED) {
+            statusDescription = `球1：${v1.toFixed(1)} m/s，球2：${v2.toFixed(1)} m/s。调整参数后点击“开始模拟”。`;
+        } else if (simState === SIM_STATE.RUNNING && !collisionOccurred) {
+            if (v1 > 0 && v2 < 0) statusDescription = `球1 向右 (${v1.toFixed(1)} m/s)，球2 向左 (${v2.toFixed(1)} m/s)。两球相向而行，即将碰撞。`;
+            else if (v1 < 0 && v2 > 0) statusDescription = `球1 向左 (${v1.toFixed(1)} m/s)，球2 向右 (${v2.toFixed(1)} m/s)。两球背向远离。`;
+            else if (v1 >= 0 && v2 >= 0) {
+                if (v1 > v2) statusDescription = `两球均向右，球1 (${v1.toFixed(1)} m/s) 快于球2 (${v2.toFixed(1)} m/s)，球1追赶球2。`;
+                else statusDescription = `两球均向右，球2 (${v2.toFixed(1)} m/s) 快于球1 (${v1.toFixed(1)} m/s)，两球远离。`;
+            } else if (v1 <= 0 && v2 <= 0) {
+                if (Math.abs(v1) > Math.abs(v2)) statusDescription = `两球均向左，球1 (${v1.toFixed(1)} m/s) 更快向左，球1追赶球2。`;
+                else statusDescription = `两球均向左，球2 (${v2.toFixed(1)} m/s) 更快向左，两球远离。`;
+            } else statusDescription = `球1 ${v1.toFixed(1)} m/s，球2 ${v2.toFixed(1)} m/s。运动中...`;
+        } else if (simState === SIM_STATE.COLLIDED && postCollisionData) {
+            statusDescription = `💥 碰撞完成！球1 速度变为 ${postCollisionData.v1.toFixed(2)} m/s，球2 速度变为 ${postCollisionData.v2.toFixed(2)} m/s。`;
+        }
+    }
+
+    function spawnParticles(x, y, count) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 90 + Math.random() * 360;
+            particles.push({x, y, vx: Math.cos(angle)*speed, vy: Math.sin(angle)*speed - Math.random()*200, life:1, decay:1.3+Math.random()*2.8, size:1.8+Math.random()*4, color: Math.random()<0.5 ? `hsl(${35+Math.random()*30},90%,${55+Math.random()*35}%)` : `hsl(${200+Math.random()*40},70%,${60+Math.random()*30}%)`});
+        }
+        if (particles.length > MAX_PARTICLES) particles.splice(0, particles.length - MAX_PARTICLES);
+    }
+
+    function updateParticles(dt) {
+        for (let i = particles.length-1; i>=0; i--) {
+            const p = particles[i];
+            p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 200*dt;
+            p.life -= p.decay*dt;
+            if (p.life <= 0) particles.splice(i,1);
+        }
+    }
+
+    function drawParticles(ctx) {
+        for (const p of particles) {
+            ctx.save(); ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.color; ctx.shadowColor = p.color; ctx.shadowBlur = 7;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size*p.life, 0, Math.PI*2); ctx.fill(); ctx.restore();
+        }
+    }
+
+    function recordTrail() {
+        trailPositions1.push({x:ball1_x, y:trackY}); if(trailPositions1.length>MAX_TRAIL) trailPositions1.shift();
+        trailPositions2.push({x:ball2_x, y:trackY}); if(trailPositions2.length>MAX_TRAIL) trailPositions2.shift();
+    }
+
+    function drawTrails(ctx) {
+        for (let i=0;i<trailPositions1.length;i++) {
+            const alpha = (i+1)/(trailPositions1.length+2)*0.35;
+            ctx.fillStyle = `rgba(74,108,247,${alpha})`; ctx.beginPath(); ctx.arc(trailPositions1[i].x, trailPositions1[i].y, ball1_r*0.7,0,Math.PI*2); ctx.fill();
+        }
+        for (let i=0;i<trailPositions2.length;i++) {
+            const alpha = (i+1)/(trailPositions2.length+2)*0.35;
+            ctx.fillStyle = `rgba(240,107,78,${alpha})`; ctx.beginPath(); ctx.arc(trailPositions2[i].x, trailPositions2[i].y, ball2_r*0.7,0,Math.PI*2); ctx.fill();
+        }
+    }
+
+    function checkAndHandleCollision() {
+        if (collisionOccurred) return;
+        if (ball2_x - ball1_x <= ball1_r+ball2_r && ball1_v > ball2_v) {
+            collisionOccurred = true; collisionPointX = (ball1_x+ball2_x)/2;
+            const v1b = ball1_v/VEL_SCALE, v2b = ball2_v/VEL_SCALE;
+            preCollisionData = { v1:v1b, v2:v2b, p1:mass1*v1b, p2:mass2*v2b, k1:0.5*mass1*v1b*v1b, k2:0.5*mass2*v2b*v2b, totalP:mass1*v1b+mass2*v2b, totalK:0.5*mass1*v1b*v1b+0.5*mass2*v2b*v2b };
+            const m1=mass1, m2=mass2, e=restitution, v1=v1b, v2=v2b, totalM=m1+m2;
+            const v1a = (m1*v1+m2*v2 - e*m2*(v1-v2))/totalM;
+            const v2a = (m1*v1+m2*v2 + e*m1*(v1-v2))/totalM;
+            ball1_v = v1a*VEL_SCALE; ball2_v = v2a*VEL_SCALE;
+            const overlap = (ball1_r+ball2_r) - (ball2_x-ball1_x);
+            if (overlap>0) { const totalR=ball1_r+ball2_r; ball1_x -= overlap*(ball2_r/totalR); ball2_x += overlap*(ball1_r/totalR); }
+            spawnParticles(collisionPointX, trackY, 40+Math.floor(Math.abs(v1b-v2b)*9));
+            flashOverlay.classList.add('active'); setTimeout(()=>flashOverlay.classList.remove('active'),130);
+            postCollisionData = { v1:v1a, v2:v2a, p1:mass1*v1a, p2:mass2*v2a, k1:0.5*mass1*v1a*v1a, k2:0.5*mass2*v2a*v2a, totalP:mass1*v1a+mass2*v2a, totalK:0.5*mass1*v1a*v1a+0.5*mass2*v2a*v2a };
+            updateStatusText(); updateDataDisplayPost(); drawChartsPost(); updateKnowledgePost();
+            simState = SIM_STATE.COLLIDED;
+        }
+    }
+
+    function updateDataDisplayPre() {
+        const v1=ball1_v/VEL_SCALE, v2=ball2_v/VEL_SCALE;
+        dataV1after.textContent=v1.toFixed(2)+' m/s'; dataV2after.textContent=v2.toFixed(2)+' m/s';
+        dataP1.textContent=(mass1*v1).toFixed(2)+' kg·m/s'; dataP2.textContent=(mass2*v2).toFixed(2)+' kg·m/s';
+        dataK1.textContent=(0.5*mass1*v1*v1).toFixed(2)+' J'; dataK2.textContent=(0.5*mass2*v2*v2).toFixed(2)+' J';
+        dataTotalP.textContent=(mass1*v1+mass2*v2).toFixed(2)+' kg·m/s';
+        dataTotalK.textContent=(0.5*mass1*v1*v1+0.5*mass2*v2*v2).toFixed(2)+' J';
+    }
+    function updateDataDisplayPost() {
+        if(!postCollisionData) return;
+        const d=postCollisionData;
+        dataV1after.textContent=d.v1.toFixed(2)+' m/s'; dataV2after.textContent=d.v2.toFixed(2)+' m/s';
+        dataP1.textContent=d.p1.toFixed(2)+' kg·m/s'; dataP2.textContent=d.p2.toFixed(2)+' kg·m/s';
+        dataK1.textContent=d.k1.toFixed(2)+' J'; dataK2.textContent=d.k2.toFixed(2)+' J';
+        dataTotalP.textContent=d.totalP.toFixed(2)+' kg·m/s'; dataTotalK.textContent=d.totalK.toFixed(2)+' J';
+    }
+
+    function updateKnowledgePre() {
+        p1Before.textContent='—'; p2Before.textContent='—'; pTotalBefore.textContent='—';
+        p1After.textContent='—'; p2After.textContent='—'; pTotalAfter.textContent='—'; pEqualMark.textContent='';
+        k1Before.textContent='—'; k2Before.textContent='—'; kTotalBefore.textContent='—';
+        k1After.textContent='—'; k2After.textContent='—'; kTotalAfter.textContent='—'; energyLossText.innerHTML='';
+        calcV1Span.textContent='—'; calcV2Span.textContent='—';
+    }
+
+    function updateKnowledgePost() {
+        if(!preCollisionData||!postCollisionData) return;
+        const pre=preCollisionData, post=postCollisionData;
+        p1Before.textContent=pre.p1.toFixed(3); p2Before.textContent=pre.p2.toFixed(3); pTotalBefore.textContent=pre.totalP.toFixed(3);
+        p1After.textContent=post.p1.toFixed(3); p2After.textContent=post.p2.toFixed(3); pTotalAfter.textContent=post.totalP.toFixed(3);
+        pEqualMark.innerHTML = Math.abs(pre.totalP-post.totalP)<0.001 ? '<span class="check-mark">✅ 动量守恒</span>' : '<span class="loss-indicator">⚠️ 微小差异</span>';
+        k1Before.textContent=pre.k1.toFixed(3); k2Before.textContent=pre.k2.toFixed(3); kTotalBefore.textContent=pre.totalK.toFixed(3);
+        k1After.textContent=post.k1.toFixed(3); k2After.textContent=post.k2.toFixed(3); kTotalAfter.textContent=post.totalK.toFixed(3);
+        const loss=pre.totalK-post.totalK;
+        energyLossText.innerHTML = restitution>=0.99&&Math.abs(loss)<0.001 ? '<span class="check-mark">✅ 动能守恒</span>' : (restitution<=0.01 ? `<span class="loss-indicator">🔥 动能损失 ${loss.toFixed(3)} J (完全非弹性)</span>` : `<span class="loss-indicator">⚡ 动能损失 ${loss.toFixed(3)} J</span>`);
+        calcV1Span.textContent=post.v1.toFixed(3); calcV2Span.textContent=post.v2.toFixed(3);
+    }
+
+    function drawBarChart(ctx, canvasEl, labelBefore, labelAfter, valueBefore, valueAfter, unit, colorBefore, colorAfter, maxVal) {
+        const cw=canvasEl.width, ch=canvasEl.height;
+        ctx.clearRect(0,0,cw,ch);
+        const displayMax = Math.max(maxVal, Math.abs(valueBefore), Math.abs(valueAfter), 1.5)*1.35;
+        const barW=Math.min(80, cw*0.24), baseY=ch-45, scaleY=(baseY-50)/displayMax;
+        ctx.strokeStyle='#e8ecf1'; ctx.lineWidth=1;
+        for(let i=0;i<=4;i++){ const y=baseY-(displayMax/4*i)*scaleY; ctx.beginPath(); ctx.moveTo(30,y); ctx.lineTo(cw-20,y); ctx.stroke(); ctx.fillStyle='#8899aa'; ctx.font='11px "Segoe UI","PingFang SC",sans-serif'; ctx.textAlign='right'; ctx.fillText((displayMax/4*i).toFixed(1),28,y+4); }
+        const cx1=cw*0.32, cx2=cw*0.68;
+        function drawBar(cx,value,color,label){
+            const barH=Math.abs(value)*scaleY, barTop=baseY-barH;
+            const grad=ctx.createLinearGradient(cx-barW/2,barTop,cx+barW/2,baseY);
+            grad.addColorStop(0,color); grad.addColorStop(1,color.replace('0.85','0.55').replace('0.9','0.5'));
+            ctx.fillStyle=grad; ctx.beginPath(); ctx.roundRect(cx-barW/2,barTop,barW,barH,[6,6,0,0]); ctx.fill();
+            ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.lineWidth=1.8; ctx.stroke();
+            ctx.fillStyle='#1a202c'; ctx.font='bold 14px "SF Mono","Consolas",monospace'; ctx.fillText(value.toFixed(2),cx,barTop-12);
+            ctx.fillStyle='#4a5568'; ctx.font='12px "Segoe UI","PingFang SC",sans-serif'; ctx.fillText(label,cx,baseY+18);
+        }
+        drawBar(cx1,valueBefore,colorBefore,labelBefore);
+        drawBar(cx2,valueAfter,colorAfter,labelAfter);
+        ctx.fillStyle='#8899aa'; ctx.font='10px sans-serif'; ctx.textAlign='right'; ctx.fillText('单位: '+unit,cw-20,18);
+    }
+
+    function drawChartsPre() {
+        const v1=ball1_v/VEL_SCALE, v2=ball2_v/VEL_SCALE;
+        const totalP=mass1*v1+mass2*v2, totalK=0.5*mass1*v1*v1+0.5*mass2*v2*v2;
+        drawBarChart(chartCtxM,chartMomentum,'碰撞前','碰撞后(待)',totalP,totalP,'kg·m/s','rgba(100,140,220,0.85)','rgba(160,180,210,0.55)',Math.max(Math.abs(totalP)*1.8,12));
+        drawBarChart(chartCtxK,chartKinetic,'碰撞前','碰撞后(待)',totalK,totalK,'J','rgba(220,120,90,0.85)','rgba(200,160,140,0.55)',Math.max(Math.abs(totalK)*1.8,12));
+    }
+    function drawChartsPost() {
+        if(!preCollisionData||!postCollisionData) return;
+        drawBarChart(chartCtxM,chartMomentum,'碰撞前','碰撞后',preCollisionData.totalP,postCollisionData.totalP,'kg·m/s','rgba(100,140,220,0.85)','rgba(60,180,120,0.85)',Math.max(Math.abs(preCollisionData.totalP),Math.abs(postCollisionData.totalP),5)*1.5);
+        drawBarChart(chartCtxK,chartKinetic,'碰撞前','碰撞后',preCollisionData.totalK,postCollisionData.totalK,'J','rgba(220,120,90,0.85)','rgba(200,80,60,0.85)',Math.max(Math.abs(preCollisionData.totalK),Math.abs(postCollisionData.totalK),5)*1.5);
+    }
+
+    function drawSimulation() {
+        const ctx=simCtx, w=canvasW, h=canvasH;
+        ctx.clearRect(0,0,w,h);
+        ctx.fillStyle='#fafbfc'; ctx.fillRect(0,0,w,h);
+        const railY=trackY, railHeight=Math.max(7,canvasH*0.022);
+        const railGrad=ctx.createLinearGradient(0,railY-railHeight,0,railY+railHeight);
+        railGrad.addColorStop(0,'#d5dbe3'); railGrad.addColorStop(0.3,'#e8ecf1'); railGrad.addColorStop(0.5,'#f8f9fa'); railGrad.addColorStop(0.7,'#e8ecf1'); railGrad.addColorStop(1,'#c8ced6');
+        ctx.fillStyle=railGrad; ctx.beginPath(); ctx.roundRect(trackLeft-20,railY-railHeight,trackLen+40,railHeight*2,railHeight); ctx.fill();
+        ctx.strokeStyle='#bcc4ce'; ctx.lineWidth=2.5; ctx.stroke();
+        const tickInterval=trackLen/10;
+        ctx.fillStyle='#8899aa'; ctx.font=`${Math.max(11,canvasH*0.028)}px "Segoe UI","PingFang SC",sans-serif`; ctx.textAlign='center';
+        for(let i=0;i<=10;i++){ const tx=trackLeft+i*tickInterval; ctx.beginPath(); ctx.moveTo(tx,railY-railHeight-8); ctx.lineTo(tx,railY-railHeight-20); ctx.stroke(); if(i%2===0) ctx.fillText((i*2)+'',tx,railY-railHeight-24); }
+        ctx.fillText('位置 (m)',trackRight-50,railY-railHeight-26);
+        drawTrails(ctx);
+        drawBall(ctx,ball1_x,railY,ball1_r,'#4a6cf7','#3b54d4','1',mass1);
+        drawBall(ctx,ball2_x,railY,ball2_r,'#f06b4e','#d45035','2',mass2);
+        if(simState===SIM_STATE.IDLE||simState===SIM_STATE.RUNNING||simState===SIM_STATE.COLLIDED){
+            drawVelocityArrow(ctx,ball1_x,railY-ball1_r-14,ball1_v,'#4a6cf7',ball1_r);
+            drawVelocityArrow(ctx,ball2_x,railY-ball2_r-14,ball2_v,'#f06b4e',ball2_r);
+        }
+        drawParticles(ctx);
+        if(statusDescription){
+            const tx=trackLeft, ty=canvasH-38;
+            ctx.fillStyle='rgba(255,255,255,0.85)'; ctx.strokeStyle='rgba(100,120,140,0.4)'; ctx.lineWidth=1.5;
+            ctx.beginPath(); ctx.roundRect(tx,ty-34,trackLen,34,8); ctx.fill(); ctx.stroke();
+            ctx.fillStyle='#1a202c'; ctx.font=`bold ${Math.max(10,canvasH*0.028)}px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif`; ctx.textAlign='left'; ctx.fillText(statusDescription,tx+12,ty-10);
+        }
+        let statusText='', statusColor='#4a5568';
+        if(simState===SIM_STATE.IDLE){statusText='⏸ 准备就绪';statusColor='#5a6c7d';}
+        else if(simState===SIM_STATE.RUNNING&&!collisionOccurred){statusText='▶ 运动中...';statusColor='#4a6cf7';}
+        else if(simState===SIM_STATE.COLLIDED&&ball1_v===0&&ball2_v===0){statusText='⏹ 模拟完成';statusColor='#38a169';}
+        else if(simState===SIM_STATE.COLLIDED){statusText='💥 碰撞已发生';statusColor='#f06b4e';}
+        else if(simState===SIM_STATE.FINISHED){statusText='✓ 模拟结束';statusColor='#38a169';}
+        ctx.fillStyle=statusColor; ctx.font=`bold ${Math.max(12,canvasH*0.032)}px "Segoe UI","PingFang SC",sans-serif`; ctx.textAlign='left'; ctx.fillText(statusText,trackLeft,34);
+        if(collisionOccurred&&collisionPointX>0){
+            ctx.fillStyle='rgba(255,180,40,0.8)'; ctx.beginPath(); ctx.arc(collisionPointX,railY,10,0,Math.PI*2); ctx.fill();
+            ctx.strokeStyle='rgba(200,120,20,0.9)'; ctx.lineWidth=2.5; ctx.stroke();
+            ctx.fillStyle='#8b4513'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.fillText('💥碰撞点',collisionPointX,railY-22);
+        }
+    }
+
+    function drawBall(ctx,x,y,r,colorLight,colorDark,label,mass){
+        ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.arc(x+3,y+5,r,0,Math.PI*2); ctx.fill();
+        const grad=ctx.createRadialGradient(x-r*0.3,y-r*0.35,r*0.1,x,y,r);
+        grad.addColorStop(0,'#ffffff'); grad.addColorStop(0.2,colorLight); grad.addColorStop(0.65,colorDark); grad.addColorStop(1,'#1a1a2e');
+        ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='rgba(0,0,0,0.3)'; ctx.lineWidth=2; ctx.stroke();
+        ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.beginPath(); ctx.arc(x-r*0.28,y-r*0.3,r*0.32,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#fff'; ctx.font=`bold ${Math.max(11,r*0.72)}px "Segoe UI","PingFang SC",sans-serif`; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,x,y);
+        ctx.fillStyle='#1a202c'; ctx.font=`bold ${Math.max(10,r*0.55)}px sans-serif`; ctx.fillText(mass.toFixed(1)+'kg',x,y+r+18);
+    }
+
+    function drawVelocityArrow(ctx,x,y,velocity,color,ballR){
+        if(Math.abs(velocity)<0.01){ ctx.fillStyle='#8899aa'; ctx.beginPath(); ctx.arc(x,y,6,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#555'; ctx.font=`bold 10px sans-serif`; ctx.textAlign='center'; ctx.fillText('v=0',x,y-16); return; }
+        const arrowLen=Math.min(Math.abs(velocity)/VEL_SCALE*26,150), direction=velocity>0?1:-1, endX=x+direction*arrowLen;
+        ctx.strokeStyle=color; ctx.lineWidth=3.2; ctx.lineCap='round'; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(endX,y); ctx.stroke();
+        ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(endX,y); ctx.lineTo(endX-direction*10,y-7); ctx.lineTo(endX-direction*10,y+7); ctx.closePath(); ctx.fill();
+        ctx.fillStyle='#1a202c'; ctx.font=`bold 10px "SF Mono","Consolas",monospace`; ctx.textAlign='center'; ctx.fillText((velocity/VEL_SCALE).toFixed(1)+' m/s',x+direction*(arrowLen/2),y-15);
+    }
+
+    let lastTime=null;
+    function animate(timestamp){
+        if(!lastTime) lastTime=timestamp;
+        let dt=(timestamp-lastTime)/1000;
+        if(dt<=0) dt=0.016; if(dt>0.1) dt=0.1;
+        lastTime=timestamp;
+        if((simState===SIM_STATE.RUNNING||simState===SIM_STATE.COLLIDED)&&!isReplaying){
+            ball1_x+=ball1_v*dt; ball2_x+=ball2_v*dt;
+            if(!collisionOccurred) checkAndHandleCollision();
+            if(ball1_x-ball1_r<=trackLeft){ball1_x=trackLeft+ball1_r; ball1_v=0;}
+            else if(ball1_x+ball1_r>=trackRight){ball1_x=trackRight-ball1_r; ball1_v=0;}
+            if(ball2_x-ball2_r<=trackLeft){ball2_x=trackLeft+ball2_r; ball2_v=0;}
+            else if(ball2_x+ball2_r>=trackRight){ball2_x=trackRight-ball2_r; ball2_v=0;}
+            recordTrail(); updateParticles(dt); updateStatusText();
+            simTotalTime += dt;
+            history.push({time:simTotalTime, ball1_x, ball2_x, ball1_v, ball2_v, collisionOccurred, collisionPointX});
+            if(collisionOccurred && ball1_v===0 && ball2_v===0 && particles.length===0){
+                simState=SIM_STATE.FINISHED; updateStatusText(); updateDataDisplayPost(); drawChartsPost(); updateKnowledgePost();
+                btnStart.textContent='▶ 开始模拟'; btnStart.disabled=false;
+                replayContainer.style.display='flex'; replaySlider.max=simTotalTime; replaySlider.value=simTotalTime; replayTimeLabel.textContent=simTotalTime.toFixed(2)+' s';
+            }
+            if(!collisionOccurred) updateDataDisplayPre(); else updateDataDisplayPost();
+        }
+        drawSimulation();
+        if((simState===SIM_STATE.RUNNING||simState===SIM_STATE.COLLIDED)&&!isReplaying) animId=requestAnimationFrame(animate);
+        else if(simState===SIM_STATE.FINISHED) animId=null;
+    }
+
+    function applyHistoryState(targetTime){
+        if(history.length===0) return;
+        let idx=0;
+        for(let i=0;i<history.length;i++){ if(history[i].time<=targetTime) idx=i; else break; }
+        const rec=history[idx];
+        ball1_x=rec.ball1_x; ball2_x=rec.ball2_x; ball1_v=rec.ball1_v; ball2_v=rec.ball2_v;
+        collisionOccurred=rec.collisionOccurred; collisionPointX=rec.collisionPointX;
+        updateStatusText(); drawSimulation();
+    }
+
+    replaySlider.addEventListener('input',()=>{
+        const t=parseFloat(replaySlider.value);
+        replayTimeLabel.textContent=t.toFixed(2)+' s';
+        applyHistoryState(t);
+    });
+
+    function startSimulation(){
+        if(simState===SIM_STATE.RUNNING||simState===SIM_STATE.COLLIDED) return;
+        readInputs(); resetBallPositions(); simState=SIM_STATE.RUNNING; btnStart.textContent='⏳ 模拟中...'; btnStart.disabled=true;
+        lastTime=null; simTotalTime=0; history=[]; replayContainer.style.display='none';
+        startAnimation();
+    }
+    function startAnimation(){ if(animId) cancelAnimationFrame(animId); animId=requestAnimationFrame(animate); }
+
+    function resetSimulation(){
+        if(animId){ cancelAnimationFrame(animId); animId=null; }
+        readInputs(); simState=SIM_STATE.IDLE; resetBallPositions(); updateDataDisplayPre(); drawChartsPre(); updateKnowledgePre();
+        btnStart.textContent='▶ 开始模拟'; btnStart.disabled=false; drawSimulation();
+    }
+    function applyQuickPreset(){
+        sliderM1.value=5; sliderV1.value=4; sliderM2.value=1.5; sliderV2.value=0; sliderE.value=1;
+        syncFromSliders(); resetSimulation();
+    }
+
+    inputM1.addEventListener('change',()=>{ sliderM1.value=inputM1.value; readInputs(); resetSimulation(); });
+    inputV1.addEventListener('change',()=>{ sliderV1.value=inputV1.value; readInputs(); resetSimulation(); });
+    inputM2.addEventListener('change',()=>{ sliderM2.value=inputM2.value; readInputs(); resetSimulation(); });
+    inputV2.addEventListener('change',()=>{ sliderV2.value=inputV2.value; readInputs(); resetSimulation(); });
+    inputE.addEventListener('change',()=>{ sliderE.value=inputE.value; readInputs(); resetSimulation(); });
+    sliderM1.addEventListener('input',()=>{ inputM1.value=sliderM1.value; readInputs(); resetSimulation(); });
+    sliderV1.addEventListener('input',()=>{ inputV1.value=sliderV1.value; readInputs(); resetSimulation(); });
+    sliderM2.addEventListener('input',()=>{ inputM2.value=sliderM2.value; readInputs(); resetSimulation(); });
+    sliderV2.addEventListener('input',()=>{ inputV2.value=sliderV2.value; readInputs(); resetSimulation(); });
+    sliderE.addEventListener('input',()=>{ inputE.value=sliderE.value; readInputs(); resetSimulation(); });
+
+    btnStart.addEventListener('click', startSimulation);
+    btnReset.addEventListener('click', resetSimulation);
+    btnQuickPreset.addEventListener('click', applyQuickPreset);
+    presetElastic.addEventListener('click',()=>{ sliderE.value=1; inputE.value='1.00'; readInputs(); resetSimulation(); });
+    presetPartial.addEventListener('click',()=>{ sliderE.value=0.5; inputE.value='0.50'; readInputs(); resetSimulation(); });
+    presetInelastic.addEventListener('click',()=>{ sliderE.value=0; inputE.value='0.00'; readInputs(); resetSimulation(); });
+
+    window.addEventListener('resize',()=>{ resizeCanvas(); drawSimulation(); });
+    window.addEventListener('keydown',e=>{ if(e.key===' '){ e.preventDefault(); if(simState===SIM_STATE.IDLE||simState===SIM_STATE.FINISHED) startSimulation(); } else if(e.key==='r'||e.key==='R'){ e.preventDefault(); resetSimulation(); } });
+
+    if(!CanvasRenderingContext2D.prototype.roundRect){ CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){ if(typeof r==='undefined') r=0; if(Array.isArray(r)&&r.length===4){ this.moveTo(x+r[0],y); this.lineTo(x+w-r[1],y); this.quadraticCurveTo(x+w,y,x+w,y+r[1]); this.lineTo(x+w,y+h-r[2]); this.quadraticCurveTo(x+w,y+h,x+w-r[2],y+h); this.lineTo(x+r[3],y+h); this.quadraticCurveTo(x,y+h,x,y+h-r[3]); this.lineTo(x,y+r[0]); this.quadraticCurveTo(x,y,x+r[0],y); } else { this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); } this.closePath(); return this; }; }
+
+    function init(){ readInputs(); resizeCanvas(); resetBallPositions(); updateDataDisplayPre(); drawChartsPre(); updateKnowledgePre(); drawSimulation(); }
+    init();
+})();
+</script>
+</body>
+</html>

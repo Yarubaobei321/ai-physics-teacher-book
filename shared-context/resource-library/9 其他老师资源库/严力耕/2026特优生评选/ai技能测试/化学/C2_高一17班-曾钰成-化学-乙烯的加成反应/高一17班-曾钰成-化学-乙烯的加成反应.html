@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>乙烯加成反应 · 高中化学3D互动教学 | 精美排版 | 大字体课堂版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Microsoft YaHei', 'Helvetica Neue', sans-serif;
+        }
+        /* 全局UI - 优雅毛玻璃，大字体，无遮挡间距 */
+        .info-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(12, 22, 38, 0.92);
+            backdrop-filter: blur(18px);
+            border-radius: 32px;
+            padding: 20px 28px;
+            color: #ffffff;
+            pointer-events: none;
+            z-index: 30;
+            border-left: 6px solid #ffb347;
+            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.5);
+            max-width: 380px;
+            font-size: 16px;
+            line-height: 1.5;
+            letter-spacing: 0.3px;
+        }
+        .info-card h2 {
+            margin: 0 0 8px 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffde9c;
+            letter-spacing: -0.3px;
+        }
+        .info-card .sub {
+            font-size: 0.9rem;
+            color: #ccddee;
+            margin-bottom: 14px;
+            border-bottom: 1px solid rgba(255,200,100,0.4);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+        .info-card p {
+            margin: 10px 0;
+            font-size: 0.95rem;
+        }
+        .info-card .highlight {
+            color: #ffcd7e;
+            font-weight: 600;
+        }
+        .reason-badge {
+            background: rgba(0,0,0,0.45);
+            border-radius: 20px;
+            padding: 10px 14px;
+            margin-top: 14px;
+            font-size: 0.88rem;
+            border-left: 4px solid #ffb347;
+        }
+        /* 原子图例 - 精致大图标 */
+        .legend-modern {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(16px);
+            border-radius: 28px;
+            padding: 16px 24px;
+            color: white;
+            pointer-events: none;
+            z-index: 30;
+            border: 1px solid rgba(255, 200, 100, 0.4);
+            min-width: 170px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+        .legend-modern h4 {
+            margin: 0 0 14px 0;
+            font-size: 1.2rem;
+            color: #ffcd7e;
+            text-align: center;
+            font-weight: 600;
+        }
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .legend-color {
+            width: 30px;
+            height: 30px;
+            border-radius: 30px;
+            box-shadow: 0 0 3px rgba(255,255,200,0.8);
+        }
+        .legend-label {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        /* 反应按钮栏 - 大按钮，舒适间距 */
+        .reaction-dock {
+            position: absolute;
+            bottom: 28px;
+            left: 24px;
+            right: 24px;
+            background: rgba(12, 22, 38, 0.94);
+            backdrop-filter: blur(24px);
+            border-radius: 64px;
+            padding: 16px 28px;
+            pointer-events: auto;
+            z-index: 30;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 16px;
+            border: 1px solid rgba(255, 210, 90, 0.4);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.5);
+        }
+        .react-btn {
+            background: #1f4172;
+            border: none;
+            color: white;
+            padding: 10px 26px;
+            border-radius: 60px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 700;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            font-family: inherit;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+            letter-spacing: 0.5px;
+        }
+        .react-btn:hover {
+            transform: translateY(-3px);
+            background: #2d5a8c;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        .react-btn:active { transform: translateY(1px); }
+        .eqn-text {
+            background: #0a142a;
+            border-radius: 48px;
+            padding: 4px 16px;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #d4f1ff;
+        }
+        .cond-tag {
+            font-size: 0.75rem;
+            background: #f5a623;
+            border-radius: 40px;
+            padding: 4px 12px;
+            color: #1e2a2e;
+            font-weight: bold;
+        }
+        /* 状态栏 + 步骤提示 - 置于底部左右，增大字体，不挡分子 */
+        .status-area {
+            position: absolute;
+            bottom: 110px;
+            right: 32px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff0c0;
+            pointer-events: none;
+            font-family: monospace;
+            z-index: 30;
+            max-width: 380px;
+            text-align: right;
+            border-right: 4px solid #ffb347;
+            letter-spacing: 0.5px;
+        }
+        .step-indicator {
+            position: absolute;
+            bottom: 110px;
+            left: 32px;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #ffefb0;
+            z-index: 30;
+            pointer-events: none;
+            font-family: monospace;
+            letter-spacing: 1px;
+            border-left: 3px solid #ffb347;
+        }
+        .instruction {
+            position: absolute;
+            bottom: 28px;
+            left: 32px;
+            background: rgba(0,0,0,0.45);
+            border-radius: 32px;
+            padding: 6px 18px;
+            font-size: 0.75rem;
+            color: #cceeff;
+            pointer-events: none;
+            z-index: 30;
+            font-weight: 500;
+        }
+        /* 响应式优化 - 字体依然保持可读 */
+        @media (max-width: 1100px) {
+            .info-card { max-width: 320px; padding: 16px 22px; }
+            .info-card h2 { font-size: 1.7rem; }
+            .legend-modern { padding: 12px 18px; min-width: 150px; }
+            .legend-color { width: 26px; height: 26px; }
+            .legend-label { font-size: 14px; }
+            .react-btn { padding: 8px 20px; font-size: 0.85rem; }
+            .eqn-text { font-size: 0.7rem; padding: 3px 12px; }
+        }
+        @media (max-width: 860px) {
+            .info-card { max-width: 260px; padding: 12px 16px; top: 16px; left: 16px; }
+            .info-card h2 { font-size: 1.4rem; }
+            .legend-modern { top: 16px; right: 16px; padding: 8px 14px; min-width: 130px; }
+            .legend-grid { gap: 8px 12px; }
+            .legend-color { width: 22px; height: 22px; }
+            .legend-label { font-size: 12px; }
+            .react-btn { padding: 6px 14px; font-size: 0.75rem; gap: 6px; }
+            .cond-tag { font-size: 0.65rem; padding: 2px 8px; }
+            .eqn-text { font-size: 0.6rem; padding: 2px 8px; }
+            .status-area { font-size: 0.75rem; bottom: 95px; padding: 8px 18px; }
+            .step-indicator { font-size: 0.8rem; bottom: 95px; padding: 8px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 左侧信息卡片：加大字体，无遮挡 -->
+    <div class="info-card">
+        <h2>乙烯 · 加成反应</h2>
+        <div class="sub">C=C双键 | π键断裂 | 新σ键形成</div>
+        <p><span class="highlight">🔬 精确键长</span> C=C / C-C / C-H 真实比例<br>
+        <span class="highlight">🧪 反应机理</span> 亲电加成 → 四面体产物</p>
+        <div class="reason-badge">
+            <strong>✨ 为何易加成？</strong><br>
+            • π键电子云<strong>暴露</strong>，易受亲电试剂进攻<br>
+            • π键能 < σ键，<strong>易断裂</strong>；加成后能量降低
+        </div>
+        <p style="font-size:0.85rem; margin-top:10px;">✔ 高中常见试剂: H₂, Cl₂, HCl, H₂O, Br₂, HCN</p>
+    </div>
+    
+    <!-- 右侧图例 - 清晰大色块 -->
+    <div class="legend-modern">
+        <h4>⚛️ 原子图例</h4>
+        <div class="legend-grid">
+            <div class="legend-item"><div class="legend-color" style="background: #708090;"></div><span class="legend-label">碳 C</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: #e0e8f0;"></div><span class="legend-label">氢 H</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: #6ab04c;"></div><span class="legend-label">氯 Cl</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: #e67e22;"></div><span class="legend-label">氧 O</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: #cd5c5c;"></div><span class="legend-label">溴 Br</span></div>
+            <div class="legend-item"><div class="legend-color" style="background: #3a6ea5;"></div><span class="legend-label">氮 N</span></div>
+        </div>
+    </div>
+    
+    <!-- 底部按钮栏 美观排列 -->
+    <div class="reaction-dock">
+        <button class="react-btn" data-reaction="h2">➕ H₂ <span class="cond-tag">Ni/加热</span><span class="eqn-text">C₂H₄+H₂→C₂H₆</span></button>
+        <button class="react-btn" data-reaction="cl2">🧪 Cl₂ <span class="cond-tag">常温</span><span class="eqn-text">C₂H₄+Cl₂→ClCH₂CH₂Cl</span></button>
+        <button class="react-btn" data-reaction="hcl">⚡ HCl <span class="cond-tag">催化剂</span><span class="eqn-text">C₂H₄+HCl→CH₃CH₂Cl</span></button>
+        <button class="react-btn" data-reaction="h2o">💧 H₂O <span class="cond-tag">酸/加压</span><span class="eqn-text">C₂H₄+H₂O→C₂H₅OH</span></button>
+        <button class="react-btn" data-reaction="br2">🧴 Br₂ <span class="cond-tag">CCl₄</span><span class="eqn-text">C₂H₄+Br₂→BrCH₂CH₂Br</span></button>
+        <button class="react-btn" data-reaction="hcn">🔹 HCN <span class="cond-tag">催化剂</span><span class="eqn-text">C₂H₄+HCN→CH₃CH₂CN</span></button>
+        <button class="react-btn" data-reaction="reset">🔄 重置·乙烯</button>
+    </div>
+    
+    <div class="status-area" id="statusMsg">✨ 乙烯 | 双键完整 键长真实比例</div>
+    <div class="step-indicator" id="stepIndicator">⚡ 待机中</div>
+    <div class="instruction">🖱️ 鼠标拖拽旋转视角 | 滚轮缩放 | 无遮挡设计</div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- 初始化场景 (优雅深色背景，分子高亮) ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a1428);
+        scene.fog = new THREE.FogExp2(0x0a1428, 0.007);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+        
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(4.0, 3.2, 5.8);
+        camera.lookAt(0, 0, 0);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.1;
+        controls.enableZoom = true;
+        
+        // 光照优化，立体感强
+        const ambientLight = new THREE.AmbientLight(0x404868);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.1);
+        mainLight.position.set(2, 4, 3);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+        const fillWarm = new THREE.PointLight(0xffaa66, 0.45);
+        fillWarm.position.set(1.2, 1.5, 2.2);
+        scene.add(fillWarm);
+        const fillCool = new THREE.PointLight(0x6688cc, 0.35);
+        fillCool.position.set(-1.2, 1.8, -2.0);
+        scene.add(fillCool);
+        
+        // 简约半透明地格，增加空间感
+        const gridHelper = new THREE.GridHelper(7, 20, 0x88aaff, 0x446688);
+        gridHelper.position.y = -1.35;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.2;
+        scene.add(gridHelper);
+        
+        // 星空背景
+        const starGeo = new THREE.BufferGeometry();
+        const starsPos = [];
+        for (let i = 0; i < 1200; i++) {
+            starsPos.push((Math.random() - 0.5) * 200);
+            starsPos.push((Math.random() - 0.5) * 100);
+            starsPos.push((Math.random() - 0.5) * 70 - 35);
+        }
+        starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starsPos), 3));
+        const stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xcceeff, size: 0.07, transparent: true, opacity: 0.5 }));
+        scene.add(stars);
+        
+        // ---- 分子系统 (精确键长比例：C=C=1.0, C-C=1.15, C-H=0.82) ----
+        let currentGroup = null;
+        let animationBusy = false;
+        let animTimeout = null;
+        
+        const atomColorMap = { C: 0x708090, H: 0xe0e8f0, Cl: 0x6ab04c, O: 0xe67e22, Br: 0xcd5c5c, N: 0x3a6ea5 };
+        const atomRadiusMap = { C: 0.48, H: 0.30, Cl: 0.58, O: 0.55, Br: 0.64, N: 0.50 };
+        
+        function addAtom(x, y, z, element, group) {
+            const color = atomColorMap[element] || 0xaa9988;
+            const rad = atomRadiusMap[element] || 0.42;
+            const sphereGeo = new THREE.SphereGeometry(rad, 64, 64);
+            const material = new THREE.MeshStandardMaterial({ color, roughness: 0.28, metalness: 0.08 });
+            const sphere = new THREE.Mesh(sphereGeo, material);
+            sphere.position.set(x, y, z);
+            group.add(sphere);
+            return sphere;
+        }
+        
+        function createBond(p1, p2, group, color = 0xc0c0aa, radius = 0.07) {
+            const start = new THREE.Vector3(p1.x, p1.y, p1.z);
+            const end = new THREE.Vector3(p2.x, p2.y, p2.z);
+            const dir = new THREE.Vector3().subVectors(end, start);
+            const len = dir.length();
+            if (len < 0.2) return;
+            const center = start.clone().add(end).multiplyScalar(0.5);
+            const cylinderGeo = new THREE.CylinderGeometry(radius, radius, len, 18);
+            const mat = new THREE.MeshStandardMaterial({ color, metalness: 0.5, roughness: 0.4 });
+            const cylinder = new THREE.Mesh(cylinderGeo, mat);
+            cylinder.position.copy(center);
+            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.clone().normalize());
+            group.add(cylinder);
+        }
+        
+        // 平行双键 (C=C双键视觉)
+        function addDoubleBondParallel(p1, p2, group, color = 0xddbb77, radius = 0.09, offset = 0.11) {
+            const start = new THREE.Vector3(p1.x, p1.y, p1.z);
+            const end = new THREE.Vector3(p2.x, p2.y, p2.z);
+            const axis = new THREE.Vector3().subVectors(end, start).normalize();
+            let up = new THREE.Vector3(0, 1, 0);
+            if (Math.abs(axis.dot(up)) > 0.999) up = new THREE.Vector3(1, 0, 0);
+            const perp = new THREE.Vector3().crossVectors(axis, up).normalize();
+            const off1 = perp.clone().multiplyScalar(offset);
+            const off2 = perp.clone().multiplyScalar(-offset);
+            const p1a = start.clone().add(off1), p2a = end.clone().add(off1);
+            const p1b = start.clone().add(off2), p2b = end.clone().add(off2);
+            createBond(p1a, p2a, group, color, radius);
+            createBond(p1b, p2b, group, color, radius);
+        }
+        
+        // ---------- 分子构建（基于真实键长比例）----------
+        function buildEthylene(group) {
+            const c1 = [-0.50, 0, 0]; const c2 = [0.50, 0, 0];
+            const h1 = [-0.92, 0.71, 0]; const h2 = [-0.92, -0.71, 0];
+            const h3 = [0.92, 0.71, 0]; const h4 = [0.92, -0.71, 0];
+            const spheres = [
+                addAtom(c1[0], c1[1], c1[2], 'C', group), addAtom(c2[0], c2[1], c2[2], 'C', group),
+                addAtom(h1[0], h1[1], h1[2], 'H', group), addAtom(h2[0], h2[1], h2[2], 'H', group),
+                addAtom(h3[0], h3[1], h3[2], 'H', group), addAtom(h4[0], h4[1], h4[2], 'H', group)
+            ];
+            addDoubleBondParallel(spheres[0].position, spheres[1].position, group, 0xddbb77, 0.09, 0.11);
+            [[0,2],[0,3],[1,4],[1,5]].forEach(e => createBond(spheres[e[0]].position, spheres[e[1]].position, group, 0xc0b090, 0.07));
+        }
+        
+        function buildEthane(group) {
+            const c1 = [-0.58,0,0]; const c2=[0.58,0,0];
+            const h1=[-1.02,0.64,0.34]; const h2=[-1.02,-0.62,-0.32]; const h3=[-0.98,0.32,-0.68];
+            const h4=[1.02,0.64,-0.34]; const h5=[1.02,-0.62,0.32]; const h6=[0.98,0.32,0.68];
+            const spheres = [c1,c2,h1,h2,h3,h4,h5,h6].map(p => addAtom(p[0],p[1],p[2], p===c1||p===c2?'C':'H', group));
+            [[0,1],[0,2],[0,3],[0,4],[1,5],[1,6],[1,7]].forEach(e => createBond(spheres[e[0]].position, spheres[e[1]].position, group));
+        }
+        
+        function buildDichloroethane(group) {
+            const c1=[-0.58,0,0]; const c2=[0.58,0,0];
+            const h1=[-1.05,0.64,0.32]; const h2=[-1.05,-0.62,-0.28];
+            const h3=[1.05,0.64,-0.32]; const h4=[1.05,-0.62,0.28];
+            const cl1=[-0.22,0.48,0.88]; const cl2=[0.22,-0.48,-0.88];
+            const spheres = [
+                addAtom(c1[0],c1[1],c1[2],'C',group), addAtom(c2[0],c2[1],c2[2],'C',group),
+                addAtom(h1[0],h1[1],h1[2],'H',group), addAtom(h2[0],h2[1],h2[2],'H',group),
+                addAtom(h3[0],h3[1],h3[2],'H',group), addAtom(h4[0],h4[1],h4[2],'H',group),
+                addAtom(cl1[0],cl1[1],cl1[2],'Cl',group), addAtom(cl2[0],cl2[1],cl2[2],'Cl',group)
+            ];
+            [[0,1],[0,2],[0,3],[0,6],[1,4],[1,5],[1,7]].forEach(e => createBond(spheres[e[0]].position, spheres[e[1]].position, group));
+        }
+        
+        function buildChloroethane(group) {
+            const c1=[-0.58,0,0]; const c2=[0.58,0,0.12];
+            const h1=[-1.04,0.65,0.30]; const h2=[-1.02,-0.62,-0.28]; const h3=[-0.98,0.32,-0.70];
+            const h4=[1.05,0.64,-0.26]; const h5=[1.02,-0.60,0.36]; const cl=[0.14,0.22,0.96];
+            const spheres = [
+                addAtom(c1[0],c1[1],c1[2],'C',group), addAtom(c2[0],c2[1],c2[2],'C',group),
+                addAtom(h1[0],h1[1],h1[2],'H',group), addAtom(h2[0],h2[1],h2[2],'H',group),
+                addAtom(h3[0],h3[1],h3[2],'H',group), addAtom(h4[0],h4[1],h4[2],'H',group),
+                addAtom(h5[0],h5[1],h5[2],'H',group), addAtom(cl[0],cl[1],cl[2],'Cl',group)
+            ];
+            [[0,1],[0,2],[0,3],[0,4],[1,5],[1,6],[1,7]].forEach(e => createBond(spheres[e[0]].position, spheres[e[1]].position, group));
+        }
+        
+        function buildEthanol(group) {
+            const c1=[-0.58,0,0]; const c2=[0.52,0.12,0.20];
+            const h1=[-1.05,0.66,0.28]; const h2=[-1.02,-0.62,-0.30]; const h3=[-0.96,0.34,-0.72];
+            const h4=[1.03,0.68,-0.22]; const h5=[0.98,-0.58,0.40]; const o=[-0.12,0.12,0.94]; const ho=[-0.16,-0.66,1.05];
+            const spheres = [
+                addAtom(c1[0],c1[1],c1[2],'C',group), addAtom(c2[0],c2[1],c2[2],'C',group),
+                addAtom(h1[0],h1[1],h1[2],'H',group), addAtom(h2[0],h2[1],h2[2],'H',group),
+                addAtom(h3[0],h3[1],h3[2],'H',group), addAtom(h4[0],h4[1],h4[2],'H',group),
+                addAtom(h5[0],h5[1],h5[2],'H',group), addAtom(o[0],o[1],o[2],'O',group),
+                addAtom(ho[0],ho[1],ho[2],'H',group)
+            ];
+            [[0,1],[0,2],[0,3],[0,4],[1,5],[1,6],[1,7],[7,8]].forEach(e => createBond(spheres[e[0]].position, spheres[e[1]].position, group));
+        }
+        
+        function buildDibromoethane(group) {
+            const c1=[-0.58,0,0]; const c2=[0.58,0,0];
+            const h1=[-1.05,0.64,0.32]; const h2=[-1.05,-0.62,-0.28];
+            const h3=[1.05,0.64,-0.32]; const h4=[1.05,-0.62,0.28];
+            const br1=[-0.24,0.50,0.94]; const br2=[0.24,-0.50,-0.94];
+            const spheres = [
+                addAtom(c1[0],c1[1],c1[2],'C',group), addAtom(c2[0],c2[1],c2[2],'C',group),
+                addAtom(h1[0],h1[1],h1[2],'H',group), addAtom(h2[0],h2[1],h2[2],'H',group),
+                addAtom(h3[0],h3[1],h3[2],'H',group), addAtom(h4[0],h4[1],h4[2],'H',group),
+                addAtom(br1[0],br1[1],br1[2],'Br',group), addAtom(br2[0],br2[1],br2[2],'Br',group)
+            ];
+            [[0,1],[0,2],[0,3],[0,6],[1,4],[1,5],[1,7]].forEach(e => createBond(spheres[e[0]].position, spheres[e[1]].position, group));
+        }
+        
+        function buildPropionitrile(group) {
+            const c1=[-0.58,0,0]; const c2=[0.52,0,0.18];
+            const h1=[-1.05,0.66,0.28]; const h2=[-1.02,-0.62,-0.28]; const h3=[-0.98,0.32,-0.72];
+            const h4=[1.05,0.64,-0.22]; const h5=[1.00,-0.60,0.38];
+            const c3=[1.12,0.06,0.94]; const n=[1.60,0.09,1.48];
+            const spheres = [
+                addAtom(c1[0],c1[1],c1[2],'C',group), addAtom(c2[0],c2[1],c2[2],'C',group),
+                addAtom(h1[0],h1[1],h1[2],'H',group), addAtom(h2[0],h2[1],h2[2],'H',group),
+                addAtom(h3[0],h3[1],h3[2],'H',group), addAtom(h4[0],h4[1],h4[2],'H',group),
+                addAtom(h5[0],h5[1],h5[2],'H',group), addAtom(c3[0],c3[1],c3[2],'C',group),
+                addAtom(n[0],n[1],n[2],'N',group)
+            ];
+            [[0,1],[0,2],[0,3],[0,4],[1,5],[1,6],[1,7],[7,8]].forEach(e => createBond(spheres[e[0]].position, spheres[e[1]].position, group));
+            createBond(spheres[7].position, spheres[8].position, group, 0x88aaff, 0.07);
+            createBond(spheres[7].position, spheres[8].position, group, 0x88aaff, 0.07);
+        }
+        
+        function getProductBuilder(type) {
+            const map = { h2: buildEthane, cl2: buildDichloroethane, hcl: buildChloroethane, h2o: buildEthanol, br2: buildDibromoethane, hcn: buildPropionitrile };
+            return map[type] || buildEthylene;
+        }
+        
+        // ---- 动画特效 ----
+        function burstParticles(center, count=70) {
+            const particleGroup = new THREE.Group();
+            const parts = [];
+            for (let i=0;i<count;i++) {
+                const geom = new THREE.SphereGeometry(0.07,6,6);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xffaa55, emissive: 0xcc4411 });
+                const pMesh = new THREE.Mesh(geom, mat);
+                pMesh.position.set(center.x+(Math.random()-0.5)*0.9, center.y+(Math.random()-0.5)*0.7, center.z+(Math.random()-0.5)*0.9);
+                particleGroup.add(pMesh);
+                parts.push({ mesh: pMesh, life: 1, vel: new THREE.Vector3((Math.random()-0.5)*0.12, Math.random()*0.1+0.03, (Math.random()-0.5)*0.12) });
+            }
+            scene.add(particleGroup);
+            const interval = setInterval(()=>{
+                if (!particleGroup.parent) { clearInterval(interval); return; }
+                let allDead=true;
+                parts.forEach(p=>{
+                    if(p.life>0){
+                        p.life-=0.045;
+                        p.mesh.position.x+=p.vel.x; p.mesh.position.y+=p.vel.y; p.mesh.position.z+=p.vel.z;
+                        p.mesh.material.emissiveIntensity = p.life*2.2;
+                        if(p.life<=0) p.mesh.visible=false;
+                        else allDead=false;
+                    }
+                });
+                if(allDead){ clearInterval(interval); scene.remove(particleGroup); }
+            },28);
+        }
+        
+        function glowTransition(pos) {
+            const glowMat = new THREE.MeshPhongMaterial({ color: 0xffaa66, emissive: 0x552200, transparent: true, opacity: 0.7 });
+            const sphereGlow = new THREE.Mesh(new THREE.SphereGeometry(0.65,16,16), glowMat);
+            sphereGlow.position.copy(pos);
+            scene.add(sphereGlow);
+            let t=0;
+            const timer = setInterval(()=>{
+                t+=0.08;
+                if(t>1.2){ clearInterval(timer); scene.remove(sphereGlow); return; }
+                sphereGlow.material.emissiveIntensity = 0.5+Math.sin(t*12)*0.3;
+                sphereGlow.scale.setScalar(1+Math.sin(t*14)*0.12);
+            },35);
+        }
+        
+        async function animateReaction(type) {
+            if (animationBusy) return;
+            animationBusy = true;
+            const stepDiv = document.getElementById('stepIndicator');
+            const statusDiv = document.getElementById('statusMsg');
+            if (currentGroup) scene.remove(currentGroup);
+            const tempEthylene = new THREE.Group();
+            buildEthylene(tempEthylene);
+            scene.add(tempEthylene);
+            currentGroup = tempEthylene;
+            stepDiv.innerHTML = "🌀 阶段1: π键断裂 · 电子云分散";
+            statusDiv.innerHTML = "💥 双键π电子云断裂，生成高活性中间体...";
+            burstParticles(new THREE.Vector3(0,0,0), 75);
+            await new Promise(r => setTimeout(r, 700));
+            stepDiv.innerHTML = "⚡ 阶段2: 亲电过渡态 · 中间体形成";
+            glowTransition(new THREE.Vector3(0,0,0));
+            statusDiv.innerHTML = "🔬 过渡态：碳正离子特性，试剂准备进攻";
+            await new Promise(r => setTimeout(r, 780));
+            stepDiv.innerHTML = "🔗 阶段3: 新σ键形成 · 加成产物生成";
+            scene.remove(tempEthylene);
+            const finalGroup = new THREE.Group();
+            const builder = getProductBuilder(type);
+            builder(finalGroup);
+            currentGroup = finalGroup;
+            scene.add(finalGroup);
+            const flash = new THREE.Mesh(new THREE.SphereGeometry(1.0,16,16), new THREE.MeshBasicMaterial({ color: 0xffdd99, transparent: true, opacity: 0.6 }));
+            flash.position.set(0,0,0);
+            scene.add(flash);
+            setTimeout(()=> scene.remove(flash), 400);
+            const names = { h2:"乙烷", cl2:"1,2-二氯乙烷", hcl:"氯乙烷", h2o:"乙醇", br2:"1,2-二溴乙烷", hcn:"丙腈" };
+            stepDiv.innerHTML = `✅ 反应完成: ${names[type] || '产物'}`;
+            statusDiv.innerHTML = `🎉 ${names[type]} 生成 | 键长真实比例 | σ键完全饱和`;
+            animationBusy = false;
+            if (animTimeout) clearTimeout(animTimeout);
+        }
+        
+        function resetToEthylene() {
+            if (animationBusy) return;
+            if (currentGroup) scene.remove(currentGroup);
+            const newGrp = new THREE.Group();
+            buildEthylene(newGrp);
+            currentGroup = newGrp;
+            scene.add(currentGroup);
+            document.getElementById('stepIndicator').innerHTML = "🌿 乙烯 · 双键完整";
+            document.getElementById('statusMsg').innerHTML = "✅ 重置为乙烯，C=C 双键比例精确，可重新进行加成";
+        }
+        
+        // 绑定按钮
+        document.querySelectorAll('.react-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const react = btn.getAttribute('data-reaction');
+                if (react === 'reset') resetToEthylene();
+                else animateReaction(react);
+            });
+        });
+        
+        // 初始分子
+        const initial = new THREE.Group();
+        buildEthylene(initial);
+        currentGroup = initial;
+        scene.add(initial);
+        
+        function renderLoop() {
+            requestAnimationFrame(renderLoop);
+            controls.update();
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        renderLoop();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

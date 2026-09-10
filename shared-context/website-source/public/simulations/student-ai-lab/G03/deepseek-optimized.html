@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>河流地貌 · 交互式 3D 网页</title>
+<style>
+:root{
+  --bg1:#ecfdf5; --bg2:#d1fae5; --card:#fff; --ink:#1e293b; --muted:#64748b;
+  --border:#a7f3d0; --accent:#047857; --river:#0ea5e9; --red:#dc2626; --brown:#92400e;
+  --shadow:0 4px 14px rgba(4,120,87,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink); background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  font-size:0.95rem; line-height:1.6;
+}
+header{background:linear-gradient(135deg,#064e3b,#059669); color:#fff; padding:1rem 1.5rem; box-shadow:var(--shadow)}
+header h1{margin:0; font-size:1.25rem; font-weight:600}
+header p{margin:.2rem 0 0; font-size:.85rem; opacity:.92}
+.wrap{max-width:1420px; margin:1rem auto; padding:0 1.5rem 2rem}
+.card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:1rem; box-shadow:var(--shadow)}
+.card h2{margin:.2rem 0 .7rem; color:var(--accent); font-size:1.12rem; border-left:4px solid var(--accent); padding-left:.6rem}
+
+/* 目录导航 */
+.nav-tabs{display:flex; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem}
+.nav-tabs button{font-family:inherit; font-size:.95rem; padding:.5rem 1.1rem; border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:10px; cursor:pointer; transition:all .15s}
+.nav-tabs button small{display:block; font-size:.72rem; opacity:.75; font-weight:400}
+.nav-tabs button.active{background:var(--accent); color:#fff; box-shadow:0 3px 10px rgba(4,120,87,.3)}
+
+/* 详情区 */
+.detail-grid{display:grid; grid-template-columns:1.25fr 1fr; gap:1rem}
+.anim-box{background:linear-gradient(180deg,#f0fdf4,#d1fae5); border:1px solid var(--border); border-radius:10px; padding:.6rem; text-align:center}
+.anim-box canvas{display:block; width:100%; height:auto; max-width:460px; margin:0 auto; background:#fff; border-radius:8px}
+.controls{display:flex; gap:.6rem; align-items:center; justify-content:center; margin-top:.6rem; flex-wrap:wrap}
+.controls button{font-family:inherit; font-size:.88rem; padding:.35rem .85rem; border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:8px; cursor:pointer}
+.controls button:hover{background:#d1fae5}
+.controls .progress{flex:1 1 140px; max-width:240px; display:flex; align-items:center; gap:.4rem; font-size:.8rem; color:var(--muted)}
+.controls .bar{flex:1; height:8px; background:#d1fae5; border-radius:4px; overflow:hidden}
+.controls .bar i{display:block; height:100%; background:var(--accent); width:0%; border-radius:4px}
+.stage-tag{font-size:.78rem; color:#fff; background:#065f46; padding:.1rem .5rem; border-radius:8px; margin-right:.3rem}
+
+/* 逻辑链 */
+.chain{display:flex; align-items:center; flex-wrap:wrap; gap:.3rem; margin:.5rem 0}
+.chain .step{background:#f0fdf4; border:1px solid var(--accent); color:var(--accent); border-radius:8px; padding:.25rem .55rem; font-size:.82rem}
+.chain .arr{color:var(--accent); font-weight:bold}
+.case-box{background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:.6rem .8rem; margin-top:.5rem}
+.case-box h4{margin:.1rem 0 .3rem; color:#92400e; font-size:.9rem}
+.case-box svg{max-width:220px; height:auto; margin:.2rem auto; display:block}
+
+/* 可拖动面板 */
+.stage-wrap{position:relative}
+.float-panel{position:absolute; top:8px; right:8px; width:260px; background:rgba(255,255,255,.97); border:1px solid var(--border); border-radius:10px; box-shadow:0 6px 18px rgba(4,120,87,.18); z-index:20; font-size:.84rem}
+.float-panel .panel-head{background:var(--accent); color:#fff; padding:.35rem .7rem; border-radius:10px 10px 0 0; cursor:move; display:flex; justify-content:space-between; align-items:center; font-size:.86rem; user-select:none}
+.float-panel .panel-head span{padding:.1rem .45rem; background:rgba(255,255,255,.25); border-radius:6px; cursor:pointer}
+.float-panel .panel-body{padding:.6rem .75rem}
+
+/* 结论 */
+.conclude{background:#fef9c3; border:1px solid #fde68a; border-radius:10px; padding:.8rem 1rem}
+.conclude li{margin:.3rem 0}
+.note{font-size:.82rem; color:var(--muted)}
+@media(max-width:900px){
+  .detail-grid{grid-template-columns:1fr}
+  .float-panel{position:static; width:100%; margin-top:.6rem}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>河流地貌 · 交互式 3D 网页</h1>
+  <p>高中地理必修一｜V 型谷 · 河漫滩 · 冲积平原 · 三角洲 · 形成过程动画</p>
+</header>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>① 地貌目录导航</h2>
+    <div class="nav-tabs">
+      <button type="button" data-lf="v" class="active">V 型谷<small>上游 · 下蚀</small></button>
+      <button type="button" data-lf="flood">河漫滩<small>中游 · 侧蚀+堆积</small></button>
+      <button type="button" data-lf="plain">冲积平原<small>下游 · 堆积</small></button>
+      <button type="button" data-lf="delta">三角洲<small>河口 · 扇形推进</small></button>
+    </div>
+
+    <div class="stage-wrap">
+      <div class="detail-grid">
+        <div class="anim-box">
+          <h3 id="animTitle">V 型谷 · 形成过程动画</h3>
+          <canvas id="lfCanvas" width="460" height="330"
+            aria-label="V型谷形成过程动画：上游落差大、下蚀强烈，河谷加深呈V形。"></canvas>
+          <div class="controls">
+            <button type="button" id="playBtn">⏸ 暂停</button>
+            <button type="button" id="resetBtn">↺ 重置</button>
+            <span class="progress"><span id="stageLabel">初期</span><span class="bar"><i id="progBar"></i></span><span id="pctLabel">0%</span></span>
+          </div>
+        </div>
+
+        <div class="detail-side">
+          <!-- V型谷 -->
+          <div class="detail-card" data-lf-card="v">
+            <h3>V 型谷 · 河流上游</h3>
+            <p><span class="stage-tag">河段</span>上游（落差大、下蚀为主，河谷加深成 V 形）</p>
+            <p><b>形成逻辑链：</b></p>
+            <div class="chain">
+              <span class="step">落差大</span><span class="arr">→</span>
+              <span class="step">下蚀强烈</span><span class="arr">→</span>
+              <span class="step">河谷加深</span><span class="arr">→</span>
+              <span class="step">V 形</span>
+            </div>
+            <div class="case-box">
+              <h4>真实案例：雅鲁藏布江大峡谷（上游下蚀）</h4>
+              <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="雅鲁藏布江大峡谷示意">
+                <rect width="220" height="90" fill="#fef9c3"/>
+                <path d="M20,80 L110,18 L200,80 Z" fill="#b45309" opacity="0.85"/>
+                <path d="M30,80 L110,28 L190,80 Z" fill="#78716c"/>
+                <path d="M90,60 L130,60 L130,78 L90,78 Z" fill="#0ea5e9"/>
+                <text x="110" y="86" text-anchor="middle" font-size="10" fill="#78350f">雅鲁藏布江大峡谷（深切河谷）</text>
+              </svg>
+              <p class="note">位置：青藏高原东南缘，下蚀力量强，河谷深窄呈 V 形。</p>
+            </div>
+          </div>
+          <!-- 河漫滩 -->
+          <div class="detail-card" data-lf-card="flood" style="display:none">
+            <h3>河漫滩 · 河流中游</h3>
+            <p><span class="stage-tag">河段</span>中游（侧蚀 + 堆积，凹岸侵蚀凸岸堆积）</p>
+            <p><b>形成逻辑链：</b></p>
+            <div class="chain">
+              <span class="step">中游侧蚀</span><span class="arr">→</span>
+              <span class="step">凹岸侵蚀</span><span class="arr">→</span>
+              <span class="step">凸岸堆积</span><span class="arr">→</span>
+              <span class="step">河床摆动 → 河漫滩</span>
+            </div>
+            <div class="case-box">
+              <h4>真实案例：长江中游（凹岸侵蚀凸岸堆积）</h4>
+              <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="长江中游曲流示意">
+                <rect width="220" height="90" fill="#fef9c3"/>
+                <path d="M10,20 Q60,10 110,30 T210,25" stroke="#0ea5e9" stroke-width="9" fill="none"/>
+                <path d="M10,55 Q60,45 110,65 T210,60" stroke="#0ea5e9" stroke-width="9" fill="none"/>
+                <circle cx="155" cy="40" r="8" fill="#dc2626" opacity="0.8"/>
+                <text x="170" y="38" font-size="9" fill="#dc2626">侵蚀岸(凹)</text>
+                <circle cx="95" cy="52" r="8" fill="#92400e" opacity="0.8"/>
+                <text x="20" y="70" font-size="9" fill="#92400e">堆积岸(凸)</text>
+                <text x="110" y="86" text-anchor="middle" font-size="10" fill="#78350f">长江中游曲流（荆江段）</text>
+              </svg>
+              <p class="note">位置：长江中游，河道弯曲，"九曲回肠"，凹岸侵蚀凸岸堆积。</p>
+            </div>
+          </div>
+          <!-- 冲积平原 -->
+          <div class="detail-card" data-lf-card="plain" style="display:none">
+            <h3>冲积平原 · 河流下游</h3>
+            <p><span class="stage-tag">河段</span>下游（以堆积为主，地势低平）</p>
+            <p><b>形成逻辑链：</b></p>
+            <div class="chain">
+              <span class="step">下游流速减缓</span><span class="arr">→</span>
+              <span class="step">泥沙大量堆积</span><span class="arr">→</span>
+              <span class="step">河床抬高、平原加积</span><span class="arr">→</span>
+              <span class="step">广阔冲积平原</span>
+            </div>
+            <div class="case-box">
+              <h4>真实案例：长江中下游平原（下游堆积）</h4>
+              <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="长江中下游平原示意">
+                <rect width="220" height="90" fill="#fef9c3"/>
+                <rect x="0" y="30" width="220" height="50" fill="#fde68a"/>
+                <path d="M0,38 Q40,30 80,42 T160,38 T220,42" stroke="#0ea5e9" stroke-width="5" fill="none"/>
+                <rect x="150" y="18" width="10" height="8" fill="#a16207"/>
+                <rect x="170" y="18" width="10" height="8" fill="#a16207"/>
+                <path d="M160,26 l2,6 h6 l2,-6 z" fill="#166534"/>
+                <path d="M176,26 l2,6 h6 l2,-6 z" fill="#166534"/>
+                <text x="110" y="86" text-anchor="middle" font-size="10" fill="#78350f">长江中下游平原（下游堆积）</text>
+              </svg>
+              <p class="note">位置：长江出三峡后进入平原区，泥沙堆积形成广阔平原与湖泊群。</p>
+            </div>
+          </div>
+          <!-- 三角洲 -->
+          <div class="detail-card" data-lf-card="delta" style="display:none">
+            <h3>三角洲 · 河口</h3>
+            <p><span class="stage-tag">河段</span>河口（流速骤减、泥沙快速沉积、向海扇形推进）</p>
+            <p><b>形成逻辑链：</b></p>
+            <div class="chain">
+              <span class="step">河流入海</span><span class="arr">→</span>
+              <span class="step">流速骤减</span><span class="arr">→</span>
+              <span class="step">泥沙快速沉积</span><span class="arr">→</span>
+              <span class="step">扇形堆积</span><span class="arr">→</span>
+              <span class="step">三角洲向海推进</span>
+            </div>
+            <div class="case-box">
+              <h4>真实案例：黄河三角洲（河口堆积）</h4>
+              <svg viewBox="0 0 220 90" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="黄河三角洲示意">
+                <rect width="220" height="90" fill="#fef9c3"/>
+                <rect x="0" y="55" width="220" height="35" fill="#7dd3fc"/>
+                <path d="M95,0 L95,30 L125,30 L125,0" fill="#d97706"/>
+                <path d="M95,30 L100,55 L120,55 L125,30 Z" fill="#fcd34d"/>
+                <path d="M100,55 L96,75 L120,74 L120,55 Z" fill="#fbbf24"/>
+                <text x="110" y="50" text-anchor="middle" font-size="9" fill="#92400e">黄河入海</text>
+                <text x="110" y="86" text-anchor="middle" font-size="10" fill="#78350f">黄河三角洲（向海推进）</text>
+              </svg>
+              <p class="note">位置：黄河入海口，每年填海造陆，三角洲不断向渤海推进。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 可拖动说明面板 -->
+      <div class="float-panel" id="floatPanel">
+        <div class="panel-head" id="panelHandle">✥ 地貌要点速记 <span id="panelReset" title="复位位置">复位</span></div>
+        <div class="panel-body" id="panelBody">
+          拖动本面板可随意摆放。当前地貌：<b id="panelLf">V 型谷</b>。<br>
+          记住判据：<b>凹岸侵蚀、凸岸堆积</b>；上游侵蚀、下游堆积；三角洲从河口向海生长。
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>② 观察与结论</h2>
+    <div class="conclude">
+      <ul>
+        <li><b>凹岸侵蚀、凸岸堆积：</b>河道弯曲处，水流偏向凹岸（外侧）冲刷成深槽，凸岸（内侧）流速慢堆积成浅滩——河流向侵蚀岸偏移、对侧沉积。</li>
+        <li><b>上游侵蚀、下游堆积：</b>上游落差大以下蚀为主（V 型谷），中游侧蚀+堆积（河漫滩），下游与河口以堆积为主（冲积平原、三角洲）。</li>
+        <li><b>三角洲从河口向外生长：</b>入海口流速骤减，泥沙快速沉积形成扇形堆积体，随泥沙补给不断向海推进。</li>
+        <li><b>溯源侵蚀方向指向上游：</b>河流源头向分水岭方向侵蚀后退。</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById('lfCanvas');
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var progBar = document.getElementById('progBar');
+  var pctLabel = document.getElementById('pctLabel');
+  var stageLabel = document.getElementById('stageLabel');
+  var playBtn = document.getElementById('playBtn');
+  var resetBtn = document.getElementById('resetBtn');
+  var animTitle = document.getElementById('animTitle');
+
+  var anim = {
+    v:     {t:0, playing:true},
+    flood: {t:0, playing:true},
+    plain: {t:0, playing:true},
+    delta: {t:0, playing:true}
+  };
+  var active = 'v';
+  var SPEED = 0.05; // 每秒推进
+
+  // ============ 四个地貌绘制（纯 Canvas 2.5D） ============
+  function drawV(t){
+    ctx.clearRect(0, 0, W, H);
+    // 天空
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#cffafe'); sky.addColorStop(1, '#f0fdf4');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    // 谷底深度随 t 加深（下蚀）
+    var floorY = H * 0.58 + t * (H * 0.24);
+    var topY = H * 0.12;
+    var mouthW = W * 0.14 + (1 - t) * W * 0.16;   // 越深越窄
+    // 左壁
+    ctx.beginPath();
+    ctx.moveTo(W * 0.04, topY);
+    ctx.lineTo(W / 2 - mouthW / 2, floorY);
+    ctx.lineTo(W / 2, floorY);
+    ctx.lineTo(W * 0.04, H);
+    ctx.lineTo(W * 0.04, topY);
+    ctx.closePath();
+    var wallG = ctx.createLinearGradient(W * 0.04, 0, W / 2, 0);
+    wallG.addColorStop(0, '#a8a29e'); wallG.addColorStop(1, '#57534e');
+    ctx.fillStyle = wallG; ctx.fill();
+    // 右壁
+    ctx.beginPath();
+    ctx.moveTo(W * 0.96, topY);
+    ctx.lineTo(W / 2 + mouthW / 2, floorY);
+    ctx.lineTo(W / 2, floorY);
+    ctx.lineTo(W * 0.96, H);
+    ctx.lineTo(W * 0.96, topY);
+    ctx.closePath();
+    ctx.fillStyle = wallG; ctx.fill();
+    // 岩层纹理
+    ctx.strokeStyle = 'rgba(68,64,60,.5)'; ctx.lineWidth = 1.5;
+    for(var i = 0; i < 5; i++){
+      var ly = topY + (floorY - topY) * (i + 0.5) / 5;
+      var half = (mouthW / 2) * ((i + 1) / 5);
+      ctx.beginPath();
+      ctx.moveTo(W * 0.04 + (ly - topY) * 0.35, ly);
+      ctx.lineTo(W / 2 - half, ly);
+      ctx.moveTo(W * 0.96 - (ly - topY) * 0.35, ly);
+      ctx.lineTo(W / 2 + half, ly);
+      ctx.stroke();
+    }
+    // 下蚀箭头（谷底）
+    ctx.fillStyle = '#dc2626';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('下蚀 ↓', W / 2, floorY - 12);
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - 7, floorY - 4); ctx.lineTo(W / 2 + 7, floorY - 4); ctx.lineTo(W / 2, floorY + 6); ctx.closePath();
+    ctx.fill();
+    // 河流
+    var riverW = Math.max(6, 22 - t * 14);
+    ctx.fillStyle = '#0ea5e9';
+    ctx.fillRect(W / 2 - riverW / 2, floorY, riverW, H - floorY);
+    ctx.strokeStyle = '#0369a1'; ctx.lineWidth = 1.5;
+    ctx.strokeRect(W / 2 - riverW / 2, floorY, riverW, H - floorY);
+    // 谷口宽度刻度
+    ctx.fillStyle = '#475569'; ctx.font = '12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('深度标尺：' + Math.round(t * 100) + '%', 10, H - 14);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#065f46'; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('V 形谷（下蚀 → 加深 → V 形）', W / 2, 20);
+  }
+
+  function drawFlood(t){
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#f0fdf4'; ctx.fillRect(0, 0, W, H);
+    // 曲流（平面视角）：河流自左上向右下，中段右弯
+    // 河道中心线
+    function riverPoint(p){
+      var cx = W * 0.18 + p * W * 0.64;
+      var cy = H * 0.12 + p * H * 0.76;
+      var bend = Math.sin(p * Math.PI) * 40;      // 中段向左弯
+      return {x: cx - bend, y: cy};
+    }
+    // 外(凹)岸偏移随 t 外移，内(凸)岸沉积随 t 内收
+    var erode = 6 + t * 14;   // 凹岸侵蚀后移
+    var depo  = 8 + t * 18;   // 凸岸堆积前伸
+    // 河道外边界（右/上为凹岸侧）
+    ctx.strokeStyle = '#0ea5e9'; ctx.lineWidth = 26;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    for(var i = 0; i <= 40; i++){
+      var p = riverPoint(i / 40);
+      if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    // 凸岸沉积体（随时间增大，向河心延伸）
+    ctx.fillStyle = '#fcd34d';
+    ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1.5;
+    for(var j = 0; j < 24; j++){
+      var q = riverPoint(0.18 + j / 24 * 0.64);
+      var bend = Math.sin((0.18 + j / 24 * 0.64) * Math.PI) * 40;
+      if(bend > 0){  // 凸岸侧（内侧）
+        var r = depo * (bend / 40);
+        ctx.beginPath();
+        ctx.arc(q.x + bend, q.y, r, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+      }
+    }
+    // 凹岸侵蚀箭头
+    var ep = riverPoint(0.5);
+    ctx.fillStyle = '#dc2626'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('侵蚀岸（凹岸）', ep.x + 70, ep.y - 34);
+    ctx.beginPath();
+    ctx.moveTo(ep.x + 62, ep.y - 24); ctx.lineTo(ep.x + 80, ep.y - 24); ctx.lineTo(ep.x + 71, ep.y - 34);
+    ctx.closePath(); ctx.fill();
+    // 凸岸堆积标注
+    var dp = riverPoint(0.34);
+    ctx.fillStyle = '#92400e';
+    ctx.fillText('堆积岸（凸岸）', dp.x - 66, dp.y - 20);
+    ctx.fillStyle = '#78350f';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('（沉积体随时间向河心生长）', dp.x - 80, dp.y - 4);
+    // 标题
+    ctx.fillStyle = '#065f46'; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('河漫滩 · 曲流（凹岸侵蚀凸岸堆积，河流向侵蚀岸偏移）', W / 2, 20);
+  }
+
+  function drawPlain(t){
+    ctx.clearRect(0, 0, W, H);
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#bae6fd'); sky.addColorStop(1, '#d1fae5');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    // 平原
+    var baseY = H * 0.40 + t * 6;   // 堆积使地面轻微抬升
+    ctx.fillStyle = '#fde68a';
+    ctx.fillRect(0, baseY, W, H - baseY);
+    // 冲积层
+    ctx.fillStyle = '#fcd34d';
+    for(var i = 0; i < 3; i++){
+      ctx.fillRect(0, baseY + 30 + i * 22, W, 12);
+    }
+    ctx.strokeStyle = '#d97706'; ctx.lineWidth = 1;
+    for(var j = 0; j < 3; j++){
+      ctx.beginPath();
+      ctx.moveTo(0, baseY + 36 + j * 22);
+      for(var x = 0; x <= W; x += 40){
+        ctx.lineTo(x, baseY + 36 + j * 22 + Math.sin(x * 0.05 + j) * 4);
+      }
+      ctx.stroke();
+    }
+    // 河流（下游宽浅）
+    ctx.strokeStyle = '#0ea5e9'; ctx.lineWidth = 16; ctx.lineCap = 'round';
+    ctx.beginPath();
+    for(var k = 0; k <= 30; k++){
+      var px = k / 30 * W;
+      var py = baseY + 6 + Math.sin(k / 30 * Math.PI * 3) * 14 + (k < 15 ? 0 : 10);
+      if(k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = '#0369a1'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    for(var m = 0; m <= 30; m++){
+      var px2 = m / 30 * W;
+      var py2 = baseY + 6 + Math.sin(m / 30 * Math.PI * 3) * 14 + (m < 15 ? 0 : 10);
+      if(m === 0) ctx.moveTo(px2, py2); else ctx.lineTo(px2, py2);
+    }
+    ctx.stroke();
+    // 农田与聚落
+    for(var f = 0; f < 4; f++){
+      ctx.fillStyle = '#65a30d';
+      ctx.fillRect(20 + f * 95, baseY + 70, 34, 20);
+      ctx.fillStyle = '#d1fae5';
+      ctx.fillRect(26 + f * 95, baseY + 76, 22, 8);
+    }
+    ctx.fillStyle = '#a16207';
+    ctx.fillRect(W * 0.78, baseY + 72, 26, 18);
+    ctx.fillStyle = '#57534e';
+    ctx.fillRect(W * 0.79, baseY + 66, 4, 8);
+    ctx.fillRect(W * 0.93, baseY + 66, 4, 8);
+    ctx.beginPath(); ctx.moveTo(W * 0.78, baseY + 72); ctx.lineTo(W * 0.91, baseY + 72); ctx.lineTo(W * 0.845, baseY + 60);
+    ctx.closePath(); ctx.fill();
+    // 堆积箭头
+    ctx.fillStyle = '#92400e'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('泥沙堆积 ↓（河床抬高、平原加积）', W / 2, baseY - 8);
+    ctx.fillStyle = '#065f46';
+    ctx.fillText('冲积平原 · 下游（以堆积为主）', W / 2, 20);
+  }
+
+  function drawDelta(t){
+    ctx.clearRect(0, 0, W, H);
+    var seaY = H * 0.66;
+    // 陆地
+    ctx.fillStyle = '#fde68a';
+    ctx.fillRect(0, 0, W, seaY);
+    ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, seaY); ctx.lineTo(W, seaY); ctx.stroke();
+    // 海
+    var sea = ctx.createLinearGradient(0, seaY, 0, H);
+    sea.addColorStop(0, '#38bdf8'); sea.addColorStop(1, '#0369a1');
+    ctx.fillStyle = sea; ctx.fillRect(0, seaY, W, H - seaY);
+    // 河口（陆地中上方）
+    var mouthX = W * 0.5;
+    ctx.fillStyle = '#0ea5e9';
+    ctx.fillRect(mouthX - 16, 0, 32, H * 0.14);
+    // 三角洲扇形：从河口向海推进，半径随 t 增大
+    var fanR = (H - seaY) * (0.15 + t * 0.78);
+    var fanW = W * (0.10 + t * 0.30);
+    ctx.fillStyle = '#fcd34d';
+    ctx.strokeStyle = '#92400e'; ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(mouthX, seaY);
+    ctx.quadraticCurveTo(mouthX - fanW / 2, seaY + fanR * 0.9, mouthX - fanW * 0.42, seaY + fanR);
+    ctx.lineTo(mouthX + fanW * 0.42, seaY + fanR);
+    ctx.quadraticCurveTo(mouthX + fanW / 2, seaY + fanR * 0.9, mouthX, seaY);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    // 扇面分流（汊道）
+    ctx.strokeStyle = '#d97706'; ctx.lineWidth = 1.4;
+    for(var i = -2; i <= 2; i++){
+      ctx.beginPath();
+      ctx.moveTo(mouthX, seaY);
+      ctx.lineTo(mouthX + i * fanW * 0.16, seaY + fanR * (0.7 + Math.abs(i) * 0.12));
+      ctx.stroke();
+    }
+    // 推进箭头
+    ctx.fillStyle = '#0f172a'; ctx.font = 'bold 13px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('向海推进 →', mouthX, seaY + fanR + 20);
+    ctx.fillStyle = '#0f172a'; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('海', W - 26, H - 14);
+    ctx.fillStyle = '#92400e'; ctx.font = '12px sans-serif';
+    ctx.fillText('河口', mouthX + 26, seaY - 10);
+    ctx.fillStyle = '#065f46'; ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('三角洲 · 河口（入海 → 流速骤减 → 扇形堆积 → 向海推进）', W / 2, 20);
+  }
+
+  var DRAWS = {v: drawV, flood: drawFlood, plain: drawPlain, delta: drawDelta};
+
+  // ============ 动画循环 ============
+  var last = null;
+  function frame(ts){
+    if(last === null) last = ts;
+    var dt = Math.min(0.05, (ts - last) / 1000);
+    last = ts;
+    if(anim[active].playing) anim[active].t = (anim[active].t + dt * SPEED) % 1;
+    DRAWS[active](anim[active].t);
+    updateProgress();
+    requestAnimationFrame(frame);
+  }
+
+  function stageName(t){
+    if(t < 0.33) return '初期';
+    if(t < 0.66) return '发展期';
+    return '成熟期';
+  }
+  function updateProgress(){
+    var t = anim[active].t;
+    progBar.style.width = (t * 100) + '%';
+    pctLabel.textContent = Math.round(t * 100) + '%';
+    stageLabel.textContent = stageName(t);
+  }
+
+  function updateAria(){
+    var map = {
+      v:     'V型谷形成过程动画：上游落差大、下蚀强烈，河谷加深呈V形。',
+      flood: '河漫滩形成过程动画：中游曲流，凹岸（侵蚀岸）侵蚀、凸岸（堆积岸）堆积，河流向侵蚀岸偏移。',
+      plain: '冲积平原形成过程动画：下游流速减缓、泥沙大量堆积，平原加积抬升。',
+      delta: '三角洲形成过程动画：入海口流速骤减、泥沙快速沉积，堆积体从河口向海方向扇形推进。'
+    };
+    canvas.setAttribute('aria-label', map[active]);
+  }
+
+  // ============ 地貌切换 ============
+  var titleMap = {v:'V 型谷 · 形成过程动画', flood:'河漫滩 · 形成过程动画', plain:'冲积平原 · 形成过程动画', delta:'三角洲 · 形成过程动画'};
+  document.querySelectorAll('.nav-tabs button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.nav-tabs button').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      active = btn.getAttribute('data-lf');
+      animTitle.textContent = titleMap[active];
+      document.querySelectorAll('.detail-card').forEach(function(c){
+        c.style.display = (c.getAttribute('data-lf-card') === active) ? 'block' : 'none';
+      });
+      playBtn.textContent = anim[active].playing ? '⏸ 暂停' : '▶ 播放';
+      document.getElementById('panelLf').textContent = titleMap[active].split('·')[0].trim();
+      updateAria();
+    });
+  });
+
+  // ============ 播放/暂停/重置 ============
+  playBtn.addEventListener('click', function(){
+    anim[active].playing = !anim[active].playing;
+    playBtn.textContent = anim[active].playing ? '⏸ 暂停' : '▶ 播放';
+  });
+  resetBtn.addEventListener('click', function(){
+    anim[active].t = 0;
+    updateProgress();
+  });
+
+  // ============ 可拖动面板 ============
+  var panel = document.getElementById('floatPanel');
+  var handle = document.getElementById('panelHandle');
+  var dragging = null;
+  handle.addEventListener('pointerdown', function(e){
+    dragging = {
+      startX: e.clientX, startY: e.clientY,
+      left: panel.offsetLeft, top: panel.offsetTop
+    };
+    handle.setPointerCapture(e.pointerId);
+  });
+  panel.addEventListener('pointermove', function(e){
+    if(!dragging) return;
+    var wrap = panel.parentElement;
+    var dx = e.clientX - dragging.startX;
+    var dy = e.clientY - dragging.startY;
+    var nl = Math.max(0, Math.min(wrap.clientWidth - panel.offsetWidth, dragging.left + dx));
+    var nt = Math.max(0, Math.min(wrap.clientHeight - panel.offsetHeight, dragging.top + dy));
+    panel.style.left = nl + 'px';
+    panel.style.top = nt + 'px';
+  });
+  panel.addEventListener('pointerup', function(){ dragging = null; });
+  panel.addEventListener('pointercancel', function(){ dragging = null; });
+  document.getElementById('panelReset').addEventListener('click', function(){
+    panel.style.left = ''; panel.style.top = '';
+  });
+
+  updateAria();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

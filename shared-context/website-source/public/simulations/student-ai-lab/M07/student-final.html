@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>线性回归 · 最小二乘法 | 与AI原理结合 + 学习助手</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖拽时选中文本，不影响按钮 */
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #f0f5fb 0%, #e9eff5 100%);
+            font-family: 'Inter', 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+        /* 主卡片容器 */
+        .regression-card {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        /* 两栏布局 */
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .explanation-area {
+            flex: 1.2;
+            padding: 2rem 1.8rem;
+            background: rgba(255, 255, 255, 0.6);
+            border-right: 1px solid #e2edf7;
+        }
+        .graph-area {
+            flex: 2;
+            padding: 1.8rem 1.5rem 1.5rem 1.5rem;
+            background: #ffffffdd;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            background: linear-gradient(135deg, #1D5C9B, #2E86AB);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .subhead {
+            color: #4a627a;
+            border-left: 3px solid #2E86AB;
+            padding-left: 14px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .theory {
+            background: #f8fafd;
+            padding: 1rem 1.2rem;
+            border-radius: 1.5rem;
+            margin-bottom: 1.2rem;
+            border: 1px solid #e2edf0;
+        }
+        .theory p {
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #1e2f3e;
+            margin: 0.5rem 0;
+        }
+        .formula {
+            font-family: 'JetBrains Mono', monospace;
+            background: #eef3fc;
+            padding: 6px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1d5c7a;
+        }
+        /* AI 原理卡片 */
+        .ai-card {
+            background: linear-gradient(120deg, #fef9e6, #ffffff);
+            border-left: 5px solid #F39C12;
+            padding: 1rem 1.2rem;
+            border-radius: 1.5rem;
+            margin: 1.2rem 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .ai-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #c45f0e;
+        }
+        .ai-icon {
+            font-size: 1.3rem;
+        }
+        .ai-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .symbolism, .connectionism {
+            flex: 1;
+            background: #fef9ef;
+            padding: 0.7rem;
+            border-radius: 1rem;
+            border: 1px solid #ffe2b5;
+        }
+        .connectionism {
+            background: #edf4fc;
+            border-color: #cde0f0;
+        }
+        .ai-subtitle {
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .ai-text {
+            font-size: 0.8rem;
+            line-height: 1.45;
+            color: #2c3e4e;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 1rem 1.2rem;
+            margin-top: 1rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            border: 1px solid #e9f0f5;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+        .stat-label {
+            font-weight: 600;
+            color: #2c5a6e;
+        }
+        .stat-value {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #226b8a;
+            background: #eef2f8;
+            padding: 4px 12px;
+            border-radius: 40px;
+        }
+        .r2-value {
+            background: #d9effa;
+            color: #1b6b87;
+        }
+        button {
+            background: white;
+            border: 1px solid #cbdde9;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #2c5a6e;
+            margin-right: 10px;
+            margin-top: 10px;
+            font-family: inherit;
+        }
+        button:hover {
+            background: #2E86AB;
+            color: white;
+            border-color: #2E86AB;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(46,134,171,0.2);
+        }
+        .btn-group {
+            margin-top: 20px;
+        }
+        .badge-info {
+            background: #eef2fa;
+            border-radius: 28px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            color: #2b6b8f;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+        .canvas-container {
+            text-align: center;
+        }
+        .interact-tip {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 12px;
+            color: #6c8eaa;
+            background: #f2f6fc;
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            padding: 12px;
+            border-top: 1px solid #e2edf0;
+            color: #6b8db0;
+        }
+        /* ---------- 可折叠学习助手 (扁平风格) ---------- */
+        .assistant-container {
+            position: fixed;
+            bottom: 24px;
+            left: 24px;
+            z-index: 1000;
+            font-family: inherit;
+        }
+        .assistant-toggle {
+            background: #f5f7fb;
+            border: 1px solid #cbdde9;
+            border-radius: 40px;
+            padding: 8px 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: 0.2s;
+            font-weight: 500;
+            color: #2c5a6e;
+        }
+        .assistant-toggle:hover {
+            background: #2E86AB;
+            color: white;
+            border-color: #2E86AB;
+            transform: translateY(-2px);
+        }
+        .assistant-bubble {
+            position: absolute;
+            bottom: 55px;
+            left: 0;
+            width: 260px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+            border: 1px solid #e2edf0;
+            overflow: hidden;
+            transition: all 0.2s ease;
+            transform-origin: bottom left;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+        .assistant-bubble.open {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+        .bubble-header {
+            background: #f8fafd;
+            padding: 12px 16px;
+            font-weight: 700;
+            border-bottom: 1px solid #e9eff5;
+            color: #1e6f5c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .bubble-content {
+            padding: 14px 16px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #2c3e50;
+        }
+        .tip-list {
+            padding-left: 20px;
+            margin: 8px 0;
+        }
+        .tip-list li {
+            margin: 6px 0;
+        }
+        .close-bubble {
+            margin-left: auto;
+            cursor: pointer;
+            font-size: 1rem;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-bubble:hover {
+            background: #e2e8f0;
+        }
+        @media (max-width: 700px) {
+            .assistant-bubble { width: 240px; }
+            .assistant-toggle { padding: 6px 14px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="regression-card">
+    <div class="two-columns">
+        <!-- 左侧：图文知识点讲解 + AI原理 -->
+        <div class="explanation-area">
+            <h1>📈 线性回归 · 最小二乘法</h1>
+            <div class="subhead">从数据中学习最佳直线，并探索与人工智能的核心联系</div>
+            <div class="theory">
+                <p><strong>🔍 核心思想</strong>：寻找直线 <span class="formula">y = a·x + b</span>，使得所有数据点的 <strong>残差平方和（SSE）</strong> 最小。</p>
+                <p>📐 <strong>斜率 a</strong> 表示 x 每变化一个单位，y 的平均变化量。<br>
+                🎯 <strong>截距 b</strong> 是直线与 y 轴的交点。<br>
+                ⭐ <strong>决定系数 R²</strong> 衡量拟合优度：越接近1，拟合效果越好。</p>
+                <p><em>✨ 右侧交互区操作：<strong>拖拽任意点</strong> 或 <strong>点击空白处添加点</strong>，回归线实时更新！</em></p>
+            </div>
+            
+            <!-- AI 原理联系卡片 -->
+            <div class="ai-card">
+                <h3><span class="ai-icon">🤖</span> 与 AI 原理的深刻联系</h3>
+                <div class="ai-row">
+                    <div class="symbolism">
+                        <div class="ai-subtitle"><span>🧠</span> 符号主义 (Symbolism)</div>
+                        <div class="ai-text">
+                            线性回归输出明确的数学公式 <strong>y = ax + b</strong>，属于“知识表示”中的符号规则。<br>
+                            参数 a、b 可解释：斜率代表影响强度，截距代表基线。这正是早期AI专家系统追求的<strong>可解释性</strong>——从数据中提炼符号化知识。
+                        </div>
+                    </div>
+                    <div class="connectionism">
+                        <div class="ai-subtitle"><span>⚡</span> 连接主义 (Connectionism)</div>
+                        <div class="ai-text">
+                            线性回归等价于一个<strong>单层神经网络（无激活函数）</strong>：一个输入神经元，一个输出神经元，权重 w = a，偏置 b = b。<br>
+                            训练过程（最小二乘法 / 梯度下降）与深度学习的<strong>反向传播</strong>思想同源，是神经网络的基石。
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 12px; font-size:0.75rem; background:#fef2e0; padding:6px 10px; border-radius:20px;">
+                    💡 <strong>教学意义</strong>：理解线性回归 = 理解机器学习核心：从数据中学习映射、量化误差、优化参数。它是通向深度学习的“第一性原理”。
+                </div>
+            </div>
+            
+            <!-- 统计卡片 -->
+            <div class="stat-card">
+                <div class="stat-row">
+                    <span class="stat-label">📐 回归方程</span>
+                    <span class="stat-value" id="eqDisplay">y = ?·x + ?</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📏 斜率 (a)</span>
+                    <span class="stat-value" id="slopeVal">--</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📍 截距 (b)</span>
+                    <span class="stat-value" id="interceptVal">--</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📊 决定系数 R²</span>
+                    <span class="stat-value r2-value" id="r2Val">--</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🔢 样本数量 (n)</span>
+                    <span class="stat-value" id="nVal">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📉 残差平方和 (SSE)</span>
+                    <span class="stat-value" id="sseVal">--</span>
+                </div>
+            </div>
+            <div class="btn-group">
+                <button id="randomBtn">🎲 随机生成数据</button>
+                <button id="resetBtn">🧹 清空所有点</button>
+                <button id="demoBtn">✨ 加载示例 (线性趋势)</button>
+            </div>
+            <div class="badge-info" style="margin-top: 18px;">
+                💡 提示：拖拽点实时拟合 | 点击画布空白添加点
+            </div>
+        </div>
+
+        <!-- 右侧：画布区 -->
+        <div class="graph-area">
+            <div class="canvas-container">
+                <canvas id="scatterCanvas" width="600" height="600" style="width:100%; height:auto; max-width:600px; aspect-ratio:1/1"></canvas>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+                    <div class="interact-tip">🖱️ 鼠标拖拽点移动 | 点击空白处添加点 (X:0~10, Y:0~10)</div>
+                    <div class="interact-tip">📌 回归线橙色虚线 | 残差灰色虚线 | 蓝色圆点为数据</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        ｜ 最小二乘法演示 + AI原理（符号主义 vs 连接主义）｜ 互动学习工具 ｜ 深度理解机器学习本质 ｜
+    </footer>
+</div>
+
+<!-- 可折叠学习助手气泡 (左下角) -->
+<div class="assistant-container">
+    <div class="assistant-toggle" id="assistantToggle">
+        <span>📘</span> 学习助手
+        <span>▼</span>
+    </div>
+    <div class="assistant-bubble" id="assistantBubble">
+        <div class="bubble-header">
+            <span>🤝 学习小贴士</span>
+            <button class="close-bubble" id="closeBubbleBtn">✕</button>
+        </div>
+        <div class="bubble-content">
+            <strong>👩‍🏫 试试这些操作：</strong>
+            <ul class="tip-list">
+                <li>✨ <strong>拖拽任意蓝色点</strong> → 回归线 & R² 实时变化</li>
+                <li>📌 <strong>点击空白区域</strong> → 添加新数据点</li>
+                <li>📈 观察 <strong>R² 值</strong>：越接近1，拟合越好</li>
+                <li>🧠 <strong>符号主义</strong>：回归方程是可解释的规则</li>
+                <li>⚡ <strong>连接主义</strong>：这是单层神经网络的雏形</li>
+                <li>🎲 点击 <strong>随机生成</strong> 体验不同数据分布</li>
+            </ul>
+            <div style="font-size:0.7rem; margin-top:8px; border-top:1px solid #eef2f8; padding-top:8px; color:#6c8eaa;">
+                ⭐ 每次交互，都能直观感受“机器学习”的本质
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // 配置画布和坐标系统
+        const canvas = document.getElementById('scatterCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = 600;
+        canvas.height = 600;
+        
+        const xMin = 0, xMax = 10;
+        const yMin = 0, yMax = 10;
+        const margin = { left: 50, right: 30, top: 30, bottom: 45 };
+        let plotWidth = canvas.width - margin.left - margin.right;
+        let plotHeight = canvas.height - margin.top - margin.bottom;
+        
+        let points = [];
+        let dragIndex = -1;
+        let isDragging = false;
+        
+        // DOM 元素
+        const eqDisplay = document.getElementById('eqDisplay');
+        const slopeValSpan = document.getElementById('slopeVal');
+        const interceptValSpan = document.getElementById('interceptVal');
+        const r2ValSpan = document.getElementById('r2Val');
+        const nValSpan = document.getElementById('nVal');
+        const sseValSpan = document.getElementById('sseVal');
+        
+        // 坐标转换
+        function toCanvasCoords(x, y) {
+            const canvasX = margin.left + (x - xMin) / (xMax - xMin) * plotWidth;
+            const canvasY = margin.top + plotHeight - (y - yMin) / (yMax - yMin) * plotHeight;
+            return { x: canvasX, y: canvasY };
+        }
+        
+        function toRealCoords(canvasX, canvasY) {
+            let x = (canvasX - margin.left) / plotWidth * (xMax - xMin) + xMin;
+            let y = (canvasY - margin.top) / plotHeight * (yMax - yMin);
+            y = (yMax - yMin) - y + yMin;
+            x = Math.min(xMax, Math.max(xMin, x));
+            y = Math.min(yMax, Math.max(yMin, y));
+            return { x, y };
+        }
+        
+        // 最小二乘计算
+        function computeRegression() {
+            const n = points.length;
+            if (n < 2) {
+                return { slope: NaN, intercept: NaN, r2: NaN, sse: NaN };
+            }
+            let sumX = 0, sumY = 0;
+            for (let p of points) {
+                sumX += p.x;
+                sumY += p.y;
+            }
+            const meanX = sumX / n;
+            const meanY = sumY / n;
+            let numerator = 0, denominator = 0;
+            for (let p of points) {
+                numerator += (p.x - meanX) * (p.y - meanY);
+                denominator += (p.x - meanX) ** 2;
+            }
+            const slope = denominator === 0 ? 0 : numerator / denominator;
+            const intercept = meanY - slope * meanX;
+            let sse = 0;
+            let sst = 0;
+            for (let p of points) {
+                let predicted = slope * p.x + intercept;
+                sse += (p.y - predicted) ** 2;
+                sst += (p.y - meanY) ** 2;
+            }
+            const r2 = sst === 0 ? 0 : 1 - (sse / sst);
+            return { slope, intercept, r2, sse };
+        }
+        
+        function updateStats() {
+            const reg = computeRegression();
+            const n = points.length;
+            nValSpan.innerText = n;
+            if (n >= 2 && !isNaN(reg.slope)) {
+                slopeValSpan.innerText = reg.slope.toFixed(4);
+                interceptValSpan.innerText = reg.intercept.toFixed(4);
+                r2ValSpan.innerText = reg.r2.toFixed(4);
+                sseValSpan.innerText = reg.sse.toFixed(3);
+                eqDisplay.innerText = `y = ${reg.slope.toFixed(3)}·x + ${reg.intercept.toFixed(3)}`;
+            } else {
+                slopeValSpan.innerText = '--';
+                interceptValSpan.innerText = '--';
+                r2ValSpan.innerText = '--';
+                sseValSpan.innerText = '--';
+                eqDisplay.innerText = n < 2 ? '至少需要2个点' : '无法拟合';
+            }
+        }
+        
+        // 绘制背景网格和轴
+        function drawAxesAndGrid() {
+            ctx.save();
+            ctx.strokeStyle = "#cbdae9";
+            ctx.lineWidth = 0.8;
+            ctx.fillStyle = "#2c5a6e";
+            ctx.font = "12px 'Segoe UI', monospace";
+            for (let i = 0; i <= 10; i++) {
+                const xVal = i;
+                const canvasX = margin.left + (xVal - xMin) / (xMax - xMin) * plotWidth;
+                ctx.beginPath();
+                ctx.moveTo(canvasX, margin.top);
+                ctx.lineTo(canvasX, margin.top + plotHeight);
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.stroke();
+                ctx.fillStyle = "#5c7a93";
+                ctx.fillText(xVal.toFixed(0), canvasX - 5, margin.top + plotHeight + 18);
+            }
+            for (let i = 0; i <= 10; i++) {
+                const yVal = i;
+                const canvasY = margin.top + plotHeight - (yVal - yMin) / (yMax - yMin) * plotHeight;
+                ctx.beginPath();
+                ctx.moveTo(margin.left, canvasY);
+                ctx.lineTo(margin.left + plotWidth, canvasY);
+                ctx.strokeStyle = "#e2e8f0";
+                ctx.stroke();
+                ctx.fillStyle = "#5c7a93";
+                ctx.fillText(yVal.toFixed(0), margin.left - 25, canvasY + 4);
+            }
+            ctx.beginPath();
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = "#9aaec2";
+            ctx.moveTo(margin.left, margin.top);
+            ctx.lineTo(margin.left, margin.top + plotHeight);
+            ctx.moveTo(margin.left, margin.top + plotHeight);
+            ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
+            ctx.stroke();
+            ctx.fillStyle = "#2c5a6e";
+            ctx.font = "bold 13px 'Segoe UI'";
+            ctx.fillText("自变量 X →", margin.left + plotWidth - 60, margin.top + plotHeight + 35);
+            ctx.save();
+            ctx.translate(margin.left - 30, margin.top + plotHeight/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText("因变量 Y ↑", -10, 0);
+            ctx.restore();
+        }
+        
+        // 绘制数据点
+        function drawPoints() {
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const { x: cx, y: cy } = toCanvasCoords(p.x, p.y);
+                ctx.beginPath();
+                ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+                ctx.fillStyle = "#2E86AB";
+                ctx.fill();
+                ctx.strokeStyle = "white";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                if (dragIndex === i) {
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 9, 0, 2 * Math.PI);
+                    ctx.strokeStyle = "#f39c12";
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                }
+            }
+        }
+        
+        // 绘制残差虚线
+        function drawResiduals() {
+            if (points.length < 2) return;
+            const reg = computeRegression();
+            if (isNaN(reg.slope)) return;
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.setLineDash([4, 4]);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = "#a0b9ce";
+            for (let p of points) {
+                const predicted = reg.slope * p.x + reg.intercept;
+                const pointCanvas = toCanvasCoords(p.x, p.y);
+                const predCanvas = toCanvasCoords(p.x, predicted);
+                ctx.beginPath();
+                ctx.moveTo(pointCanvas.x, pointCanvas.y);
+                ctx.lineTo(predCanvas.x, predCanvas.y);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+            ctx.restore();
+        }
+        
+        // 绘制回归线
+        function drawRegressionLine() {
+            if (points.length < 2) return;
+            const reg = computeRegression();
+            if (isNaN(reg.slope)) return;
+            let xStart = xMin, xEnd = xMax;
+            let yStart = reg.slope * xStart + reg.intercept;
+            let yEnd = reg.slope * xEnd + reg.intercept;
+            yStart = Math.min(yMax, Math.max(yMin, yStart));
+            yEnd = Math.min(yMax, Math.max(yMin, yEnd));
+            const startCanvas = toCanvasCoords(xStart, yStart);
+            const endCanvas = toCanvasCoords(xEnd, yEnd);
+            ctx.beginPath();
+            ctx.moveTo(startCanvas.x, startCanvas.y);
+            ctx.lineTo(endCanvas.x, endCanvas.y);
+            ctx.strokeStyle = "#E67E22";
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            const midX = (xStart + xEnd)/2;
+            const midY = reg.slope * midX + reg.intercept;
+            const midCanvas = toCanvasCoords(midX, midY);
+            ctx.font = "500 12px 'Segoe UI'";
+            ctx.fillStyle = "#E67E22";
+            ctx.fillText("回归线", midCanvas.x + 8, midCanvas.y - 5);
+        }
+        
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawAxesAndGrid();
+            drawResiduals();
+            drawRegressionLine();
+            drawPoints();
+            ctx.font = "italic 11px 'Segoe UI'";
+            ctx.fillStyle = "#849eb6";
+            ctx.fillText("✚ 点击空白添加点 | 拖拽圆点移动", margin.left + 5, margin.top - 8);
+        }
+        
+        // 交互逻辑
+        function hitTest(canvasX, canvasY) {
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const { x: cx, y: cy } = toCanvasCoords(p.x, p.y);
+                const dx = cx - canvasX;
+                const dy = cy - canvasY;
+                if (Math.hypot(dx, dy) < 12) return i;
+            }
+            return -1;
+        }
+        
+        function addPoint(x, y) {
+            if (points.length >= 30) {
+                alert("最多支持30个点，保持体验。请删除或重置。");
+                return;
+            }
+            points.push({ x: Math.min(xMax, Math.max(xMin, x)), y: Math.min(yMax, Math.max(yMin, y)) });
+            updateStats();
+            render();
+        }
+        
+        function clearPoints() {
+            points = [];
+            dragIndex = -1;
+            updateStats();
+            render();
+        }
+        
+        function generateRandomPoints(count = 8) {
+            const newPoints = [];
+            for (let i = 0; i < count; i++) {
+                let x = 2 + Math.random() * 7;
+                let noise = (Math.random() - 0.5) * 1.6;
+                let y = 0.68 * x + 2.2 + noise;
+                y = Math.min(9.5, Math.max(0.8, y));
+                x = Math.min(9.8, Math.max(0.5, x));
+                newPoints.push({ x, y });
+            }
+            points = newPoints;
+            updateStats();
+            render();
+        }
+        
+        function loadDemo() {
+            points = [
+                { x: 1.2, y: 2.5 }, { x: 2.0, y: 3.1 }, { x: 2.8, y: 3.7 },
+                { x: 3.5, y: 4.2 }, { x: 4.3, y: 4.9 }, { x: 5.1, y: 5.4 },
+                { x: 6.0, y: 6.0 }, { x: 7.2, y: 7.0 }, { x: 8.1, y: 7.8 }, { x: 9.0, y: 8.4 }
+            ];
+            updateStats();
+            render();
+        }
+        
+        function getCanvasCoordsFromEvent(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(canvas.width, Math.max(0, canvasX));
+            canvasY = Math.min(canvas.height, Math.max(0, canvasY));
+            return { canvasX, canvasY };
+        }
+        
+        function onMouseDown(e) {
+            e.preventDefault();
+            const { canvasX, canvasY } = getCanvasCoordsFromEvent(e);
+            const idx = hitTest(canvasX, canvasY);
+            if (idx !== -1) {
+                dragIndex = idx;
+                isDragging = true;
+                render();
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+                window.addEventListener('touchmove', onMouseMove);
+                window.addEventListener('touchend', onMouseUp);
+            } else {
+                const real = toRealCoords(canvasX, canvasY);
+                addPoint(real.x, real.y);
+            }
+        }
+        
+        function onMouseMove(e) {
+            if (!isDragging || dragIndex === -1) return;
+            e.preventDefault();
+            const { canvasX, canvasY } = getCanvasCoordsFromEvent(e);
+            const real = toRealCoords(canvasX, canvasY);
+            points[dragIndex].x = real.x;
+            points[dragIndex].y = real.y;
+            updateStats();
+            render();
+        }
+        
+        function onMouseUp(e) {
+            isDragging = false;
+            dragIndex = -1;
+            render();
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('touchmove', onMouseMove);
+            window.removeEventListener('touchend', onMouseUp);
+        }
+        
+        function onTouchStart(e) {
+            e.preventDefault();
+            const { canvasX, canvasY } = getCanvasCoordsFromEvent(e);
+            const idx = hitTest(canvasX, canvasY);
+            if (idx !== -1) {
+                dragIndex = idx;
+                isDragging = true;
+                render();
+                window.addEventListener('touchmove', onMouseMove);
+                window.addEventListener('touchend', onMouseUp);
+            } else {
+                const real = toRealCoords(canvasX, canvasY);
+                addPoint(real.x, real.y);
+            }
+        }
+        
+        // 绑定按钮
+        document.getElementById('randomBtn').addEventListener('click', () => generateRandomPoints(8));
+        document.getElementById('resetBtn').addEventListener('click', () => clearPoints());
+        document.getElementById('demoBtn').addEventListener('click', () => loadDemo());
+        
+        canvas.addEventListener('mousedown', onMouseDown);
+        canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        function initDefaultPoints() {
+            points = [
+                { x: 1.5, y: 2.3 }, { x: 2.2, y: 3.0 }, { x: 3.1, y: 3.9 },
+                { x: 4.0, y: 4.8 }, { x: 5.2, y: 5.5 }, { x: 6.4, y: 6.4 },
+                { x: 7.5, y: 7.2 }, { x: 8.7, y: 8.0 }
+            ];
+            updateStats();
+            render();
+        }
+        
+        function resizePlot() {
+            plotWidth = canvas.width - margin.left - margin.right;
+            plotHeight = canvas.height - margin.top - margin.bottom;
+            render();
+        }
+        resizePlot();
+        window.addEventListener('resize', () => render());
+        initDefaultPoints();
+        
+        // 学习助手折叠交互
+        const toggleBtn = document.getElementById('assistantToggle');
+        const bubble = document.getElementById('assistantBubble');
+        const closeBtn = document.getElementById('closeBubbleBtn');
+        
+        function openBubble() {
+            bubble.classList.add('open');
+        }
+        function closeBubble() {
+            bubble.classList.remove('open');
+        }
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (bubble.classList.contains('open')) closeBubble();
+            else openBubble();
+        });
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeBubble();
+        });
+        // 点击页面其他地方自动关闭? 可选，但不强制，避免影响体验
+        document.addEventListener('click', function(e) {
+            if (!bubble.contains(e.target) && !toggleBtn.contains(e.target) && bubble.classList.contains('open')) {
+                closeBubble();
+            }
+        });
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大气环流 - 三圈环流交互演示</title>
+    <style>
+        :root {
+            --bg: #f5f0e8;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-secondary: #5a6c7d;
+            --accent-warm: #e07b4c;
+            --accent-cool: #4a90c4;
+            --accent-green: #5d9b7e;
+            --accent-purple: #8b6b9e;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --radius: 16px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: linear-gradient(160deg, #e8e0d5 0%, #f0ece4 30%, #e4e8ed 70%, #dce3e8 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow), 0 1px 3px rgba(0, 0, 0, 0.04);
+            padding: 32px 28px 24px;
+            max-width: 960px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header h1 .icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #e8d5c4, #d4c4b0);
+            font-size: 1.4rem;
+        }
+        .badge {
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: #f0f4f8;
+            color: #5a6c7d;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        .main-area {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .canvas-wrapper {
+            flex: 1 1 580px;
+            min-width: 480px;
+            background: #fafaf8;
+            border-radius: var(--radius);
+            border: 1px solid #e8e4dc;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.03);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: default;
+        }
+
+        .sidebar {
+            flex: 0 0 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .info-card {
+            background: #fafaf8;
+            border-radius: 14px;
+            padding: 16px 18px;
+            border: 1px solid #e8e4dc;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+        .info-card h3 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1a1a2e;
+            letter-spacing: 0.01em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+            font-size: 0.8rem;
+            cursor: pointer;
+            padding: 5px 8px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+        .legend-item:hover {
+            background: #f0ece4;
+        }
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        }
+        .legend-dot.low {
+            background: #e07b4c;
+        }
+        .legend-dot.high {
+            background: #4a90c4;
+        }
+        .legend-dot.hadley {
+            background: #e8985e;
+        }
+        .legend-dot.ferrel {
+            background: #5d9b7e;
+        }
+        .legend-dot.polar {
+            background: #8b6b9e;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn {
+            padding: 10px 18px;
+            border-radius: 24px;
+            border: 1.5px solid #d8d0c4;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: #4a4a4a;
+            transition: var(--transition);
+            white-space: nowrap;
+            font-family: inherit;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:hover {
+            background: #f5f1ea;
+            border-color: #c4b8a5;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+        }
+        .btn:active {
+            transform: scale(0.97);
+            transition: 0.1s;
+        }
+        .btn.active {
+            background: #3a3a4a;
+            color: #fff;
+            border-color: #3a3a4a;
+            box-shadow: 0 3px 14px rgba(0, 0, 0, 0.18);
+        }
+        .btn.summer {
+            border-color: #e8985e;
+            color: #c0562a;
+        }
+        .btn.summer.active {
+            background: #e8985e;
+            color: #fff;
+            border-color: #e8985e;
+        }
+        .btn.winter {
+            border-color: #6a9ec0;
+            color: #2e5f80;
+        }
+        .btn.winter.active {
+            background: #6a9ec0;
+            color: #fff;
+            border-color: #6a9ec0;
+        }
+
+        .tooltip-hint {
+            font-size: 0.75rem;
+            color: #999;
+            text-align: center;
+            margin-top: -6px;
+            letter-spacing: 0.02em;
+        }
+
+        @media (max-width: 820px) {
+            .main-area {
+                flex-direction: column;
+            }
+            .canvas-wrapper {
+                min-width: 100%;
+            }
+            .sidebar {
+                flex: 1 1 auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .info-card {
+                flex: 1 1 140px;
+                min-width: 130px;
+                font-size: 0.78rem;
+                padding: 12px;
+            }
+            .container {
+                padding: 16px 12px;
+            }
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .btn {
+                padding: 8px 13px;
+                font-size: 0.78rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>
+                <span class="icon">🌍</span> 大气环流示意图
+            </h1>
+            <span class="badge">三圈环流 · 气压带与风带</span>
+        </div>
+
+        <!-- 主体 -->
+        <div class="main-area">
+            <!-- 画布 -->
+            <div class="canvas-wrapper">
+                <canvas id="mainCanvas" aria-label="大气环流交互演示图"></canvas>
+            </div>
+
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <div class="info-card" id="infoCard">
+                    <h3>💡 提示</h3>
+                    <p>将鼠标悬停在气压带或环流圈上查看详情</p>
+                </div>
+                <div class="info-card">
+                    <h3>图例</h3>
+                    <div class="legend-item" data-highlight="low">
+                        <span class="legend-dot low"></span> 低压带（上升气流）
+                    </div>
+                    <div class="legend-item" data-highlight="high">
+                        <span class="legend-dot high"></span> 高压带（下沉气流）
+                    </div>
+                    <div class="legend-item" data-highlight="hadley">
+                        <span class="legend-dot hadley"></span> 低纬环流（哈德莱）
+                    </div>
+                    <div class="legend-item" data-highlight="ferrel">
+                        <span class="legend-dot ferrel"></span> 中纬环流（费雷尔）
+                    </div>
+                    <div class="legend-item" data-highlight="polar">
+                        <span class="legend-dot polar"></span> 高纬环流（极地）
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 季节控制 -->
+        <div class="controls" id="seasonControls">
+            <button class="btn winter" data-season="winter">❄️ 北半球冬季（1月）<br><small>气压带南移</small></button>
+            <button class="btn active" data-season="equinox">🍂 春/秋分<br><small>标准位置</small></button>
+            <button class="btn summer" data-season="summer">☀️ 北半球夏季（7月）<br><small>气压带北移</small></button>
+            <button class="btn" id="toggleAnimation" style="margin-left:auto;">⏯️ 暂停动画</button>
+        </div>
+        <p class="tooltip-hint">🖱️ 悬停气压带查看详情 &nbsp;|&nbsp; 点击图例高亮对应环流圈</p>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const infoCard = document.getElementById('infoCard');
+            const toggleAnimBtn = document.getElementById('toggleAnimation');
+            const seasonControls = document.getElementById('seasonControls');
+
+            // --- 响应式画布尺寸 ---
+            const wrapper = canvas.parentElement;
+
+            function resizeCanvas() {
+                const rect = wrapper.getBoundingClientRect();
+                const w = Math.max(480, rect.width);
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                canvas.width = w * dpr;
+                canvas.height = 680 * dpr;
+                canvas.style.width = w + 'px';
+                canvas.style.height = '680px';
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(dpr, dpr);
+                return { w, h: 680 };
+            }
+
+            let displaySize = resizeCanvas();
+            window.addEventListener('resize', () => {
+                displaySize = resizeCanvas();
+            });
+
+            // --- 核心参数 ---
+            const cx = () => displaySize.w / 2;
+            const cy = 340;
+            const R = 270; // 地球表面大圆半径
+            const rInner = 170; // 高空环流小圆半径（约63%）
+            const shiftMax = 5.5; // 最大季节偏移角度（度）
+
+            let seasonShift = 0; // -1(冬), 0(春秋), +1(夏) 对应角度偏移
+            let animationPaused = false;
+
+            // --- 气压带定义 ---
+            // 纬度 -> { name, type: 'low'|'high', color }
+            const pressureBeltDefs = [
+                { lat: 90, name: '极地高压带', type: 'high', color: '#4a90c4' },
+                { lat: 60, name: '副极地低压带', type: 'low', color: '#e07b4c' },
+                { lat: 30, name: '副热带高压带', type: 'high', color: '#4a90c4' },
+                { lat: 0, name: '赤道低压带', type: 'low', color: '#e07b4c' },
+                { lat: -30, name: '副热带高压带', type: 'high', color: '#4a90c4' },
+                { lat: -60, name: '副极地低压带', type: 'low', color: '#e07b4c' },
+                { lat: -90, name: '极地高压带', type: 'high', color: '#4a90c4' },
+            ];
+
+            // 获取偏移后的有效纬度
+            function getShiftedLat(baseLat) {
+                let shifted = baseLat + seasonShift * shiftMax;
+                // 限制在-90到90之间
+                return Math.max(-90, Math.min(90, shifted));
+            }
+
+            // 纬度转角度（以圆心为原点，右=0°，上=-90°，下=+90°）
+            function latToAngle(lat) {
+                return -lat; // 北半球为正纬度对应负角度（上方）
+            }
+
+            // 角度转canvas坐标
+            function angleToPoint(angleDeg, radius, centerX, centerY) {
+                const rad = angleDeg * Math.PI / 180;
+                return {
+                    x: centerX + radius * Math.cos(rad),
+                    y: centerY + radius * Math.sin(rad),
+                };
+            }
+
+            // --- 环流圈定义 ---
+            // 每个环流圈: { baseLatRange: [latHigh, latLow], hemisphere: 'north'|'south', name, color, type }
+            // latHigh是较高纬度端，latLow是较低纬度端
+            const circulationDefs = [
+                { baseLatRange: [30, 0], hemisphere: 'north', name: '哈德莱环流（低纬）', color: '#e8985e',
+                    type: 'hadley', groundFromHighToLow: true },
+                { baseLatRange: [60, 30], hemisphere: 'north', name: '费雷尔环流（中纬）', color: '#5d9b7e', type: 'ferrel',
+                    groundFromHighToLow: false },
+                { baseLatRange: [90, 60], hemisphere: 'north', name: '极地环流（高纬）', color: '#8b6b9e', type: 'polar',
+                    groundFromHighToLow: true },
+                { baseLatRange: [-30, 0], hemisphere: 'south', name: '哈德莱环流（低纬）', color: '#e8985e', type: 'hadley',
+                    groundFromHighToLow: true },
+                { baseLatRange: [-60, -30], hemisphere: 'south', name: '费雷尔环流（中纬）', color: '#5d9b7e', type: 'ferrel',
+                    groundFromHighToLow: false },
+                { baseLatRange: [-90, -60], hemisphere: 'south', name: '极地环流（高纬）', color: '#8b6b9e', type: 'polar',
+                    groundFromHighToLow: true },
+            ];
+
+            // --- 粒子系统 ---
+            const particlesPerCirculation = 22;
+            let allParticles = []; // { circIndex, t, speed }  t在0~1之间表示在闭合回路上的位置
+
+            function initParticles() {
+                allParticles = [];
+                circulationDefs.forEach((def, idx) => {
+                    for (let i = 0; i < particlesPerCirculation; i++) {
+                        allParticles.push({
+                            circIndex: idx,
+                            t: i / particlesPerCirculation + Math.random() * 0.03,
+                            speed: 0.0007 + Math.random() * 0.0005,
+                        });
+                    }
+                });
+            }
+            initParticles();
+
+            // --- 获取环流圈的实际角度范围（考虑季节偏移） ---
+            function getShiftedAngleRange(circDef) {
+                const latHigh = getShiftedLat(circDef.baseLatRange[0]);
+                const latLow = getShiftedLat(circDef.baseLatRange[1]);
+                const angHigh = latToAngle(latHigh);
+                const angLow = latToAngle(latLow);
+                return { angHigh, angLow, latHigh, latLow };
+            }
+
+            // --- 获取粒子在环流圈闭合路径上的坐标 ---
+            function getParticlePosition(circDef, t) {
+                const { angHigh, angLow } = getShiftedAngleRange(circDef);
+                const centerX = cx();
+                const centerY = cy;
+
+                // 闭合回路分为4段（t在0~1）：
+                // 0.00~0.35: 地面弧线（沿大圆）
+                // 0.35~0.42: 在低纬端上升/下沉（径向过渡）
+                // 0.42~0.77: 高空弧线（沿小圆）
+                // 0.77~0.84: 在高纬端下沉/上升（径向过渡）
+                // 0.84~1.00: 回到地面弧线起点
+
+                const segGround = 0.35;
+                const segTransLow = 0.42;
+                const segUpper = 0.77;
+                const segTransHigh = 0.84;
+
+                let pt;
+                if (t < segGround) {
+                    // 地面弧线（沿大圆R）
+                    const frac = t / segGround;
+                    const angle = angHigh + (angLow - angHigh) * frac;
+                    pt = angleToPoint(angle, R, centerX, centerY);
+                } else if (t < segTransLow) {
+                    // 低纬端过渡（径向）
+                    const frac = (t - segGround) / (segTransLow - segGround);
+                    const r = R + (rInner - R) * frac;
+                    pt = angleToPoint(angLow, r, centerX, centerY);
+                } else if (t < segUpper) {
+                    // 高空弧线（沿小圆rInner）
+                    const frac = (t - segTransLow) / (segUpper - segTransLow);
+                    const angle = angLow + (angHigh - angLow) * frac;
+                    pt = angleToPoint(angle, rInner, centerX, centerY);
+                } else if (t < segTransHigh) {
+                    // 高纬端过渡（径向）
+                    const frac = (t - segUpper) / (segTransHigh - segUpper);
+                    const r = rInner + (R - rInner) * frac;
+                    pt = angleToPoint(angHigh, r, centerX, centerY);
+                } else {
+                    // 回到起点
+                    const frac = (t - segTransHigh) / (1 - segTransHigh);
+                    const angle = angHigh;
+                    pt = angleToPoint(angle, R, centerX, centerY);
+                    // 微调使完全闭合
+                    const startPt = angleToPoint(angHigh, R, centerX, centerY);
+                    pt = { x: startPt.x, y: startPt.y };
+                }
+                return pt;
+            }
+
+            // --- 鼠标交互 ---
+            let mouseX = -100;
+            let mouseY = -100;
+            let hoveredPressureBelt = null;
+            let hoveredCirculation = null;
+            let highlightedType = null; // 'low'|'high'|'hadley'|'ferrel'|'polar'
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = displaySize.w / rect.width;
+                const scaleY = 680 / rect.height;
+                mouseX = (e.clientX - rect.left) * scaleX;
+                mouseY = (e.clientY - rect.top) * scaleY;
+                updateHover();
+            });
+            canvas.addEventListener('mouseleave', () => {
+                mouseX = -100;
+                mouseY = -100;
+                hoveredPressureBelt = null;
+                hoveredCirculation = null;
+                updateInfoCard();
+            });
+            canvas.addEventListener('click', (e) => {
+                if (hoveredPressureBelt) {
+                    highlightedType = hoveredPressureBelt.type;
+                    setTimeout(() => { if (highlightedType === hoveredPressureBelt?.type) highlightedType =
+                            null; }, 2500);
+                } else if (hoveredCirculation !== null) {
+                    const ctype = circulationDefs[hoveredCirculation].type;
+                    highlightedType = ctype;
+                    setTimeout(() => { if (highlightedType === ctype) highlightedType = null; }, 2500);
+                }
+            });
+
+            // 图例点击
+            document.querySelectorAll('.legend-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const hl = item.dataset.highlight;
+                    if (highlightedType === hl) {
+                        highlightedType = null;
+                    } else {
+                        highlightedType = hl;
+                        setTimeout(() => { if (highlightedType === hl) highlightedType = null; },
+                            3000);
+                    }
+                });
+            });
+
+            function updateHover() {
+                const centerX = cx();
+                const centerY = cy;
+                const dx = mouseX - centerX;
+                const dy = mouseY - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const clickAngle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+                // 检查气压带悬停
+                hoveredPressureBelt = null;
+                const beltTolerance = 18; // 像素容差
+                for (const belt of pressureBeltDefs) {
+                    const sLat = getShiftedLat(belt.lat);
+                    const sAng = latToAngle(sLat);
+                    const pt = angleToPoint(sAng, R, centerX, centerY);
+                    const bdx = mouseX - pt.x;
+                    const bdy = mouseY - pt.y;
+                    if (Math.sqrt(bdx * bdx + bdy * bdy) < beltTolerance) {
+                        hoveredPressureBelt = belt;
+                        break;
+                    }
+                }
+
+                // 检查环流圈悬停
+                hoveredCirculation = null;
+                if (!hoveredPressureBelt && dist < R + 30 && dist > rInner - 30) {
+                    let bestDist = Infinity;
+                    circulationDefs.forEach((def, idx) => {
+                        const { angHigh, angLow } = getShiftedAngleRange(def);
+                        let minA = Math.min(angHigh, angLow);
+                        let maxA = Math.max(angHigh, angLow);
+                        // 处理角度跨越0度的情况
+                        let checkAngle = clickAngle;
+                        if (maxA - minA > 180) {
+                            // 跨越0度线，调整
+                            if (checkAngle < 0) checkAngle += 360;
+                            const tmpMin = ((angHigh % 360) + 360) % 360;
+                            const tmpMax = ((angLow % 360) + 360) % 360;
+                            minA = Math.min(tmpMin, tmpMax);
+                            maxA = Math.max(tmpMin, tmpMax);
+                        }
+                        if (checkAngle >= minA - 6 && checkAngle <= maxA + 6 && dist < R + 35 && dist > rInner -
+                            35) {
+                            const midA = (minA + maxA) / 2;
+                            const midPt = angleToPoint(midA, (R + rInner) / 2, centerX, centerY);
+                            const md = Math.sqrt((mouseX - midPt.x) ** 2 + (mouseY - midPt.y) ** 2);
+                            if (md < bestDist) {
+                                bestDist = md;
+                                hoveredCirculation = idx;
+                            }
+                        }
+                    });
+                }
+                updateInfoCard();
+            }
+
+            function updateInfoCard() {
+                if (hoveredPressureBelt) {
+                    const belt = hoveredPressureBelt;
+                    const icon = belt.type === 'low' ? '🔴' : '🔵';
+                    const desc = belt.type === 'low' ?
+                        '空气上升，易形成云雨，地面风力较弱。' :
+                        '空气下沉，天气晴朗干燥，地面风力较强。';
+                    const windInfo = belt.lat === 0 ? '信风在此汇合（辐合带）。' :
+                        belt.lat === 30 || belt.lat === -30 ? '地面风向外辐散，形成信风和西风。' :
+                        belt.lat === 60 || belt.lat === -60 ? '西风与极地东风在此汇合。' :
+                        '寒冷干燥的下沉气流。';
+                    infoCard.innerHTML =
+                        `<h3>${icon} ${belt.name}</h3><p><strong>类型：</strong>${belt.type==='low'?'低压带（上升气流）':'高压带（下沉气流）'}</p><p>${desc}</p><p style="font-size:0.78rem;color:#888;">${windInfo}</p>`;
+                } else if (hoveredCirculation !== null) {
+                    const def = circulationDefs[hoveredCirculation];
+                    const h = def.hemisphere === 'north' ? '北半球' : '南半球';
+                    const groundDir = def.groundFromHighToLow ? '从高纬吹向低纬' : '从低纬吹向高纬';
+                    infoCard.innerHTML =
+                        `<h3>🔄 ${def.name}</h3><p><strong>范围：</strong>${h} ${Math.abs(def.baseLatRange[0])}°~${Math.abs(def.baseLatRange[1])}°</p><p><strong>地面风向：</strong>${groundDir}</p><p style="font-size:0.78rem;color:#888;">点击可高亮该环流圈</p>`;
+                } else if (highlightedType) {
+                    const names = { low: '低压带', high: '高压带', hadley: '哈德莱环流（低纬）', ferrel: '费雷尔环流（中纬）', polar: '极地环流（高纬）' };
+                    infoCard.innerHTML = `<h3>✨ 已高亮</h3><p>当前高亮：<strong>${names[highlightedType]||highlightedType}</strong></p><p style="font-size:0.78rem;color:#888;">点击图例或空白处可取消</p>`;
+                } else {
+                    infoCard.innerHTML =
+                        '<h3>💡 提示</h3><p>将鼠标悬停在气压带（圆边缘彩色弧段）或环流圈上查看详情。</p><p style="font-size:0.78rem;color:#888;">点击图例可高亮对应元素</p>';
+                }
+            }
+
+            // --- 季节按钮 ---
+            seasonControls.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn || btn === toggleAnimBtn) return;
+                const season = btn.dataset.season;
+                if (season === 'winter') seasonShift = -1;
+                else if (season === 'summer') seasonShift = 1;
+                else seasonShift = 0;
+
+                // 更新按钮状态
+                seasonControls.querySelectorAll('button[data-season]').forEach(b => b.classList.remove(
+                    'active'));
+                if (btn.dataset.season) btn.classList.add('active');
+            });
+
+            // --- 暂停动画 ---
+            toggleAnimBtn.addEventListener('click', () => {
+                animationPaused = !animationPaused;
+                toggleAnimBtn.textContent = animationPaused ? '▶️ 播放动画' : '⏯️ 暂停动画';
+                if (animationPaused) {
+                    toggleAnimBtn.classList.add('active');
+                } else {
+                    toggleAnimBtn.classList.remove('active');
+                }
+            });
+
+            // --- 绘制函数 ---
+            function drawEarthCircle() {
+                const centerX = cx();
+                const centerY = cy;
+
+                // 地球填充
+                const earthGrad = ctx.createRadialGradient(centerX - 40, centerY - 60, R * 0.3, centerX, centerY, R);
+                earthGrad.addColorStop(0, '#f7f3e8');
+                earthGrad.addColorStop(0.5, '#e8dfcc');
+                earthGrad.addColorStop(0.85, '#d5c9ad');
+                earthGrad.addColorStop(1, '#b8a880');
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, R, 0, Math.PI * 2);
+                ctx.fillStyle = earthGrad;
+                ctx.fill();
+                ctx.strokeStyle = '#9b8c70';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // 纬度虚线
+                const latLines = [-60, -30, 0, 30, 60];
+                ctx.setLineDash([6, 10]);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(150,140,120,0.5)';
+                latLines.forEach(lat => {
+                    const sLat = getShiftedLat(lat);
+                    const ang = latToAngle(sLat);
+                    const rad = ang * Math.PI / 180;
+                    const x1 = centerX + R * 0.25 * Math.cos(rad);
+                    const y1 = centerY + R * 0.25 * Math.sin(rad);
+                    const x2 = centerX + R * Math.cos(rad);
+                    const y2 = centerY + R * Math.sin(rad);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                });
+                // 赤道虚线更明显
+                const eqAng = latToAngle(getShiftedLat(0));
+                const eqRad = eqAng * Math.PI / 180;
+                ctx.setLineDash([3, 8]);
+                ctx.lineWidth = 1.8;
+                ctx.strokeStyle = 'rgba(180,100,60,0.55)';
+                ctx.beginPath();
+                ctx.moveTo(centerX - R, centerY);
+                ctx.lineTo(centerX + R, centerY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.lineWidth = 1;
+            }
+
+            function drawPressureBelts() {
+                const centerX = cx();
+                const centerY = cy;
+                const arcWidth = 16;
+
+                for (const belt of pressureBeltDefs) {
+                    const sLat = getShiftedLat(belt.lat);
+                    const ang = latToAngle(sLat);
+                    const isHighlighted = highlightedType === belt.type || hoveredPressureBelt === belt;
+                    const alpha = (highlightedType && highlightedType !== belt.type && hoveredPressureBelt !== belt) ?
+                        0.25 : (isHighlighted ? 1 : 0.75);
+                    const arcSpan = isHighlighted ? 14 : 10;
+
+                    // 发光效果
+                    if (isHighlighted) {
+                        ctx.save();
+                        ctx.shadowColor = belt.color;
+                        ctx.shadowBlur = 20;
+                    }
+
+                    const rad = ang * Math.PI / 180;
+                    const startAngle = rad - arcSpan * Math.PI / 180;
+                    const endAngle = rad + arcSpan * Math.PI / 180;
+
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, R - arcWidth / 2, startAngle, endAngle);
+                    ctx.lineWidth = arcWidth;
+                    ctx.strokeStyle = belt.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    ctx.lineCap = 'butt';
+
+                    if (isHighlighted) {
+                        ctx.restore();
+                    }
+
+                    // 标签
+                    const labelPt = angleToPoint(ang, R + 22, centerX, centerY);
+                    ctx.fillStyle = '#2c3e50';
+                    ctx.font = 'bold 11px "PingFang SC","Microsoft YaHei","Segoe UI",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.globalAlpha = alpha;
+                    const labelText = belt.lat === 0 ? '赤道低压带' :
+                        belt.lat === 30 ? '副热带高压带' :
+                        belt.lat === -30 ? '副热带高压带' :
+                        belt.lat === 60 ? '副极地低压带' :
+                        belt.lat === -60 ? '副极地低压带' :
+                        belt.lat === 90 ? '极地高压' :
+                        '极地高压';
+                    ctx.fillText(labelText, labelPt.x, labelPt.y);
+                    ctx.globalAlpha = 1;
+
+                    // 上升/下沉箭头标记
+                    const innerPt = angleToPoint(ang, R - arcWidth - 8, centerX, centerY);
+                    const outerPt = angleToPoint(ang, R + 8, centerX, centerY);
+                    if (belt.type === 'low') {
+                        // 上升箭头（从内向外）
+                        drawSmallArrow(innerPt.x, innerPt.y, outerPt.x, outerPt.y, '#c0392b', alpha);
+                    } else {
+                        // 下沉箭头（从外向内）
+                        drawSmallArrow(outerPt.x, outerPt.y, innerPt.x, innerPt.y, '#2c6e9c', alpha);
+                    }
+                }
+            }
+
+            function drawSmallArrow(x1, y1, x2, y2, color, alpha) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.sqrt(dx * dx + dy * dy);
+                if (len < 1) return;
+                const ux = dx / len;
+                const uy = dy / len;
+                const arrowSize = 8;
+                ctx.fillStyle = color;
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - arrowSize * ux + arrowSize * 0.4 * uy, y2 - arrowSize * uy - arrowSize * 0.4 * ux);
+                ctx.lineTo(x2 - arrowSize * ux - arrowSize * 0.4 * uy, y2 - arrowSize * uy + arrowSize * 0.4 * ux);
+                ctx.closePath();
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            function drawCirculationPaths() {
+                const centerX = cx();
+                const centerY = cy;
+
+                for (let ci = 0; ci < circulationDefs.length; ci++) {
+                    const def = circulationDefs[ci];
+                    const { angHigh, angLow } = getShiftedAngleRange(def);
+                    const isHighlighted = highlightedType === def.type || hoveredCirculation === ci;
+                    const alpha = (highlightedType && highlightedType !== def.type && hoveredCirculation !== ci) ? 0.15 :
+                        (isHighlighted ? 0.7 : 0.3);
+
+                    // 绘制高空弧线（虚线）
+                    ctx.setLineDash([8, 8]);
+                    ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
+                    ctx.strokeStyle = def.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    const highStart = angleToPoint(angLow, rInner, centerX, centerY);
+                    const highEnd = angleToPoint(angHigh, rInner, centerX, centerY);
+                    ctx.arc(centerX, centerY, rInner, angHigh * Math.PI / 180, angLow * Math.PI / 180,
+                        angHigh > angLow);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    // 地面弧线（实线）
+                    ctx.lineWidth = isHighlighted ? 2.5 : 1.5;
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    ctx.arc(centerX, centerY, R, angHigh * Math.PI / 180, angLow * Math.PI / 180, angHigh > angLow);
+                    ctx.strokeStyle = def.color;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    ctx.lineWidth = 1;
+                }
+            }
+
+            function drawGroundWindArrows() {
+                const centerX = cx();
+                const centerY = cy;
+                const arrowDefs = [
+                    { latRange: [30, 0], hemisphere: 'north', dir: 'towardLow', label: '东北信风', color: '#c07840' },
+                    { latRange: [60, 30], hemisphere: 'north', dir: 'towardHigh', label: '盛行西风', color: '#4a7d60' },
+                    { latRange: [90, 60], hemisphere: 'north', dir: 'towardLow', label: '极地东风', color: '#6d507d' },
+                    { latRange: [-30, 0], hemisphere: 'south', dir: 'towardLow', label: '东南信风', color: '#c07840' },
+                    { latRange: [-60, -30], hemisphere: 'south', dir: 'towardHigh', label: '盛行西风', color: '#4a7d60' },
+                    { latRange: [-90, -60], hemisphere: 'south', dir: 'towardLow', label: '极地东风', color: '#6d507d' },
+                ];
+
+                for (const ad of arrowDefs) {
+                    const sLatHigh = getShiftedLat(ad.latRange[0]);
+                    const sLatLow = getShiftedLat(ad.latRange[1]);
+                    const angHigh = latToAngle(sLatHigh);
+                    const angLow = latToAngle(sLatLow);
+                    const midAng = (angHigh + angLow) / 2;
+                    const pt = angleToPoint(midAng, R + 4, centerX, centerY);
+
+                    // 风向箭头（沿圆切线方向）
+                    const tangentAng = midAng + 90; // 切线方向
+                    const radT = tangentAng * Math.PI / 180;
+                    const arrowLen = 22;
+                    let dirSign = 1;
+                    if (ad.dir === 'towardLow') {
+                        // 从高纬指向低纬
+                        if (ad.hemisphere === 'north') dirSign = -1;
+                        else dirSign = 1;
+                    } else {
+                        // 从低纬指向高纬
+                        if (ad.hemisphere === 'north') dirSign = 1;
+                        else dirSign = -1;
+                    }
+                    // 调整：北半球右侧边缘，角度负值区域
+                    if (ad.hemisphere === 'north') {
+                        dirSign = ad.dir === 'towardLow' ? 1 : -1;
+                    } else {
+                        dirSign = ad.dir === 'towardLow' ? -1 : 1;
+                    }
+
+                    const ax = pt.x + dirSign * arrowLen * Math.cos(radT);
+                    const ay = pt.y + dirSign * arrowLen * Math.sin(radT);
+
+                    ctx.fillStyle = ad.color;
+                    ctx.globalAlpha = 0.7;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    const tipX = pt.x - dirSign * 3 * Math.cos(radT);
+                    const tipY = pt.y - dirSign * 3 * Math.sin(radT);
+                    ctx.lineTo(tipX - 7 * Math.cos((tangentAng + 140) * Math.PI / 180), tipY - 7 * Math.sin((tangentAng +
+                        140) * Math.PI / 180));
+                    ctx.lineTo(tipX - 7 * Math.cos((tangentAng - 140) * Math.PI / 180), tipY - 7 * Math.sin((tangentAng -
+                        140) * Math.PI / 180));
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+
+                    // 标签
+                    const labelPt = angleToPoint(midAng, R + 36, centerX, centerY);
+                    ctx.fillStyle = '#3a3a3a';
+                    ctx.font = '10px "PingFang SC","Microsoft YaHei","Segoe UI",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(ad.label, labelPt.x, labelPt.y);
+                }
+            }
+
+            function drawParticles() {
+                const centerX = cx();
+                const centerY = cy;
+
+                for (const particle of allParticles) {
+                    const def = circulationDefs[particle.circIndex];
+                    const isHighlighted = highlightedType === def.type || hoveredCirculation === particle.circIndex;
+                    const alpha = (highlightedType && highlightedType !== def.type && hoveredCirculation !== particle
+                        .circIndex) ? 0.12 : (isHighlighted ? 0.9 : 0.55);
+
+                    const pt = getParticlePosition(def, particle.t);
+                    const size = isHighlighted ? 4.5 : 3;
+
+                    // 光晕
+                    if (isHighlighted) {
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, size + 4, 0, Math.PI * 2);
+                        ctx.fillStyle = def.color;
+                        ctx.globalAlpha = alpha * 0.35;
+                        ctx.fill();
+                    }
+
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, size, 0, Math.PI * 2);
+                    ctx.fillStyle = def.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            function drawLabels() {
+                const centerX = cx();
+                const centerY = cy;
+                // 南北极标签
+                ctx.fillStyle = '#555';
+                ctx.font = 'bold 12px "PingFang SC","Microsoft YaHei","Segoe UI",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('北极 90°N', centerX, centerY - R - 30);
+                ctx.fillText('南极 90°S', centerX, centerY + R + 30);
+
+                // 赤道标签
+                ctx.fillText('赤道 0°', centerX + R + 35, centerY);
+                ctx.fillText('赤道 0°', centerX - R - 35, centerY);
+
+                // 纬度标签（右侧）
+                const rightLabels = [
+                    { lat: 30, text: '30°N' },
+                    { lat: 60, text: '60°N' },
+                    { lat: -30, text: '30°S' },
+                    { lat: -60, text: '60°S' },
+                ];
+                ctx.fillStyle = '#777';
+                ctx.font = '10px "PingFang SC","Microsoft YaHei","Segoe UI",sans-serif';
+                rightLabels.forEach(rl => {
+                    const sLat = getShiftedLat(rl.lat);
+                    const ang = latToAngle(sLat);
+                    const pt = angleToPoint(ang, R + 44, centerX, centerY);
+                    ctx.fillText(rl.text, pt.x, pt.y);
+                });
+            }
+
+            function drawTitleOnCanvas() {
+                // 在画布内不画标题，留给HTML处理
+            }
+
+            // --- 主渲染循环 ---
+            function updateParticles() {
+                if (animationPaused) return;
+                for (const particle of allParticles) {
+                    particle.t += particle.speed;
+                    if (particle.t > 1) particle.t -= 1;
+                    if (particle.t < 0) particle.t += 1;
+                }
+            }
+
+            function render() {
+                const w = displaySize.w;
+                const h = 680;
+                ctx.clearRect(0, 0, w, h);
+
+                // 背景
+                ctx.fillStyle = '#fafaf8';
+                ctx.fillRect(0, 0, w, h);
+
+                drawEarthCircle();
+                drawCirculationPaths();
+                drawPressureBelts();
+                drawGroundWindArrows();
+                drawParticles();
+                drawLabels();
+
+                updateParticles();
+                requestAnimationFrame(render);
+            }
+
+            // --- 启动 ---
+            updateInfoCard();
+            render();
+
+            // --- 窗口大小变化时重新计算 ---
+            window.addEventListener('resize', () => {
+                displaySize = resizeCanvas();
+                updateHover();
+            });
+
+            console.log('🌍 大气环流交互演示已就绪');
+            console.log('  - 悬停气压带或环流圈查看详情');
+            console.log('  - 点击图例高亮对应元素');
+            console.log('  - 使用季节按钮查看气压带移动');
+            console.log('  - 点击暂停按钮停止动画');
+        })();
+    </script>
+</body>
+</html>

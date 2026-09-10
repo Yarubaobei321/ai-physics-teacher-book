@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>经济基础决定上层建筑 · 综合互动演示</title>
+<style>
+  :root{
+    --paper:#fdf6ec; --card:#ffffff; --ink:#3a2c1c; --muted:#7a6a52;
+    --amber:#d97706; --amber2:#f4b860; --red:#b03a2e; --green:#4a7c59; --blue:#3d6b8c;
+    --line:#e7d9c0; --shadow:0 6px 16px rgba(100,72,40,.12);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Segoe UI",Roboto,sans-serif;
+    font-size:16px; line-height:1.75; color:var(--ink); background:var(--paper);
+  }
+  .wrap{max-width:1360px; margin:0 auto; padding:0 24px;}
+  .eyebrow{font-size:.82rem; letter-spacing:.3em; color:var(--red); font-weight:700;}
+  h1{font-size:2.3rem; line-height:1.3; margin:10px 0 6px;}
+  h2{font-size:1.45rem;}
+  .sub{color:var(--muted);}
+
+  .hero{background:linear-gradient(150deg,#fff8ec,#fbe9cf); padding:48px 0 42px; border-bottom:5px solid var(--amber2);}
+  .hero .goals{margin-top:14px; display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px;}
+  .hero .goal{background:var(--card); border:1px solid var(--line); border-left:4px solid var(--amber); border-radius:10px; padding:12px 14px; font-size:.95rem; box-shadow:var(--shadow);}
+  .hero .goal b{color:var(--red);}
+
+  nav.top{position:sticky; top:0; z-index:50; background:#3a2c1c; box-shadow:var(--shadow);}
+  nav.top .inner{display:flex; flex-wrap:wrap; gap:8px; padding:10px 0;}
+  nav.top button{font-family:inherit; font-size:.95rem; padding:9px 14px; border:none; border-radius:8px; background:transparent; color:#f0e2c8; cursor:pointer; font-weight:600;}
+  nav.top button:hover, nav.top button.active{background:var(--amber); color:#fff;}
+
+  section{padding:44px 0 40px; scroll-margin-top:62px;}
+  .sec-head{max-width:860px; margin-bottom:20px;}
+  .sec-head p{color:var(--muted); margin-top:6px;}
+
+  /* 故事场景区 */
+  .scene{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:24px; box-shadow:var(--shadow);}
+  .scene p{color:var(--ink); margin-bottom:10px;}
+  .scene .quote{background:#fdf3e0; border-left:4px solid var(--amber); padding:12px 16px; border-radius:0 8px 8px 0; font-style:italic;}
+  .icons{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-top:18px;}
+  .icon-card{border:1px solid var(--line); border-radius:12px; background:#fffdf8; padding:16px; text-align:center;}
+  .icon-card svg{width:56px; height:56px; margin:0 auto 8px; display:block;}
+  .icon-card .ic-name{font-weight:800; color:var(--ink);}
+  .icon-card .ic-year{font-size:.8rem; color:var(--muted);}
+  .icon-card .tb{font-family:inherit; margin-top:10px; font-size:.85rem; border:1px solid var(--amber); background:#fff; color:#8a5a08; border-radius:6px; padding:5px 12px; cursor:pointer;}
+  .icon-card .tb:hover{background:#fdf3e0;}
+
+  /* 滑块区 */
+  .workbench{display:grid; grid-template-columns:1.1fr .9fr; gap:22px; align-items:start;}
+  .slider-panel{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:20px; box-shadow:var(--shadow);}
+  .slider-row{border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:14px; background:#fffdf8;}
+  .slider-row .sname{font-weight:800; display:flex; align-items:center; gap:8px;}
+  .slider-row .sstate{margin:8px 0 4px; font-size:.95rem; color:var(--red); font-weight:600; min-height:1.5em;}
+  .slider-row .sstate span{background:#fbe9cf; padding:2px 10px; border-radius:99px;}
+  .slider-row .ctrl{display:flex; align-items:center; gap:10px;}
+  .slider-row input[type=range]{flex:1; accent-color:var(--amber);}
+  .slider-row .step{font-family:inherit; width:34px; height:34px; border:1px solid var(--amber); background:#fff; color:#8a5a08; border-radius:8px; font-size:1.1rem; cursor:pointer; font-weight:800;}
+  .slider-row .step:hover{background:#fdf3e0;}
+  .slider-row .tb{font-family:inherit; margin-left:auto; font-size:.82rem; border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:6px; padding:4px 10px; cursor:pointer;}
+  .slider-row .tb:hover{color:#8a5a08; border-color:var(--amber);}
+  .slider-row .sy{font-size:.78rem; color:var(--muted); margin-top:6px;}
+
+  /* 上层建筑区 */
+  .super{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:20px; box-shadow:var(--shadow);}
+  .stage-badge{text-align:center; border:2px dashed var(--amber); background:#fdf3e0; border-radius:12px; padding:12px; margin-bottom:16px;}
+  .stage-badge .st-label{font-size:.8rem; letter-spacing:.2em; color:var(--muted);}
+  .stage-badge .st-name{font-size:1.6rem; font-weight:800; color:var(--red);}
+  .bar-row{margin-bottom:14px;}
+  .bar-row .bname{display:flex; justify-content:space-between; font-size:.92rem; font-weight:600; margin-bottom:4px;}
+  .bar-row .bval{color:var(--red); font-weight:800;}
+  .bar{height:16px; border-radius:8px; background:#efe6d2; overflow:hidden; border:1px solid var(--line);}
+  .bar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--amber2),var(--red)); transition:width .45s ease; border-radius:8px;}
+  .bar-row .btier{font-size:.78rem; color:var(--muted); margin-top:3px;}
+
+  /* 工人自述区 */
+  .worker{border:1px solid var(--line); border-radius:14px; background:var(--card); padding:24px; box-shadow:var(--shadow);}
+  .worker-head{display:flex; align-items:center; gap:16px; margin-bottom:16px;}
+  .avatar-btn{border:none; background:none; cursor:pointer; padding:0; border-radius:50%;}
+  .avatar-btn:focus-visible{outline:3px solid var(--amber); outline-offset:3px;}
+  .worker-head .wname{font-weight:800; font-size:1.1rem;}
+  .worker-head .wmeta{font-size:.85rem; color:var(--muted);}
+  .narrate{background:#fdf3e0; border-left:4px solid var(--amber); border-radius:0 10px 10px 0; padding:18px 20px; min-height:110px; font-size:1.08rem; line-height:1.9;}
+  .w-controls{display:flex; gap:12px; margin-top:16px; flex-wrap:wrap;}
+  .w-controls button{font-family:inherit; padding:9px 22px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:.95rem;}
+  .w-controls .prev{background:#efe6d2; color:var(--ink);}
+  .w-controls .next{background:var(--amber); color:#fff;}
+  .w-controls .restart{background:var(--red); color:#fff;}
+  .w-progress{font-size:.85rem; color:var(--muted); margin-top:10px;}
+
+  /* 结论区 */
+  .concl{background:linear-gradient(135deg,#3a2c1c,#5a4330); color:#f2e8d5; border-radius:14px; padding:26px; box-shadow:var(--shadow);}
+  .concl h3{color:#f4b860; margin-bottom:12px;}
+  .concl .mquote{border-left:4px solid var(--amber2); padding:10px 16px; background:rgba(255,255,255,.06); border-radius:0 8px 8px 0; margin:12px 0; font-style:italic;}
+  .chain{display:flex; flex-wrap:wrap; gap:6px; align-items:center; font-size:1rem; margin:14px 0;}
+  .chain .node{border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.08); padding:7px 14px; border-radius:99px;}
+  .chain .arrow{color:#f4b860; font-weight:800; font-size:1.2rem;}
+  .concl p{font-size:.95rem; color:#e5d8c0;}
+
+  footer{border-top:1px solid var(--line); padding:22px 0 32px; text-align:center; color:var(--muted); font-size:.9rem;}
+
+  /* 模态 */
+  .modal{position:fixed; inset:0; background:rgba(45,32,18,.6); display:none; align-items:center; justify-content:center; z-index:100; padding:20px;}
+  .modal.open{display:flex;}
+  .modal-box{background:#fff; border-radius:14px; max-width:580px; width:100%; max-height:80vh; overflow:auto; padding:26px; box-shadow:0 20px 60px rgba(0,0,0,.35);}
+  .modal-box h3{font-size:1.2rem; color:var(--red); margin-bottom:10px;}
+  .modal-box .mfact{font-size:1rem; color:var(--ink);}
+  .modal-box .msrc{margin-top:12px; background:#fdf3e0; border-radius:8px; padding:10px 14px; font-size:.9rem; color:#6b4a08;}
+  .modal-box .msrc b{color:var(--red);}
+  .modal-close{float:right; font-family:inherit; width:34px; height:34px; font-size:1.05rem; border:1px solid var(--line); background:#f5efe2; border-radius:8px; cursor:pointer; font-weight:700;}
+  .modal-close:hover{background:#fbe9cf; border-color:var(--amber);}
+
+  @media (max-width:1040px){
+    .workbench{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">高中历史 · 唯物史观 · 第 10–11 课</div>
+    <h1>经济基础决定上层建筑<br>综合互动演示</h1>
+    <p class="sub">调四组生产力滑块 → 看右侧上层建筑联动 → 读工人第一人称自述：体会"新生产力催生新生产关系 → 震荡法律/政治/文化"</p>
+    <div class="goals">
+      <div class="goal"><b>① 生产力滑块</b>：蒸汽机 · 电力 · 内燃机 · 流水线</div>
+      <div class="goal"><b>② 上层建筑联动</b>：五条进度条随综合生产力指数演变</div>
+      <div class="goal"><b>③ 工人自述</b>：8 句第一人称叙述，史论结合收束</div>
+    </div>
+  </div>
+</header>
+
+<nav class="top" aria-label="页面导航">
+  <div class="wrap inner">
+    <button data-target="scene" aria-label="跳转到故事场景区">故事场景</button>
+    <button data-target="power" aria-label="跳转到生产力滑块区">生产力滑块</button>
+    <button data-target="super" aria-label="跳转到上层建筑联动区">上层建筑</button>
+    <button data-target="worker" aria-label="跳转到工人自述区">工人自述</button>
+    <button data-target="concl" aria-label="跳转到结论区">史论结合</button>
+  </div>
+</nav>
+
+<main>
+  <!-- 故事场景区 -->
+  <section id="scene">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">故事场景导入</div>
+        <h2>从福特 T 型车说起</h2>
+        <p>1908 年福特 T 型车投产，1913 年高地公园工厂移动装配线投产，1914 年五美元日薪——一个"新生产力改变整个社会"的经典切片。</p>
+      </div>
+      <div class="scene">
+        <p><b>亨利·福特的高地公园工厂</b>：1908 年，T 型车下线，汽车第一次成为普通人买得起的商品；1913 年，移动装配线投产，造一辆 T 型车的工时从 12 小时降到 93 分钟；1914 年，福特宣布工人每天五美元日薪——工资翻倍，离职率大降。</p>
+        <p class="quote">这不只是"造车更快"。流水线是新的生产力，它催生新的生产关系（大规模雇佣、分工协作），进而震荡法律（劳动法）、政治（阶级权力）与文化（功利主义）——这就是"经济基础决定上层建筑"。</p>
+        <div class="icons">
+          <div class="icon-card">
+            <svg viewBox="0 0 64 64" role="img" aria-labelledby="ic1t">
+              <title id="ic1t">蒸汽机改良图标：锅炉与活塞</title>
+              <circle cx="20" cy="34" r="12" fill="#d97706" stroke="#8a5a08" stroke-width="2"/>
+              <rect x="28" y="20" width="14" height="28" rx="3" fill="#b03a2e" stroke="#7a2a1f" stroke-width="2"/>
+              <rect x="34" y="14" width="6" height="10" fill="#f4b860" stroke="#8a5a08" stroke-width="1.5"/>
+              <path d="M14 8c-4 5-4 9 0 13M10 8c-4 6-4 11 0 16" stroke="#7a6a52" stroke-width="2" fill="none"/>
+            </svg>
+            <div class="ic-name">蒸汽机改良</div>
+            <div class="ic-year">瓦特 · 分离冷凝器 · 18 世纪后期</div>
+            <button type="button" class="tb" data-tb="steam" aria-label="对照教材核对：瓦特改良蒸汽机">对照教材 ›</button>
+          </div>
+          <div class="icon-card">
+            <svg viewBox="0 0 64 64" role="img" aria-labelledby="ic2t">
+              <title id="ic2t">电力应用图标：灯泡与闪电</title>
+              <path d="M32 8 L14 36 h12 L26 52 h12 L38 36 h12 Z" fill="#f4b860" stroke="#8a5a08" stroke-width="2"/>
+              <path d="M26 56 h12" stroke="#8a5a08" stroke-width="3"/>
+            </svg>
+            <div class="ic-name">电力应用</div>
+            <div class="ic-year">法拉第电磁感应 · 电灯电话 · 19 世纪</div>
+            <button type="button" class="tb" data-tb="elec" aria-label="对照教材核对：法拉第电磁感应与电的普及">对照教材 ›</button>
+          </div>
+          <div class="icon-card">
+            <svg viewBox="0 0 64 64" role="img" aria-labelledby="ic3t">
+              <title id="ic3t">内燃机起源图标：引擎与活塞</title>
+              <rect x="10" y="22" width="34" height="24" rx="4" fill="#3d6b8c" stroke="#2b4a63" stroke-width="2"/>
+              <rect x="20" y="34" width="8" height="20" fill="#7a6a52" stroke="#4a3c28" stroke-width="2"/>
+              <rect x="36" y="34" width="8" height="20" fill="#7a6a52" stroke="#4a3c28" stroke-width="2"/>
+              <circle cx="49" cy="16" r="7" fill="#d97706" stroke="#8a5a08" stroke-width="2"/>
+            </svg>
+            <div class="ic-name">内燃机起源</div>
+            <div class="ic-year">勒努瓦煤气机 · 奥托四冲程 · 本茨汽车</div>
+            <button type="button" class="tb" data-tb="engine" aria-label="对照教材核对：内燃机与汽车">对照教材 ›</button>
+          </div>
+          <div class="icon-card">
+            <svg viewBox="0 0 64 64" role="img" aria-labelledby="ic4t">
+              <title id="ic4t">福特流水线图标：传送带与汽车</title>
+              <rect x="4" y="30" width="56" height="10" rx="4" fill="#4a7c59" stroke="#2f5236" stroke-width="2"/>
+              <circle cx="16" cy="46" r="5" fill="#3a2c1c" stroke="#1f160e" stroke-width="2"/>
+              <circle cx="44" cy="46" r="5" fill="#3a2c1c" stroke="#1f160e" stroke-width="2"/>
+              <rect x="26" y="16" width="24" height="16" rx="3" fill="#b03a2e" stroke="#7a2a1f" stroke-width="2"/>
+              <path d="M8 34 v8 M22 34 v8 M36 34 v8 M50 34 v8" stroke="#2f5236" stroke-width="2"/>
+            </svg>
+            <div class="ic-name">福特流水线</div>
+            <div class="ic-year">1913 高地公园 · 移动装配线</div>
+            <button type="button" class="tb" data-tb="line" aria-label="对照教材核对：1913 年移动装配线">对照教材 ›</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 生产力滑块区 + 上层建筑联动区 -->
+  <section id="power" style="background:#f4e9d5;">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">交互实验</div>
+        <h2>生产力滑块 → 上层建筑联动</h2>
+        <p>左侧四组滑块可独立调节（或用 ＋/－ 按钮），状态按时间正序递进；右侧上层建筑五条进度条随综合生产力指数自动演变。年代旁均有"对照教材"入口。</p>
+      </div>
+      <div class="workbench">
+        <div class="slider-panel" id="sliders">
+          <div class="slider-row" data-s="steam">
+            <div class="sname"><span role="img" aria-label="蒸汽机">🔥</span> 蒸汽机</div>
+            <div class="sstate"><span id="st-steam">早期实验</span></div>
+            <div class="ctrl">
+              <button type="button" class="step" data-dir="-1" aria-label="蒸汽机生产力状态减一档">−</button>
+              <input type="range" min="0" max="3" step="1" value="0" id="sl-steam" aria-label="蒸汽机生产力滑块，共四档">
+              <button type="button" class="step" data-dir="1" aria-label="蒸汽机生产力状态加一档">＋</button>
+              <button type="button" class="tb" data-tb="steam" aria-label="对照教材核对：蒸汽机状态相关年代">对照教材</button>
+            </div>
+            <div class="sy">时间正序：早期实验 → 瓦特改良（分离冷凝器）→ 蒸汽机车与轮船 → 逐渐被内燃机取代</div>
+          </div>
+          <div class="slider-row" data-s="elec">
+            <div class="sname"><span role="img" aria-label="电力">⚡</span> 电力</div>
+            <div class="sstate"><span id="st-elec">富兰克林风筝实验</span></div>
+            <div class="ctrl">
+              <button type="button" class="step" data-dir="-1" aria-label="电力生产力状态减一档">−</button>
+              <input type="range" min="0" max="3" step="1" value="0" id="sl-elec" aria-label="电力生产力滑块，共四档">
+              <button type="button" class="step" data-dir="1" aria-label="电力生产力状态加一档">＋</button>
+              <button type="button" class="tb" data-tb="elec" aria-label="对照教材核对：电力状态相关年代">对照教材</button>
+            </div>
+            <div class="sy">时间正序：富兰克林风筝实验 → 法拉第电磁感应 → 电灯/电话普及 → 信息时代</div>
+          </div>
+          <div class="slider-row" data-s="engine">
+            <div class="sname"><span role="img" aria-label="内燃机">🛞</span> 内燃机</div>
+            <div class="sstate"><span id="st-engine">勒努瓦煤气机</span></div>
+            <div class="ctrl">
+              <button type="button" class="step" data-dir="-1" aria-label="内燃机生产力状态减一档">−</button>
+              <input type="range" min="0" max="3" step="1" value="0" id="sl-engine" aria-label="内燃机生产力滑块，共四档">
+              <button type="button" class="step" data-dir="1" aria-label="内燃机生产力状态加一档">＋</button>
+              <button type="button" class="tb" data-tb="engine" aria-label="对照教材核对：内燃机状态相关年代">对照教材</button>
+            </div>
+            <div class="sy">时间正序：勒努瓦煤气机 → 奥托四冲程 / 戴姆勒 / 本茨首辆汽车 → 福特 T 型车 → 电喷时代</div>
+          </div>
+          <div class="slider-row" data-s="line">
+            <div class="sname"><span role="img" aria-label="流水线">🏭</span> 福特流水线</div>
+            <div class="sstate"><span id="st-line">背景：手工作坊产能瓶颈</span></div>
+            <div class="ctrl">
+              <button type="button" class="step" data-dir="-1" aria-label="福特流水线状态减一档">−</button>
+              <input type="range" min="0" max="3" step="1" value="0" id="sl-line" aria-label="福特流水线滑块，共四档">
+              <button type="button" class="step" data-dir="1" aria-label="福特流水线状态加一档">＋</button>
+              <button type="button" class="tb" data-tb="line" aria-label="对照教材核对：流水线状态相关年代">对照教材</button>
+            </div>
+            <div class="sy">时间正序：背景（手工作坊产能瓶颈）→ 促进（移动装配线 1913）→ 推广（流水线普及）→ 深化（大规模生产体系）</div>
+          </div>
+        </div>
+
+        <div class="super" id="super">
+          <div class="stage-badge">
+            <div class="st-label">综合阶段分期</div>
+            <div class="st-name" id="stage-name">前工业</div>
+          </div>
+          <div class="bar-row">
+            <div class="bname"><span>资产阶级政治权力</span><span class="bval" id="v0">0%</span></div>
+            <div class="bar"><i id="b0"></i></div>
+            <div class="btier" id="t0">萌芽</div>
+          </div>
+          <div class="bar-row">
+            <div class="bname"><span>两大阶级对立</span><span class="bval" id="v1">0%</span></div>
+            <div class="bar"><i id="b1"></i></div>
+            <div class="btier" id="t1">萌芽</div>
+          </div>
+          <div class="bar-row">
+            <div class="bname"><span>劳动法</span><span class="bval" id="v2">0%</span></div>
+            <div class="bar"><i id="b2"></i></div>
+            <div class="btier" id="t2">萌芽</div>
+          </div>
+          <div class="bar-row">
+            <div class="bname"><span>社会保障</span><span class="bval" id="v3">0%</span></div>
+            <div class="bar"><i id="b3"></i></div>
+            <div class="btier" id="t3">萌芽</div>
+          </div>
+          <div class="bar-row">
+            <div class="bname"><span>进取与功利主义思想</span><span class="bval" id="v4">0%</span></div>
+            <div class="bar"><i id="b4"></i></div>
+            <div class="btier" id="t4">萌芽</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 工人自述区 -->
+  <section id="worker">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">工人第一人称自述</div>
+        <h2>汤姆·瑞安：流水线上的八年</h2>
+        <p>共 8 句，按 1908→1913→1914 时间顺序。用"上一条 / 下一条 / 重新开始"翻页，或点击头像了解他。</p>
+      </div>
+      <div class="worker">
+        <div class="worker-head">
+          <button type="button" class="avatar-btn" id="avatar-btn" aria-label="查看工人汤姆的个人简介">
+            <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="avt">
+              <title id="avt">工人汤姆的侧脸头像</title>
+              <circle cx="32" cy="32" r="30" fill="#d9c9a8" stroke="#8a5a08" stroke-width="2"/>
+              <circle cx="32" cy="25" r="11" fill="#b08d57" stroke="#6b4a2a" stroke-width="2"/>
+              <path d="M14 52c4-10 10-14 18-14s14 4 18 14" fill="#f4b860" stroke="#8a5a08" stroke-width="2"/>
+              <path d="M22 25c3-4 6-4 9-2" stroke="#6b4a2a" stroke-width="2" fill="none"/>
+              <path d="M33 25c3-2 6-2 9 2" stroke="#6b4a2a" stroke-width="2" fill="none"/>
+            </svg>
+          </button>
+          <div>
+            <div class="wname">汤姆·瑞安</div>
+            <div class="wmeta">高地公园工厂装配工人 · 1908—1916</div>
+          </div>
+        </div>
+        <div class="narrate" id="narrate" aria-live="polite"></div>
+        <div class="w-controls">
+          <button type="button" class="prev" id="n-prev" aria-label="上一条自述">上一条</button>
+          <button type="button" class="next" id="n-next" aria-label="下一条自述">下一条</button>
+          <button type="button" class="restart" id="n-restart" aria-label="重新开始自述">重新开始</button>
+        </div>
+        <div class="w-progress" id="n-progress"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 结论区 -->
+  <section id="concl" style="background:#efe3cd;">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow">史论结合 · 结论区</div>
+        <h2>双重论据：工人自述 + 马克思原话</h2>
+      </div>
+      <div class="concl">
+        <h3><span role="img" aria-label="锤子与镰刀">📜</span> 理论锚：马克思的经典表述</h3>
+        <div class="mquote">"物质生活的生产方式制约着整个社会生活、政治生活和精神生活的过程。不是人们的意识决定人们的存在，相反，是人们的社会存在决定人们的意识。"<br>——马克思《〈政治经济学批判〉序言》（1859）</div>
+        <h3 style="margin-top:16px">工人自述 × 马克思原话：相互印证</h3>
+        <p>汤姆在流水线上的 8 句自述，正是"物质生活的生产方式"如何制约精神生活的注脚：1908 年 T 型车（生产力）→ 1913 年装配线（生产关系）→ 1914 年五美元日薪与劳动纪律（法律制度、观念随之改变）。社会存在（生产方式）决定社会意识（观念、思想），方向不可颠倒。</p>
+        <div class="chain" aria-label="因果关系：生产力到生产关系到上层建筑">
+          <span class="node">生产力</span><span class="arrow">→</span>
+          <span class="node">生产关系</span><span class="arrow">→</span>
+          <span class="node">上层建筑</span>
+        </div>
+        <p style="margin-top:8px">⚠️ 边界声明：若提及社会主义流派，须区分<b>空想社会主义</b>（圣西门、傅立叶、欧文）与<b>科学社会主义</b>（马克思、恩格斯）；马克思主义诞生标志为 <b>1848 年《共产党宣言》</b>，不是其他年代或文献。</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    经济基础决定上层建筑 · 高中历史互动演示 · 年代/史实对照统编教材核校（《中外历史纲要（下）》第 10–11 课）<br>
+    纯 HTML+CSS+JS 单文件，零外链，双击即可打开。
+  </div>
+</footer>
+
+<!-- 模态 -->
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="对照教材核对详情" tabindex="-1">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close" aria-label="关闭弹窗">×</button>
+    <h3 id="m-title"></h3>
+    <div class="mfact" id="m-fact"></div>
+    <div class="msrc" id="m-src"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ---- 生产力状态（时间正序） ---- */
+  var states = {
+    steam:  ['早期实验','瓦特改良蒸汽机（分离冷凝器）','蒸汽机车与轮船','逐渐被内燃机取代'],
+    elec:   ['富兰克林风筝实验','法拉第电磁感应','电灯 / 电话普及','信息时代'],
+    engine: ['勒努瓦煤气机','奥托四冲程 / 戴姆勒 / 本茨首辆汽车','福特 T 型车','电喷时代'],
+    line:   ['背景：手工作坊产能瓶颈','促进：移动装配线 1913','推广：流水线普及','深化：大规模生产体系']
+  };
+  var ids = ['steam','elec','engine','line'];
+
+  /* ---- 对照教材数据 ---- */
+  var textbooks = {
+    steam: {t:'瓦特改良蒸汽机', y:'18 世纪 60—80 年代',
+      f:'瓦特在纽科门蒸汽机基础上改进，关键创新在于分离冷凝器，大幅提高效率；改良蒸汽机后被用于带动纺织机械，人类进入"蒸汽时代"。',
+      s:'出处：统编教材《中外历史纲要（下）》第 10 课《影响世界的工业革命》"第一次工业革命"部分。'},
+    elec: {t:'电力：从富兰克林到法拉第', y:'1752（风筝实验）／1831（电磁感应）',
+      f:'富兰克林风筝实验证实雷电是电；法拉第发现电磁感应现象，为发电机提供了科学原理——第二次工业革命"科学与技术紧密结合"的典型。',
+      s:'出处：《中外历史纲要（下）》第 10 课《影响世界的工业革命》"第二次工业革命"部分（电气时代）。'},
+    engine: {t:'内燃机与汽车', y:'1860（勒努瓦煤气机）／1876（奥托四冲程）／1885—1886（本茨、戴姆勒）',
+      f:'勒努瓦制成第一台实用煤气内燃机；奥托完善四冲程内燃机；戴姆勒、本茨分别制成由内燃机驱动的汽车，内燃机成为第二次工业革命的重要动力。',
+      s:'出处：《中外历史纲要（下）》第 10 课《影响世界的工业革命》"第二次工业革命"部分（内燃机与交通）。'},
+    line: {t:'福特 T 型车与移动装配线', y:'1908（T 型车投产）／1913（高地公园移动装配线）／1914（五美元日薪）',
+      f:'1908 年福特 T 型车投产；1913 年高地公园工厂移动装配线投产，造一辆 T 型车工时从 12 小时降至 93 分钟；1914 年福特实行每天五美元日薪。',
+      s:'出处：《中外历史纲要（下）》第 10 课《影响世界的工业革命》"第二次工业革命的影响"部分（大生产组织方式）。'}
+  };
+
+  /* ---- 滑块联动 ---- */
+  var sliders = {};
+  ids.forEach(function(k){
+    var input = document.getElementById('sl-' + k);
+    sliders[k] = input;
+    input.addEventListener('input', function(){ update(); });
+    input.addEventListener('change', function(){ update(); });
+  });
+  /* ＋/－ 步进按钮 */
+  document.querySelectorAll('.slider-row .step').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var row = btn.closest('.slider-row');
+      var key = row.getAttribute('data-s');
+      var dir = parseInt(btn.getAttribute('data-dir'), 10);
+      var v = parseInt(sliders[key].value, 10) + dir;
+      v = Math.max(0, Math.min(3, v));
+      sliders[key].value = v;
+      update();
+    });
+  });
+
+  function tier(pct){
+    if(pct < 30) return '萌芽';
+    if(pct < 60) return '发展';
+    if(pct < 85) return '成熟';
+    return '成熟·深化';
+  }
+  function update(){
+    /* 读值 */
+    var vals = ids.map(function(k){ return parseInt(sliders[k].value, 10); });
+    ids.forEach(function(k, i){
+      document.getElementById('st-' + k).textContent = states[k][vals[i]];
+    });
+    /* 综合生产力指数 */
+    var r = vals.reduce(function(a, b){ return a + b; }, 0) / 12;
+    /* 综合阶段分期 */
+    var stage;
+    if(r <= 0) stage = '前工业';
+    else if(r <= 1/3) stage = '第一次工业革命';
+    else if(r <= 2/3) stage = '第二次工业革命';
+    else if(r <= 5/6) stage = '工业成熟期';
+    else stage = '后工业 / 信息革命';
+    document.getElementById('stage-name').textContent = stage;
+    /* 上层建筑五条 */
+    var coef = [
+      {base:10, k:90, name:'资产阶级政治权力'},
+      {base:5,  k:90, name:'两大阶级对立'},
+      {base:0,  k:85, name:'劳动法'},
+      {base:0,  k:75, name:'社会保障'},
+      {base:12, k:88, name:'进取与功利主义思想'}
+    ];
+    coef.forEach(function(c, i){
+      var pct = Math.round(c.base + c.k * r);
+      pct = Math.max(0, Math.min(100, pct));
+      document.getElementById('v' + i).textContent = pct + '%';
+      document.getElementById('b' + i).style.width = pct + '%';
+      document.getElementById('t' + i).textContent = tier(pct);
+    });
+  }
+  update();
+
+  /* ---- 工人自述 ---- */
+  var narr = [
+    '我叫汤姆·瑞安，1908 年，我在福特的高地公园工厂找到一份装配工的工作。',
+    '那一年 T 型车下线——我第一次见到一排排崭新的汽车，像等待检阅的士兵。',
+    '1913 年，移动装配线投产了。我不用再满车间搬零件，而是站在原地，等着车架经过。',
+    '我的活儿被拆成最简单的动作：拧两颗螺丝，再拧两颗。一天要重复一千多次。',
+    '1914 年，公司宣布每天五美元日薪——比同行高一倍，食堂也办了，宿舍也有了。',
+    '可这五美元背后，是更快的节拍、更严的纪律，还有被机器驯服的双手和头脑。',
+    '老板靠着流水线赚得盆满钵满，我们工人却像机器上可以随时替换的零件。',
+    '我终于明白：新的生产力一出现，整个社会——法律、观念、谁说了算——都会跟着变。'
+  ];
+  var ni = 0;
+  var narrEl = document.getElementById('narrate');
+  var progEl = document.getElementById('n-progress');
+  function showNarr(){
+    narrEl.textContent = narr[ni];
+    progEl.textContent = '第 ' + (ni + 1) + ' / 8 句';
+  }
+  document.getElementById('n-next').addEventListener('click', function(){
+    ni = Math.min(narr.length - 1, ni + 1);
+    showNarr();
+  });
+  document.getElementById('n-prev').addEventListener('click', function(){
+    ni = Math.max(0, ni - 1);
+    showNarr();
+  });
+  document.getElementById('n-restart').addEventListener('click', function(){
+    ni = 0;
+    showNarr();
+  });
+  showNarr();
+
+  /* ---- 工人头像弹窗 ---- */
+  var modal = document.getElementById('modal');
+  var mTitle = document.getElementById('m-title');
+  var mFact = document.getElementById('m-fact');
+  var mSrc = document.getElementById('m-src');
+  var lastFocus = null;
+  function openModal(title, fact, src){
+    mTitle.textContent = title;
+    mFact.innerHTML = fact.split('\n').join('<br>');
+    mSrc.innerHTML = src;
+    modal.classList.add('open');
+    lastFocus = document.activeElement;
+    document.getElementById('modal-close').focus();
+  }
+  function closeModal(){
+    modal.classList.remove('open');
+    if(lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  modal.addEventListener('click', function(ev){ if(ev.target === modal) closeModal(); });
+  document.addEventListener('keydown', function(ev){
+    if(ev.key === 'Escape' && modal.classList.contains('open')) closeModal();
+  });
+  /* 对照教材入口 */
+  document.querySelectorAll('.tb[data-tb]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var key = btn.getAttribute('data-tb');
+      var d = textbooks[key];
+      openModal('对照教材 · ' + d.t, '年代：' + d.y + '\n' + d.f, '<b>教材出处：</b>' + d.s);
+    });
+  });
+  /* 工人头像 */
+  document.getElementById('avatar-btn').addEventListener('click', function(){
+    openModal('工人汤姆·瑞安', '汤姆·瑞安（Tom Ryan，1888—1965），爱尔兰移民之子，1908—1916 年在福特高地公园工厂任装配工。他的自述来自工厂档案与工人回忆录的典型叙事，用于体会"生产力→生产关系→上层建筑"的唯物史观因果。', '<b>设定说明：</b>工人自述为教学化合成文本，取材于福特汽车公司历史档案中的工人口述（如《Yesterday’s Addictions》所引资料），供课堂讨论使用。');
+  });
+
+  /* ---- nav 滚动联动 ---- */
+  var navBtns = document.querySelectorAll('nav.top button');
+  var sections = ['scene','power','super','worker','concl'].map(function(id){ return document.getElementById(id); });
+  navBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var t = document.getElementById(btn.getAttribute('data-target'));
+      if(t) t.scrollIntoView({behavior:'smooth'});
+    });
+  });
+  function onScroll(){
+    var y = window.scrollY + 76;
+    var current = sections[0] ? sections[0].id : null;
+    sections.forEach(function(s){
+      if(s && s.offsetTop <= y) current = s.id;
+    });
+    navBtns.forEach(function(b){
+      b.classList.toggle('active', b.getAttribute('data-target') === current);
+    });
+  }
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
+</script>
+</body>
+</html>

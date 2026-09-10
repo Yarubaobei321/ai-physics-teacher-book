@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>孟德尔自由组合定律模拟器：配子随机结合与性状显示 | 高中生物人教版必修二</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动文字影响点击，不影响文字选择 */
+        }
+
+        body {
+            background: linear-gradient(145deg, #e0f0e8 0%, #c8e0d4 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', '华文楷书', 'Apple SD Gothic Neo', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .sim-card {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(255, 255, 245, 0.95);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px rgba(0, 20, 0, 0.2), 0 0 0 1px rgba(180, 210, 170, 0.5);
+            backdrop-filter: blur(2px);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        /* 头部 */
+        .header {
+            background: #2c6e3c;
+            background: linear-gradient(135deg, #1f5430, #2e7d40);
+            padding: 1.2rem 2rem;
+            color: white;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 0.5rem 0 0;
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        /* 内容区 */
+        .content {
+            padding: 1.8rem 2rem 2rem 2rem;
+        }
+
+        /* 基因型说明区 (亲本性状及配子类型) */
+        .gene-info {
+            background: #fef7e0;
+            border-radius: 1.8rem;
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            border-left: 8px solid #e0a800;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .gene-info h3 {
+            margin: 0 0 0.6rem 0;
+            color: #7a5b00;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gene-info .traits-box {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 8px;
+        }
+
+        .allele-pair {
+            background: #fff;
+            padding: 8px 16px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: baseline;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .allele-item {
+            font-size: 1.2rem;
+            font-weight: bold;
+            font-family: monospace;
+            background: #eef5ee;
+            padding: 4px 12px;
+            border-radius: 36px;
+        }
+
+        .phenotype {
+            color: #b45f06;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        /* 两个亲本配子池区域（演示雌雄配子随机结合）*/
+        .gamete-pools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .pool {
+            flex: 1;
+            min-width: 200px;
+            background: #f9faf5;
+            border-radius: 1.8rem;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 1px solid #e2e8cd;
+        }
+
+        .pool h3 {
+            margin-top: 0;
+            margin-bottom: 0.8rem;
+            font-size: 1.3rem;
+            border-bottom: 2px dashed #bebc8f;
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .pool .badge {
+            background: #d9e6b3;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #3f5c1a;
+        }
+
+        .gamete-list {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 14px;
+            margin: 20px 0;
+        }
+
+        .gamete-card {
+            background: white;
+            width: 90px;
+            border-radius: 2rem;
+            padding: 10px 0;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border: 2px solid transparent;
+        }
+
+        .gamete-card.selected {
+            background: #fff2cf;
+            border-color: #f5b042;
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .gamete-symbol {
+            font-size: 1.9rem;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            color: #2c5e2e;
+        }
+
+        .gamete-pheno {
+            font-size: 0.7rem;
+            color: #aa6f20;
+            margin-top: 5px;
+        }
+
+        /* 随机抽选与结果区 */
+        .action-area {
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .random-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            border: none;
+            background: #4e8d5c;
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #3c7a46;
+        }
+
+        .btn-primary:hover {
+            background: #2c5f37;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #b18b42;
+        }
+
+        .btn-secondary:hover {
+            background: #9c7436;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #5f6c5b;
+        }
+
+        .result-box {
+            background: #eef3e6;
+            border-radius: 2rem;
+            padding: 1rem;
+            margin-top: 15px;
+        }
+
+        .selected-pair {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .selected-item {
+            text-align: center;
+            min-width: 130px;
+        }
+
+        .selected-label {
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            color: #4a6741;
+        }
+
+        .selected-value {
+            font-size: 2rem;
+            font-weight: bold;
+            background: #fff3cf;
+            display: inline-block;
+            padding: 0.2rem 1rem;
+            border-radius: 60px;
+            margin-top: 6px;
+            font-family: monospace;
+        }
+
+        .combined-box {
+            background: #e0c99240;
+            border-radius: 2rem;
+            padding: 12px;
+            border: 2px solid #c4a86a;
+        }
+
+        .zygote-geno {
+            font-size: 2rem;
+            font-weight: bold;
+            font-family: monospace;
+            background: #fff9e8;
+            display: inline-block;
+            padding: 0.3rem 1.2rem;
+            border-radius: 48px;
+            margin: 8px 0;
+        }
+
+        .zygote-pheno {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #a3540e;
+        }
+
+        .log-area {
+            margin-top: 20px;
+            background: #eef0e4;
+            border-radius: 28px;
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            color: #2b482b;
+            text-align: left;
+            max-height: 80px;
+            overflow-y: auto;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 1rem;
+            background: #e2e9da;
+            color: #4b5e3a;
+            border-top: 1px solid #cddcb6;
+        }
+
+        @media (max-width: 680px) {
+            .content {
+                padding: 1rem;
+            }
+            .gamete-card {
+                width: 70px;
+            }
+            .gamete-symbol {
+                font-size: 1.4rem;
+            }
+            .selected-value {
+                font-size: 1.3rem;
+            }
+            .zygote-geno {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="sim-card">
+    <div class="header">
+        <h1>🧬 自由组合定律 · 配子随机结合模拟器</h1>
+        <p>人教版生物必修二 | 两对相对性状 (Y/y 黄绿 , R/r 圆皱) 雌雄配子随机结合</p>
+    </div>
+    <div class="content">
+        <!-- 性状说明 -->
+        <div class="gene-info">
+            <h3>📖 实验背景：孟德尔两对相对性状杂交实验</h3>
+            <div class="traits-box">
+                <div class="allele-pair"><span class="allele-item">Y (黄色) </span> <span class="phenotype">显性</span> vs <span class="allele-item">y (绿色) </span><span class="phenotype">隐性</span></div>
+                <div class="allele-pair"><span class="allele-item">R (圆粒) </span> <span class="phenotype">显性</span> vs <span class="allele-item">r (皱粒) </span><span class="phenotype">隐性</span></div>
+                <div class="allele-pair"><span>🎯 配子类型: <strong>YR, Yr, yR, yr</strong> (四种等概率)</span></div>
+            </div>
+        </div>
+
+        <!-- 两个配子池 (模拟雌雄配子，或者父本母本) -->
+        <div class="gamete-pools">
+            <!-- 雌配子池 (或母本) -->
+            <div class="pool">
+                <h3>🌸 雌配子池 <span class="badge">母本</span></h3>
+                <div class="gamete-list" id="femaleGametesContainer">
+                    <!-- 动态生成4种配子 YR, Yr, yR, yr -->
+                </div>
+                <p style="font-size: 0.7rem; color: #776e3a;">点击选择 / 随机抽选时会结合选中的配子</p>
+            </div>
+
+            <!-- 雄配子池 (父本) -->
+            <div class="pool">
+                <h3>🌿 雄配子池 <span class="badge">父本</span></h3>
+                <div class="gamete-list" id="maleGametesContainer">
+                    <!-- 动态生成 -->
+                </div>
+                <p style="font-size: 0.7rem; color: #776e3a;">点击选择 / 随机抽选时结合选中的配子</p>
+            </div>
+        </div>
+
+        <!-- 随机抽选操作区 -->
+        <div class="action-area">
+            <div class="random-buttons">
+                <button class="btn btn-primary" id="randomBothBtn">🎲 随机抽选雌雄配子</button>
+                <button class="btn btn-secondary" id="randomFemaleOnlyBtn">🌸 随机雌配子</button>
+                <button class="btn btn-secondary" id="randomMaleOnlyBtn">🌿 随机雄配子</button>
+                <button class="btn btn-reset" id="resetSelectionBtn">🔄 重置选择</button>
+            </div>
+
+            <!-- 当前选中的配子结合结果 -->
+            <div class="result-box">
+                <div class="selected-pair">
+                    <div class="selected-item">
+                        <div class="selected-label">🌸 当前所选雌配子</div>
+                        <div class="selected-value" id="selectedFemaleDisplay">—</div>
+                        <div id="femalePhenoDisplay" style="font-size:0.8rem; color:#8b6946;"></div>
+                    </div>
+                    <div class="selected-item">
+                        <div class="selected-label">🌿 当前所选雄配子</div>
+                        <div class="selected-value" id="selectedMaleDisplay">—</div>
+                        <div id="malePhenoDisplay" style="font-size:0.8rem; color:#8b6946;"></div>
+                    </div>
+                </div>
+                <div class="combined-box">
+                    <div style="font-weight: bold;">🧬 结合形成的合子基因型 & 表现型</div>
+                    <div class="zygote-geno" id="zygoteGeno">----</div>
+                    <div class="zygote-pheno" id="zygotePheno">----</div>
+                    <div style="font-size:0.7rem; margin-top:8px;">✨ 依据自由组合定律，配子随机结合，性状由显隐性决定</div>
+                </div>
+            </div>
+            <div class="log-area" id="logArea">
+                💡 点击「随机抽选雌雄配子」或单独随机，也可以直接点击下方配子卡片进行选择~<br>
+            </div>
+        </div>
+    </div>
+    <footer>
+        📚 模拟自由组合定律：两对等位基因独立分配，雌雄配子各有四种 (YR,Yr,yR,yr)，随机结合产生9:3:3:1的变式基础。
+    </footer>
+</div>
+
+<script>
+    // 定义配子类型 (四种)
+    const GAMETES = ['YR', 'Yr', 'yR', 'yr'];
+    
+    // 配子对应的表现型描述 (由于配子是单倍体，表现其携带的性状潜力，但结合后合子表现型由显隐性决定)
+    // 这里为了显示配子代表的性状（即配子所携带的等位基因对应的表型潜力）
+    function getGametePhenotype(gamete) {
+        const [Y_allele, R_allele] = gamete.split('');
+        const color = (Y_allele === 'Y') ? '黄' : '绿';
+        const shape = (R_allele === 'R') ? '圆' : '皱';
+        return `${color}${shape}`;
+    }
+    
+    // 根据合子基因型（由雌雄配子结合）得到表现型
+    function getZygotePhenotype(femaleGamete, maleGamete) {
+        // 合子基因型为双等位基因，例如雌YR + 雄Yr => YY Rr => 黄圆
+        const fY = femaleGamete[0];
+        const fR = femaleGamete[1];
+        const mY = maleGamete[0];
+        const mR = maleGamete[1];
+        // 决定颜色 Y_ 显性（只要有Y即黄）
+        const color = (fY === 'Y' || mY === 'Y') ? '黄色' : '绿色';
+        // 决定形状 R_ 显性
+        const shape = (fR === 'R' || mR === 'R') ? '圆粒' : '皱粒';
+        return `${color} · ${shape}`;
+    }
+    
+    // 合子完整基因型显示
+    function getZygoteGenotype(femaleGamete, maleGamete) {
+        const Y_alleles = [femaleGamete[0], maleGamete[0]].sort().join(''); // 按字母排序,但保持直观Y,y
+        const R_alleles = [femaleGamete[1], maleGamete[1]].sort().join('');
+        // 注意排序后 YY 或 Yy 或 yy ； RR Rr rr
+        let Ystr = Y_alleles;
+        let Rstr = R_alleles;
+        // 更符合书写习惯大写在前（如果有Y大写，小写后）
+        if(Ystr === 'yY') Ystr = 'Yy';
+        if(Rstr === 'rR') Rstr = 'Rr';
+        return `${Ystr} ${Rstr}`;
+    }
+    
+    // ---------- 状态管理 ----------
+    let currentFemaleGamete = null;   // 当前选中的雌配子（字符串）
+    let currentMaleGamete = null;     // 当前选中的雄配子
+    
+    // DOM 元素
+    const femaleContainer = document.getElementById('femaleGametesContainer');
+    const maleContainer = document.getElementById('maleGametesContainer');
+    const selectedFemaleDisplay = document.getElementById('selectedFemaleDisplay');
+    const selectedMaleDisplay = document.getElementById('selectedMaleDisplay');
+    const femalePhenoDisplay = document.getElementById('femalePhenoDisplay');
+    const malePhenoDisplay = document.getElementById('malePhenoDisplay');
+    const zygoteGeno = document.getElementById('zygoteGeno');
+    const zygotePheno = document.getElementById('zygotePheno');
+    const logArea = document.getElementById('logArea');
+    
+    // 辅助添加日志
+    function addLog(msg) {
+        const p = document.createElement('div');
+        p.innerHTML = `🟢 ${new Date().toLocaleTimeString().slice(0,8)}  ${msg}`;
+        logArea.appendChild(p);
+        logArea.scrollTop = logArea.scrollHeight;
+        // 保留最多15条日志
+        while(logArea.children.length > 20) logArea.removeChild(logArea.firstChild);
+    }
+    
+    // 刷新整个界面: 更新高亮，更新显示选中配子及合子结果
+    function refreshUI() {
+        // 刷新雌配子高亮
+        const femaleCards = document.querySelectorAll('.female-card');
+        femaleCards.forEach(card => {
+            const g = card.getAttribute('data-gamete');
+            if (currentFemaleGamete === g) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+        // 刷新雄配子高亮
+        const maleCards = document.querySelectorAll('.male-card');
+        maleCards.forEach(card => {
+            const g = card.getAttribute('data-gamete');
+            if (currentMaleGamete === g) {
+                card.classList.add('selected');
+            } else {
+                card.classList.remove('selected');
+            }
+        });
+        
+        // 更新文字显示
+        if (currentFemaleGamete) {
+            selectedFemaleDisplay.innerText = currentFemaleGamete;
+            femalePhenoDisplay.innerText = `🌱 性状潜力: ${getGametePhenotype(currentFemaleGamete)}`;
+        } else {
+            selectedFemaleDisplay.innerText = '—';
+            femalePhenoDisplay.innerText = '未选择';
+        }
+        
+        if (currentMaleGamete) {
+            selectedMaleDisplay.innerText = currentMaleGamete;
+            malePhenoDisplay.innerText = `🌱 性状潜力: ${getGametePhenotype(currentMaleGamete)}`;
+        } else {
+            selectedMaleDisplay.innerText = '—';
+            malePhenoDisplay.innerText = '未选择';
+        }
+        
+        // 如果雌雄配子都存在，显示合子结果
+        if (currentFemaleGamete && currentMaleGamete) {
+            const geno = getZygoteGenotype(currentFemaleGamete, currentMaleGamete);
+            const pheno = getZygotePhenotype(currentFemaleGamete, currentMaleGamete);
+            zygoteGeno.innerText = geno;
+            zygotePheno.innerText = pheno;
+        } else {
+            zygoteGeno.innerText = '----';
+            zygotePheno.innerText = '请选择雌雄配子各一';
+        }
+    }
+    
+    // 随机生成配子（等概率）
+    function randomGamete() {
+        const idx = Math.floor(Math.random() * GAMETES.length);
+        return GAMETES[idx];
+    }
+    
+    // 设置随机雌配子并记录日志
+    function setRandomFemale() {
+        const newG = randomGamete();
+        currentFemaleGamete = newG;
+        addLog(`🌸 随机抽选雌配子: ${newG} (${getGametePhenotype(newG)})`);
+        refreshUI();
+    }
+    
+    function setRandomMale() {
+        const newG = randomGamete();
+        currentMaleGamete = newG;
+        addLog(`🌿 随机抽选雄配子: ${newG} (${getGametePhenotype(newG)})`);
+        refreshUI();
+    }
+    
+    function randomBoth() {
+        const fem = randomGamete();
+        const mal = randomGamete();
+        currentFemaleGamete = fem;
+        currentMaleGamete = mal;
+        addLog(`🎲 随机结合: 雌配子 ${fem} (${getGametePhenotype(fem)})  +  雄配子 ${mal} (${getGametePhenotype(mal)}) → 合子: ${getZygoteGenotype(fem, mal)} (${getZygotePhenotype(fem, mal)})`);
+        refreshUI();
+    }
+    
+    function resetSelection() {
+        currentFemaleGamete = null;
+        currentMaleGamete = null;
+        addLog(`🔄 已重置所有选择，请重新选取配子进行随机结合。`);
+        refreshUI();
+    }
+    
+    // 构建配子池界面
+    function buildGametePools() {
+        // 清空容器
+        femaleContainer.innerHTML = '';
+        maleContainer.innerHTML = '';
+        
+        GAMETES.forEach(gamete => {
+            // 雌配子卡片
+            const femaleCard = document.createElement('div');
+            femaleCard.className = 'gamete-card female-card';
+            femaleCard.setAttribute('data-gamete', gamete);
+            femaleCard.innerHTML = `
+                <div class="gamete-symbol">${gamete}</div>
+                <div class="gamete-pheno">${getGametePhenotype(gamete)}</div>
+            `;
+            femaleCard.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentFemaleGamete = gamete;
+                addLog(`🌸 手动选择雌配子: ${gamete} (${getGametePhenotype(gamete)})`);
+                refreshUI();
+            });
+            femaleContainer.appendChild(femaleCard);
+            
+            // 雄配子卡片
+            const maleCard = document.createElement('div');
+            maleCard.className = 'gamete-card male-card';
+            maleCard.setAttribute('data-gamete', gamete);
+            maleCard.innerHTML = `
+                <div class="gamete-symbol">${gamete}</div>
+                <div class="gamete-pheno">${getGametePhenotype(gamete)}</div>
+            `;
+            maleCard.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentMaleGamete = gamete;
+                addLog(`🌿 手动选择雄配子: ${gamete} (${getGametePhenotype(gamete)})`);
+                refreshUI();
+            });
+            maleContainer.appendChild(maleCard);
+        });
+    }
+    
+    // 额外添加一个初始化演示，自动默认选中一组配子作为示例 (YR 和 yr 但为了展示，可以选择默认？可选，但为了清爽先不默认)
+    // 为了让初始体验更直观，可以设置一对默认选中？不过用户首次打开可能看不到结果。设置为默认随机挑选一对典型组合 (YR + yr)
+    function setDefaultDemo() {
+        // 演示经典组合：黄色圆粒雌配子YR 和 绿色皱粒雄配子yr 结合产生 YyRr 黄色圆粒
+        currentFemaleGamete = 'YR';
+        currentMaleGamete = 'yr';
+        addLog(`📘 初始化示例: 雌配子 YR (黄圆) + 雄配子 yr (绿皱) → 合子 Yy Rr (黄色圆粒)，符合自由组合定律`);
+        refreshUI();
+    }
+    
+    // 绑定按钮
+    function bindEvents() {
+        document.getElementById('randomBothBtn').addEventListener('click', randomBoth);
+        document.getElementById('randomFemaleOnlyBtn').addEventListener('click', setRandomFemale);
+        document.getElementById('randomMaleOnlyBtn').addEventListener('click', setRandomMale);
+        document.getElementById('resetSelectionBtn').addEventListener('click', resetSelection);
+    }
+    
+    // 初始化
+    function init() {
+        buildGametePools();
+        bindEvents();
+        setDefaultDemo();      // 有一开始演示，方便理解
+        refreshUI();
+    }
+    
+    init();
+</script>
+</body>
+</html>

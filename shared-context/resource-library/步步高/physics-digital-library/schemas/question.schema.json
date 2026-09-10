@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/question.schema.json",
+  "title": "步步高题目记录",
+  "type": "object",
+  "required": ["id", "relative_path", "status", "source_id", "source_location", "label", "question_type", "stem", "options", "answer", "solution", "figures", "formula_latex", "knowledge_ids", "model_ids", "skill_ids", "difficulty", "extraction_confidence", "review_status", "issues"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^q\\.src\\.bbg\\.[0-9a-f]{64}\\.[0-9]{3}$"},
+    "relative_path": {"$ref": "#/$defs/relativePath"},
+    "status": {"$ref": "#/$defs/status"},
+    "source_id": {"type": "string", "pattern": "^src\\.bbg\\.[0-9a-f]{64}$"},
+    "source_location": {
+      "type": "object",
+      "required": ["relative_path", "locator"],
+      "properties": {
+        "relative_path": {"$ref": "#/$defs/rawRelativePath"},
+        "locator": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "label": {"type": "string", "minLength": 1},
+    "question_type": {"type": "string", "minLength": 1},
+    "stem": {"type": "string", "minLength": 1},
+    "options": {"type": "array", "items": {"type": ["string", "object"]}},
+    "answer": {"type": ["string", "object", "array", "null"]},
+    "solution": {"type": ["string", "object", "array", "null"]},
+    "figures": {"type": "array", "items": {"$ref": "#/$defs/relativePath"}},
+    "formula_latex": {"type": "array", "items": {"type": "string"}},
+    "knowledge_ids": {"type": "array", "items": {"type": "string", "pattern": "^kn\\.bbg\\.[a-z0-9][a-z0-9._-]*$"}},
+    "model_ids": {"type": ["array", "null"], "items": {"type": "string", "pattern": "^model\\.bbg\\.[a-z0-9][a-z0-9._-]*$"}},
+    "skill_ids": {"type": ["array", "null"], "items": {"type": "string", "pattern": "^skill\\.bbg\\.[a-z0-9][a-z0-9._-]*$"}},
+    "difficulty": {"type": ["number", "string", "null"]},
+    "extraction_confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "review_status": {"$ref": "#/$defs/status"},
+    "issues": {"type": "array", "items": {"type": "string"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "published"}}, "required": ["status"]},
+      "then": {"properties": {"knowledge_ids": {"minItems": 1}}}
+    },
+    {
+      "if": {"properties": {"review_status": {"const": "published"}}, "required": ["review_status"]},
+      "then": {"properties": {"knowledge_ids": {"minItems": 1}}}
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "status": {"enum": ["discovered", "raw_extracted", "ai_structured", "pending_manual_review", "reviewed", "published", "blocked"]},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"},
+    "rawRelativePath": {"allOf": [{"$ref": "#/$defs/relativePath"}, {"pattern": "^raw/"}]}
+  }
+}

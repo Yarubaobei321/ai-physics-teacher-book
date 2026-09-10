@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高考物理：圆周运动转盘连接体 | 矢量半径 + 临界教学 + 实验模拟</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #eef2f5;
+            font-family: 'Segoe UI', 'Roboto', 'Microsoft YaHei', '宋体', SimSun, serif;
+            margin: 0;
+            padding: 24px;
+        }
+
+        .master-container {
+            max-width: 1500px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+        }
+
+        /* 教学区（左侧） */
+        .teaching-area {
+            flex: 1.2;
+            min-width: 340px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .teaching-header {
+            border-bottom: 2px solid #2c5282;
+            padding-bottom: 8px;
+            margin-bottom: 18px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .teaching-header h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #1e3a5f;
+        }
+
+        .scenario-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .scenario-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e0;
+            border-radius: 40px;
+            padding: 8px 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .scenario-btn.active {
+            background: #2c5282;
+            border-color: #2c5282;
+            color: white;
+        }
+
+        /* 教学示意图 */
+        .teaching-schema {
+            background: #fefcf5;
+            border-radius: 16px;
+            padding: 12px;
+            margin: 16px 0;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .teaching-schema canvas {
+            background: #ffffff;
+            border-radius: 12px;
+            width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+        }
+        .theory-box {
+            background: #f8fafc;
+            border-left: 4px solid #e67e22;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+        .formula {
+            font-family: monospace;
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 6px;
+        }
+        hr {
+            margin: 12px 0;
+        }
+
+        /* 实验区（右侧）保持原样 */
+        .experiment-area {
+            flex: 2.2;
+            min-width: 580px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+        }
+        .exp-header {
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 18px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: #1e3a5f;
+        }
+        .canvas-panel {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        canvas {
+            background: #fefcf5;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+        }
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin: 20px 0;
+        }
+        .param-card {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 12px;
+            border: 1px solid #edf2f7;
+        }
+        .param-card label {
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+        .value-display {
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-family: monospace;
+        }
+        .toggle-side {
+            display: flex;
+            gap: 12px;
+            margin: 12px 0;
+        }
+        .side-btn {
+            background: #e2e8f0;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .side-btn.active {
+            background: #2c5282;
+            color: white;
+        }
+        .status-panel {
+            background: #f1f5f9;
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 16px;
+            font-size: 0.8rem;
+        }
+        button {
+            background: #ffffff;
+            border: 1px solid #cbd5e0;
+            padding: 6px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: 0.1s;
+            font-weight: 500;
+        }
+        button:hover {
+            background: #e2e8f0;
+        }
+        .btn-primary {
+            background: #2c5282;
+            border-color: #2c5282;
+            color: white;
+        }
+        .footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 20px;
+            color: #718096;
+        }
+        @media (max-width: 900px) {
+            .control-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="master-container">
+    <!-- ================= 教学区 ================= -->
+    <div class="teaching-area">
+        <div class="teaching-header">
+            <h2>📖 临界模型讲解</h2>
+            <span class="badge" style="background:#e2e8f0; padding:2px 12px; border-radius:20px;">高中物理·标准符号</span>
+        </div>
+        <div class="scenario-selector" id="scenarioSelector">
+            <div data-scene="single" class="scenario-btn active">🔹 单个物体：静摩擦 → 滑动</div>
+            <div data-scene="multi-noConn" class="scenario-btn">🔸 多物体无连接：谁先滑动？</div>
+            <div data-scene="rope-same" class="scenario-btn">🧵 绳连接 · 同侧 (半径同向)</div>
+            <div data-scene="rope-opp" class="scenario-btn">🧵 绳连接 · 异侧 (半径反向)</div>
+        </div>
+
+        <!-- 教学示意图（动态受力简图） -->
+        <div class="teaching-schema">
+            <div style="font-size:0.75rem; margin-bottom:6px; color:#2c5282;">📐 当前模型受力示意图</div>
+            <canvas id="teachingCanvas" width="300" height="180" style="width:100%; height:auto; max-width:300px; aspect-ratio:300/180"></canvas>
+        </div>
+
+        <div id="theoryContent" class="theory-box">
+            <strong>⚡ 临界条件分析</strong><br>
+            请选择一个教学场景，系统将结合实时实验参数给出详细高中水准讲解。
+        </div>
+        <div class="footer" style="margin-top: 12px;">
+            ※ 讲解格式：ω增大 → 谁先达到最大静摩擦 → 绳拉力变化（若有） → 最终系统滑动
+        </div>
+    </div>
+
+    <!-- ================= 实验区 ================= -->
+    <div class="experiment-area">
+        <div class="exp-header">
+            🧪 实验模拟 · 转盘连接体 &nbsp; <span style="font-size:0.7rem;">半径矢量可控 | 绳/弹簧可切换</span>
+        </div>
+        <div class="canvas-panel">
+            <canvas id="expCanvas" width="620" height="480" style="width:100%; height:auto; max-width:620px; aspect-ratio:620/480"></canvas>
+        </div>
+        <!-- 控制栏 -->
+        <div class="control-grid">
+            <div class="param-card">
+                <label>⚡ 角速度 ω <span id="expOmegaVal" class="value-display">0.00 rad/s</span></label>
+                <input type="range" id="expOmega" min="0" max="6.5" step="0.01" value="1.8">
+                <div class="toggle-side" style="margin-top: 12px;">
+                    <span style="font-size:0.75rem;">🔗 连接类型 :</span>
+                    <button id="expNoConn" class="side-btn">无连接</button>
+                    <button id="expRope" class="side-btn active">轻绳</button>
+                    <button id="expSpring" class="side-btn">轻弹簧</button>
+                </div>
+            </div>
+            <div class="param-card">
+                <label>📦 物块 A &nbsp; <span id="expMassA" class="value-display">1.00 kg</span></label>
+                <input type="range" id="expMassA" min="0.3" max="3.0" step="0.01" value="1.0">
+                <label>半径 r<sub>A</sub> (正) <span id="expRA" class="value-display">1.00 m</span></label>
+                <input type="range" id="expRA" min="0.5" max="2.2" step="0.01" value="1.0">
+            </div>
+            <div class="param-card">
+                <label>📦 物块 B &nbsp; <span id="expMassB" class="value-display">2.00 kg</span></label>
+                <input type="range" id="expMassB" min="0.3" max="3.0" step="0.01" value="2.0">
+                <label>半径 r<sub>B</sub> (带符号) <span id="expRB" class="value-display">2.00 m</span></label>
+                <input type="range" id="expRB" min="-2.2" max="2.2" step="0.01" value="2.0">
+                <div class="toggle-side" style="margin-top: 6px;">
+                    <button id="sameSideBtn" class="side-btn active">同侧 (rB > 0)</button>
+                    <button id="oppSideBtn" class="side-btn">异侧 (rB < 0)</button>
+                </div>
+            </div>
+            <div class="param-card">
+                <label>🧲 摩擦系数 μ <span id="expMu" class="value-display">0.30</span></label>
+                <input type="range" id="expMu" min="0.1" max="0.8" step="0.01" value="0.30">
+                <div id="springParamBox" style="margin-top: 12px; display: none;">
+                    <label>弹簧劲度 k <span id="expK" class="value-display">50 N/m</span></label>
+                    <input type="range" id="expK" min="10" max="150" step="2" value="50">
+                </div>
+            </div>
+        </div>
+        <div class="status-panel" id="expStatus">
+            <strong>📊 实时临界状态</strong><br>
+            <span id="expMotionMsg">系统稳定，同步转动</span><br>
+            <span id="expForceDetail"></span>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 16px;">
+            <button id="autoIncExp">▶ 逐渐增大 ω</button>
+            <button id="stopIncExp">⏸ 停止</button>
+            <button id="resetExp" class="btn-primary">⟳ 重置实验</button>
+        </div>
+        <div class="footer">
+            ※ 半径正负代表物块在同侧或异侧；绳拉力极限 T_max = 10 N（超过则滑动）；弹簧无拉力极限。
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- DOM 元素 ----------
+        const expCanvas = document.getElementById('expCanvas');
+        const expCtx = expCanvas.getContext('2d');
+        const teachingCanvas = document.getElementById('teachingCanvas');
+        const teachCtx = teachingCanvas.getContext('2d');
+
+        // 实验滑块
+        const omegaSlider = document.getElementById('expOmega');
+        const massASlider = document.getElementById('expMassA');
+        const rASlider = document.getElementById('expRA');
+        const massBSlider = document.getElementById('expMassB');
+        const rBSlider = document.getElementById('expRB');
+        const muSlider = document.getElementById('expMu');
+        const kSlider = document.getElementById('expK');
+        
+        // 显示span
+        const expOmegaVal = document.getElementById('expOmegaVal');
+        const expMassA = document.getElementById('expMassA');
+        const expRA = document.getElementById('expRA');
+        const expMassB = document.getElementById('expMassB');
+        const expRB = document.getElementById('expRB');
+        const expMu = document.getElementById('expMu');
+        const expK = document.getElementById('expK');
+        const expMotionMsg = document.getElementById('expMotionMsg');
+        const expForceDetail = document.getElementById('expForceDetail');
+        
+        // 按钮
+        const autoIncBtn = document.getElementById('autoIncExp');
+        const stopIncBtn = document.getElementById('stopIncExp');
+        const resetBtn = document.getElementById('resetExp');
+        const noConnBtn = document.getElementById('expNoConn');
+        const ropeBtn = document.getElementById('expRope');
+        const springBtn = document.getElementById('expSpring');
+        const sameSideBtn = document.getElementById('sameSideBtn');
+        const oppSideBtn = document.getElementById('oppSideBtn');
+        const springParamBox = document.getElementById('springParamBox');
+        
+        // 教学区场景按钮
+        const scenarioBtns = document.querySelectorAll('.scenario-btn');
+        const theoryDiv = document.getElementById('theoryContent');
+        
+        // ---------- 全局参数 ----------
+        let omega = 1.8;
+        let mA = 1.0, rA = 1.0;
+        let mB = 2.0, rB = 2.0;
+        let mu = 0.30;
+        let g = 9.8;
+        let connectorType = 'rope';   // 'none', 'rope', 'spring'
+        let springK = 50.0;
+        let sameSide = (rB >= 0);
+        let slideA = false, slideB = false;
+        let autoInterval = null;
+        let isAuto = false;
+        let globalAngle = 0;
+        const T_MAX_LIMIT = 10.0;
+        
+        // ----- 辅助物理函数 (同之前代码，保持稳定) -----
+        function getMaxFriction(m) { return mu * m * g; }
+        function neededForceMag(m, r_abs, w) { return m * w * w * Math.abs(r_abs); }
+        
+        function computeSystem() {
+            const f_maxA = getMaxFriction(mA);
+            const f_maxB = getMaxFriction(mB);
+            const rB_abs = Math.abs(rB);
+            const needA = mA * omega * omega * rA;
+            const needB_mag = mB * omega * omega * rB_abs;
+            let T = 0, fA = 0, fB = 0;
+            let feasible = true;
+            let slipA = false, slipB = false;
+            
+            if (connectorType === 'none') {
+                fA = Math.min(needA, f_maxA);
+                fB = Math.min(needB_mag, f_maxB);
+                slipA = (needA > f_maxA + 1e-6);
+                slipB = (needB_mag > f_maxB + 1e-6);
+                return { T:0, fA, fB, slipA, slipB, needA, needB: needB_mag };
+            }
+            else if (connectorType === 'rope') {
+                if (sameSide) {
+                    let T_lower = Math.max(0, needB_mag - f_maxB);
+                    let T_upper = Math.min(f_maxA - needA, needB_mag);
+                    if (T_lower > T_upper + 1e-6) feasible = false;
+                    T = (T_lower + T_upper) / 2;
+                    T = Math.max(0, T);
+                    fA = needA + T;
+                    fB = needB_mag - T;
+                } else {
+                    let T_lower = Math.max(0, needA - f_maxA, needB_mag - f_maxB);
+                    let T_upper = Math.min(f_maxA - needA, f_maxB - needB_mag);
+                    if (T_lower > T_upper + 1e-6) feasible = false;
+                    T = (T_lower + T_upper) / 2;
+                    T = Math.max(0, T);
+                    fA = needA + T;
+                    fB = needB_mag + T;
+                }
+                if (fA < 0) fA = 0;
+                if (fB < 0) fB = 0;
+                slipA = (fA > f_maxA + 1e-6) || (T > T_MAX_LIMIT && needA > f_maxA);
+                slipB = (fB > f_maxB + 1e-6) || (T > T_MAX_LIMIT && needB_mag > f_maxB);
+                return { T, fA, fB, slipA, slipB, needA, needB: needB_mag };
+            }
+            else { // spring
+                if (sameSide) {
+                    let F_lower = Math.max(-needA, needB_mag - f_maxB);
+                    let F_upper = Math.min(f_maxA - needA, needB_mag);
+                    if (F_lower > F_upper) feasible = false;
+                    T = (F_lower + F_upper) / 2;
+                    fA = needA + T;
+                    fB = needB_mag - T;
+                } else {
+                    let F_lower = Math.max(needA - f_maxA, needB_mag - f_maxB, -10);
+                    let F_upper = Math.min(f_maxA - needA, f_maxB - needB_mag, 10);
+                    if (F_lower > F_upper) feasible = false;
+                    T = (F_lower + F_upper) / 2;
+                    fA = needA + T;
+                    fB = needB_mag + T;
+                }
+                if (fA < 0) fA = 0;
+                if (fB < 0) fB = 0;
+                slipA = (fA > f_maxA + 1e-6);
+                slipB = (fB > f_maxB + 1e-6);
+                return { T, fA, fB, slipA, slipB, needA, needB: needB_mag };
+            }
+        }
+        
+        function updateSlip() {
+            const res = computeSystem();
+            slideA = res.slipA;
+            slideB = res.slipB;
+            if ((slideA || slideB) && isAuto) stopAuto();
+        }
+        
+        function refreshUI() {
+            omega = parseFloat(omegaSlider.value);
+            mA = parseFloat(massASlider.value);
+            rA = parseFloat(rASlider.value);
+            mB = parseFloat(massBSlider.value);
+            rB = parseFloat(rBSlider.value);
+            mu = parseFloat(muSlider.value);
+            springK = parseFloat(kSlider.value);
+            sameSide = (rB >= 0);
+            
+            expOmegaVal.innerText = omega.toFixed(2);
+            expMassA.innerText = mA.toFixed(2);
+            expRA.innerText = rA.toFixed(2);
+            expMassB.innerText = mB.toFixed(2);
+            expRB.innerText = rB.toFixed(2);
+            expMu.innerText = mu.toFixed(3);
+            expK.innerText = springK.toFixed(0);
+            
+            if(sameSide) { sameSideBtn.classList.add('active'); oppSideBtn.classList.remove('active'); }
+            else { oppSideBtn.classList.add('active'); sameSideBtn.classList.remove('active'); }
+            
+            const res = computeSystem();
+            slideA = res.slipA; slideB = res.slipB;
+            if(slideA || slideB) {
+                let msg = slideA ? "🔴 物块A滑动！" : "";
+                msg += slideB ? " 🟠 物块B滑动！" : "";
+                expMotionMsg.innerHTML = `⚠️ 相对滑动：${msg}`;
+            } else {
+                expMotionMsg.innerHTML = `✅ 系统同步转动 | ω = ${omega.toFixed(2)} rad/s`;
+            }
+            expForceDetail.innerHTML = `A: 需向心力 ${res.needA.toFixed(1)}N / f_max=${getMaxFriction(mA).toFixed(1)}N &nbsp; B: 需向心力 ${res.needB.toFixed(1)}N / f_max=${getMaxFriction(mB).toFixed(1)}N<br>连接体作用力 T = ${res.T.toFixed(2)} N`;
+            updateSlip();
+            drawExpCanvas();
+            updateTeachingContent();     // 更新讲解文本
+            drawTeachingSchema();        // 更新教学示意图
+        }
+        
+        // 实验画布 (俯视转盘)
+        function drawExpCanvas() {
+            const w = expCanvas.width = 620;
+            const h = expCanvas.height = 480;
+            expCtx.clearRect(0, 0, w, h);
+            const centerX = w/2, centerY = h/2;
+            const maxPx = 180;
+            const physMax = 2.5;
+            function toPx(r) { return (Math.abs(r) / physMax) * maxPx; }
+            const pxA = toPx(rA);
+            const pxB = toPx(rB);
+            expCtx.beginPath();
+            expCtx.arc(centerX, centerY, maxPx+4, 0, 2*Math.PI);
+            expCtx.fillStyle = "#f0ede8";
+            expCtx.fill();
+            expCtx.strokeStyle = "#aaa";
+            expCtx.stroke();
+            for(let ang=0; ang<360; ang+=45){
+                let rad = ang*Math.PI/180;
+                let x = centerX + (maxPx)*Math.cos(rad);
+                let y = centerY + (maxPx)*Math.sin(rad);
+                expCtx.beginPath();
+                expCtx.moveTo(centerX, centerY);
+                expCtx.lineTo(x,y);
+                expCtx.strokeStyle = "#ccc";
+                expCtx.stroke();
+            }
+            if(!slideA && !slideB) globalAngle += omega * 0.025;
+            else globalAngle += omega * 0.018;
+            function getPos(r_val, radiusPx) {
+                let direction = (r_val >= 0 ? 1 : -1);
+                let angle = globalAngle;
+                if(direction === -1) angle += Math.PI;
+                let x = centerX + radiusPx * Math.cos(angle);
+                let y = centerY + radiusPx * Math.sin(angle);
+                return {x, y};
+            }
+            const posA = getPos(rA, pxA);
+            const posB = getPos(rB, pxB);
+            if(connectorType !== 'none'){
+                expCtx.beginPath();
+                expCtx.moveTo(posA.x, posA.y);
+                expCtx.lineTo(posB.x, posB.y);
+                expCtx.setLineDash([6,5]);
+                expCtx.strokeStyle = "#4a5568";
+                expCtx.lineWidth = 2;
+                expCtx.stroke();
+                expCtx.setLineDash([]);
+            }
+            expCtx.beginPath();
+            expCtx.arc(posA.x, posA.y, 14, 0, 2*Math.PI);
+            expCtx.fillStyle = slideA ? "#e53e3e" : "#3182ce";
+            expCtx.fill();
+            expCtx.fillStyle = "white";
+            expCtx.font = "bold 14px";
+            expCtx.fillText("A", posA.x-6, posA.y+5);
+            expCtx.fillStyle = "#2d3748";
+            expCtx.font = "10px";
+            expCtx.fillText(`${mA.toFixed(1)}kg`, posA.x-12, posA.y-10);
+            expCtx.beginPath();
+            expCtx.arc(posB.x, posB.y, 14, 0, 2*Math.PI);
+            expCtx.fillStyle = slideB ? "#e53e3e" : "#e67e22";
+            expCtx.fill();
+            expCtx.fillStyle = "white";
+            expCtx.fillText("B", posB.x-6, posB.y+5);
+            expCtx.fillStyle = "#2d3748";
+            expCtx.fillText(`${mB.toFixed(1)}kg`, posB.x-12, posB.y-10);
+        }
+        
+        // 教学示意图 (受力简图，标准符号)
+        function drawTeachingSchema() {
+            const w = teachingCanvas.width = 300;
+            const h = teachingCanvas.height = 180;
+            teachCtx.clearRect(0, 0, w, h);
+            teachCtx.fillStyle = "#fefcf5";
+            teachCtx.fillRect(0, 0, w, h);
+            const centerX = w/2, centerY = h/2;
+            const activeScene = document.querySelector('.scenario-btn.active')?.dataset.scene || 'single';
+            // 根据场景画示意
+            if(activeScene === 'single') {
+                teachCtx.beginPath();
+                teachCtx.arc(centerX, centerY, 40, 0, 2*Math.PI);
+                teachCtx.fillStyle = "#cbd5e0";
+                teachCtx.fill();
+                teachCtx.fillStyle = "#3182ce";
+                teachCtx.beginPath();
+                teachCtx.arc(centerX+45, centerY, 12, 0, 2*Math.PI);
+                teachCtx.fill();
+                teachCtx.fillStyle = "black";
+                teachCtx.font = "10px";
+                teachCtx.fillText("m", centerX+40, centerY-6);
+                teachCtx.fillText("r", centerX+22, centerY-10);
+                teachCtx.beginPath();
+                teachCtx.moveTo(centerX, centerY);
+                teachCtx.lineTo(centerX+45, centerY);
+                teachCtx.stroke();
+                teachCtx.fillText("f静", centerX+20, centerY-15);
+                teachCtx.fillText("ω", centerX-15, centerY-20);
+            } 
+            else if(activeScene === 'multi-noConn') {
+                teachCtx.beginPath();
+                teachCtx.arc(centerX, centerY, 40, 0, 2*Math.PI);
+                teachCtx.fillStyle = "#ddd";
+                teachCtx.fill();
+                teachCtx.fillStyle = "#3182ce";
+                teachCtx.beginPath();
+                teachCtx.arc(centerX+30, centerY-10, 10, 0, 2*Math.PI);
+                teachCtx.fill();
+                teachCtx.fillStyle = "#e67e22";
+                teachCtx.beginPath();
+                teachCtx.arc(centerX+30, centerY+20, 10, 0, 2*Math.PI);
+                teachCtx.fill();
+                teachCtx.fillStyle = "black";
+                teachCtx.fillText("A", centerX+25, centerY-12);
+                teachCtx.fillText("B", centerX+25, centerY+28);
+                teachCtx.fillText("rA", centerX+15, centerY-18);
+                teachCtx.fillText("rB", centerX+15, centerY+35);
+            }
+            else {
+                // rope 同侧/异侧
+                const side = (activeScene === 'rope-same') ? 'same' : 'opp';
+                teachCtx.beginPath();
+                teachCtx.arc(centerX, centerY, 40, 0, 2*Math.PI);
+                teachCtx.fillStyle = "#e2e8f0";
+                teachCtx.fill();
+                let angleA = 0, angleB = (side === 'same') ? 0 : Math.PI;
+                let xA = centerX + 50*Math.cos(angleA);
+                let yA = centerY + 50*Math.sin(angleA);
+                let xB = centerX + 60*Math.cos(angleB);
+                let yB = centerY + 60*Math.sin(angleB);
+                teachCtx.beginPath();
+                teachCtx.arc(xA, yA, 12, 0, 2*Math.PI);
+                teachCtx.fillStyle = "#3182ce";
+                teachCtx.fill();
+                teachCtx.beginPath();
+                teachCtx.arc(xB, yB, 12, 0, 2*Math.PI);
+                teachCtx.fillStyle = "#e67e22";
+                teachCtx.fill();
+                teachCtx.beginPath();
+                teachCtx.moveTo(xA, yA);
+                teachCtx.lineTo(xB, yB);
+                teachCtx.strokeStyle = "#333";
+                teachCtx.stroke();
+                teachCtx.fillStyle = "black";
+                teachCtx.fillText("A", xA-6, yA+4);
+                teachCtx.fillText("B", xB-6, yB+4);
+                teachCtx.fillText("T", (xA+xB)/2+5, (yA+yB)/2-5);
+                if(side === 'same') teachCtx.fillText("同侧", centerX-20, centerY-30);
+                else teachCtx.fillText("异侧", centerX-20, centerY-30);
+            }
+            teachCtx.fillStyle = "#1e3a5f";
+            teachCtx.font = "bold 8px monospace";
+            teachCtx.fillText(`μ = ${mu.toFixed(2)}  ω = ${omega.toFixed(2)}`, 10, 15);
+        }
+        
+        // 教学讲解（高中水准，使用规范符号）
+        function updateTeachingContent() {
+            const active = document.querySelector('.scenario-btn.active');
+            if(!active) return;
+            const scene = active.dataset.scene;
+            const fmaxA = getMaxFriction(mA), fmaxB = getMaxFriction(mB);
+            const needA = mA * omega * omega * rA;
+            const needB_mag = mB * omega * omega * Math.abs(rB);
+            let html = `<strong>🔍 当前场景：${active.innerText}</strong><br><br>`;
+            if(scene === 'single') {
+                html += `物块质量 <span class="formula">m = ${mA} kg</span>，半径 <span class="formula">r = ${rA} m</span>，摩擦系数 <span class="formula">μ = ${mu}</span><br>`;
+                html += `最大静摩擦力 <span class="formula">f<sub>max</sub> = μ m g = ${fmaxA.toFixed(2)} N</span><br>`;
+                html += `所需向心力 <span class="formula">F<sub>向</sub> = m ω² r = ${needA.toFixed(2)} N</span><br>`;
+                let omega_c = Math.sqrt(mu*g/rA);
+                html += `<strong>临界角速度 <span class="formula">ω<sub>c</sub> = √(μg / r) = ${omega_c.toFixed(3)} rad/s</span></strong><br>`;
+                html += `<div class="critical-list">📖 讲解：当 ω < ω<sub>c</sub> 时，静摩擦力 <span class="formula">f = mω²r</span>；ω = ω<sub>c</sub> 时 f = f<sub>max</sub>；继续增大 ω，摩擦力不足以提供向心力，物块开始滑动（变为动摩擦力，系统失稳）。</div>`;
+            }
+            else if(scene === 'multi-noConn') {
+                let omega_cA = Math.sqrt(mu*g/rA);
+                let omega_cB = Math.sqrt(mu*g/Math.abs(rB));
+                let first = (omega_cA < omega_cB) ? "A先滑动" : "B先滑动";
+                html += `A: <span class="formula">m<sub>A</sub>=${mA}kg, r<sub>A</sub>=${rA}m</span>，临界ω<sub>cA</sub>=${omega_cA.toFixed(3)}<br>`;
+                html += `B: <span class="formula">m<sub>B</sub>=${mB}kg, |r<sub>B</sub>|=${Math.abs(rB)}m</span>，临界ω<sub>cB</sub>=${omega_cB.toFixed(3)}<br>`;
+                html += `<strong>👉 谁先滑动：${first}</strong><br>`;
+                html += `<div class="critical-list">📖 讲解：角速度ω逐渐增大，临界角速度较小的物块先达到最大静摩擦并开始滑动；此时另一物块仍可同步；继续增大ω，第二个物块最终也会滑动，系统完全失稳。</div>`;
+            }
+            else if(scene === 'rope-same') {
+                let prodA = mA * rA, prodB = mB * Math.abs(rB);
+                let trend = (prodA > prodB) ? "A所需向心力更大，通常A先达到最大静摩擦" : (prodA < prodB ? "B所需向心力更大，B先达到最大静摩擦" : "可能同时临界");
+                html += `绳连接 · 同侧 (<span class="formula">r<sub>A</sub>>0, r<sub>B</sub>>0</span>)<br>`;
+                html += `平衡方程：<span class="formula">f<sub>A</sub> + T = m<sub>A</sub> ω² r<sub>A</sub></span>，<span class="formula">f<sub>B</sub> - T = m<sub>B</sub> ω² r<sub>B</sub></span><br>`;
+                html += `<span class="formula">m<sub>A</sub> r<sub>A</sub> = ${prodA.toFixed(2)}</span>，<span class="formula">m<sub>B</sub> r<sub>B</sub> = ${prodB.toFixed(2)}</span><br>`;
+                html += `<strong>📌 ${trend}</strong><br>`;
+                html += `<div class="critical-list">📖 临界过程：ω增大 → 先达到最大静摩擦的物块（设X）摩擦力不再增加，绳拉力T开始出现；ω继续增大，另一物块也达到临界；最终绳拉力超过极限或某侧摩擦力不足，系统发生滑动。</div>`;
+            }
+            else if(scene === 'rope-opp') {
+                html += `绳连接 · 异侧 (<span class="formula">r<sub>A</sub>>0, r<sub>B</sub><0</span>)<br>`;
+                html += `平衡方程：<span class="formula">f<sub>A</sub> + T = m<sub>A</sub> ω² r<sub>A</sub></span>，<span class="formula">f<sub>B</sub> + T = m<sub>B</sub> ω² |r<sub>B</sub>|</span><br>`;
+                html += `此时绳拉力同时增加两侧对摩擦力的需求，使得临界更容易发生。<br>`;
+                html += `<div class="critical-list">📖 讲解：异侧时，绳张力加剧了两物块的离心趋势，临界角速度通常比同侧小。随着ω增大，A、B可能同时接近滑动，具体由 <span class="formula">m<sub>A</sub>r<sub>A</sub></span> 与 <span class="formula">m<sub>B</sub>|r<sub>B</sub>|</span> 的对比决定最终哪一侧先滑动或同时滑动。</div>`;
+            }
+            html += `<hr><div class="formula">💡 当前实验参数实时匹配上述理论，可调节滑块观察滑动临界现象。</div>`;
+            theoryDiv.innerHTML = html;
+        }
+        
+        // 自动增量
+        function startAuto() {
+            if(isAuto) return;
+            if(slideA || slideB) { expMotionMsg.innerHTML = "已滑动，请重置后再自动增加"; return; }
+            isAuto = true;
+            autoInterval = setInterval(()=>{
+                let newOmega = parseFloat(omegaSlider.value);
+                newOmega += 0.04;
+                if(newOmega > 6.2) newOmega = 6.2;
+                omegaSlider.value = newOmega;
+                refreshUI();
+                if(slideA || slideB) stopAuto();
+            }, 55);
+        }
+        function stopAuto() { if(autoInterval) clearInterval(autoInterval); isAuto = false; autoInterval = null; }
+        function resetExp() {
+            stopAuto();
+            omegaSlider.value = "1.8";
+            massASlider.value = "1.0";
+            rASlider.value = "1.0";
+            massBSlider.value = "2.0";
+            rBSlider.value = "2.0";
+            muSlider.value = "0.30";
+            kSlider.value = "50";
+            connectorType = 'rope';
+            sameSide = true;
+            document.querySelector('#expRope').click();
+            refreshUI();
+        }
+        
+        function setConnector(type) {
+            connectorType = type;
+            noConnBtn.classList.remove('active');
+            ropeBtn.classList.remove('active');
+            springBtn.classList.remove('active');
+            if(type==='none') noConnBtn.classList.add('active');
+            else if(type==='rope') ropeBtn.classList.add('active');
+            else if(type==='spring') springBtn.classList.add('active');
+            springParamBox.style.display = (type === 'spring') ? 'block' : 'none';
+            refreshUI();
+        }
+        
+        function bindEvents() {
+            omegaSlider.addEventListener('input', ()=>{ stopAuto(); refreshUI(); });
+            massASlider.addEventListener('input', refreshUI);
+            rASlider.addEventListener('input', refreshUI);
+            massBSlider.addEventListener('input', refreshUI);
+            rBSlider.addEventListener('input', refreshUI);
+            muSlider.addEventListener('input', refreshUI);
+            kSlider.addEventListener('input', refreshUI);
+            autoIncBtn.addEventListener('click', startAuto);
+            stopIncBtn.addEventListener('click', stopAuto);
+            resetBtn.addEventListener('click', resetExp);
+            noConnBtn.addEventListener('click', ()=>setConnector('none'));
+            ropeBtn.addEventListener('click', ()=>setConnector('rope'));
+            springBtn.addEventListener('click', ()=>setConnector('spring'));
+            sameSideBtn.addEventListener('click', ()=>{
+                if(rBSlider.value < 0) rBSlider.value = Math.abs(parseFloat(rBSlider.value));
+                refreshUI();
+            });
+            oppSideBtn.addEventListener('click', ()=>{
+                if(rBSlider.value >= 0) rBSlider.value = -parseFloat(rBSlider.value);
+                refreshUI();
+            });
+            scenarioBtns.forEach(btn=>{
+                btn.addEventListener('click', ()=>{
+                    scenarioBtns.forEach(b=>b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateTeachingContent();
+                    drawTeachingSchema();
+                });
+            });
+        }
+        
+        function animate() { drawExpCanvas(); requestAnimationFrame(animate); }
+        
+        function init() {
+            bindEvents();
+            refreshUI();
+            animate();
+        }
+        init();
+    })();
+</script>
+</body>
+</html>

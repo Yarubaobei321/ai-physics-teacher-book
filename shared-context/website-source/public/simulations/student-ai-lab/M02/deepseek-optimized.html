@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>复数的几何意义及运算互动实验室</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;background:#eef2f7;color:#22303c;overflow:hidden}
+  header{background:linear-gradient(135deg,#234e52,#319795);color:#fff;padding:14px 22px}
+  header h1{font-size:22px;font-weight:700;letter-spacing:1px}
+  header p{font-size:13px;opacity:.92;margin-top:4px}
+  .tabs{display:flex;gap:8px;background:#234e52;padding:8px 22px;flex-wrap:wrap}
+  .tabs button{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:6px 16px;font-size:13px;cursor:pointer;transition:.2s}
+  .tabs button:hover{background:rgba(255,255,255,.25)}
+  .tabs button.active{background:#fff;color:#234e52;font-weight:700}
+  .layout{display:grid;grid-template-columns:300px 1fr 290px;gap:12px;padding:12px 16px;height:calc(100vh - 150px)}
+  .pane{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(35,78,82,.08);padding:14px;overflow-y:auto}
+  .control label{display:block;font-size:13px;font-weight:600;color:#319795;margin:12px 0 6px}
+  .control input[type=number]{width:90px;padding:7px;border:1px solid #cbd5e0;border-radius:6px;font-size:14px;text-align:center}
+  .control .row{display:flex;align-items:center;gap:8px;margin:4px 0}
+  .control .hint{font-size:12px;color:#718096;margin-top:5px;line-height:1.6}
+  .btn{background:#319795;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:14px;cursor:pointer;margin:6px 4px 0 0}
+  .btn:hover{background:#256e6e}
+  .btn.secondary{background:#e2e8f0;color:#2d3748}
+  .btn.green{background:#2f855a}
+  .data h3{font-size:14px;color:#234e52;border-bottom:2px solid #b2f5ea;padding-bottom:6px;margin-bottom:10px}
+  .readout{background:#f7fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px;margin-bottom:10px;font-size:14px}
+  .readout .k{color:#718096;font-size:12px}
+  .readout .v{font-size:19px;font-weight:700;color:#1a202c;margin-top:2px}
+  .canvas-holder{display:flex;flex-direction:column;gap:10px}
+  canvas{display:block;background:#fff;border:1px solid #e2e8f0;border-radius:8px;width:100%}
+  .cap{font-size:12px;color:#718096;text-align:center;margin-top:4px}
+  .guide h2{font-size:18px;color:#234e52;margin-bottom:10px}
+  .guide p,.guide li{font-size:14px;line-height:1.9;color:#2d3748}
+  .guide ul{margin:8px 0 8px 22px}
+  .formula{background:#e6fffa;border-left:4px solid #319795;padding:10px 14px;margin:10px 0;border-radius:0 8px 8px 0;font-size:15px;color:#1a202c}
+  footer{position:fixed;left:0;right:0;bottom:0;background:#234e52;color:#e2e8f0;font-size:12.5px;padding:10px 22px;line-height:1.7;border-top:3px solid #319795}
+  footer b{color:#81e6d9}
+  .sub{font-size:.7em;vertical-align:sub}
+  .sup{font-size:.7em;vertical-align:super}
+  .eq{font-family:"Times New Roman",serif}
+  .result-table{width:100%;border-collapse:collapse;font-size:14px}
+  .result-table td,.result-table th{border:1px solid #cbd5e0;padding:6px 8px;text-align:center}
+  .result-table th{background:#e6fffa;color:#234e52}
+  .result-table .vz{color:#2b6cb0;font-weight:700}
+  .result-table .vout{color:#c53030;font-weight:700}
+</style>
+</head>
+<body>
+<header>
+  <h1>复数的几何意义及相关运算互动实验室</h1>
+  <p>复平面点位 · 四则运算 · 模与辐角 · 模长最值轨迹 —— 掌握 z=a+bi 与点 (a,b) 的一一对应</p>
+</header>
+
+<div class="tabs" role="tablist">
+  <button data-tab="guide" class="active">① 概念指南</button>
+  <button data-tab="plane">② 复平面展示</button>
+  <button data-tab="arith">③ 四则运算</button>
+  <button data-tab="locus">④ 模长最值轨迹</button>
+</div>
+
+<main class="layout">
+  <!-- ============ 控制区 ============ -->
+  <aside class="pane control">
+    <div class="tab-pane" id="ctl-guide">
+      <div class="hint">点击上方标签页进入「复平面展示」「四则运算」或「模长最值轨迹」实验。</div>
+      <div class="hint" style="margin-top:12px"><b>本实验室核心对象：</b></div>
+      <div class="formula">z = a + bi ↔ 复平面点 (a, b)</div>
+      <div class="hint">复数 z 与复平面上的点一一对应：实部 a 对应横轴（实轴），虚部 b 对应纵轴（虚轴）。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-plane" style="display:none">
+      <label>输入或拖动复数 z = a + bi（a, b ∈ [-6, 6]）</label>
+      <div class="row">
+        <span>a（实部）</span>
+        <input type="number" id="pA" value="3" min="-6" max="6" step="0.5">
+      </div>
+      <div class="row">
+        <span>b（虚部）</span>
+        <input type="number" id="pB" value="4" min="-6" max="6" step="0.5">
+      </div>
+      <button class="btn" id="pApply">✓ 显示点</button>
+      <button class="btn secondary" id="pRandom">🎲 随机 z1</button>
+      <div class="hint">「随机 z1」每次在 [-6,6]×[-6,6] 内重新生成坐标（连续 10 次不重复同一坐标）。也可在画布上直接拖动点。</div>
+      <div class="hint" style="margin-top:8px;color:#2d3748" id="pRandomLog">随机记录：—</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-arith" style="display:none">
+      <label>输入 z₁ = a + bi</label>
+      <div class="row">
+        <input type="number" id="z1a" value="1" step="0.5">
+        <span>+</span>
+        <input type="number" id="z1b" value="1" step="0.5">
+        <span>i</span>
+      </div>
+      <label>输入 z₂ = c + di</label>
+      <div class="row">
+        <input type="number" id="z2c" value="1" step="0.5">
+        <span>+</span>
+        <input type="number" id="z2d" value="-1" step="0.5">
+        <span>i</span>
+      </div>
+      <button class="btn" id="arithCalc">= 计算四种运算</button>
+      <div class="hint">四则运算公式：<br>
+        (a+bi)±(c+di) 按向量分量加减<br>
+        (a+bi)(c+di)=(ac−bd)+(ad+bc)i<br>
+        (a+bi)/(c+di) 分子分母同乘共轭 c−di 后分母实数化。</div>
+    </div>
+
+    <div class="tab-pane" id="ctl-locus" style="display:none">
+      <label>圆心 z₀ = a₀ + b₀i</label>
+      <div class="row">
+        <input type="number" id="lA0" value="4" step="0.5">
+        <span>+</span>
+        <input type="number" id="lB0" value="0" step="0.5">
+        <span>i</span>
+      </div>
+      <label>半径 r</label>
+      <div class="row">
+        <input type="number" id="lR" value="1" min="0" max="8" step="0.5">
+      </div>
+      <button class="btn" id="lApply">✓ 画轨迹</button>
+      <button class="btn secondary" id="lSample">↺ 示例：z₀=0, r=3</button>
+      <button class="btn secondary" id="lSample2">↺ 示例：z₀=4, r=1</button>
+      <div class="hint">|z − z₀| = r 表示以 z₀ 为圆心、r 为半径的圆（轨迹上每点模长恒为 r）。</div>
+    </div>
+  </aside>
+
+  <!-- ============ 画布区 ============ -->
+  <section class="pane canvas-holder">
+    <div class="tab-pane" id="cv-guide" style="flex:1">
+      <div class="guide">
+        <h2>一、复数与复平面的一一对应</h2>
+        <p>每个复数 <b>z = a + bi</b>（a、b 为实数）都唯一对应复平面上的一个点 <b>(a, b)</b>：横轴为<b>实轴</b>，纵轴为<b>虚轴</b>。</p>
+        <div class="formula">z = a + bi ↔ 点 (a, b)，且 i² = −1</div>
+
+        <h2>二、模长与辐角</h2>
+        <p>复数的<b>模</b> |z| 等于对应点到原点的距离，<b>辐角</b> arg(z) 等于 OP 与实轴正方向的夹角：</p>
+        <div class="formula">|z| = √(a² + b²)，&nbsp;&nbsp;arg(z) = atan2(b, a)，范围 (−π, π]</div>
+        <p>例如 z = 3 + 4i：|z| = √(9+16) = <b>5</b>，arg(z) ≈ 0.927 rad（≈53.13°）。</p>
+
+        <h2>三、复数乘法的几何意义</h2>
+        <ul>
+          <li>模相乘：<b>|z₁·z₂| = |z₁|·|z₂|</b></li>
+          <li>辐角相加：<b>arg(z₁·z₂) = arg(z₁) + arg(z₂)</b></li>
+          <li>乘法计算：<b>(a+bi)(c+di) = (ac−bd) + (ad+bc)i</b></li>
+        </ul>
+        <p>算例：z=1+i 与 w=1−i，则 z·w = (1·1−1·(−1)) + (1·(−1)+1·1)i = <b>2+0i</b>，结果点落在 (2,0)。</p>
+
+        <h2>四、模长最值轨迹</h2>
+        <div class="formula">|z − z₀| = r ⇔ 以 z₀ 为圆心、r 为半径的圆</div>
+        <p>轨迹上任意一点到原点的距离（|z|）最大值为 |z₀| + r，最小值为 ||z₀| − r|。</p>
+
+        <h2>五、除法（分母实数化）</h2>
+        <div class="formula">(a+bi) / (c+di) = (a+bi)(c−di) / (c²+d²)</div>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-plane" style="display:none;flex:1">
+      <canvas id="planeCanvas" aria-label="复平面：显示复数 z=a+bi 的点位、模长与辐角，点可拖动"></canvas>
+      <div class="cap">复平面（实轴/虚轴）：蓝点 z，红线为模长 |z|（到原点距离）</div>
+    </div>
+
+    <div class="tab-pane" id="cv-arith" style="display:none;flex:1">
+      <canvas id="arithCanvas" aria-label="四则运算：显示 z1、z2 及加减乘除结果的复平面矢量"></canvas>
+      <div class="cap">z₁（蓝）、z₂（绿）、z₁+z₂（紫）、z₁−z₂（橙）、z₁·z₂（红）、z₁/z₂（青）</div>
+      <div class="result-table-wrap" style="margin-top:8px">
+        <table class="result-table" id="arithTable">
+          <tr><th>运算</th><th>公式</th><th>结果</th><th>模</th><th>辐角(°)</th></tr>
+          <tr><td>z₁+z₂</td><td class="eq" id="tAddF">—</td><td class="vout" id="tAdd">—</td><td id="tAddM">—</td><td id="tAddA">—</td></tr>
+          <tr><td>z₁−z₂</td><td class="eq" id="tSubF">—</td><td class="vout" id="tSub">—</td><td id="tSubM">—</td><td id="tSubA">—</td></tr>
+          <tr><td>z₁·z₂</td><td class="eq" id="tMulF">—</td><td class="vout" id="tMul">—</td><td id="tMulM">—</td><td id="tMulA">—</td></tr>
+          <tr><td>z₁/z₂</td><td class="eq" id="tDivF">—</td><td class="vout" id="tDiv">—</td><td id="tDivM">—</td><td id="tDivA">—</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="cv-locus" style="display:none;flex:1">
+      <canvas id="locusCanvas" aria-label="模长最值轨迹：显示以 z0 为圆心半径为 r 的圆，及 |z| 的最大最小值位置"></canvas>
+      <div class="cap">圆 |z−z₀|=r（绿）；|z| 最大点（红）距原点 = |z₀|+r，最小点（橙）距原点 = ||z₀|−r|</div>
+    </div>
+  </section>
+
+  <!-- ============ 数据区 ============ -->
+  <aside class="pane data">
+    <div class="tab-pane" id="data-guide">
+      <div class="readout"><div class="k">核心公式</div><div class="v" style="font-size:16px">|z| = √(a²+b²)</div></div>
+      <div class="readout"><div class="k">乘法几何意义</div><div class="v" style="font-size:15px">模相乘、辐角相加</div></div>
+      <div class="readout"><div class="k">轨迹</div><div class="v" style="font-size:15px">|z−z₀|=r 为圆</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-plane" style="display:none">
+      <div class="readout"><div class="k">当前复数 z</div><div class="v" id="dPz">3 + 4i</div></div>
+      <div class="readout"><div class="k">模长 |z| = √(a²+b²)</div><div class="v" id="dPm" style="color:#319795">5</div></div>
+      <div class="readout"><div class="k">辐角 arg(z)</div><div class="v" id="dPa">0.927 rad（53.13°）</div></div>
+      <div class="readout"><div class="k">坐标</div><div class="v" id="dPc" style="font-size:15px">(3, 4)</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-arith" style="display:none">
+      <div class="readout"><div class="k">z₁</div><div class="v" id="dZ1" style="font-size:16px;color:#2b6cb0">1 + 1i</div></div>
+      <div class="readout"><div class="k">z₂</div><div class="v" id="dZ2" style="font-size:16px;color:#2f855a">1 - 1i</div></div>
+      <div class="readout"><div class="k">|z₁·z₂| = |z₁|·|z₂|</div><div class="v" id="dMulCheck" style="font-size:15px">—</div></div>
+      <div class="readout"><div class="k">arg(z₁)+arg(z₂)</div><div class="v" id="dArgCheck" style="font-size:15px">—</div></div>
+    </div>
+
+    <div class="tab-pane" id="data-locus" style="display:none">
+      <div class="readout"><div class="k">圆心 z₀</div><div class="v" id="dLz0" style="font-size:16px">4 + 0i</div></div>
+      <div class="readout"><div class="k">半径 r</div><div class="v" id="dLr">1</div></div>
+      <div class="readout"><div class="k">|z| 最大值 = |z₀|+r</div><div class="v" id="dLmax" style="color:#e53e3e">5</div></div>
+      <div class="readout"><div class="k">|z| 最小值 = ||z₀|−r|</div><div class="v" id="dLmin" style="color:#dd6b20">3</div></div>
+      <div class="readout"><div class="k">轨迹性质</div><div class="v" id="dLnote" style="font-size:13px">轨迹上点模长恒等于 r（当 z₀=0 时）</div></div>
+    </div>
+  </aside>
+</main>
+
+<footer>
+  <b>观察与结论：</b>① 复数 z=a+bi 的<b>模</b> |z| 就是点到原点的距离 √(a²+b²)，模的几何含义是「长度」；② <b>复数乘法</b>对应「模相乘、辐角相加」——两个复数的乘积模长等于各自模长之积，辐角等于各自辐角之和；③ 方程 |z−z₀|=r 的<b>轨迹是圆</b>：圆心为 z₀、半径为 r，圆上每一点到原点的距离都在 [|z₀|−r, |z₀|+r] 之间。
+</footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const TAU = Math.PI * 2;
+function fmt(v, n) { const f = Math.pow(10, n); return (Math.round(v * f) / f).toFixed(n); }
+function setupCanvas(cv) {
+  const dpr = window.devicePixelRatio || 1;
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (w === 0 || h === 0) return null;
+  cv.width = w * dpr; cv.height = h * dpr;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w, h };
+}
+function cn(c) { return Math.abs(c.imag) < 1e-9 ? fmt(c.real, 4) : fmt(c.real, 4) + (c.imag >= 0 ? '+' : '') + fmt(c.imag, 4) + 'i'; }
+function cnShort(c) { return Math.abs(c.imag) < 1e-9 ? fmt(c.real, 2) : fmt(c.real, 2) + (c.imag >= 0 ? '+' : '') + fmt(c.imag, 2) + 'i'; }
+
+const state = {
+  tab: 'guide',
+  plane: { a: 3, b: 4, randLog: [] },
+  arith: { z1: {real:1, imag:1}, z2: {real:1, imag:-1} },
+  locus: { a0: 4, b0: 0, r: 1 }
+};
+
+/* ============ 标签页 ============ */
+function switchTab(tab) {
+  state.tab = tab;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  ['guide','plane','arith','locus'].forEach(t => {
+    document.getElementById('ctl-' + t).style.display = t === tab ? 'block' : 'none';
+    document.getElementById('cv-' + t).style.display = t === tab ? 'flex' : 'none';
+    document.getElementById('data-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'plane') { drawPlane(); updatePlaneData(); }
+  if (tab === 'arith') { drawArith(); updateArithData(); }
+  if (tab === 'locus') { drawLocus(); updateLocusData(); }
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+/* ============ 复平面网格 ============ */
+function planeGrid(ctx, w, h, pad) {
+  // 网格 -6..6
+  ctx.strokeStyle = '#edf2f7'; ctx.lineWidth = 1;
+  for (let i = -6; i <= 6; i++) {
+    ctx.beginPath(); ctx.moveTo(pad + (i + 6) / 12 * (w - 2 * pad), pad);
+    ctx.lineTo(pad + (i + 6) / 12 * (w - 2 * pad), h - pad); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad, pad + (6 - i) / 12 * (h - 2 * pad));
+    ctx.lineTo(w - pad, pad + (6 - i) / 12 * (h - 2 * pad)); ctx.stroke();
+  }
+  // 坐标轴
+  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(pad, (h - pad + pad) / 2); ctx.lineTo(w - pad, (h) / 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(w / 2, pad); ctx.lineTo(w / 2, h - pad); ctx.stroke();
+  // 刻度
+  ctx.fillStyle = '#718096'; ctx.font = '11px sans-serif';
+  const cx0 = w / 2, cy0 = h / 2;
+  const xu = (w - 2 * pad) / 12, yu = (h - 2 * pad) / 12;
+  for (let i = -5; i <= 5; i++) {
+    if (i === 0) continue;
+    ctx.fillText(i, cx0 + i * xu - 4, cy0 + 12);
+    ctx.fillText(i, cx0 + 6, cy0 - i * yu + 4);
+  }
+  ctx.fillText('实轴 Re', w - pad - 40, cy0 + 18);
+  ctx.fillText('虚轴 Im', cx0 + 8, pad + 12);
+  return { cx0, cy0, xu, yu };
+}
+function ptToCanvas(c, w, h, pad) {
+  const cx0 = w / 2, cy0 = h / 2;
+  const xu = (w - 2 * pad) / 12, yu = (h - 2 * pad) / 12;
+  return { x: cx0 + c.real * xu, y: cy0 - c.imag * yu };
+}
+function canvasToPt(x, y, w, h, pad) {
+  const cx0 = w / 2, cy0 = h / 2;
+  const xu = (w - 2 * pad) / 12, yu = (h - 2 * pad) / 12;
+  return { real: (x - cx0) / xu, imag: (cy0 - y) / yu };
+}
+
+/* ============ ① 复平面展示 ============ */
+function drawPlane() {
+  const cv = $('planeCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  ctx.clearRect(0, 0, w, h);
+  const pad = 30;
+  const g = planeGrid(ctx, w, h, pad);
+  const z = { real: state.plane.a, imag: state.plane.b };
+  const P = ptToCanvas(z, w, h, pad);
+  // 模长线
+  ctx.strokeStyle = '#e53e3e'; ctx.lineWidth = 2.4;
+  ctx.beginPath(); ctx.moveTo(w / 2, h / 2); ctx.lineTo(P.x, P.y); ctx.stroke();
+  // 辐角弧
+  const ang = Math.atan2(z.imag, z.real);
+  ctx.fillStyle = 'rgba(230,57,70,.12)';
+  ctx.beginPath(); ctx.moveTo(w / 2, h / 2);
+  ctx.arc(w / 2, h / 2, 30, 0, -ang, ang < 0); ctx.closePath(); ctx.fill();
+  // 投影线
+  ctx.setLineDash([5,4]); ctx.strokeStyle = '#a0aec0'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(P.x, h / 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(P.x, P.y); ctx.lineTo(w / 2, P.y); ctx.stroke();
+  ctx.setLineDash([]);
+  // 点
+  ctx.fillStyle = '#2b6cb0';
+  ctx.beginPath(); ctx.arc(P.x, P.y, 7, 0, TAU); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(P.x, P.y, 7, 0, TAU); ctx.stroke();
+  ctx.fillStyle = '#2b6cb0'; ctx.font = '14px sans-serif';
+  ctx.fillText('z=' + cnShort(z), P.x + 10, P.y - 10);
+  ctx.fillStyle = '#e53e3e'; ctx.font = '12px sans-serif';
+  ctx.fillText('|z|=' + fmt(Math.hypot(z.real, z.imag), 2), (P.x + w / 2) / 2 + 4, (P.y + h / 2) / 2);
+}
+function updatePlaneData() {
+  const z = { real: state.plane.a, imag: state.plane.b };
+  $('dPz').textContent = cnShort(z);
+  $('dPm').textContent = '|' + cnShort(z) + '| = √(' + Math.round(z.real * z.real) + '+' + Math.round(z.imag * z.imag) + ') = ' + fmt(Math.hypot(z.real, z.imag), 3);
+  const ang = Math.atan2(z.imag, z.real);
+  $('dPa').textContent = fmt(ang, 3) + ' rad（' + fmt(ang * 180 / Math.PI, 2) + '°）';
+  $('dPc').textContent = '(' + fmt(z.real, 2) + ', ' + fmt(z.imag, 2) + ')';
+}
+function readPlaneInputs() {
+  state.plane.a = Math.max(-6, Math.min(6, parseFloat($('pA').value) || 0));
+  state.plane.b = Math.max(-6, Math.min(6, parseFloat($('pB').value) || 0));
+  $('pA').value = state.plane.a; $('pB').value = state.plane.b;
+}
+$('pApply').addEventListener('click', () => { readPlaneInputs(); drawPlane(); updatePlaneData(); });
+$('pRandom').addEventListener('click', () => {
+  const used = state.plane.randLog.slice(-9);
+  let a, b, tries = 0;
+  do {
+    a = Math.round((Math.random() * 12 - 6) * 2) / 2;
+    b = Math.round((Math.random() * 12 - 6) * 2) / 2;
+    tries++;
+  } while (used.some(u => u.a === a && u.b === b) && tries < 100);
+  state.plane.a = a; state.plane.b = b;
+  state.plane.randLog.push({ a, b });
+  $('pA').value = a; $('pB').value = b;
+  const log = state.plane.randLog.slice(-10);
+  $('pRandomLog').textContent = '最近 10 次：' + log.map(u => '(' + u.a + ',' + u.b + ')').join(' ');
+  drawPlane(); updatePlaneData();
+});
+// 画布拖动点
+let drag = null;
+(function planeDrag() {
+  const cv = $('planeCanvas');
+  cv.addEventListener('mousedown', e => {
+    if (state.tab !== 'plane') return;
+    const s = setupCanvas(cv);
+    const rect = cv.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+    const P = ptToCanvas({ real: state.plane.a, imag: state.plane.b }, s.w, s.h, 30);
+    if (Math.hypot(x - P.x, y - P.y) < 18) { drag = true; }
+  });
+  cv.addEventListener('mousemove', e => {
+    if (!drag || state.tab !== 'plane') return;
+    const rect = cv.getBoundingClientRect();
+    const p = canvasToPt(e.clientX - rect.left, e.clientY - rect.top, cv.clientWidth, cv.clientHeight, 30);
+    state.plane.a = Math.max(-6, Math.min(6, Math.round(p.real * 2) / 2));
+    state.plane.b = Math.max(-6, Math.min(6, Math.round(p.imag * 2) / 2));
+    $('pA').value = state.plane.a; $('pB').value = state.plane.b;
+    drawPlane(); updatePlaneData();
+  });
+  window.addEventListener('mouseup', () => { drag = null; });
+})();
+
+/* ============ ② 四则运算 ============ */
+function opAdd(u, v) { return { real: u.real + v.real, imag: u.imag + v.imag }; }
+function opSub(u, v) { return { real: u.real - v.real, imag: u.imag - v.imag }; }
+function opMul(u, v) { return { real: u.real * v.real - u.imag * v.imag, imag: u.real * v.imag + u.imag * v.real }; }
+function opDiv(u, v) {
+  const d = v.real * v.real + v.imag * v.imag;
+  if (Math.abs(d) < 1e-12) return null;
+  return { real: (u.real * v.real + u.imag * v.imag) / d, imag: (u.imag * v.real - u.real * v.imag) / d };
+}
+function readArithInputs() {
+  state.arith.z1 = { real: parseFloat($('z1a').value) || 0, imag: parseFloat($('z1b').value) || 0 };
+  state.arith.z2 = { real: parseFloat($('z2c').value) || 0, imag: parseFloat($('z2d').value) || 0 };
+}
+function vecLabel(ctx, P, txt, color, off) {
+  ctx.fillStyle = color; ctx.font = '12px sans-serif';
+  ctx.fillText(txt, P.x + (off.x || 8), P.y + (off.y || -8));
+}
+function drawArith() {
+  const cv = $('arithCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  ctx.clearRect(0, 0, w, h);
+  const pad = 30;
+  planeGrid(ctx, w, h, pad);
+  const z1 = state.arith.z1, z2 = state.arith.z2;
+  const O = { x: w / 2, y: h / 2 };
+  function vec(z, color, label) {
+    const P = ptToCanvas(z, w, h, pad);
+    ctx.strokeStyle = color; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(O.x, O.y); ctx.lineTo(P.x, P.y); ctx.stroke();
+    // 箭头
+    const ang = Math.atan2(P.y - O.y, P.x - O.x);
+    ctx.beginPath(); ctx.moveTo(P.x, P.y);
+    ctx.lineTo(P.x - 10 * Math.cos(ang - 0.4), P.y - 10 * Math.sin(ang - 0.4));
+    ctx.moveTo(P.x, P.y);
+    ctx.lineTo(P.x - 10 * Math.cos(ang + 0.4), P.y - 10 * Math.sin(ang + 0.4));
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(P.x, P.y, 5, 0, TAU); ctx.fill();
+    vecLabel(ctx, P, label, color, {});
+    return P;
+  }
+  const p1 = vec(z1, '#2b6cb0', 'z₁');
+  const p2 = vec(z2, '#2f855a', 'z₂');
+  const sum = opAdd(z1, z2), dif = opSub(z1, z2), mul = opMul(z1, z2), div = opDiv(z1, z2);
+  vec(sum, '#805ad5', 'z₁+z₂');
+  vec(dif, '#dd6b20', 'z₁−z₂');
+  vec(mul, '#e53e3e', 'z₁·z₂');
+  if (div) vec(div, '#087e8b', 'z₁/z₂');
+  // 平行四边形辅助线
+  ctx.setLineDash([4, 4]); ctx.strokeStyle = '#cbd5e0'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x + (p1.x - O.x), p2.y + (p1.y - O.y)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(p2.x, p2.y); ctx.lineTo(p1.x + (p2.x - O.x), p1.y + (p2.y - O.y)); ctx.stroke();
+  ctx.setLineDash([]);
+}
+function updateArithData() {
+  const z1 = state.arith.z1, z2 = state.arith.z2;
+  $('dZ1').textContent = cnShort(z1);
+  $('dZ2').textContent = cnShort(z2);
+  const sum = opAdd(z1, z2), dif = opSub(z1, z2), mul = opMul(z1, z2), div = opDiv(z1, z2);
+  const fill = (id, z) => {
+    $('d' + id + 'M').textContent = fmt(Math.hypot(z.real, z.imag), 3);
+    $('d' + id + 'A').textContent = fmt(Math.atan2(z.imag, z.real) * 180 / Math.PI, 2);
+  };
+  $('tAdd').textContent = cn(z1) + ' + (' + cn(z2) + ') = ' + cn(sum);
+  $('tAddF').textContent = cnShort(z1) + ' + ' + cnShort(z2);
+  $('tSub').textContent = cn(z1) + ' − (' + cn(z2) + ') = ' + cn(dif);
+  $('tSubF').textContent = cnShort(z1) + ' − ' + cnShort(z2);
+  $('tMul').textContent = '(' + cn(z1) + ')·(' + cn(z2) + ') = ' + cn(mul);
+  $('tMulF').textContent = '(' + cnShort(z1) + ')·(' + cnShort(z2) + ')';
+  if (div) {
+    $('tDiv').textContent = '(' + cn(z1) + ') / (' + cn(z2) + ') = ' + cn(div);
+    $('tDivF').textContent = cnShort(z1) + ' / ' + cnShort(z2);
+  } else {
+    $('tDiv').textContent = '除数 z₂ 为 0，无法计算';
+    $('tDivF').textContent = '—';
+  }
+  fill('Add', sum); fill('Sub', dif); fill('Mul', mul);
+  if (div) fill('Div', div);
+  else { $('dDivM').textContent = '—'; $('dDivA').textContent = '—'; }
+  const m1 = Math.hypot(z1.real, z1.imag), m2 = Math.hypot(z2.real, z2.imag);
+  $('dMulCheck').textContent = '|' + cnShort(mul) + '| = ' + fmt(Math.hypot(mul.real, mul.imag), 3) + '，|z₁|·|z₂| = ' + fmt(m1 * m2, 3) + '（相等 ✓）';
+  const a1 = Math.atan2(z1.imag, z1.real), a2 = Math.atan2(z2.imag, z2.real);
+  const am = Math.atan2(mul.imag, mul.real);
+  $('dArgCheck').textContent = 'arg(z₁·z₂) = ' + fmt(am, 3) + '，arg(z₁)+arg(z₂) = ' + fmt(a1 + a2, 3) + '（模 2π 意义下相等）';
+}
+$('arithCalc').addEventListener('click', () => { readArithInputs(); drawArith(); updateArithData(); });
+
+/* ============ ③ 模长最值轨迹 ============ */
+function readLocusInputs() {
+  state.locus.a0 = parseFloat($('lA0').value) || 0;
+  state.locus.b0 = parseFloat($('lB0').value) || 0;
+  state.locus.r = Math.max(0, parseFloat($('lR').value) || 0);
+  $('lR').value = state.locus.r;
+}
+function drawLocus() {
+  readLocusInputs();
+  const cv = $('locusCanvas');
+  const s = setupCanvas(cv); if (!s) return;
+  const { ctx, w, h } = s;
+  ctx.clearRect(0, 0, w, h);
+  const pad = 30;
+  const g = planeGrid(ctx, w, h, pad);
+  const z0 = { real: state.locus.a0, imag: state.locus.b0 };
+  const C = ptToCanvas(z0, w, h, pad);
+  const R = state.locus.r * g.xu;
+
+  // 圆 |z-z0|=r
+  ctx.strokeStyle = '#2f855a'; ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.arc(C.x, C.y, R, 0, TAU); ctx.stroke();
+  ctx.fillStyle = 'rgba(47,133,90,.08)';
+  ctx.beginPath(); ctx.arc(C.x, C.y, R, 0, TAU); ctx.fill();
+
+  // 圆心
+  ctx.fillStyle = '#234e52';
+  ctx.beginPath(); ctx.arc(C.x, C.y, 5, 0, TAU); ctx.fill();
+  ctx.fillStyle = '#234e52'; ctx.font = '13px sans-serif';
+  ctx.fillText('z₀=' + cnShort(z0), C.x + 8, C.y - 10);
+
+  // 最大/最小 |z| 点
+  const dist = Math.hypot(z0.real, z0.imag);
+  const dir = dist < 1e-9 ? { real: 1, imag: 0 } : { real: z0.real / dist, imag: z0.imag / dist };
+  const maxP = { real: z0.real + R / g.xu * dir.real * (dist < 1e-9 ? 1 : 0) + (dist < 1e-9 ? z0.real : dir.real * state.locus.r), imag: 0 };
+  // 直接算：模最大的点 = z0 沿 z0 方向移动 r
+  let Pmax, Pmin;
+  if (dist < 1e-9) {
+    Pmax = { real: state.locus.r, imag: 0 };
+    Pmin = { real: -state.locus.r, imag: 0 };
+  } else {
+    Pmax = { real: z0.real + dir.real * state.locus.r, imag: z0.imag + dir.imag * state.locus.r };
+    Pmin = { real: z0.real - dir.real * state.locus.r, imag: z0.imag - dir.imag * state.locus.r };
+  }
+  [[Pmax, '#e53e3e', '|z|最大'], [Pmin, '#dd6b20', '|z|最小']].forEach(([p, color, label]) => {
+    const Q = ptToCanvas(p, w, h, pad);
+    ctx.strokeStyle = color; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(w / 2, h / 2); ctx.lineTo(Q.x, Q.y); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(Q.x, Q.y, 6, 0, TAU); ctx.fill();
+    ctx.font = '12.5px sans-serif';
+    ctx.fillText(label + ' ' + fmt(Math.hypot(p.real, p.imag), 2), Q.x + 8, Q.y - 8);
+  });
+
+  // 半径标线
+  ctx.setLineDash([4, 4]); ctx.strokeStyle = '#2f855a'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(C.x, C.y); ctx.lineTo(Pmax.x !== undefined ? ptToCanvas(Pmax, w, h, pad).x : C.x + R, C.y); ctx.stroke();
+  ctx.setLineDash([]);
+}
+function updateLocusData() {
+  const z0 = { real: state.locus.a0, imag: state.locus.b0 };
+  const dist = Math.hypot(z0.real, z0.imag);
+  $('dLz0').textContent = cnShort(z0);
+  $('dLr').textContent = fmt(state.locus.r, 2);
+  $('dLmax').textContent = fmt(dist + state.locus.r, 3) + '（|z₀|=' + fmt(dist, 3) + ' + r=' + fmt(state.locus.r, 2) + '）';
+  $('dLmin').textContent = fmt(Math.abs(dist - state.locus.r), 3) + '（||z₀|−r|）';
+  $('dLnote').textContent = dist < 1e-9
+    ? '圆心在原点：轨迹上每点模长恒等于 r=' + fmt(state.locus.r, 2) + '，最大=最小=' + fmt(state.locus.r, 2)
+    : '轨迹为圆心 ' + cnShort(z0) + '、半径 ' + fmt(state.locus.r, 2) + ' 的圆';
+}
+$('lApply').addEventListener('click', () => { drawLocus(); updateLocusData(); });
+$('lSample').addEventListener('click', () => {
+  $('lA0').value = 0; $('lB0').value = 0; $('lR').value = 3;
+  drawLocus(); updateLocusData();
+});
+$('lSample2').addEventListener('click', () => {
+  $('lA0').value = 4; $('lB0').value = 0; $('lR').value = 1;
+  drawLocus(); updateLocusData();
+});
+
+/* ============ 初始化 ============ */
+function resizeAll() {
+  if (state.tab === 'plane') { drawPlane(); updatePlaneData(); }
+  else if (state.tab === 'arith') { drawArith(); updateArithData(); }
+  else if (state.tab === 'locus') { drawLocus(); updateLocusData(); }
+}
+window.addEventListener('resize', resizeAll);
+function fitCanvases() {
+  ['planeCanvas', 'arithCanvas', 'locusCanvas'].forEach(id => {
+    const el = $(id);
+    el.style.height = Math.max(340, el.clientWidth * 0.62) + 'px';
+  });
+}
+fitCanvases();
+window.addEventListener('resize', fitCanvases);
+
+readPlaneInputs();
+drawPlane(); updatePlaneData();
+readArithInputs();
+drawArith(); updateArithData();
+readLocusInputs();
+drawLocus(); updateLocusData();
+</script>
+</body>
+</html>

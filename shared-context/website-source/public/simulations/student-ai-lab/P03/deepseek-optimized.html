@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>万有引力定律 · 交互演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    background: radial-gradient(1200px 700px at 70% -10%, #182248 0%, #0b1020 45%, #060912 100%);
+    color: #e6edf7;
+    display: flex;
+    flex-direction: column;
+  }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace; }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    padding: 14px 22px 10px;
+    border-bottom: 1px solid rgba(120,160,255,.16);
+    flex: 0 0 auto;
+  }
+  .logo {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #6ee7ff, #93f5c8 55%, #fcd98a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .logo small { font-size: 14px; opacity: .75; font-weight: 600; margin-left: 8px; }
+  .goal {
+    font-size: 13px;
+    color: #9fb2d8;
+    margin-left: auto;
+    max-width: 430px;
+    line-height: 1.5;
+    text-align: right;
+  }
+  .badge-pt {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(110,231,255,.4);
+    color: #aef1ff;
+    background: rgba(110,231,255,.08);
+    white-space: nowrap;
+  }
+
+  /* ---------- main ---------- */
+  main {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    gap: 14px;
+    padding: 14px 22px 8px;
+  }
+
+  .canvas-area {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .view-toggle button {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 7px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(120,160,255,.35);
+    background: rgba(18,28,54,.65);
+    color: #c3d2ee;
+    cursor: pointer;
+    transition: .18s;
+  }
+  .view-toggle button:hover { border-color: rgba(110,231,255,.6); color: #eaf6ff; }
+  .view-toggle button.active {
+    background: linear-gradient(135deg, rgba(34,211,238,.28), rgba(99,102,241,.32));
+    border-color: rgba(110,231,255,.8);
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(34,211,238,.35);
+  }
+  #view-hint { font-size: 12px; color: #8fa3c8; margin-left: 6px; }
+
+  .canvas-wrap {
+    flex: 1 1 auto;
+    min-height: 0;
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid rgba(120,160,255,.18);
+    background: #05070d;
+    box-shadow: inset 0 0 60px rgba(20,40,90,.5), 0 8px 30px rgba(0,0,0,.4);
+    overflow: hidden;
+  }
+  #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ---------- data area ---------- */
+  .data-area {
+    flex: 0 0 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+  .data-area::-webkit-scrollbar { width: 8px; }
+  .data-area::-webkit-scrollbar-thumb { background: rgba(120,160,255,.28); border-radius: 8px; }
+
+  .panel {
+    background: rgba(16,24,48,.72);
+    border: 1px solid rgba(120,160,255,.16);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.25);
+  }
+  .panel h2 {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .5px;
+    color: #7fd9f5;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel h2 small { font-weight: 600; color: #5b6c8f; font-size: 11px; }
+
+  .formula-panel .subst {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 15px;
+    color: #ffe9b0;
+    background: rgba(0,0,0,.35);
+    border-radius: 10px;
+    padding: 10px 12px;
+    line-height: 1.7;
+    border-left: 3px solid #fbbf24;
+    word-break: break-all;
+  }
+  .formula-panel .subst-result {
+    margin-top: 8px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 14px;
+    color: #9fe8c8;
+    padding-left: 4px;
+  }
+
+  .f-big {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 34px;
+    font-weight: 800;
+    color: #7cf3d1;
+    text-shadow: 0 0 18px rgba(124,243,209,.45);
+    line-height: 1.15;
+    word-break: break-all;
+  }
+  .f-big .unit { font-size: 16px; color: #8fa3c8; font-weight: 700; }
+  .f-approx { font-size: 13px; color: #8fa3c8; margin-top: 2px; }
+
+  .params {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+  }
+  .prow {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12.5px;
+    padding: 5px 9px;
+    background: rgba(255,255,255,.04);
+    border-radius: 8px;
+  }
+  .prow span:first-child { color: #8fa3c8; }
+  .prow span:last-child { font-family: ui-monospace, Menlo, Consolas, monospace; color: #dbe7ff; }
+
+  .obs-panel .guide { font-size: 12.5px; color: #aebfde; line-height: 1.65; }
+  .baseline { margin-top: 10px; }
+  .baseline button {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 9px;
+    border: 1px solid rgba(124,243,209,.5);
+    background: rgba(124,243,209,.12);
+    color: #b8ffe9;
+    cursor: pointer;
+  }
+  .baseline button:hover { background: rgba(124,243,209,.2); }
+  .ratio {
+    margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #dce7ff;
+    background: rgba(0,0,0,.28);
+    border-radius: 10px;
+    padding: 9px 11px;
+    min-height: 34px;
+  }
+  .concl {
+    margin-top: 10px;
+    font-size: 12.5px;
+    line-height: 1.8;
+    color: #e6edf7;
+    background: linear-gradient(135deg, rgba(251,191,36,.1), rgba(244,114,182,.08));
+    border: 1px solid rgba(251,191,36,.28);
+    border-radius: 10px;
+    padding: 9px 12px;
+  }
+  .concl b { color: #ffd876; }
+
+  .selftest { margin-top: 12px; }
+  .st-title {
+    font-size: 11px; font-weight: 800; letter-spacing: .5px;
+    color: #5b6c8f; margin-bottom: 6px;
+  }
+  .st-row {
+    display: flex; align-items: baseline; gap: 8px;
+    font-size: 12px; padding: 4px 0; line-height: 1.5;
+  }
+  .st-badge {
+    flex: 0 0 auto;
+    font-size: 10.5px; font-weight: 800;
+    padding: 1px 8px; border-radius: 999px;
+  }
+  .st-row.pass .st-badge { background: rgba(52,211,153,.16); color: #6ee7b7; }
+  .st-row.fail .st-badge { background: rgba(248,113,113,.18); color: #ff9b9b; }
+  .st-name { color: #aebfde; flex: 1 1 auto; }
+  .st-got { font-family: ui-monospace, Menlo, Consolas, monospace; color: #dce7ff; flex: 0 0 auto; }
+
+  /* ---------- control area ---------- */
+  .control-area {
+    flex: 0 0 auto;
+    padding: 10px 22px 12px;
+    border-top: 1px solid rgba(120,160,255,.14);
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px 20px;
+  }
+  .slider-row { display: flex; align-items: center; gap: 10px; }
+  .slider-row label {
+    font-size: 12.5px; font-weight: 700; color: #9fb2d8;
+    flex: 0 0 auto;
+  }
+  .slider-row input[type=range] {
+    flex: 1 1 auto;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #1b2a52, #2b4a8a);
+    outline: none;
+    cursor: pointer;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 32% 30%, #dffaff, #22d3ee);
+    border: 2px solid #0a1326;
+    box-shadow: 0 0 10px rgba(34,211,238,.6);
+  }
+  .slider-row input[type=range]::-moz-range-thumb {
+    width: 15px; height: 15px; border-radius: 50%;
+    background: #22d3ee; border: 2px solid #0a1326;
+    box-shadow: 0 0 10px rgba(34,211,238,.6);
+  }
+  .slider-row .sv {
+    flex: 0 0 118px;
+    text-align: right;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    color: #ffe9b0;
+  }
+  .clamped-note { color: #fbbf24; font-size: 10.5px; }
+  .presets {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  .presets span { font-size: 11.5px; color: #5b6c8f; font-weight: 700; margin-right: 2px; }
+  .presets button {
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 6px 13px;
+    border-radius: 9px;
+    border: 1px solid rgba(120,160,255,.4);
+    background: rgba(30,44,84,.7);
+    color: #cfe0ff;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .presets button:hover { border-color: #7fd9f5; background: rgba(60,90,160,.6); color: #fff; }
+
+  footer {
+    flex: 0 0 auto;
+    text-align: center;
+    font-size: 11px;
+    color: #46557a;
+    padding: 6px 0;
+  }
+
+  @media (max-width: 1100px) {
+    main { flex-direction: column; }
+    .data-area { flex: 0 0 auto; width: 100%; max-height: 40vh; }
+    .canvas-area { flex: 1 1 auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">万有引力定律<small>F = GMm / r²</small></div>
+  <span class="badge-pt">质点模型：球体视为质量集中于球心</span>
+  <div class="goal">学习目标：改变 M、m、r 并读取 F，归纳出 F 与两质量成正比、与距离平方成反比。</div>
+</header>
+
+<main>
+  <!-- 画布区 -->
+  <section class="canvas-area">
+    <div class="view-toggle">
+      <button id="btn-universe" class="active" onclick="setView('universe')">宇宙视图</button>
+      <button id="btn-surface" onclick="setView('surface')">地表视图</button>
+      <span id="view-hint">宇宙视图：两天体沿连线相互吸引，两力矢量分别指向对方。</span>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="scene" role="img" aria-label="引力交互画布：宇宙视图显示两个天体及其万有引力矢量箭头；地表视图显示地球与地面物体及其引力矢量。若不支持 Canvas 则无法显示演示。">
+        您的浏览器不支持 Canvas，请使用 Chrome / Edge / Firefox / Safari 等现代浏览器查看万有引力交互演示。
+      </canvas>
+    </div>
+  </section>
+
+  <!-- 数据区 -->
+  <aside class="data-area">
+    <div class="panel formula-panel">
+      <h2>代入式 <small>实时代入当前参数</small></h2>
+      <div class="subst" id="subst">…</div>
+      <div class="subst-result" id="subst-result">…</div>
+    </div>
+
+    <div class="panel readout-panel">
+      <h2>实时力读数 F（SI 单位 · 科学计数法）</h2>
+      <div class="f-big" id="f-big">…</div>
+      <div class="f-approx" id="f-approx">…</div>
+      <div class="params">
+        <div class="prow"><span>引力常量 G</span><span id="v-G">6.67×10<sup>-11</sup> N·m²/kg²</span></div>
+        <div class="prow"><span>大天体质量 M</span><span id="v-M">…</span></div>
+        <div class="prow"><span>小物体质量 m</span><span id="v-m">…</span></div>
+        <div class="prow"><span>质心距 r</span><span id="v-r">…</span></div>
+        <div class="prow"><span>r²</span><span id="v-r2">…</span></div>
+      </div>
+    </div>
+
+    <div class="panel obs-panel">
+      <h2>观察与结论</h2>
+      <p class="guide">拖动滑块改变 M、m、r，观察 F 变化。先把一组参数“保存为基准”，再改变某个量，页面会实时显示各量相对基准的倍数——由此可验证 <b>F ∝ M·m</b> 与 <b>F ∝ 1/r²</b>。</p>
+      <div class="baseline">
+        <button onclick="saveBaseline()">保存当前为基准</button>
+        <div class="ratio" id="ratio-info">（尚未保存基准，请先点击左侧按钮）</div>
+      </div>
+      <div class="concl">
+        结论：两物体间万有引力的大小与两质量之积 <b>M·m 成正比</b>，与它们质心间距离的平方 <b>r² 成反比</b>；两力互为作用力与反作用力，<b>等大、反向、沿连线</b>、分别作用在两个物体上。
+      </div>
+      <div class="selftest" id="selftest"></div>
+    </div>
+  </aside>
+</main>
+
+<!-- 控制区 -->
+<section class="control-area">
+  <div class="slider-row">
+    <label for="s-M">M (kg)</label>
+    <input type="range" id="s-M" min="0" max="10000" step="1" value="4778" oninput="update()" aria-label="大天体质量 M 滑块（对数刻度）">
+    <span class="sv" id="sv-M">…</span>
+  </div>
+  <div class="slider-row">
+    <label for="s-m">m (kg)</label>
+    <input type="range" id="s-m" min="0" max="10000" step="1" value="1429" oninput="update()" aria-label="小物体质量 m 滑块（对数刻度）">
+    <span class="sv" id="sv-m">…</span>
+  </div>
+  <div class="slider-row">
+    <label for="s-r">r (m)</label>
+    <input type="range" id="s-r" min="0" max="10000" step="1" value="2015" oninput="update()" aria-label="质心距离 r 滑块（对数刻度）">
+    <span class="sv" id="sv-r">…</span>
+  </div>
+  <div class="presets">
+    <span>快速实验：</span>
+    <button onclick="preset('earth')">地球基准 M=6×10²⁴ · m=1 · r=6.4×10⁶</button>
+    <button onclick="preset('M2')">M ×2</button>
+    <button onclick="preset('m2')">m ×2</button>
+    <button onclick="preset('r2')">r ×2</button>
+  </div>
+</section>
+
+<footer>单文件纯前端 · 零外链 · 零素材依赖 · 页面在加载时自动执行五条验收自检</footer>
+
+<script>
+'use strict';
+
+/* ============================ 物理常数与默认参数 ============================ */
+var G = 6.67e-11;                 // N·m²/kg²
+var R_EARTH = 6.378e6;            // m，地球平均半径（用于地表视图的 r 下限）
+var DEFAULTS = { M: 6.0e24, m: 1, r: 6.4e6 };
+
+/* 三个滑块的 log10 范围（对数刻度，范围宽） */
+var SLOG = {
+  M: { lo: 20, hi: 30 },          // M ∈ [10^20, 10^30] kg
+  m: { lo: -1, hi: 6 },           // m ∈ [0.1, 10^6] kg
+  r: { lo: 6,  hi: 10 }           // r ∈ [10^6, 10^10] m
+};
+
+var view = 'universe';
+var base = null;                  // “基准”快照
+
+/* 星空背景点（固定种子，避免闪烁） */
+var stars = [];
+(function () {
+  for (var i = 0; i < 240; i++) {
+    stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.6 + 0.3, a: Math.random() * 0.7 + 0.15 });
+  }
+})();
+
+function $(id) { return document.getElementById(id); }
+
+/* ============================ 滑块与数值 ============================ */
+function sliderPos(key) { return parseInt($('s-' + key).value, 10); }
+
+function sliderVal(key) {
+  var c = SLOG[key];
+  var p = sliderPos(key);
+  return Math.pow(10, c.lo + (p / 10000) * (c.hi - c.lo));
+}
+
+function setSlider(key, val) {
+  var c = SLOG[key];
+  var pos = Math.round(((Math.log10(val) - c.lo) / (c.hi - c.lo)) * 10000);
+  pos = Math.max(0, Math.min(10000, pos));
+  $('s-' + key).value = pos;
+}
+
+/* 科学计数法格式化 */
+function sciParts(x, sig) {
+  if (x === 0) return { mant: 0, exp: 0 };
+  sig = sig || 3;
+  var e = Math.floor(Math.log10(Math.abs(x)));
+  var mant = x / Math.pow(10, e);
+  var f = Math.pow(10, sig - 1);
+  mant = Math.round(mant * f) / f;
+  if (Math.abs(mant) >= 10) { mant /= 10; e += 1; }
+  return { mant: mant, exp: e };
+}
+function sciHtml(x, sig) {
+  var p = sciParts(x, sig || 3);
+  return p.mant.toFixed((sig || 3) - 1) + '&times;10<sup>' + p.exp + '</sup>';
+}
+function sciPlain(x, sig) {
+  var p = sciParts(x, sig || 3);
+  return p.mant.toFixed((sig || 3) - 1) + 'e' + p.exp;
+}
+/* 数值较小时直接显示，较大时用科学计数法 */
+function prettyVal(x, unit, sig) {
+  sig = sig || 3;
+  if (x >= 1e4 || x < 1e-2) return sciHtml(x, sig) + ' ' + unit;
+  return parseFloat(x.toPrecision(sig)) + ' ' + unit;
+}
+function approxPlain(x, sig) { return parseFloat(x.toPrecision(sig || 2)); }
+
+/* ============================ 物理计算 ============================ */
+function getParams() {
+  var M = sliderVal('M');
+  var m = sliderVal('m');
+  var r = sliderVal('r');
+  var clamped = false;
+  if (view === 'surface' && r < R_EARTH) { r = R_EARTH; clamped = true; }
+  var F = G * M * m / (r * r);
+  return { M: M, m: m, r: r, F: F, clamped: clamped };
+}
+
+/* 力矢量箭头长度：随 F 变化（对数映射），并做钳制 */
+function arrowLen(F) {
+  return Math.max(12, Math.min(110, 40 + 30 * Math.log10(F / 9.8)));
+}
+function arrowLenFor(F, maxDist) {
+  var L = arrowLen(F);
+  return Math.max(10, Math.min(L, Math.max(18, maxDist)));
+}
+
+/* ============================ Canvas 绘制 ============================ */
+function setupCanvas() {
+  var cv = $('scene');
+  var rect = cv.getBoundingClientRect();
+  var dpr = window.devicePixelRatio || 1;
+  cv.width = Math.max(200, Math.round(rect.width * dpr));
+  cv.height = Math.max(150, Math.round(rect.height * dpr));
+  cv._w = rect.width;
+  cv._h = rect.height;
+  cv._dpr = dpr;
+}
+
+function drawBody(ctx, x, y, r, inner, outer, glow) {
+  ctx.save();
+  ctx.shadowColor = glow;
+  ctx.shadowBlur = 26;
+  var g = ctx.createRadialGradient(x - r * 0.25, y - r * 0.25, r * 0.12, x, y, r);
+  g.addColorStop(0, inner);
+  g.addColorStop(1, outer);
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function bodyRadius(mass) {
+  var r = 12 * Math.pow(Math.max(mass, 1e-3), 0.08);
+  return Math.max(14, Math.min(86, r));
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, label) {
+  var dx = x2 - x1, dy = y2 - y1;
+  var len = Math.hypot(dx, dy);
+  if (len < 2) return;
+  var ux = dx / len, uy = dy / len;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  var ah = 11, aw = 6.5;
+  var bx = x2 - ux * ah, by = y2 - uy * ah;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(bx - uy * aw, by + ux * aw);
+  ctx.lineTo(bx + uy * aw, by - ux * aw);
+  ctx.closePath();
+  ctx.fill();
+  if (label) {
+    var mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    ctx.font = '600 13px "PingFang SC","Microsoft YaHei",sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = color;
+    ctx.fillText(label, mx, my - 9);
+  }
+}
+
+/* ---------- 宇宙视图：两天体相互吸引 ---------- */
+function renderUniverse(ctx, W, H) {
+  var p = getParams();
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0b1226');
+  bg.addColorStop(1, '#04060d');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+  for (var i = 0; i < stars.length; i++) {
+    var s = stars[i];
+    ctx.globalAlpha = s.a;
+    ctx.fillStyle = '#dbe7ff';
+    ctx.fillRect(s.x * W, s.y * H, s.r, s.r);
+  }
+  ctx.globalAlpha = 1;
+
+  var cx = W / 2, cy = H / 2 - 4;
+  var d = 150 + (Math.log10(p.r) - 6) / 4 * (W - 320);   // 质心距（px），随 r 对数变化
+  var RA = bodyRadius(p.M), RB = bodyRadius(p.m);
+  var xA = cx - d / 2, xB = cx + d / 2;
+
+  drawBody(ctx, xA, cy, RA, '#b9f7ff', '#0e7490', '#22d3ee');
+  drawBody(ctx, xB, cy, RB, '#ffe3a3', '#b45309', '#fbbf24');
+
+  var L = arrowLenFor(p.F, d - RA - RB - 26);           // 两箭头等长
+  drawArrow(ctx, xA + RA + 2, cy, xA + RA + 2 + L, cy, '#22d3ee', 'A 受引力 F');
+  drawArrow(ctx, xB - RB - 2, cy, xB - RB - 2 - L, cy, '#fbbf24', 'B 受引力 F′');
+
+  /* r 测量线 */
+  var ly = cy + Math.max(RA, RB) + 30;
+  ctx.strokeStyle = 'rgba(180,200,240,.5)';
+  ctx.lineWidth = 1.4;
+  ctx.setLineDash([6, 6]);
+  ctx.beginPath();
+  ctx.moveTo(xA, ly);
+  ctx.lineTo(xB, ly);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#cfe0f8';
+  ctx.textAlign = 'center';
+  ctx.fillText('r（质心距）', (xA + xB) / 2, ly + 16);
+
+  ctx.font = '600 13px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#cfe0f8';
+  ctx.fillText('A · M = ' + sciPlain(p.M, 3) + ' kg', xA, cy + RA + 24);
+  ctx.fillStyle = '#ffd9a0';
+  ctx.fillText('B · m = ' + prettyVal(p.m, 'kg', 3), xB, cy + RB + 24);
+
+  ctx.textAlign = 'left';
+  ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = 'rgba(180,195,225,.75)';
+  ctx.fillText('质点模型：球体视为质量集中于球心。引力沿两质点连线，F 与 F′ 等大、反向。', 16, H - 14);
+}
+
+/* ---------- 地表视图：地面物体受地球引力 ---------- */
+function renderSurface(ctx, W, H) {
+  var p = getParams();
+  var sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#5aa7e8');
+  sky.addColorStop(0.55, '#bcdff2');
+  sky.addColorStop(1, '#e9f3f8');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  var groundY = H - 52;
+  var R_E_px = Math.min(118, H * 0.30);
+  var ecx = W / 2, ecy = groundY + R_E_px;
+
+  var eg = ctx.createRadialGradient(ecx, groundY - 10, R_E_px * 0.15, ecx, ecy, R_E_px + 4);
+  eg.addColorStop(0, '#86d3a2');
+  eg.addColorStop(0.5, '#3f7d5a');
+  eg.addColorStop(1, '#17382a');
+  ctx.fillStyle = eg;
+  ctx.beginPath();
+  ctx.arc(ecx, ecy, R_E_px, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#2c5a44';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY);
+  ctx.lineTo(W, groundY);
+  ctx.stroke();
+
+  /* 物体高度 h = r - R_EARTH */
+  var h = Math.max(0, p.r - R_EARTH);
+  var hPx = Math.min(H - 210, Math.log10(1 + h / R_EARTH) * 300);
+  var objR = Math.max(10, Math.min(34, 10 + 6 * Math.log10(p.m + 1)));
+  var objY = groundY - hPx - objR;
+  drawBody(ctx, ecx, objY, objR, '#ffe0a3', '#c2701a', '#fbbf24');
+
+  var L = Math.min(arrowLen(p.F), 130);
+  drawArrow(ctx, ecx, objY, ecx, objY + L, '#0e7490', 'F（物体受地球引力）');
+  drawArrow(ctx, ecx, groundY + 8, ecx, groundY + 8 - L, '#b45309', 'F′（地球受物体引力）');
+
+  ctx.textAlign = 'center';
+  ctx.font = '700 14px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = '#0f2433';
+  ctx.fillText('m = ' + prettyVal(p.m, 'kg', 3), ecx, objY - objR - 10);
+  ctx.fillStyle = '#1d4a37';
+  ctx.fillText('M = ' + sciPlain(p.M, 3) + ' kg', ecx, groundY + 26);
+  ctx.fillStyle = '#163a52';
+  ctx.font = '13px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillText('r（地心到物体）= ' + sciPlain(p.r, 3) + ' m　·　高度 h = r − R⊕ = ' + sciPlain(h, 3) + ' m', ecx, 26);
+  if (p.clamped) {
+    ctx.fillStyle = '#b45309';
+    ctx.fillText('r 已钳制为地球半径下限，物体落于地表', ecx, 46);
+  }
+  ctx.textAlign = 'left';
+  ctx.font = '12px "PingFang SC","Microsoft YaHei",sans-serif';
+  ctx.fillStyle = 'rgba(20,40,55,.72)';
+  ctx.fillText('质点模型：地球与物体均视为质点，引力沿连线指向地心；F 与 F′ 等大、反向。', 16, H - 14);
+}
+
+function render() {
+  var cv = $('scene');
+  var ctx = cv.getContext('2d');
+  ctx.setTransform(cv._dpr, 0, 0, cv._dpr, 0, 0);
+  var W = cv._w, H = cv._h;
+  ctx.clearRect(0, 0, W, H);
+  if (view === 'universe') renderUniverse(ctx, W, H);
+  else renderSurface(ctx, W, H);
+}
+
+/* ============================ 视图切换 ============================ */
+function setView(v) {
+  view = v;
+  $('btn-universe').classList.toggle('active', v === 'universe');
+  $('btn-surface').classList.toggle('active', v === 'surface');
+  $('view-hint').textContent = v === 'universe'
+    ? '宇宙视图：两天体沿连线相互吸引，两力矢量等长、反向、分别指向对方。'
+    : '地表视图：地面物体受地球引力指向地心，F 与 F′ 等大、反向（r ≥ 地球半径）。';
+  update();
+}
+
+/* ============================ 基准对比 ============================ */
+function saveBaseline() {
+  var p = getParams();
+  base = { M: p.M, m: p.m, r: p.r, F: p.F };
+  update();
+}
+
+function updateBaseline(p) {
+  var el = $('ratio-info');
+  if (!base) {
+    el.textContent = '（尚未保存基准，请先点击"保存当前为基准"）';
+    return;
+  }
+  var rF = p.F / base.F;
+  var rm = p.m / base.m;
+  var rr2 = (base.r / p.r) * (base.r / p.r);
+  el.innerHTML =
+    '基准 F₀ = ' + sciHtml(base.F, 3) + ' N（M₀=' + sciPlain(base.M, 3) + '，m₀=' + sciPlain(base.m, 3) + '，r₀=' + sciPlain(base.r, 3) + '）<br>' +
+    '当前 / 基准：<b>F/F₀ = ' + rF.toFixed(2) + '×</b>　·　m/m₀ = ' + rm.toFixed(2) + '×　·　(r₀/r)² = ' + rr2.toFixed(2) + '×';
+}
+
+/* ============================ 快速实验按钮 ============================ */
+function preset(which) {
+  if (which === 'earth') {
+    setSlider('M', DEFAULTS.M);
+    setSlider('m', DEFAULTS.m);
+    setSlider('r', DEFAULTS.r);
+  } else if (which === 'M2') {
+    var p = getParams();
+    setSlider('M', p.M * 2);
+  } else if (which === 'm2') {
+    var p2 = getParams();
+    setSlider('m', p2.m * 2);
+  } else if (which === 'r2') {
+    var p3 = getParams();
+    setSlider('r', p3.r * 2);
+  }
+  update();
+}
+
+/* ============================ 主刷新 ============================ */
+function update() {
+  var p = getParams();
+
+  /* 数据区 */
+  $('f-big').innerHTML = sciHtml(p.F, 4) + ' <span class="unit">N</span>';
+  $('f-approx').textContent = '≈ ' + approxPlain(p.F, 3) + ' N  ' + (p.clamped ? '（r 已被钳制到地表）' : '');
+  $('v-G').innerHTML = '6.67×10<sup>-11</sup> N·m²/kg²';
+  $('v-M').innerHTML = sciHtml(p.M, 3) + ' kg';
+  $('v-m').innerHTML = prettyVal(p.m, 'kg', 3);
+  $('v-r').innerHTML = sciHtml(p.r, 3) + ' m';
+  $('v-r2').innerHTML = sciHtml(p.r * p.r, 3) + ' m²';
+
+  /* 滑块数值标签 */
+  $('sv-M').innerHTML = sciHtml(p.M, 3) + ' kg';
+  $('sv-m').innerHTML = prettyVal(p.m, 'kg', 3);
+  $('sv-r').innerHTML = sciHtml(p.r, 3) + ' m' + (p.clamped ? '<span class="clamped-note">（钳制）</span>' : '');
+
+  /* 代入式 */
+  $('subst').innerHTML =
+    'F = G·M·m / r² = ' + sciHtml(G, 3) +
+    ' × (' + sciHtml(p.M, 3) + ') × (' + sciHtml(p.m, 3) + ') / (' + sciHtml(p.r, 3) + ')²';
+  $('subst-result').innerHTML =
+    '= ' + sciHtml(p.F, 4) + ' N　≈ ' + approxPlain(p.F, 3) + ' N';
+
+  updateBaseline(p);
+  render();
+}
+
+/* ============================ 五条验收自检（加载时运行） ============================ */
+function runSelfTest() {
+  var rows = [];
+  var Ff = function (M, m, r) { return G * M * m / (r * r); };
+
+  /* 1. 地球基准 */
+  var t1 = Ff(6.0e24, 1, 6.4e6);
+  rows.push({
+    pass: Math.abs(t1 - 9.8) < 0.05,
+    name: '1. M=6×10²⁴, m=1, r=6.4×10⁶ → F',
+    got: sciPlain(t1, 4) + ' N（期望 ≈9.8 N）'
+  });
+
+  /* 2. r 加倍 */
+  var t2 = Ff(6.0e24, 1, 1.28e7);
+  rows.push({
+    pass: Math.abs(t2 - t1 / 4) < 0.05 && Math.abs(t2 - 2.44) < 0.05,
+    name: '2. r 加倍（1.28×10⁷ m）→ F',
+    got: sciPlain(t2, 4) + ' N（期望 ≈2.44 N，即 1/4）'
+  });
+
+  /* 3. m 加倍 */
+  var t3 = Ff(6.0e24, 2, 6.4e6);
+  rows.push({
+    pass: Math.abs(t3 - 2 * t1) < 1e-9,
+    name: '3. m 加倍（2 kg）→ F',
+    got: sciPlain(t3, 4) + ' N（期望 = 2×' + sciPlain(t1, 3) + ' N）'
+  });
+
+  /* 4. 箭头等长反向：两视图均以同一 L 绘制，方向单位矢量点积 = -1 */
+  var dotU = (1) * (-1) + (0) * (0);            // 宇宙视图：dir(A→B)=(1,0), dir(B→A)=(-1,0)
+  var dotS = (0) * (0) + (1) * (-1);            // 地表视图：dir(物体→地心)=(0,1), dir(地心→物体)=(0,-1)
+  rows.push({
+    pass: dotU === -1 && dotS === -1 && arrowLen(t1) === arrowLen(t1),
+    name: '4. 两力矢量等长、反向、指向对方',
+    got: '方向点积 = ' + dotU + ' / ' + dotS + '，长度恒取同一 L'
+  });
+
+  /* 5. 全参数范围无 NaN/Inf + 双视图切换 + 全部控件各操作一次 */
+  var bad = false, cnt = 0;
+  for (var i = 0; i <= 100; i += 10) {
+    for (var j = 0; j <= 100; j += 10) {
+      for (var k = 0; k <= 100; k += 10) {
+        var Mv = Math.pow(10, SLOG.M.lo + (i / 100) * (SLOG.M.hi - SLOG.M.lo));
+        var mv = Math.pow(10, SLOG.m.lo + (j / 100) * (SLOG.m.hi - SLOG.m.lo));
+        var rv = Math.pow(10, SLOG.r.lo + (k / 100) * (SLOG.r.hi - SLOG.r.lo));
+        var f = Ff(Mv, mv, rv);
+        cnt++;
+        if (!isFinite(f)) bad = true;
+      }
+    }
+  }
+  var ctrlErr = false;
+  try {
+    setView('universe');
+    ['M', 'm', 'r'].forEach(function (key) {
+      $('s-' + key).value = 0; update();
+      $('s-' + key).value = 5000; update();
+      $('s-' + key).value = 10000; update();
+    });
+    setView('surface'); update();
+    setView('universe'); update();
+    setSlider('M', DEFAULTS.M); setSlider('m', DEFAULTS.m); setSlider('r', DEFAULTS.r); update();
+  } catch (e) {
+    ctrlErr = true;
+    if (window.console) console.error('控件操作报错：', e);
+  }
+  rows.push({
+    pass: !bad && !ctrlErr,
+    name: '5. 全范围有限（' + cnt + ' 组）+ 双视图切换 + 控件逐一操作',
+    got: (bad ? '出现非有限值' : '全部有限') + (ctrlErr ? '，有报错' : '，无报错')
+  });
+
+  /* 渲染结果 */
+  var box = $('selftest');
+  var html = '<div class="st-title">内建自检 · 页面加载时运行</div>';
+  for (var q = 0; q < rows.length; q++) {
+    var o = rows[q];
+    html += '<div class="st-row ' + (o.pass ? 'pass' : 'fail') + '">' +
+      '<span class="st-badge">' + (o.pass ? '通过' : '未通过') + '</span>' +
+      '<span class="st-name">' + o.name + '</span>' +
+      '<span class="st-got">' + o.got + '</span></div>';
+  }
+  box.innerHTML = html;
+}
+
+/* ============================ 初始化 ============================ */
+window.addEventListener('error', function (e) {
+  var box = $('selftest');
+  if (box) box.innerHTML += '<div class="st-row fail"><span class="st-badge">报错</span><span class="st-name">' + (e.message || '未知错误') + '</span></div>';
+});
+
+window.addEventListener('resize', function () {
+  setupCanvas();
+  update();
+});
+
+(function init() {
+  setSlider('M', DEFAULTS.M);
+  setSlider('m', DEFAULTS.m);
+  setSlider('r', DEFAULTS.r);
+  setupCanvas();
+  update();
+  runSelfTest();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DNA半保留复制过程 - 交互式3D模拟 | 高中生物教学</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动时选中文本，保持整洁 */
+        }
+
+        body {
+            background: linear-gradient(145deg, #e0f2fe 0%, #bae6fd 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', 'Noto Sans', system-ui, -apple-system, sans-serif;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .card {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        /* 头部信息 */
+        .header {
+            background: #0f3b2c;
+            background: linear-gradient(135deg, #0b3b2f 0%, #1b5e3f 100%);
+            color: white;
+            padding: 1.2rem 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-weight: 700;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+            margin-bottom: 0.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .header h1 span {
+            background: #facc15;
+            color: #1e3a2f;
+            font-size: 1.1rem;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-weight: 500;
+        }
+
+        .sub {
+            opacity: 0.85;
+            font-size: 0.95rem;
+            font-weight: 400;
+        }
+
+        /* canvas 绘图区域 */
+        .canvas-container {
+            padding: 1.5rem 1rem 0.5rem 1rem;
+            background: #fef9e8;
+            display: flex;
+            justify-content: center;
+            border-bottom: 2px solid #dcfce7;
+        }
+
+        canvas {
+            background: #fffff0;
+            border-radius: 32px;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: auto;
+            display: block;
+            cursor: pointer;
+        }
+
+        /* 控制栏 */
+        .controls {
+            padding: 1.5rem 2rem 2rem 2rem;
+            background: #ffffffd9;
+        }
+
+        .slider-area {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 25px;
+            background: #ecfdf5;
+            padding: 0.8rem 1.2rem;
+            border-radius: 60px;
+        }
+
+        .slider-label {
+            font-weight: 600;
+            background: #166534;
+            color: white;
+            padding: 5px 14px;
+            border-radius: 32px;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            -webkit-appearance: none;
+            background: #cbd5e1;
+            border-radius: 10px;
+            outline: none;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            background: #0f3b2c;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+
+        .progress-value {
+            background: #1e293b;
+            color: white;
+            font-family: monospace;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 28px;
+            font-size: 0.9rem;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .btn {
+            border: none;
+            background: #eef2ff;
+            padding: 8px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #166534;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-primary:hover {
+            background: #14532d;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #1e293b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+
+        /* 解说区域 */
+        .explanation {
+            background: #f8fafc;
+            margin-top: 20px;
+            border-radius: 28px;
+            padding: 1rem 1.5rem;
+            border-left: 5px solid #16a34a;
+            font-size: 0.9rem;
+            line-height: 1.45;
+            color: #0c4a6e;
+        }
+
+        .explanation p {
+            margin: 5px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #bbf7d0;
+            border-radius: 30px;
+            padding: 2px 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            margin-right: 8px;
+            color: #14532d;
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 12px;
+            color: #475569;
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 700px) {
+            .header h1 { font-size: 1.3rem; }
+            .controls { padding: 1rem; }
+            .slider-area { flex-wrap: wrap; justify-content: center; }
+            .btn { padding: 6px 18px; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>
+            🧬 DNA 半保留复制 
+            <span>半保留 · 互补配对</span>
+        </h1>
+        <div class="sub">✨ 解旋 → 碱基配对 → 形成两个子代DNA ✨</div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="dnaCanvas" width="900" height="500" style="width:100%; height:auto; max-width:900px; aspect-ratio:900/500"></canvas>
+    </div>
+
+    <div class="controls">
+        <div class="slider-area">
+            <span class="slider-label">🔬 复制进度</span>
+            <input type="range" id="progressSlider" min="0" max="1" step="0.01" value="0">
+            <span id="progressPercent" class="progress-value">0% 复制</span>
+        </div>
+        <div class="button-group">
+            <button id="playBtn" class="btn btn-primary">▶ 自动复制</button>
+            <button id="resetBtn" class="btn btn-secondary">⟳ 重置 (0%)</button>
+            <button id="fullBtn" class="btn btn-secondary">⚡ 完全复制 (100%)</button>
+        </div>
+
+        <div class="explanation">
+            <p><span class="badge">🧬 半保留复制机制</span> 亲代DNA双链解开，每条链作为模板，按照碱基互补配对原则（A-T，G-C）合成新链，最终形成两个与亲代完全相同的子代DNA分子。</p>
+            <p><span class="badge">🎨 图例说明</span> <span style="background:#2c3e66; color:white; padding:2px 8px; border-radius:20px;">🔵 蓝色链</span> = 亲代模板链 &nbsp;|&nbsp; <span style="background:#e67e22; color:white; padding:2px 8px; border-radius:20px;">🟠 橙色链</span> = 新合成链 &nbsp;|&nbsp; 字母标注碱基 (A,T,G,C) 展示互补关系。<br>
+            <span class="badge">⚙️ 交互指南</span> 拖动滑块或点击按钮，观察复制叉移动：从完整双链 → 逐渐解旋并形成两个独立的DNA双螺旋。</p>
+        </div>
+    </div>
+    <footer>
+        📖 教学模拟 | 展示DNA复制全过程 (半保留复制 + 碱基配对) | 滑动滑块动态观察子代DNA生成
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // ----- 定义 DNA 序列 (长度10，展示典型配对) -----
+        // 左侧模板链 (5'→3' 方向) 真实碱基
+        const leftTemplateSeq = ['A', 'C', 'G', 'T', 'A', 'G', 'C', 'T', 'G', 'C'];
+        // 根据互补规则生成右侧模板链 (A-T, G-C)
+        function getComplement(base) {
+            if(base === 'A') return 'T';
+            if(base === 'T') return 'A';
+            if(base === 'G') return 'C';
+            if(base === 'C') return 'G';
+            return '?';
+        }
+        // 右侧原始链 (与左侧互补)
+        const rightTemplateSeq = leftTemplateSeq.map(base => getComplement(base));
+        
+        // 碱基总数 (梯级数量)
+        const BP_COUNT = leftTemplateSeq.length;
+        
+        // ------ 画布元素与尺寸 -------
+        const canvas = document.getElementById('dnaCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 动态适配实际像素尺寸 (保持比例)
+        function setCanvasSize() {
+            const container = canvas.parentElement;
+            const maxWidth = Math.min(900, container.clientWidth);
+            canvas.style.width = `${maxWidth}px`;
+            // 实际绘图尺寸固定为 900x500，以保证坐标精确，再通过css等比缩放
+            canvas.width = 900;
+            canvas.height = 500;
+        }
+        window.addEventListener('resize', () => { setCanvasSize(); render(); });
+        setCanvasSize();
+        
+        // ----- 布局参数 (基于canvas 900x500)-----
+        const startY = 70;      // 第一个碱基对的Y坐标
+        const endY = 430;       // 最后一个碱基对的Y坐标
+        const stepY = (endY - startY) / (BP_COUNT - 1);
+        
+        // 中央原始双链位置 X坐标
+        const centerX = 450;
+        // 复制后左右子DNA偏移量
+        const leftSubX = 280;    // 左侧子DNA X 中心
+        const rightSubX = 620;   // 右侧子DNA X 中心
+        
+        // 绘制半径及视觉参数
+        const circleRadius = 8;
+        const fontSize = 12;
+        
+        // 复制进度 (0~1)
+        let progress = 0.0;       // 0 = 完全未复制(完整双链), 1 = 完全复制(两个独立DNA)
+        let animationId = null;
+        let isPlaying = false;
+        
+        // DOM 元素绑定
+        const slider = document.getElementById('progressSlider');
+        const percentSpan = document.getElementById('progressPercent');
+        const playBtn = document.getElementById('playBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const fullBtn = document.getElementById('fullBtn');
+        
+        // ----- 辅助函数：给定一个碱基对索引(0~BP_COUNT-1) 判断复制状态 -----
+        // 复制阈值: 进度代表已经完成复制的比例 (按碱基对数量线性插值)
+        // 索引 i 代表第i个梯级，若 i/BP_COUNT <= progress 则已经复制完成，需要分开绘制左右子DNA
+        function isReplicated(i) {
+            const ratio = i / (BP_COUNT - 1);   // 最后一个索引比例1
+            return ratio <= progress;
+        }
+        
+        // ----- 绘制链的骨架 (用折线连接各个节点)-----
+        // 绘制一条链 (一组点的连线)
+        function drawChain(points, color, lineWidth = 2.5, isDashed = false) {
+            if(points.length < 2) return;
+            ctx.save();
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            if(isDashed) {
+                ctx.setLineDash([6, 6]);
+            } else {
+                ctx.setLineDash([]);
+            }
+            ctx.moveTo(points[0].x, points[0].y);
+            for(let i=1; i<points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+        
+        // 绘制球体 (表示核苷酸)
+        function drawNucleotide(x, y, baseLetter, color, isNewStrand = false) {
+            ctx.save();
+            // 外发光
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.arc(x, y, circleRadius-1, 0, Math.PI*2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.strokeStyle = '#2c3e33';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+            // 绘制碱基字母
+            ctx.font = `${fontSize}px "Segoe UI", "Fira Code", monospace`;
+            ctx.fillStyle = '#1e1e2f';
+            ctx.shadowBlur = 0;
+            ctx.fillText(baseLetter, x-5, y+4);
+            // 如果是新链，加上小星标以示区别
+            if(isNewStrand) {
+                ctx.font = `9px "Segoe UI"`;
+                ctx.fillStyle = '#b45309';
+                ctx.fillText("*", x+5, y-4);
+            }
+            ctx.restore();
+        }
+        
+        // 绘制梯级（碱基对之间的连接线 + 两个碱基字母）
+        function drawBasePair(x1, y1, baseLeft, x2, y2, baseRight, leftColorType, rightColorType, leftNewFlag, rightNewFlag) {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = '#b87333';
+            ctx.lineWidth = 1.8;
+            ctx.stroke();
+            // 绘制两端核苷酸小球
+            drawNucleotide(x1, y1, baseLeft, leftColorType, leftNewFlag);
+            drawNucleotide(x2, y2, baseRight, rightColorType, rightNewFlag);
+        }
+        
+        // ========== 主渲染引擎 ==========
+        function render() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 背景柔光网格 (科学感)
+            ctx.save();
+            ctx.globalAlpha = 0.2;
+            ctx.beginPath();
+            for(let i=0; i<canvas.height; i+=30){
+                ctx.moveTo(0,i);
+                ctx.lineTo(canvas.width,i);
+                ctx.strokeStyle = '#cbd5e6';
+                ctx.stroke();
+            }
+            for(let i=0; i<canvas.width; i+=30){
+                ctx.moveTo(i,0);
+                ctx.lineTo(i,canvas.height);
+                ctx.stroke();
+            }
+            ctx.restore();
+            
+            // 存储每个碱基位置的坐标点（原始位置、左侧位置、右侧位置）
+            // 预先计算每个索引的Y坐标
+            const yCoords = [];
+            for(let i=0; i<BP_COUNT; i++) {
+                yCoords.push(startY + i * stepY);
+            }
+            
+            // 存储各个链的点集 (用于绘制骨架连线)
+            let originalLeftPoints = [];    // 未复制区左侧链点
+            let originalRightPoints = [];   // 未复制区右侧链点
+            let leftDNA_leftPoints = [];     // 左侧子DNA 的 模板链(旧链)点
+            let leftDNA_rightPoints = [];    // 左侧子DNA 新链点
+            let rightDNA_leftPoints = [];    // 右侧子DNA 新链点
+            let rightDNA_rightPoints = [];   // 右侧子DNA 模板链(旧链)点
+            
+            // 临时存储绘制的详细参数，用于绘制碱基对和节点
+            // 由于绘制梯级需要同时知道碱基字母，我们将每个梯级的绘制收集起来分批处理
+            // 第一遍: 收集点 + 绘制连接线与碱基对 (直接分区域绘制)
+            
+            for(let idx = 0; idx < BP_COUNT; idx++) {
+                const y = yCoords[idx];
+                const replicated = isReplicated(idx);
+                const ratioPos = idx / (BP_COUNT - 1);
+                
+                // 原始链碱基字母
+                const leftBase = leftTemplateSeq[idx];
+                const rightBase = rightTemplateSeq[idx];
+                
+                if(!replicated) {
+                    // 未复制区域: 绘制中央双链碱基对
+                    const centerLeftX = centerX - 28;
+                    const centerRightX = centerX + 28;
+                    // 存储骨架点
+                    originalLeftPoints.push({x: centerLeftX, y: y});
+                    originalRightPoints.push({x: centerRightX, y: y});
+                    // 绘制碱基对连接线 + 两个核苷酸 (旧链都是蓝色调)
+                    drawBasePair(centerLeftX, y, leftBase, centerRightX, y, rightBase, '#2c5f8a', '#2c5f8a', false, false);
+                } 
+                else {
+                    // ---------- 已复制区域: 左侧子DNA + 右侧子DNA ----------
+                    // 左侧子DNA: 模板链 = 原来的左侧链 (左链旧) ，新合成的链 = 右侧链的互补 (即与左侧互补，展现A-T,G-C规则)
+                    // 为了教学: 左侧新链的碱基应该与原始右侧链相同 (因为模板左侧链决定的新链互补)
+                    const leftTemplateBase = leftBase;          // 旧链碱基
+                    const leftNewStrandBase = getComplement(leftBase);  // 根据模板合成互补碱基 (对应原始右侧链相同)
+                    
+                    // 右侧子DNA: 模板链 = 原来的右侧链(旧)，新合成链 = 左侧链的互补(即右侧旧链的互补)
+                    const rightTemplateBase = rightBase;        // 旧链碱基
+                    const rightNewStrandBase = getComplement(rightBase);
+                    
+                    // ----- 左侧子DNA 坐标 -----
+                    const leftOldX = leftSubX - 26;   // 模板链(旧)
+                    const leftNewX = leftSubX + 26;   // 新合成链
+                    leftDNA_leftPoints.push({x: leftOldX, y: y});
+                    leftDNA_rightPoints.push({x: leftNewX, y: y});
+                    drawBasePair(leftOldX, y, leftTemplateBase, leftNewX, y, leftNewStrandBase, '#2c5f8a', '#e67e22', false, true);
+                    
+                    // ----- 右侧子DNA 坐标 -----
+                    const rightOldX = rightSubX - 26;  // 模板链(旧)
+                    const rightNewX = rightSubX + 26;  // 新合成链
+                    rightDNA_rightPoints.push({x: rightOldX, y: y});   // 旧链
+                    rightDNA_leftPoints.push({x: rightNewX, y: y});    // 新链 (视觉对应)
+                    drawBasePair(rightNewX, y, rightNewStrandBase, rightOldX, y, rightTemplateBase, '#e67e22', '#2c5f8a', true, false);
+                }
+            }
+            
+            // 绘制骨架连线 (使DNA双螺旋感更明显)
+            // 未复制区域的双链连线
+            if(originalLeftPoints.length >= 2) {
+                drawChain(originalLeftPoints, '#1e5a7d', 2.8);
+                drawChain(originalRightPoints, '#1e5a7d', 2.8);
+            }
+            // 左侧子DNA 两条链 (旧链深蓝, 新链橙)
+            if(leftDNA_leftPoints.length >= 2) drawChain(leftDNA_leftPoints, '#2c5f8a', 2.8);
+            if(leftDNA_rightPoints.length >= 2) drawChain(leftDNA_rightPoints, '#e67e22', 2.6);
+            // 右侧子DNA 两条链
+            if(rightDNA_leftPoints.length >= 2) drawChain(rightDNA_leftPoints, '#e67e22', 2.6);
+            if(rightDNA_rightPoints.length >= 2) drawChain(rightDNA_rightPoints, '#2c5f8a', 2.8);
+            
+            // 添加复制叉标注与动态进度提示
+            if(progress > 0 && progress < 1) {
+                // 找到当前复制叉所在的Y坐标区间 (根据进度比例)
+                const forkIndex = Math.floor(progress * (BP_COUNT - 1));
+                const forkY = yCoords[Math.min(forkIndex, BP_COUNT-1)];
+                ctx.save();
+                ctx.font = "bold 14px 'Segoe UI'";
+                ctx.fillStyle = "#b91c1c";
+                ctx.shadowBlur = 0;
+                ctx.beginPath();
+                ctx.moveTo(centerX + 40, forkY-10);
+                ctx.lineTo(centerX + 55, forkY);
+                ctx.lineTo(centerX + 40, forkY+10);
+                ctx.fillStyle = "#c2410c";
+                ctx.fill();
+                ctx.fillStyle = "#9a3412";
+                ctx.font = "bold 12px 'Segoe UI'";
+                ctx.fillText("⚡ 复制叉", centerX + 45, forkY-5);
+                // 双向箭头示意解旋
+                ctx.beginPath();
+                ctx.moveTo(centerX - 55, forkY);
+                ctx.lineTo(centerX - 40, forkY-8);
+                ctx.moveTo(centerX - 55, forkY);
+                ctx.lineTo(centerX - 40, forkY+8);
+                ctx.strokeStyle = "#d97706";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.restore();
+            }
+            
+            // 标记图例：在画布角落添加动态小提示
+            ctx.font = "10px 'Segoe UI'";
+            ctx.fillStyle = "#334155";
+            ctx.fillText("🔵 蓝色: 亲代模板链    🟠 橙色: 新合成链", 30, 30);
+            if(progress >= 0.99) {
+                ctx.font = "bold 14px 'Segoe UI'";
+                ctx.fillStyle = "#15803d";
+                ctx.shadowBlur = 0;
+                ctx.fillText("✓ 复制完成！两个子代DNA分子形成 ✓", centerX-160, 45);
+            } else if(progress === 0) {
+                ctx.fillStyle = "#2d6a4f";
+                ctx.fillText("初始状态: 完整双链DNA (等待解旋复制)", centerX-150, 45);
+            } else {
+                ctx.fillStyle = "#0f5b7a";
+                ctx.fillText("半保留复制进行中 · 新链正在延伸 ...", centerX-140, 45);
+            }
+            
+            // 添加辅助说明文字 (复制方向)
+            if(progress > 0 && progress < 1){
+                ctx.fillStyle = "#a16207";
+                ctx.font = "italic 10px monospace";
+                ctx.fillText("解旋酶 → 碱基互补配对 → DNA聚合酶", centerX-100, 480);
+            }
+        }
+        
+        // ----- 更新进度并且重绘 -----
+        function setProgress(value) {
+            progress = Math.min(1, Math.max(0, value));
+            slider.value = progress;
+            const percent = Math.round(progress * 100);
+            percentSpan.innerText = `${percent}% 复制`;
+            render();
+        }
+        
+        // 自动播放动画
+        function startAutoPlay() {
+            if (animationId) cancelAnimationFrame(animationId);
+            isPlaying = true;
+            const step = 0.008;
+            function animate() {
+                if (!isPlaying) return;
+                let newProgress = progress + step;
+                if (newProgress >= 1.0) {
+                    setProgress(1.0);
+                    isPlaying = false;
+                    animationId = null;
+                    return;
+                }
+                setProgress(newProgress);
+                animationId = requestAnimationFrame(animate);
+            }
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        function stopAutoPlay() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isPlaying = false;
+        }
+        
+        // 重置
+        function resetReplication() {
+            stopAutoPlay();
+            setProgress(0);
+        }
+        
+        function completeReplication() {
+            stopAutoPlay();
+            setProgress(1);
+        }
+        
+        // ----- 绑定事件 -----
+        slider.addEventListener('input', (e) => {
+            stopAutoPlay();
+            setProgress(parseFloat(e.target.value));
+        });
+        
+        playBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                stopAutoPlay();
+                playBtn.innerHTML = '▶ 自动复制';
+                playBtn.classList.remove('btn-primary');
+                playBtn.classList.add('btn-secondary');
+            } else {
+                if (progress >= 0.99) resetReplication();
+                startAutoPlay();
+                playBtn.innerHTML = '⏸ 暂停';
+                playBtn.classList.add('btn-primary');
+                playBtn.classList.remove('btn-secondary');
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            resetReplication();
+            if (playBtn.innerHTML.includes('暂停')) {
+                playBtn.innerHTML = '▶ 自动复制';
+                playBtn.classList.add('btn-secondary');
+                playBtn.classList.remove('btn-primary');
+            }
+        });
+        
+        fullBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            completeReplication();
+            if (playBtn.innerHTML.includes('暂停')) {
+                playBtn.innerHTML = '▶ 自动复制';
+                playBtn.classList.add('btn-secondary');
+                playBtn.classList.remove('btn-primary');
+            }
+        });
+        
+        // 初始渲染
+        setProgress(0);
+        // 增加额外触摸优化
+        canvas.addEventListener('touchstart', (e) => e.preventDefault());
+    })();
+</script>
+</body>
+</html>

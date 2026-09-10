@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>地理水循环系统原理 - 点击高亮互动演示 | 高中地理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #c1e2f0 0%, #9fcde2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', '微软雅黑', system-ui, sans-serif;
+            padding: 24px;
+        }
+
+        /* 主容器 */
+        .water-cycle-card {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 245, 0.96);
+            border-radius: 2rem;
+            box-shadow: 0 30px 50px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            backdrop-filter: blur(1px);
+        }
+
+        /* 头部 */
+        .header {
+            background: linear-gradient(135deg, #0a3b2f, #145c3e);
+            padding: 1.6rem 2rem;
+            text-align: center;
+            color: white;
+            border-bottom: 5px solid #ffcd7e;
+        }
+        .header h1 {
+            font-size: 2rem;
+            letter-spacing: 1px;
+            font-weight: 700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .header p {
+            font-size: 1rem;
+            margin-top: 8px;
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        /* 两栏布局调整：左侧为示意图+图表区域，右侧为详细文字说明 */
+        .content-split {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 2rem 2rem 2rem 2rem;
+            gap: 2rem;
+        }
+
+        /* 左侧大面板（示意图 + 左下角问答卡片 + 统计图表区） */
+        .visual-panel {
+            flex: 2;
+            min-width: 300px;
+            background: #fefcf0;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .canvas-wrapper {
+            background: #eaf7ff;
+            border-radius: 1.5rem;
+            display: flex;
+            justify-content: center;
+            box-shadow: inset 0 0 0 2px white, 0 6px 14px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+        canvas#waterCycleCanvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: linear-gradient(180deg, #cbeafe 0%, #def0fa 100%);
+            border-radius: 1.2rem;
+            cursor: pointer;
+        }
+        .legend-bar {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.2rem;
+            background: #ffffffcc;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        .legend-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .color-badge {
+            width: 18px;
+            height: 14px;
+            border-radius: 20px;
+        }
+        .interact-tip {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 4px;
+            color: #2d6a4f;
+            font-weight: 500;
+        }
+        
+        /* 左下角组合卡片: 问答 + 统计图表区 */
+        .info-card {
+            background: #ffffffea;
+            border-radius: 1.2rem;
+            padding: 0.7rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9f0e3;
+        }
+        /* 问答样式 */
+        .qa-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: #f9fef5;
+            padding: 0.5rem 0.8rem;
+            border-radius: 1rem;
+        }
+        .qa-icon { font-size: 1.3rem; min-width: 32px; text-align: center; }
+        .qa-content { flex: 1; }
+        .qa-question {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #2c6e49;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .qa-answer {
+            font-size: 0.75rem;
+            color: #3e5a3a;
+            line-height: 1.4;
+        }
+        .daily-tag {
+            font-size: 0.65rem;
+            background: #e2f0da;
+            display: inline-block;
+            padding: 0px 8px;
+            border-radius: 20px;
+            font-weight: normal;
+        }
+        .separator-light {
+            height: 1px;
+            background: #ddecd0;
+            margin: 0.1rem 0;
+        }
+        /* 统计图表区域 - 放大尺寸，确保数字清晰 */
+        .charts-container {
+            background: #fefdf7;
+            border-radius: 1rem;
+            padding: 0.8rem 0.5rem 0.8rem 0.5rem;
+            margin-top: 0.2rem;
+            border: 1px solid #e2ebd6;
+        }
+        .charts-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #2a5c3c;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-left: 6px;
+        }
+        .charts-flex {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .chart-card {
+            background: #ffffff;
+            border-radius: 1rem;
+            padding: 10px 8px 8px 8px;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .chart-card canvas {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+            max-width: 180px;
+        }
+        .chart-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #2b6e44;
+            margin-top: 8px;
+            background: #f3f8ef;
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 30px;
+        }
+        /* 右侧详细解释板块 - 将卡片与点击区域联动高亮 */
+        .explanation-detailed {
+            flex: 1.3;
+            min-width: 280px;
+            background: #ffffffea;
+            border-radius: 1.8rem;
+            padding: 1.3rem 1.6rem;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+            border: 1px solid #fff0cf;
+            transition: all 0.2s;
+        }
+        .section-header {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1f5e3a;
+            border-left: 7px solid #f4a261;
+            padding-left: 16px;
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .process-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1.3rem;
+        }
+        .step-item {
+            background: #fefef7;
+            border-radius: 1.2rem;
+            padding: 0.9rem 1rem;
+            transition: all 0.25s ease;
+            border-left: 5px solid #5e9b7a;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            cursor: pointer;
+        }
+        .step-item.active-highlight {
+            background: #fff2db;
+            border-left-color: #f4a261;
+            box-shadow: 0 6px 14px rgba(244, 162, 97, 0.2);
+            transform: scale(1.01);
+        }
+        /* 针对不同过程单独高亮配色 (额外视觉) */
+        .step-item.active-highlight[data-step="evap"] { background: #fff2db; border-left-color: #f4a261; }
+        .step-item.active-highlight[data-step="transport"] { background: #e2f0ff; border-left-color: #4f9fff; }
+        .step-item.active-highlight[data-step="precip"] { background: #defff0; border-left-color: #2a9d8f; }
+        .step-item.active-highlight[data-step="runoff"] { background: #eaf4e6; border-left-color: #b66d3b; }
+
+        .step-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2b5d3b;
+            margin-bottom: 10px;
+        }
+        .step-desc {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #2c3a2b;
+            margin-bottom: 8px;
+        }
+        .step-detail {
+            font-size: 0.78rem;
+            background: #eef4ea;
+            padding: 6px 12px;
+            border-radius: 18px;
+            color: #2b5a2e;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+        .fun-box {
+            margin-top: 1.6rem;
+            background: #e0f0e5;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+            font-size: 0.8rem;
+            color: #1f4f2d;
+            text-align: center;
+            border-top: 2px dotted #9bc48b;
+        }
+        @media (max-width: 800px) {
+            .charts-flex { flex-direction: column; align-items: center; }
+            .chart-card { width: 100%; max-width: 280px; }
+        }
+    </style>
+</head>
+<body>
+<div class="water-cycle-card">
+    <div class="header">
+        <h1>💧 全球水循环系统 · 点击图片高亮文字 💨</h1>
+        <p>点击图中不同区域（海洋/云层/降雨区/河流）→ 下方对应的详细说明板块自动高亮显示</p>
+    </div>
+    <div class="content-split">
+        <!-- 左侧 visual-panel 内含可点击canvas + 图例 + 问答卡片 + 统计图表 -->
+        <div class="visual-panel">
+            <div class="canvas-wrapper">
+                <canvas id="waterCycleCanvas" width="850" height="520" style="width:100%; height:auto; max-width:850px; aspect-ratio:850/520"></canvas>
+            </div>
+            <div class="legend-bar">
+                <div class="legend-dot"><span class="color-badge" style="background:#3c8c40;"></span> 陆地/森林</div>
+                <div class="legend-dot"><span class="color-badge" style="background:#2c6e9e;"></span> 海洋/湖泊</div>
+                <div class="legend-dot"><span class="color-badge" style="background:#f3b33d;"></span> ☀️ 太阳辐射</div>
+                <div class="legend-dot"><span class="color-badge" style="background:#e68a2e;"></span> 💨 水汽运动</div>
+                <div class="legend-dot"><span class="color-badge" style="background:#4f9fff;"></span> 降水/径流</div>
+                <div class="legend-dot"><span class="color-badge" style="background:#ffffffcc; border:1px solid #85b;"></span> 云/凝结</div>
+            </div>
+            <div class="interact-tip">
+                ✨ 提示：点击图中 <strong>海洋/陆地(蒸发区)、云层(水汽输送区)、降雨云团(降水区)、河流/陆地底部(径流区)</strong> → 右侧对应解释高亮 ✨
+            </div>
+            
+            <!-- 左下角问答+图表（维持原来的内容布局） -->
+            <div class="info-card">
+                <div class="qa-row">
+                    <div class="qa-icon">❓</div>
+                    <div class="qa-content">
+                        <div class="qa-question">1. 晒衣服为什么能干？ <span class="daily-tag">日常蒸发</span></div>
+                        <div class="qa-answer">太阳热量使衣服里的液态水变成水汽跑到空气中，这就是“蒸发”。海洋、湖泊也是这样变成水汽的。</div>
+                    </div>
+                </div>
+                <div class="separator-light"></div>
+                <div class="qa-row">
+                    <div class="qa-icon">☁️</div>
+                    <div class="qa-content">
+                        <div class="qa-question">2. 云是怎么形成的？ <span class="daily-tag">凝结现象</span></div>
+                        <div class="qa-answer">水汽升到高空遇冷，附着在微尘上凝结成 tiny 水滴，聚在一起就成了云。</div>
+                    </div>
+                </div>
+                <div class="separator-light"></div>
+                <div class="qa-row">
+                    <div class="qa-icon">🌧️</div>
+                    <div class="qa-content">
+                        <div class="qa-question">3. 雨后地面水洼去哪了？ <span class="daily-tag">径流+下渗</span></div>
+                        <div class="qa-answer">一部分流入河流（径流），一部分渗入地下（下渗），还有的晒干蒸发。</div>
+                    </div>
+                </div>
+                
+                <!-- 统计图表区域 (放大清晰) -->
+                <div class="charts-container">
+                    <div class="charts-title">📊 水循环关键数据图表 <span style="font-size:0.7rem;">(基于全球水平衡)</span></div>
+                    <div class="charts-flex">
+                        <div class="chart-card">
+                            <canvas id="pieChartCanvas" width="180" height="140" style="width:100%; height:auto; max-width:180px;"></canvas>
+                            <div class="chart-label">🌊 蒸发水源构成 · 海洋86% / 陆地14%</div>
+                        </div>
+                        <div class="chart-card">
+                            <canvas id="barChartCanvas" width="200" height="140" style="width:100%; height:auto; max-width:200px;"></canvas>
+                            <div class="chart-label">📊 年水量对比 (千km³)<br>蒸发≈505 | 降水≈505 | 径流≈44.5</div>
+                        </div>
+                        <div class="chart-card">
+                            <canvas id="lineChartCanvas" width="190" height="140" style="width:100%; height:auto; max-width:190px;"></canvas>
+                            <div class="chart-label">⏳ 水分停留时间趋势<br>大气(9天) → 河流(16天) → 海洋(3000年)</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size:0.65rem; color:#7e9a76; text-align:center; margin-top: 0.1rem;">
+                    🌱 点击上图不同区域，右侧详细说明自动高亮，联动学习水循环过程
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧详细文字板块：与点击区域联动高亮 -->
+        <div class="explanation-detailed">
+            <div class="section-header">
+                <span>🌊 水循环核心过程详解 (点击图片高亮对应卡片)</span>
+            </div>
+            <div class="process-steps" id="processStepsContainer">
+                <div class="step-item" id="step-evapotrans" data-step="evap">
+                    <div class="step-title">🌞 1. 蒸发 &amp; 植物蒸腾</div>
+                    <div class="step-desc"><strong>蒸发：</strong> 在太阳辐射作用下，海洋、湖泊、河流及湿润土壤中的液态水转化为水汽进入大气。海洋蒸发约占全球蒸发总量的86%，是水汽的主要来源。<br><strong>蒸腾：</strong> 植物根系吸收水分，通过叶片气孔以水汽形式释放到大气中，全球陆地蒸腾量约占陆地总蒸发量的60%左右。</div>
+                    <div class="step-detail">📌 详细说明：太阳短波辐射加热地表水体，水分子获得动能逸出液面。每年约有505,000 km³ 水通过蒸发进入大气。</div>
+                </div>
+                <div class="step-item" id="step-condense" data-step="transport">
+                    <div class="step-title">☁️ 2. 凝结 &amp; 水汽输送</div>
+                    <div class="step-desc"><strong>凝结：</strong> 水汽随气流上升，绝热冷却达到饱和后，在凝结核上凝结成微小水滴或冰晶，形成云。<br><strong>水汽输送：</strong> 盛行风带将水汽从海洋输送到内陆，维持陆地淡水循环。</div>
+                    <div class="step-detail">📌 详细说明：凝结释放潜热，大气中水汽停留时间约9天，每年从海洋输送到陆地的水汽量约为45,000 km³。</div>
+                </div>
+                <div class="step-item" id="step-precip" data-step="precip">
+                    <div class="step-title">🌧️ 3. 降水</div>
+                    <div class="step-desc"><strong>降水形式：</strong> 云滴通过碰并增长以降雪、雨等形式降落到地表。全球年均降水量约1,000 mm。<br><strong>类型：</strong> 对流雨、地形雨、锋面雨等，是陆地水资源的主要补给来源。</div>
+                    <div class="step-detail">📌 详细说明：全球每年降水总量约577,000 km³，其中约2/3降落在海洋。</div>
+                </div>
+                <div class="step-item" id="step-runoff" data-step="runoff">
+                    <div class="step-title">🏞️ 4. 径流 &amp; 下渗</div>
+                    <div class="step-desc"><strong>地表径流：</strong> 降水超过下渗能力后沿地表汇入河流，最终注入海洋。<br><strong>下渗与地下径流：</strong> 水分渗入土壤层，部分成为地下水缓慢回归海洋。</div>
+                    <div class="step-detail">📌 详细说明：全球河流年径流量约44,500 km³，下渗速率与土壤岩性、植被覆盖密切相关。</div>
+                </div>
+            </div>
+            <div class="fun-box">
+                🌍 水文循环小百科：水循环不仅调节全球热量平衡，还影响气候变化。每一滴水都在海洋、大气和陆地间反复旅行，平均一个水分子在大气中停留约9天，在海洋中则可能停留超过3000年！
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // 主画布（示意图）
+        const canvas = document.getElementById('waterCycleCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = 850, height = 520;
+        canvas.width = width;
+        canvas.height = height;
+
+        // 粒子系统
+        let particles = [];
+        const PARTICLE_AMOUNT = 85;
+        let highlightZone = null;      // 当前高亮区域（用于绘制视觉反馈）
+        let currentClickedZone = null; // 记录点击区域，并触发右侧高亮
+
+        // 粒子类
+        class WaterParticle {
+            constructor(x,y,vx,vy,radius,alpha) { this.x=x; this.y=y; this.vx=vx; this.vy=vy; this.radius=radius; this.alpha=alpha; }
+            reset() {
+                if (Math.random() < 0.65) { this.x = 100 + Math.random() * 260; this.y = 340 + Math.random() * 140; } 
+                else { this.x = 450 + Math.random() * 250; this.y = 360 + Math.random() * 100; }
+                this.vx = (Math.random() - 0.5)*0.8; this.vy = -0.6 - Math.random()*1.3;
+                this.radius = 1.2 + Math.random()*2.2; this.alpha = 0.5 + Math.random()*0.45;
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                this.vx += (Math.random()-0.5)*0.1; this.vy += (Math.random()-0.5)*0.07;
+                let maxSpeed = 1.3;
+                if (Math.abs(this.vx) > maxSpeed) this.vx = this.vx>0?maxSpeed:-maxSpeed;
+                if (Math.abs(this.vy) > maxSpeed) this.vy = this.vy>0?maxSpeed:-maxSpeed;
+                if (this.x < -30 || this.x > width+30 || this.y < -40 || this.y > height+50) this.reset();
+                if (this.y < 50 && Math.random()<0.01) this.reset();
+            }
+            draw(ctx) {
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(255, 250, 210, ${this.alpha*0.85})`; ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x-0.8, this.y-0.6, this.radius*0.6, 0, Math.PI*2);
+                ctx.fillStyle = `rgba(255, 255, 240, ${this.alpha*0.7})`; ctx.fill();
+            }
+        }
+        function initParticles() { for(let i=0;i<PARTICLE_AMOUNT;i++) { let p = new WaterParticle(0,0,0,0,1,1); p.reset(); particles.push(p); } }
+        
+        function drawArrow(ctx, fx,fy,tx,ty,color) {
+            ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(tx,ty); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.stroke();
+            let angle=Math.atan2(ty-fy, tx-fx), asize=8;
+            ctx.beginPath(); ctx.moveTo(tx,ty); ctx.lineTo(tx-asize*Math.cos(angle-Math.PI/6), ty-asize*Math.sin(angle-Math.PI/6));
+            ctx.lineTo(tx-asize*Math.cos(angle+Math.PI/6), ty-asize*Math.sin(angle+Math.PI/6)); ctx.fillStyle=color; ctx.fill();
+        }
+
+        function drawBackground() {
+            const skyGrad = ctx.createLinearGradient(0,0,0,height*0.6);
+            skyGrad.addColorStop(0,"#c2e0fc"); skyGrad.addColorStop(1,"#e1f5fe");
+            ctx.fillStyle=skyGrad; ctx.fillRect(0,0,width,height);
+            // 太阳
+            ctx.beginPath(); ctx.arc(760,68,34,0,Math.PI*2); ctx.fillStyle="#ffda88"; ctx.fill();
+            ctx.beginPath(); ctx.arc(760,68,28,0,Math.PI*2); ctx.fillStyle="#ffb347"; ctx.fill();
+            for(let i=0;i<14;i++){ let rad=i*Math.PI*2/14; let dx=Math.cos(rad)*44,dy=Math.sin(rad)*44;
+                ctx.beginPath(); ctx.moveTo(760+Math.cos(rad)*36,68+Math.sin(rad)*36); ctx.lineTo(760+dx,68+dy); ctx.lineWidth=2.2; ctx.strokeStyle="#f4b942"; ctx.stroke();}
+            // 海洋
+            ctx.fillStyle="#3e89cf"; ctx.fillRect(70,320,350,180);
+            ctx.fillStyle="#5fa7e2"; for(let i=0;i<20;i++){ ctx.beginPath(); ctx.ellipse(90+i*25,380+Math.sin(i)*8,12,5,0,0,Math.PI*2); ctx.fill();}
+            ctx.fillStyle="#2f6ea0"; ctx.fillRect(70,320,350,180);
+            // 陆地
+            ctx.fillStyle="#6ab04c"; ctx.beginPath(); ctx.moveTo(420,490); ctx.lineTo(420,310); ctx.bezierCurveTo(490,280,580,270,670,290); ctx.lineTo(730,300); ctx.lineTo(800,350); ctx.lineTo(820,490); ctx.fill();
+            ctx.fillStyle="#4f8a3a"; ctx.beginPath(); ctx.moveTo(460,300); ctx.lineTo(510,240); ctx.lineTo(560,290); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(590,275); ctx.lineTo(645,210); ctx.lineTo(690,265); ctx.fill();
+            ctx.fillStyle="#89cf5c"; ctx.fillRect(460,330,340,40);
+            // 河流
+            ctx.beginPath(); ctx.moveTo(580,335); ctx.quadraticCurveTo(610,380,560,425); ctx.lineTo(430,435); ctx.lineTo(370,440); ctx.lineWidth=9; ctx.strokeStyle="#3690cf"; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(660,302); ctx.lineTo(630,370); ctx.lineTo(570,420); ctx.stroke();
+            // 云层
+            function drawCloud(x,y,sx,sy){ ctx.fillStyle="#fefefdcc"; ctx.beginPath(); ctx.ellipse(x,y,sx*0.8,sy*0.7,0,0,Math.PI*2); ctx.ellipse(x+sx*0.5,y-sy*0.1,sx*0.7,sy*0.65,0,0,Math.PI*2); ctx.ellipse(x-sx*0.55,y-sy*0.05,sx*0.7,sy*0.65,0,0,Math.PI*2); ctx.ellipse(x+sx*0.2,y+sy*0.2,sx*0.65,sy*0.6,0,0,Math.PI*2); ctx.fill();}
+            drawCloud(180,110,45,32); drawCloud(420,80,58,40); drawCloud(620,115,48,35); drawCloud(280,55,42,30); drawCloud(730,170,46,32);
+            // 降水示意
+            if(highlightZone==='precip'){ for(let i=0;i<45;i++){ let x=460+Math.random()*320, y=190+Math.random()*80; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-2,y+7); ctx.lineTo(x+2,y+7); ctx.fillStyle="#88ccffbb"; ctx.fill();} }
+            else{ for(let i=0;i<24;i++){ let x=500+(i*19)%300, y=205+Math.sin(i)*10; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-1.8,y+6); ctx.lineTo(x+1.8,y+6); ctx.fillStyle="#7bc5ffcc"; ctx.fill();} }
+            // 箭头文字
+            ctx.font="bold 12px 'Segoe UI'"; ctx.fillStyle="#2c5530";
+            drawArrow(ctx,220,330,210,170,"#e28743"); ctx.fillText("💧 蒸发",175,235);
+            drawArrow(ctx,540,355,530,200,"#e28743"); ctx.fillText("🌿 蒸腾",545,270);
+            drawArrow(ctx,340,145,490,105,"#5d9bbf"); ctx.fillStyle="#2c6e8f"; ctx.fillText("水汽输送 (风)",360,120);
+            drawArrow(ctx,590,158,590,215,"#4997d0"); ctx.fillText("🌧️ 降水",608,180);
+            drawArrow(ctx,680,340,600,405,"#407e65"); ctx.fillText("地表径流",650,375);
+            drawArrow(ctx,540,445,400,450,"#2a7f6e"); ctx.fillText("下渗 & 地下径流",430,465);
+            ctx.fillStyle="#1f543b"; ctx.font="italic 13px sans-serif";
+            ctx.fillText("海洋 (主要蒸发源)",170,460); ctx.fillText("陆地生态系统",580,470); ctx.fillText("☀️ 太阳驱动循环",745,30);
+        }
+
+        // 根据坐标获取对应的水循环过程区域 (用于点击和鼠标悬停)
+        function getZoneFromCoordinate(cx, cy) {
+            if ((cx > 70 && cx < 410 && cy > 310 && cy < 500) || (cx > 430 && cx < 720 && cy > 340 && cy < 470)) return 'evap';
+            else if ((cx > 150 && cx < 750 && cy > 30 && cy < 180) || (cx > 350 && cx < 720 && cy > 60 && cy < 200)) return 'transport';
+            else if (cx > 450 && cx < 810 && cy > 180 && cy < 270) return 'precip';
+            else if ((cx > 420 && cx < 820 && cy > 360 && cy < 490) || (cx > 360 && cx < 600 && cy > 420 && cy < 490)) return 'runoff';
+            return null;
+        }
+
+        // 高亮右侧对应的卡片（通过data-step匹配或id）
+        function highlightRightCard(zone) {
+            // 先移除所有卡片的 active-highlight 类
+            const allSteps = document.querySelectorAll('.step-item');
+            allSteps.forEach(step => step.classList.remove('active-highlight'));
+            if (!zone) return;
+            let targetCard = null;
+            if (zone === 'evap') targetCard = document.getElementById('step-evapotrans');
+            else if (zone === 'transport') targetCard = document.getElementById('step-condense');
+            else if (zone === 'precip') targetCard = document.getElementById('step-precip');
+            else if (zone === 'runoff') targetCard = document.getElementById('step-runoff');
+            if (targetCard) {
+                targetCard.classList.add('active-highlight');
+                // 可选：平滑滚动到视图
+                targetCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // 处理点击事件：获取点击区域，同步高亮右侧卡片，并在画布上留下视觉标记
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clickX = (e.clientX - rect.left) * scaleX;
+            let clickY = (e.clientY - rect.top) * scaleY;
+            clickX = Math.min(width, Math.max(0, clickX));
+            clickY = Math.min(height, Math.max(0, clickY));
+            const zone = getZoneFromCoordinate(clickX, clickY);
+            if (zone) {
+                currentClickedZone = zone;
+                highlightRightCard(zone);
+                // 同时让画布高亮效果保持 (绘制时根据 highlightZone = zone 来增加高亮蒙层)
+                highlightZone = zone;
+                // 3秒后清除临时高亮蒙层，但保留卡片高亮不清除(用户可再次点击)
+                setTimeout(() => {
+                    if (highlightZone === zone) highlightZone = null;
+                }, 2000);
+            } else {
+                // 点击空白区域不清除卡片高亮，但可取消蒙层
+                highlightZone = null;
+            }
+        }
+
+        // 鼠标移动悬停也可视觉预览（但点击是重点，移动仅做临时高亮效果，不干扰右侧点击选择）
+        function onCanvasMouseMove(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let mx = (e.clientX - rect.left) * scaleX;
+            let my = (e.clientY - rect.top) * scaleY;
+            mx = Math.min(width, Math.max(0, mx));
+            my = Math.min(height, Math.max(0, my));
+            const zone = getZoneFromCoordinate(mx, my);
+            // 鼠标悬停时暂态高亮画布区域（不改变右侧高亮），便于引导
+            if (zone) highlightZone = zone;
+            else if (!currentClickedZone) highlightZone = null;
+        }
+        function onCanvasLeave() {
+            if (!currentClickedZone) highlightZone = null;
+        }
+
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('mousemove', onCanvasMouseMove);
+        canvas.addEventListener('mouseleave', onCanvasLeave);
+        
+        // 动画循环: 绘制背景与粒子
+        function animate() {
+            drawBackground();
+            // 如果存在高亮区域（点击后残留蒙层或悬停），加半透明高亮提示
+            if (highlightZone === 'evap') { ctx.fillStyle = "#ffdd9944"; ctx.fillRect(70,310,360,180); }
+            else if (highlightZone === 'transport') { ctx.fillStyle = "#cceeff66"; ctx.fillRect(150,40,650,140); }
+            else if (highlightZone === 'precip') { ctx.fillStyle = "#b3e6ff55"; ctx.fillRect(430,175,350,100); }
+            else if (highlightZone === 'runoff') { ctx.fillStyle = "#b3e0c066"; ctx.fillRect(400,350,420,140); }
+            for (let p of particles) { p.update(); p.draw(ctx); }
+            requestAnimationFrame(animate);
+        }
+        
+        initParticles(); 
+        animate();
+        
+        // 绘制三个放大图表（饼图、条形图、折线图）
+        function drawPie() { 
+            let canvas = document.getElementById('pieChartCanvas'); if(!canvas) return; 
+            let ctx = canvas.getContext('2d'); let w=180, h=140; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); 
+            let centerX=w/2, centerY=h/2, radius=Math.min(w,h)*0.38; 
+            let data=[{val:86,color:"#3c8c40"},{val:14,color:"#f3b33d"}]; let start=-Math.PI/2; 
+            for(let d of data){ let angle=(d.val/100)*Math.PI*2; ctx.beginPath(); ctx.moveTo(centerX,centerY); ctx.arc(centerX,centerY,radius,start,start+angle); ctx.fillStyle=d.color; ctx.fill(); start+=angle; } 
+            ctx.fillStyle="#1e482b"; ctx.font="bold 9px 'Segoe UI'"; ctx.fillText("海洋蒸发 86%", centerX-40, centerY-8); 
+            ctx.fillStyle="#a5651e"; ctx.fillText("陆地蒸发 14%", centerX+10, centerY+20); 
+        }
+        function drawBar(){ 
+            let canvas=document.getElementById('barChartCanvas'); if(!canvas) return; 
+            let ctx=canvas.getContext('2d'); let w=200, h=140; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); 
+            let categories=["蒸发","降水","径流"]; let values=[505,505,44.5]; let maxVal=550; let barWidth=40; let startX=22; 
+            for(let i=0;i<categories.length;i++){ let barHeight=(values[i]/maxVal)*85; let x=startX+i*(barWidth+18); let y=h-22-barHeight; ctx.fillStyle="#468b6b"; ctx.fillRect(x,y,barWidth-4,barHeight); ctx.fillStyle="#2a5a3a"; ctx.font="bold 8px 'Segoe UI'"; ctx.fillText(categories[i], x+8, h-6); ctx.fillStyle="#1a3a28"; ctx.font="bold 9px 'Segoe UI'"; ctx.fillText(values[i]+"k km³", x+6, y-4); } 
+            ctx.fillStyle="#2b6e44"; ctx.font="7px sans-serif"; ctx.fillText("年水量对比", w-50, 18);
+        }
+        function drawLine(){ 
+            let canvas=document.getElementById('lineChartCanvas'); if(!canvas) return; 
+            let ctx=canvas.getContext('2d'); let w=190, h=140; canvas.width=w; canvas.height=h; ctx.clearRect(0,0,w,h); 
+            let points=[{x:28, y:108, label:"大气(9天)"},{x:85, y:72, label:"河流(16天)"},{x:148, y:28, label:"海洋(3000年)"}]; 
+            ctx.beginPath(); ctx.moveTo(points[0].x,points[0].y); for(let i=1;i<points.length;i++) ctx.lineTo(points[i].x,points[i].y); ctx.strokeStyle="#e68a2e"; ctx.lineWidth=2.5; ctx.stroke(); 
+            points.forEach(p=>{ ctx.beginPath(); ctx.arc(p.x,p.y,4,0,Math.PI*2); ctx.fillStyle="#f4a261"; ctx.fill(); ctx.fillStyle="#2c4d2a"; ctx.font="bold 8px 'Segoe UI'"; ctx.fillText(p.label, p.x-18, p.y-6); }); 
+            ctx.fillStyle="#2b6e44"; ctx.font="bold 8px sans-serif"; ctx.fillText("停留时间对比", 60, 18); ctx.fillStyle="#886633"; ctx.font="7px sans-serif"; ctx.fillText("(短 → 长)", 125, 128);
+        }
+        drawPie(); drawBar(); drawLine();
+    })();
+</script>
+
+</body></html>

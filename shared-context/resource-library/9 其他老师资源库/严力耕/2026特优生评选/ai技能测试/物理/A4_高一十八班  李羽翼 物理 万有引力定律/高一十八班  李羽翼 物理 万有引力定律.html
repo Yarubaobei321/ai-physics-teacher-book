@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0">
+  <title>万有引力定律 · 交互演示 | 高中物理必修二</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(145deg, #0b1a2f 0%, #1a2f40 100%);
+      font-family: 'Segoe UI', 'Noto Sans', 'Roboto', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 1300px;
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-radius: 48px;
+      padding: 28px 32px;
+      box-shadow: 0 30px 55px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #eef5ff;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    h1 {
+      font-weight: 600;
+      font-size: 2.5rem;
+      letter-spacing: 3px;
+      text-align: center;
+      color: #ffd9a5;
+      text-shadow: 0 4px 16px rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    h1 span {
+      background: rgba(255,215,150,0.18);
+      padding: 6px 22px;
+      border-radius: 40px;
+      font-size: 1.2rem;
+      font-weight: 500;
+      color: #ffdead;
+      letter-spacing: 2px;
+      border: 1px solid rgba(255,255,200,0.25);
+    }
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .canvas-panel {
+      flex: 2.2;
+      min-width: 520px;
+      background: rgba(10, 20, 35, 0.5);
+      border-radius: 36px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      box-shadow: inset 0 0 24px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 440px;
+      border-radius: 24px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.75);
+      background: radial-gradient(circle at 20% 30%, #1c3248, #09121e);
+      cursor: pointer;
+    }
+    .slider-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 22px;
+      justify-content: center;
+      width: 100%;
+    }
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.06);
+      border-radius: 30px;
+      padding: 10px 18px;
+      min-width: 135px;
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .slider-item label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #c5d9ff;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .slider-item input[type=range] {
+      width: 110px;
+      cursor: pointer;
+      accent-color: #f7b05e;
+    }
+    .value-display {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #ffd58c;
+      background: #0f1e2c;
+      padding: 3px 14px;
+      border-radius: 20px;
+      margin-top: 5px;
+    }
+    .info-panel {
+      flex: 1.8;
+      min-width: 290px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .card {
+      background: rgba(20, 30, 44, 0.65);
+      backdrop-filter: blur(18px);
+      border-radius: 28px;
+      padding: 20px 18px;
+      box-shadow: 0 15px 28px rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .force-value {
+      font-size: 2.3rem;
+      font-weight: 700;
+      color: #ffbc5b;
+      text-shadow: 0 0 18px #ff8c2e;
+      letter-spacing: 0.5px;
+    }
+    .unit {
+      font-size: 1rem;
+      color: #b0c8e0;
+      font-weight: 500;
+    }
+    .live-display {
+      background: #0b1b2b;
+      border-radius: 18px;
+      padding: 14px;
+      margin: 12px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      border-left: 4px solid #ffae42;
+    }
+    .derivation {
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: #cfdefa;
+    }
+    .math {
+      font-family: 'Courier New', 'Times New Roman', serif;
+      background: rgba(0,0,0,0.45);
+      padding: 3px 12px;
+      border-radius: 14px;
+      font-weight: 700;
+      display: inline-block;
+    }
+    hr {
+      border-color: rgba(255,255,255,0.15);
+      margin: 16px 0;
+    }
+    .badge {
+      background: #2e4b6e;
+      color: white;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    button {
+      background: #f7b05e;
+      border: none;
+      color: #0a121f;
+      font-weight: bold;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      box-shadow: 0 6px 16px rgba(255,180,60,0.4);
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255,255,200,0.5);
+    }
+    button:hover {
+      background: #ffc77a;
+      box-shadow: 0 8px 22px #f90;
+      transform: scale(1.03);
+    }
+    .newton-thought {
+      background: rgba(255,215,140,0.07);
+      border-left: 4px solid #ffae42;
+      padding: 12px 16px;
+      border-radius: 14px;
+      margin-top: 10px;
+      font-style: italic;
+      color: #ffe4b5;
+    }
+    .highlight-red {
+      color: #ff6b6b;
+      font-weight: 700;
+    }
+    .highlight-yellow {
+      color: #ffcc00;
+      font-weight: 700;
+    }
+    .highlight-cyan {
+      color: #44ddff;
+      font-weight: 700;
+    }
+    .highlight-orange {
+      color: #ffae42;
+      font-weight: 700;
+    }
+    @media (max-width: 800px) {
+      .main-layout {
+        flex-direction: column;
+      }
+      .canvas-panel {
+        min-width: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    🌌 万有引力定律
+    <span>F = G·M·m / r²</span>
+  </h1>
+
+  <div class="main-layout">
+    <div class="canvas-panel">
+      <canvas id="gravityCanvas" width="600" height="420"></canvas>
+      <div style="display: flex; gap: 12px; margin-top: 14px;">
+        <button id="spaceModeBtn" style="background:#2e4b6e; color:white;">🌠 宇宙尺度</button>
+        <button id="earthModeBtn" style="background:#3a5a4a; color:white;">🌍 地球表面</button>
+      </div>
+      <div class="slider-group" id="spaceSliders">
+        <div class="slider-item">
+          <label>🌞 太阳质量 <span style="color:#ffae42;">M</span></label>
+          <input type="range" id="massMSlider" min="1.0" max="5.0" value="2.0" step="0.1">
+          <span class="value-display" id="massMValue">2.0 ×10³⁰ kg</span>
+        </div>
+        <div class="slider-item">
+          <label>🪐 行星质量 <span style="color:#6cb4ff;">m</span></label>
+          <input type="range" id="massMSlider2" min="0.5" max="4.0" value="1.5" step="0.1">
+          <span class="value-display" id="massMValue2">1.5 ×10²⁴ kg</span>
+        </div>
+        <div class="slider-item">
+          <label>📏 距离 r</label>
+          <input type="range" id="distanceSlider" min="60" max="260" value="150" step="1">
+          <span class="value-display" id="distanceValue">1.5 AU</span>
+        </div>
+      </div>
+      <div class="slider-group" id="earthSliders" style="display: none;">
+        <div class="slider-item">
+          <label>🧍 物体质量 m</label>
+          <input type="range" id="earthMassSlider" min="1" max="100" value="10" step="1">
+          <span class="value-display" id="earthMassValue">10 kg</span>
+        </div>
+        <div class="slider-item">
+          <label>🌐 纬度</label>
+          <input type="range" id="latitudeSlider" min="0" max="90" value="45" step="1">
+          <span class="value-display" id="latitudeValue">45°</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-panel">
+      <div class="card" id="dynamicInfoCard">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight:600; font-size:1.1rem;" id="infoTitle">🔵 实时引力</span>
+          <span class="badge" id="infoBadge">矢量</span>
+        </div>
+        <div style="margin-top:10px;">
+          <span class="force-value" id="forceDisplay">3.56</span>
+          <span class="unit" id="forceUnit">×10²² N</span>
+        </div>
+        <div class="live-display" id="forceDetail">F = G·M·m / r²</div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600; font-size:1.2rem; color:#ffd58c;">📐 牛顿的思考与推导</div>
+        <div class="derivation" style="margin-top:12px;">
+          <p><span class="math">1. 苹果与月球</span> —— 使苹果落地的力与维持月球绕地的力<strong class="highlight-orange">可能是同一种力</strong>。</p>
+          <p><span class="math">2. 圆周运动向心力</span> <strong>F=m·v²/r</strong> ，结合开普勒第三定律 <strong>T²∝r³</strong> ，得 <strong class="highlight-yellow">F∝1/r²</strong> 。</p>
+          <p><span class="math">3. 推广到万物</span>：任何两个物体之间都存在引力，<strong class="highlight-red">与质量乘积成正比</strong>。</p>
+          <div class="newton-thought">💡 “我从未作出任何发现，我的发现都是通过不断思考得来。” —— 牛顿</div>
+          <p style="margin-top:10px;"><span class="math">F = G·M·m / r²</span> ，<strong>G≈6.67×10⁻¹¹ N·m²/kg²</strong></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight:600; font-size:1.15rem; color:#ffb347;">⚖️ 引力 vs 重力 (地球表面辨析)</div>
+        <div class="gravity-diff" style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+          <div><span class="highlight-red">🔴 万有引力 F引</span>：指向地心，<strong>F引 = G·M·m / R²</strong> 。</div>
+          <div><span class="highlight-yellow">🟡 向心力分量</span>：物体随地球自转所需，方向<strong>垂直地轴指向自转轴</strong>。</div>
+          <div><span class="highlight-cyan">🔵 重力 G</span>：引力的一个分力，<strong>竖直向下</strong>。G = mg 。</div>
+          <div style="background:#1e3144; border-radius:16px; padding:12px; margin-top:8px;">
+            <span style="font-weight:bold;">🔹 关键：</span>重力是万有引力的<strong class="highlight-orange">主要分量</strong>，向心力是另一个小分量。<br> 
+            <span style="font-size:0.9rem;">极点重力=引力；赤道重力最小。</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    let currentMode = 'space';
+
+    const G = 6.67e-11;
+    const AU = 1.496e11;
+    let M_sun = 2.0e30;
+    let m_planet = 1.5e24;
+    let r_au = 1.5;
+
+    const SUN_X = 160, SUN_Y = 210;
+    let planetX = 420, planetY = 210;
+
+    const EARTH_CENTER_X = 300, EARTH_CENTER_Y = 210;
+    const EARTH_RADIUS = 145;
+    const M_earth = 5.97e24;
+    const R_earth = 6.37e6;
+    let objectMass = 10;
+    let latitude = 45;
+
+    let isDragging = false;
+
+    const canvas = document.getElementById('gravityCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const spaceSliders = document.getElementById('spaceSliders');
+    const earthSliders = document.getElementById('earthSliders');
+    const spaceModeBtn = document.getElementById('spaceModeBtn');
+    const earthModeBtn = document.getElementById('earthModeBtn');
+
+    const massMSlider = document.getElementById('massMSlider');
+    const massMSlider2 = document.getElementById('massMSlider2');
+    const distanceSlider = document.getElementById('distanceSlider');
+    const massMValue = document.getElementById('massMValue');
+    const massMValue2 = document.getElementById('massMValue2');
+    const distanceValue = document.getElementById('distanceValue');
+
+    const earthMassSlider = document.getElementById('earthMassSlider');
+    const latitudeSlider = document.getElementById('latitudeSlider');
+    const earthMassValue = document.getElementById('earthMassValue');
+    const latitudeValue = document.getElementById('latitudeValue');
+
+    const forceDisplay = document.getElementById('forceDisplay');
+    const forceUnit = document.getElementById('forceUnit');
+    const forceDetail = document.getElementById('forceDetail');
+    const infoTitle = document.getElementById('infoTitle');
+    const infoBadge = document.getElementById('infoBadge');
+
+    function setMode(mode) {
+      currentMode = mode;
+      if (mode === 'space') {
+        spaceSliders.style.display = 'flex';
+        earthSliders.style.display = 'none';
+        spaceModeBtn.style.background = '#2e4b6e';
+        earthModeBtn.style.background = '#3a5a4a';
+        canvas.style.cursor = 'default';
+      } else {
+        spaceSliders.style.display = 'none';
+        earthSliders.style.display = 'flex';
+        spaceModeBtn.style.background = '#3a5a4a';
+        earthModeBtn.style.background = '#2e4b6e';
+        canvas.style.cursor = 'default';
+      }
+      updateUI();
+    }
+
+    spaceModeBtn.addEventListener('click', () => setMode('space'));
+    earthModeBtn.addEventListener('click', () => setMode('earth'));
+
+    function computeSpace() {
+      const r_meters = r_au * AU;
+      const force = G * M_sun * m_planet / (r_meters * r_meters);
+      const dx = planetX - SUN_X;
+      const dy = planetY - SUN_Y;
+      const distPx = Math.sqrt(dx*dx + dy*dy);
+      return { force, r_meters, dx, dy, distPx };
+    }
+
+    function computeEarth() {
+      const rad = latitude * Math.PI / 180;
+      const objX = EARTH_CENTER_X + EARTH_RADIUS * Math.cos(rad);
+      const objY = EARTH_CENTER_Y - EARTH_RADIUS * Math.sin(rad);
+      const F_grav = G * M_earth * objectMass / (R_earth * R_earth);
+      const omega = 7.27e-5;
+      const r_perp = R_earth * Math.cos(rad);
+      const F_cent = objectMass * omega * omega * r_perp;
+      const gravity = F_grav - F_cent * Math.cos(rad);
+      const g_eff = gravity / objectMass;
+      return { objX, objY, F_grav, F_cent, gravity, g_eff, rad };
+    }
+
+    function updateUI() {
+      if (currentMode === 'space') {
+        const { force, r_meters, distPx } = computeSpace();
+        massMValue.textContent = (M_sun/1e30).toFixed(1) + ' ×10³⁰ kg';
+        massMValue2.textContent = (m_planet/1e24).toFixed(1) + ' ×10²⁴ kg';
+        distanceValue.textContent = r_au.toFixed(2) + ' AU';
+        distanceSlider.value = Math.round(distPx);
+
+        if (force > 1e22) {
+          forceDisplay.textContent = (force/1e22).toFixed(2);
+          forceUnit.textContent = '×10²² N';
+        } else {
+          forceDisplay.textContent = force.toExponential(2);
+          forceUnit.textContent = 'N';
+        }
+        infoTitle.textContent = '🔵 实时引力 (真实量级)';
+        infoBadge.textContent = '矢量方向→太阳';
+        forceDetail.innerHTML = `
+          <strong>F = G·M·m / r²</strong><br>
+          = (6.67e-11)·(${(M_sun/1e30).toFixed(1)}e30)·(${(m_planet/1e24).toFixed(1)}e24) / (${r_au.toFixed(2)} AU)²<br>
+          = <strong style="color:#ffbc5b;">${force.toExponential(2)} N</strong>
+        `;
+      } else {
+        const e = computeEarth();
+        earthMassValue.textContent = objectMass + ' kg';
+        latitudeValue.textContent = latitude + '°';
+        forceDisplay.textContent = e.g_eff.toFixed(2);
+        forceUnit.textContent = 'm/s² (g)';
+        infoTitle.textContent = '🌍 地表重力分析';
+        infoBadge.textContent = '力矢量图';
+        forceDetail.innerHTML = `
+          <span style="color:#ff6b6b;">🔴 万有引力 F引 = <strong>${(e.F_grav/objectMass).toFixed(2)} N/kg</strong></span><br>
+          <span style="color:#ffcc00;">🟡 向心力分量 = <strong>${(e.F_cent/objectMass).toFixed(3)} N/kg</strong></span><br>
+          <span style="color:#44ddff;">🔵 有效重力 g = <strong>${e.g_eff.toFixed(2)} N/kg</strong></span>
+        `;
+      }
+      drawCanvas();
+    }
+
+    function drawCanvas() {
+      ctx.clearRect(0,0,600,420);
+      if (currentMode === 'space') {
+        drawSpaceScene();
+      } else {
+        drawEarthScene();
+      }
+    }
+
+    function drawSpaceScene() {
+      const { dx, dy, distPx, force } = computeSpace();
+      for(let i=0;i<45;i++){ctx.fillStyle=`rgba(255,255,200,${0.35+Math.sin(i)*0.2})`;ctx.beginPath();ctx.arc((i*29)%600,(i*23)%420,1.1,0,Math.PI*2);ctx.fill();}
+      for(let r=55;r<250;r+=45){ctx.beginPath();ctx.arc(SUN_X,SUN_Y,r,0,2*Math.PI);ctx.strokeStyle='rgba(255,200,100,0.16)';ctx.setLineDash([6,11]);ctx.stroke();}
+      ctx.setLineDash([]);
+      ctx.beginPath();ctx.moveTo(SUN_X,SUN_Y);ctx.lineTo(planetX,planetY);ctx.strokeStyle='#ffbb4d';ctx.lineWidth=2.2;ctx.setLineDash([8,7]);ctx.stroke();ctx.setLineDash([]);
+      if(distPx>5){
+        const ang = Math.atan2(dy,dx);
+        const arrowLen = Math.min(48, 22 + force*1.2e-22*10);
+        const ex = planetX - Math.cos(ang)*arrowLen;
+        const ey = planetY - Math.sin(ang)*arrowLen;
+        drawArrow(ctx, planetX, planetY, ex, ey, '#ff8c42', 'F引');
+      }
+      ctx.shadowBlur=26;ctx.shadowColor='#fa3';ctx.beginPath();ctx.arc(SUN_X,SUN_Y,24+(M_sun/1e30)*4,0,2*Math.PI);ctx.fillStyle='#ffb347';ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#fff5c0';ctx.beginPath();ctx.arc(SUN_X-5,SUN_Y-7,6,0,2*Math.PI);ctx.fill();
+      ctx.shadowBlur=18;ctx.shadowColor='#6cb4ff';ctx.beginPath();ctx.arc(planetX,planetY,14+(m_planet/1e24)*3,0,2*Math.PI);ctx.fillStyle='#4d9eff';ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#b0d8ff';ctx.beginPath();ctx.arc(planetX-3,planetY-4,5,0,2*Math.PI);ctx.fill();
+      ctx.fillStyle='#ffe';ctx.font='bold 15px sans-serif';ctx.fillText('☀️',SUN_X-32,SUN_Y-32);ctx.fillText('🪐',planetX-32,planetY-32);
+    }
+
+    function drawEarthScene() {
+      const e = computeEarth();
+      ctx.shadowBlur=18;ctx.shadowColor='#2e5a88';
+      ctx.beginPath();ctx.arc(EARTH_CENTER_X, EARTH_CENTER_Y, EARTH_RADIUS,0,2*Math.PI);
+      ctx.fillStyle='#1e4d6e';ctx.fill();ctx.strokeStyle='#6baed6';ctx.lineWidth=2.2;ctx.stroke();
+      ctx.fillStyle='#3a7a3a';ctx.beginPath();ctx.arc(EARTH_CENTER_X-38,EARTH_CENTER_Y-38,26,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#5a9e5a';ctx.beginPath();ctx.arc(EARTH_CENTER_X+48,EARTH_CENTER_Y+28,32,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;
+
+      const {objX, objY, rad, F_grav, F_cent, gravity} = e;
+      const objectRadius = 12;
+
+      ctx.shadowBlur=10;ctx.shadowColor='#fff';
+      ctx.beginPath();ctx.arc(objX, objY, objectRadius,0,2*Math.PI);ctx.fillStyle='#f9a03f';ctx.fill();
+      ctx.fillStyle='white';ctx.font='bold 16px sans-serif';ctx.fillText('🧍',objX-14,objY-18);
+      ctx.shadowBlur=0;
+
+      const targetArrowLength = objectRadius * 4;
+      const angleToCenter = Math.atan2(EARTH_CENTER_Y - objY, EARTH_CENTER_X - objX);
+
+      // 万有引力 (红色，指向地心)
+      drawArrow(ctx, objX, objY, objX + Math.cos(angleToCenter)*targetArrowLength, objY + Math.sin(angleToCenter)*targetArrowLength, '#ff5555', 'F引');
+
+      // 向心力 (黄色，指向自转轴，即水平向左)
+      drawArrow(ctx, objX, objY, objX - targetArrowLength, objY, '#ffcc00', 'F向');
+
+      // 重力 (青色，竖直向下)
+      drawArrow(ctx, objX, objY, objX, objY + targetArrowLength, '#44ddff', 'G');
+
+      ctx.fillStyle='#ddd';ctx.font='bold 13px sans-serif';
+      ctx.fillText(`纬度 ${latitude}°`, objX+20, objY-14);
+    }
+
+    function drawArrow(ctx, fromX, fromY, toX, toY, color, label) {
+      ctx.beginPath();ctx.moveTo(fromX, fromY);ctx.lineTo(toX, toY);
+      ctx.strokeStyle=color;ctx.lineWidth=2.8;ctx.stroke();
+      const angle = Math.atan2(toY-fromY, toX-fromX);
+      const head=10;
+      ctx.beginPath();ctx.moveTo(toX,toY);
+      ctx.lineTo(toX-Math.cos(angle-0.7)*head, toY-Math.sin(angle-0.7)*head);
+      ctx.lineTo(toX-Math.cos(angle+0.7)*head, toY-Math.sin(angle+0.7)*head);
+      ctx.closePath();ctx.fillStyle=color;ctx.fill();
+      if(label){
+        ctx.fillStyle=color;ctx.font='bold 13px "Segoe UI"';
+        ctx.fillText(label, (fromX+toX)/2+8, (fromY+toY)/2-8);
+      }
+    }
+
+    function handleMouseDown(e){
+      if(currentMode!=='space') return;
+      e.preventDefault();
+      const rect=canvas.getBoundingClientRect();
+      const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+      const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy;
+      if(Math.hypot(mx-planetX, my-planetY)<38){isDragging=true; canvas.style.cursor='grabbing';}
+    }
+    function handleMouseMove(e){
+      if(currentMode!=='space'){canvas.style.cursor='default';return;}
+      const rect=canvas.getBoundingClientRect();
+      const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+      const mx=(e.clientX-rect.left)*sx, my=(e.clientY-rect.top)*sy;
+      if(isDragging){
+        planetX=Math.min(580,Math.max(20,mx)); planetY=Math.min(400,Math.max(20,my));
+        const distPx = Math.hypot(planetX-SUN_X, planetY-SUN_Y);
+        r_au = Math.max(0.3, distPx / 100);
+        updateUI();
+      }else{
+        canvas.style.cursor = Math.hypot(mx-planetX, my-planetY)<38 ? 'grab' : 'default';
+      }
+    }
+    function handleMouseUp(){isDragging=false;canvas.style.cursor='default';}
+
+    canvas.addEventListener('mousedown',handleMouseDown);
+    window.addEventListener('mousemove',handleMouseMove);
+    window.addEventListener('mouseup',handleMouseUp);
+
+    massMSlider.addEventListener('input',e=>{M_sun=parseFloat(e.target.value)*1e30;updateUI();});
+    massMSlider2.addEventListener('input',e=>{m_planet=parseFloat(e.target.value)*1e24;updateUI();});
+    distanceSlider.addEventListener('input',e=>{
+      const distPx=parseInt(e.target.value);
+      const ang=Math.atan2(planetY-SUN_Y,planetX-SUN_X);
+      planetX=SUN_X+Math.cos(ang)*distPx; planetY=SUN_Y+Math.sin(ang)*distPx;
+      r_au = Math.max(0.3, distPx / 100);
+      updateUI();
+    });
+    earthMassSlider.addEventListener('input',e=>{objectMass=+e.target.value;updateUI();});
+    latitudeSlider.addEventListener('input',e=>{latitude=+e.target.value;updateUI();});
+
+    setMode('space');
+    updateUI();
+  })();
+</script>
+</body>
+</html>

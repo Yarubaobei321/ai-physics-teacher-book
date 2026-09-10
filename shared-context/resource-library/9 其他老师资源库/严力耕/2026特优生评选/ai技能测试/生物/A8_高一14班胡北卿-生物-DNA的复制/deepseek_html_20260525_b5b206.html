@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>DNA半保留复制 · 碱基配对可视化 | 高中生物精讲</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #e9f3ec 0%, #cde0d3 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', system-ui;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .master-container {
+            max-width: 1600px;
+            width: 95%;
+            background: #fffffffa;
+            border-radius: 56px;
+            box-shadow: 0 30px 45px -12px rgba(0, 30, 10, 0.45);
+            overflow: hidden;
+            backdrop-filter: blur(0px);
+        }
+        .header {
+            background: #1d5a3f;
+            padding: 1.2rem 2rem;
+            color: white;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.3rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .sub {
+            font-size: 1.2rem;
+            margin-top: 8px;
+            opacity: 0.95;
+        }
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 28px 28px 20px;
+        }
+        .canvas-area {
+            flex: 3;
+            min-width: 800px;
+            background: #ffffff;
+            border-radius: 44px;
+            box-shadow: 0 14px 32px rgba(0,0,0,0.12);
+            padding: 20px;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefef5;
+            border-radius: 32px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .knowledge-sidebar {
+            flex: 1.2;
+            background: #fafaf0;
+            border-radius: 44px;
+            padding: 24px 22px;
+            border: 1px solid #e2f0d6;
+            font-size: 1rem;
+        }
+        .button-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 24px;
+            margin: 28px 0 16px;
+        }
+        .btn {
+            background: #2d7a59;
+            border: none;
+            color: white;
+            font-weight: 700;
+            font-size: 1.2rem;
+            padding: 12px 36px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .btn.reset-btn {
+            background: #9b7a57;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.05);
+        }
+        .status {
+            background: #eef3e7;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #1f543e;
+            text-align: center;
+            margin-top: 14px;
+        }
+        .exp-desc {
+            background: #fef5e6;
+            border-radius: 32px;
+            padding: 18px;
+            margin-top: 20px;
+            border-left: 8px solid #f0a347;
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+        .knowledge-footer {
+            background: #eef3e8;
+            padding: 20px 32px;
+            border-top: 1px solid #cfdfc5;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+            font-size: 0.95rem;
+        }
+        .footer-block {
+            flex: 1;
+            min-width: 200px;
+        }
+        .footer-block h4 {
+            color: #2a6b4b;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+        .rule-mini {
+            display: flex;
+            gap: 20px;
+            margin-top: 8px;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+        footer {
+            background: #e2ecda;
+            text-align: center;
+            padding: 12px;
+            font-size: 0.85rem;
+            color: #4c6b58;
+        }
+        @media (max-width: 1200px) {
+            .canvas-area { min-width: auto; }
+            .btn { padding: 8px 22px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="master-container">
+    <div class="header">
+        <h1>🧬 DNA半保留复制 · 碱基配对可视化</h1>
+        <div class="sub">5'→3' 方向 · 前导链连续合成 · 后随链冈崎片段 | 清晰区分 A-T / G-C</div>
+    </div>
+    <div class="two-columns">
+        <div class="canvas-area">
+            <canvas id="dnaCanvas" width="1300" height="780" style="width:100%; height:auto; aspect-ratio:1300/780"></canvas>
+            <div class="button-bar">
+                <button class="btn reset-btn" id="resetBtn">⟳ 重置 · 完整双螺旋</button>
+                <button class="btn" id="unwindBtn">🔓 解旋酶 · 打开复制叉</button>
+                <button class="btn" id="polymeraseBtn">⚡ DNA聚合酶 · 合成新链</button>
+            </div>
+            <div class="status" id="phaseStatus">🌿 完整DNA双螺旋 | 碱基配对 A-T / G-C 用精美色块区分</div>
+            <div class="exp-desc" id="expText">
+                <strong>📘 分子机制精讲</strong><br>
+                DNA两条链反向平行，碱基互补配对：<span style="background:#c8e6df; padding:0 6px; border-radius:12px;">A＝T（两个氢键）</span> 和 <span style="background:#ffe0b5; padding:0 6px; border-radius:12px;">G≡C（三个氢键）</span>。解旋酶（橙色）打开双链，DNA聚合酶（蓝色）催化前导链连续合成，后随链不连续合成冈崎片段。
+            </div>
+        </div>
+        <div class="knowledge-sidebar">
+            <h3 style="color:#266d49; font-size:1.6rem; margin-bottom: 16px;">🧫 核心知识库</h3>
+            <div style="background: #e8f3e2; border-radius: 28px; padding: 14px; margin-bottom: 20px; text-align: center;">
+                <strong style="font-size:1.2rem;">🔬 碱基互补配对（彩色标识）</strong>
+                <div style="display: flex; justify-content: center; gap: 32px; margin: 12px 0;">
+                    <div style="background: #55b58a; width: 70px; height: 70px; border-radius: 35px; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">A</div>
+                    <div style="font-size: 2rem;">⇄</div>
+                    <div style="background: #4a90b0; width: 70px; height: 70px; border-radius: 35px; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">T</div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 32px; margin: 12px 0;">
+                    <div style="background: #e09d3e; width: 70px; height: 70px; border-radius: 35px; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">G</div>
+                    <div style="font-size: 2rem;">⇄</div>
+                    <div style="background: #c26b3a; width: 70px; height: 70px; border-radius: 35px; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: bold; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">C</div>
+                </div>
+            </div>
+            <div style="background:#fff7ed; border-radius: 28px; padding: 12px; margin-bottom: 16px;">
+                <div style="font-size:1.2rem; font-weight:600;">🔓 解旋酶 <span style="color:#d97c2b;">【橙色】</span></div>
+                <div>利用ATP水解，破坏氢键，形成复制叉，使两条链分开。</div>
+            </div>
+            <div style="background:#fff7ed; border-radius: 28px; padding: 12px; margin-bottom: 16px;">
+                <div style="font-size:1.2rem; font-weight:600;">⚡ DNA聚合酶 III <span style="color:#2b6f9e;">【蓝色】</span></div>
+                <div>只能沿模板链3'→5'方向读取，合成新链方向为5'→3'。</div>
+            </div>
+            <div style="background:#fff7ed; border-radius: 28px; padding: 12px;">
+                <div style="font-size:1.2rem; font-weight:600;">🧬 前导链 vs 后随链</div>
+                <div>前导链连续合成；后随链合成冈崎片段，需DNA连接酶缝合。</div>
+            </div>
+        </div>
+    </div>
+    <div class="knowledge-footer">
+        <div class="footer-block">
+            <h4>🔚 方向性与复制叉</h4>
+            <p>DNA两条链反向平行，复制叉处一条链为模板链3'→5'（前导链模板），另一条为5'→3'（后随链模板）。</p>
+        </div>
+        <div class="footer-block">
+            <h4>⚙️ 冈崎片段</h4>
+            <p>后随链上合成的不连续DNA短片段，长度约1000-2000碱基，之后由DNA连接酶连成完整链。</p>
+        </div>
+        <div class="footer-block">
+            <h4>🧪 RNA引物作用</h4>
+            <p>DNA聚合酶无法从头合成，需引物酶合成RNA引物提供3'-OH，随后引物被切除并替换为DNA。</p>
+        </div>
+        <div class="footer-block">
+            <h4>📖 半保留复制意义</h4>
+            <p>保证遗传信息精确传递，为细胞分裂和生物遗传奠定基础。</p>
+        </div>
+    </div>
+    <footer>⚛️ 动态模拟：双螺旋→解旋酶（橙色）打开复制叉→DNA聚合酶（蓝色）合成前导链连续 & 后随链不连续（冈崎片段）→ 最终形成两个子代DNA双螺旋</footer>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById('dnaCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 1300;
+        canvas.height = 780;
+        
+        // 序列 (12bp 更丰富)
+        const topSeq = ["A", "G", "C", "T", "A", "C", "G", "T", "A", "G", "C", "T"];
+        const bottomSeq = ["T", "C", "G", "A", "T", "G", "C", "A", "T", "C", "G", "A"];
+        const bpCount = topSeq.length;
+        
+        // 动画状态
+        let unwindProgress = 0;     // 0→1 解旋进度
+        let synthesisProgress = 0;  // 0→1 聚合进度
+        let currentMode = "idle";
+        let animFrame = null;
+        
+        // 粒子系统 (游离dNTP)
+        let flyingBases = [];
+        
+        function getComplement(base) {
+            if(base === "A") return "T";
+            if(base === "T") return "A";
+            if(base === "G") return "C";
+            if(base === "C") return "G";
+            return "?";
+        }
+        
+        // 获取碱基对应的颜色
+        function getBaseColor(base, isBackground=true) {
+            if(base === "A") return isBackground ? "#55b58a" : "#ffffff";
+            if(base === "T") return isBackground ? "#4a90b0" : "#ffffff";
+            if(base === "G") return isBackground ? "#e09d3e" : "#ffffff";
+            if(base === "C") return isBackground ? "#c26b3a" : "#ffffff";
+            return "#888888";
+        }
+        
+        // 绘制带彩色背景的碱基字母
+        function drawBaseWithColor(base, x, y, fontSize=28) {
+            ctx.font = `bold ${fontSize}px 'Courier New', monospace`;
+            const metrics = ctx.measureText(base);
+            const width = metrics.width;
+            const padding = 10;
+            const boxW = width + padding * 2;
+            const boxH = fontSize * 1.2;
+            ctx.fillStyle = getBaseColor(base, true);
+            ctx.shadowBlur = 3;
+            ctx.shadowColor = "rgba(0,0,0,0.1)";
+            ctx.fillRect(x - width/2 - padding, y - fontSize/1.8, boxW, boxH);
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = getBaseColor(base, false);
+            ctx.fillText(base, x - width/2, y + fontSize/3);
+        }
+        
+        // 坐标系统
+        const startX = 200;
+        const endX = 1100;
+        const step = (endX - startX) / (bpCount - 1);
+        const helixCenterY = 350;
+        const topStrandY = 220;      // 模板链 3'→5'
+        const bottomStrandY = 520;    // 模板链 5'→3'
+        const finalHelix1CenterY = 190;
+        const finalHelix2CenterY = 580;
+        
+        // 辅助: 方向标注
+        function drawDirectionLabel(x, y, label, color="#2c6e4f") {
+            ctx.font = "bold 24px 'Segoe UI'";
+            ctx.fillStyle = color;
+            ctx.fillText(label, x, y);
+        }
+        
+        // 绘制双螺旋（带彩色碱基）
+        function drawOneHelixWithColor(centerY, amplitude, freq, topSequence, bottomSequence, startXpos, stepX, labelText, labelX, topDirection, bottomDirection) {
+            // 骨架曲线
+            for(let side = 0; side <= 1; side++) {
+                let sign = (side === 0) ? 1 : -1;
+                ctx.beginPath();
+                ctx.strokeStyle = "#2f7a56";
+                ctx.lineWidth = 3;
+                for(let i=0; i<=200; i++) {
+                    let x = startXpos + (i/200)*(endX - startXpos);
+                    let yOff = sign * amplitude * Math.sin(x * freq);
+                    let y = centerY + yOff + 6*Math.sin(x*0.018);
+                    if(i===0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            // 碱基对及横档
+            for(let i=0; i<bpCount; i++) {
+                let x = startXpos + i*stepX;
+                let topY = centerY + amplitude * Math.sin(x * freq) + 6*Math.sin(x*0.018);
+                let bottomY = centerY - amplitude * Math.sin(x * freq) + 6*Math.sin(x*0.018);
+                // 氢键虚线
+                ctx.beginPath();
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(x, topY);
+                ctx.lineTo(x, bottomY);
+                ctx.strokeStyle = "#c68542";
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // 彩色碱基
+                drawBaseWithColor(topSequence[i], x, topY-6, 28);
+                drawBaseWithColor(bottomSequence[i], x, bottomY+22, 28);
+                // 装饰小圆
+                ctx.beginPath();
+                ctx.arc(x, topY-10, 6, 0, 2*Math.PI);
+                ctx.fillStyle = "#cbdbb8";
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(x, bottomY+10, 6, 0, 2*Math.PI);
+                ctx.fill();
+            }
+            if(labelText) {
+                ctx.font = "bold 26px 'Segoe UI'";
+                ctx.fillStyle = "#2d7053";
+                ctx.fillText(labelText, labelX, centerY - 55);
+            }
+            // 方向标注
+            let leftX = startXpos - 30;
+            let rightX = endX + 30;
+            ctx.font = "bold 24px monospace";
+            ctx.fillStyle = "#2b5f46";
+            ctx.fillText(topDirection, leftX, centerY - 45);
+            ctx.fillText(bottomDirection, leftX, centerY + 45);
+            ctx.fillText(topDirection === "5'" ? "3'" : "5'", rightX, centerY - 45);
+            ctx.fillText(bottomDirection === "5'" ? "3'" : "5'", rightX, centerY + 45);
+        }
+        
+        // 原始双螺旋
+        function drawFullHelix() {
+            drawOneHelixWithColor(helixCenterY, 34, 0.04, topSeq, bottomSeq, startX, step, 
+                "原始DNA双螺旋 (亲代)", startX+400, "5'", "3'");
+            ctx.font = "bold 22px sans-serif";
+            ctx.fillStyle = "#e0872a";
+            ctx.fillText("← 5'端", startX-70, helixCenterY-50);
+            ctx.fillText("3'端 →", endX+40, helixCenterY-50);
+            ctx.fillText("← 3'端", startX-70, helixCenterY+50);
+            ctx.fillText("5'端 →", endX+40, helixCenterY+50);
+        }
+        
+        // 解旋过程 (解旋酶橙色)
+        function drawUnwinding(t) {
+            const amplitude = 34;
+            const freq = 0.04;
+            const centerY = 350;
+            let topShift = -95 * t;
+            let bottomShift = 95 * t;
+            for(let side = 0; side <= 1; side++) {
+                let sign = (side===0)? 1 : -1;
+                let shiftY = (side===0)? topShift : bottomShift;
+                ctx.beginPath();
+                ctx.strokeStyle = "#327a58";
+                ctx.lineWidth = 3;
+                for(let i=0; i<=200; i++) {
+                    let x = startX + (i/200)*(endX-startX);
+                    let yOff = sign * amplitude * Math.sin(x*freq) * (1-t);
+                    let y = centerY + yOff + 6*Math.sin(x*0.018) + shiftY;
+                    if(i===0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+            // 碱基 (部分保留)
+            for(let i=0; i<bpCount; i++) {
+                let x = startX + i*step;
+                let topY = centerY + amplitude*Math.sin(x*freq) + 6*Math.sin(x*0.018) + topShift;
+                let bottomY = centerY - amplitude*Math.sin(x*freq) + 6*Math.sin(x*0.018) + bottomShift;
+                ctx.save();
+                ctx.globalAlpha = 1 - t*0.7;
+                ctx.beginPath();
+                ctx.setLineDash([4,4]);
+                ctx.moveTo(x, topY);
+                ctx.lineTo(x, bottomY);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+                drawBaseWithColor(topSeq[i], x, topY-6, 28);
+                drawBaseWithColor(bottomSeq[i], x, bottomY+22, 28);
+                ctx.restore();
+            }
+            // 方向标注
+            if(t > 0.2) {
+                drawDirectionLabel(startX-80, topStrandY-10, "5'", "#2b6e4a");
+                drawDirectionLabel(endX+50, topStrandY-10, "3'", "#2b6e4a");
+                drawDirectionLabel(startX-80, bottomStrandY+20, "3'", "#2b6e4a");
+                drawDirectionLabel(endX+50, bottomStrandY+20, "5'", "#2b6e4a");
+                // 解旋酶橙色位于复制叉中间
+                let enzymeX = startX + t * (endX-startX);
+                let enzymeY = (topStrandY + bottomStrandY) / 2 - 20;
+                ctx.shadowBlur = 6;
+                ctx.beginPath();
+                ctx.ellipse(enzymeX, enzymeY, 38, 44, 0, 0, 2*Math.PI);
+                ctx.fillStyle = "#f5a65a";
+                ctx.fill();
+                ctx.fillStyle = "#b45a1c";
+                ctx.font = "bold 26px sans-serif";
+                ctx.fillText("解旋酶", enzymeX-45, enzymeY+8);
+                ctx.fillText("🔓", enzymeX+10, enzymeY);
+                ctx.shadowBlur = 0;
+                ctx.font = "bold 28px sans-serif";
+                ctx.fillStyle = "#bc752a";
+                ctx.fillText("🔓 解旋酶 · 打开复制叉", startX+380, 90);
+            }
+        }
+        
+        // 合成阶段：前导链连续 + 后随链冈崎片段，DNA聚合酶蓝色
+        function drawSynthesisWithColor(progress, particles) {
+            // 绘制两条模板链
+            for(let i=0; i<bpCount; i++) {
+                let x = startX + i*step;
+                // 上链模板
+                ctx.beginPath();
+                ctx.moveTo(x-12, topStrandY);
+                ctx.lineTo(x+12, topStrandY);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = "#2d7a53";
+                ctx.stroke();
+                drawBaseWithColor(topSeq[i], x, topStrandY-10, 30);
+                // 下链模板
+                ctx.beginPath();
+                ctx.moveTo(x-12, bottomStrandY);
+                ctx.lineTo(x+12, bottomStrandY);
+                ctx.stroke();
+                drawBaseWithColor(bottomSeq[i], x, bottomStrandY+28, 30);
+                
+                let synthIndex = Math.floor(progress * bpCount);
+                // 前导链连续合成 (互补链)
+                if(i < synthIndex) {
+                    let newBaseTop = getComplement(topSeq[i]);
+                    drawBaseWithColor(newBaseTop, x, topStrandY+52, 30);
+                    ctx.beginPath();
+                    ctx.moveTo(x-12, topStrandY+44);
+                    ctx.lineTo(x+12, topStrandY+44);
+                    ctx.strokeStyle = "#e0964a";
+                    ctx.stroke();
+                }
+                // 后随链不连续合成 (冈崎片段)
+                let okazakiCount = Math.floor(progress * bpCount * 0.75);
+                for(let j=0; j<okazakiCount; j+=2) {
+                    if(j === i) {
+                        let newBaseBottom = getComplement(bottomSeq[i]);
+                        drawBaseWithColor(newBaseBottom, x, bottomStrandY-44, 30);
+                        ctx.beginPath();
+                        ctx.moveTo(x-12, bottomStrandY-36);
+                        ctx.lineTo(x+12, bottomStrandY-36);
+                        ctx.strokeStyle = "#d68a3a";
+                        ctx.stroke();
+                        ctx.fillStyle = "#c06d2a";
+                        ctx.font = "bold 18px sans-serif";
+                        ctx.fillText("冈崎片段", x-28, bottomStrandY-68);
+                    }
+                }
+            }
+            // 游离粒子飞入
+            for(let p of particles) {
+                if(!p.active) continue;
+                let curX = p.fromX + (p.targetX - p.fromX) * p.progress;
+                let curY = p.fromY + (p.targetY - p.fromY) * p.progress;
+                ctx.beginPath();
+                ctx.arc(curX, curY, 22, 0, 2*Math.PI);
+                ctx.fillStyle = "#f5bc70";
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                drawBaseWithColor(p.baseChar, curX, curY+5, 26);
+                ctx.shadowBlur = 0;
+            }
+            // 方向标注
+            drawDirectionLabel(startX-100, topStrandY-25, "3'", "#2b6e4a");
+            drawDirectionLabel(endX+60, topStrandY-25, "5'", "#2b6e4a");
+            drawDirectionLabel(startX-100, bottomStrandY+25, "5'", "#2b6e4a");
+            drawDirectionLabel(endX+60, bottomStrandY+25, "3'", "#2b6e4a");
+            
+            // DNA聚合酶蓝色位于复制叉前导链合成区域
+            let polyX = startX + progress * (endX-startX);
+            let polyY = (topStrandY + bottomStrandY) / 2 - 30;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.ellipse(polyX+20, polyY, 40, 48, 0, 0, 2*Math.PI);
+            ctx.fillStyle = "#5a9ad6";
+            ctx.fill();
+            ctx.fillStyle = "#1f5a7e";
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillText("DNA聚合酶", polyX-48, polyY+8);
+            ctx.fillText("⚡", polyX+28, polyY);
+            ctx.shadowBlur = 0;
+            
+            // 标注文本
+            ctx.font = "bold 24px sans-serif";
+            ctx.fillStyle = "#2d855d";
+            ctx.fillText("前导链 (连续合成)", startX+80, topStrandY+85);
+            ctx.fillStyle = "#b5561a";
+            ctx.fillText("后随链 (不连续合成, 冈崎片段)", startX+80, bottomStrandY-85);
+            ctx.font = "italic 22px";
+            ctx.fillStyle = "#587b66";
+            ctx.fillText("游离dNTP飞入配对 →", startX+550, topStrandY+105);
+        }
+        
+        // 最终子代双螺旋
+        function drawFinalHelices() {
+            let newSeq1 = topSeq.map(b => getComplement(b));
+            drawOneHelixWithColor(finalHelix1CenterY, 28, 0.045, topSeq, newSeq1, startX, step, 
+                "子代DNA ① (半保留)", startX+80, "5'", "3'");
+            let newSeq2 = bottomSeq.map(b => getComplement(b));
+            drawOneHelixWithColor(finalHelix2CenterY, 28, 0.045, bottomSeq, newSeq2, startX, step, 
+                "子代DNA ② (半保留)", startX+80, "3'", "5'");
+            ctx.font = "bold 28px sans-serif";
+            ctx.fillStyle = "#2a7653";
+            ctx.fillText("✅ 半保留复制完成 · 两个相同的DNA双螺旋", startX+380, finalHelix1CenterY-80);
+            ctx.fillStyle = "#cf7f37";
+            ctx.font = "italic 22px";
+            ctx.fillText("每条双链均保持5'→3'方向性，遗传信息一致", startX+380, finalHelix2CenterY+95);
+        }
+        
+        function renderScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.shadowBlur = 0;
+            if(currentMode === "idle" && unwindProgress === 0 && synthesisProgress === 0) {
+                drawFullHelix();
+            } else if(unwindProgress < 1 && (currentMode === "unwinding" || unwindProgress > 0)) {
+                drawUnwinding(unwindProgress);
+            } else if(unwindProgress >= 0.99 && synthesisProgress < 1) {
+                drawSynthesisWithColor(synthesisProgress, flyingBases);
+            } else if(synthesisProgress >= 1.0) {
+                drawFinalHelices();
+            } else {
+                drawFullHelix();
+            }
+            ctx.restore();
+            updateStatusText();
+        }
+        
+        // 粒子系统
+        function updateFlyingParticles(progress) {
+            let currentSynthCount = Math.floor(progress * bpCount);
+            let existingIndices = new Set();
+            for(let p of flyingBases) existingIndices.add(p.targetIndex);
+            for(let idx=0; idx<currentSynthCount; idx++) {
+                if(!existingIndices.has(idx)) {
+                    let targetX = startX + idx*step;
+                    let targetY_top = topStrandY + 48;
+                    let fromX = targetX + (Math.random() * 240 - 120);
+                    let fromY = targetY_top - 120 - Math.random() * 100;
+                    flyingBases.push({
+                        fromX, fromY, targetX, targetY: targetY_top,
+                        baseChar: getComplement(topSeq[idx]), progress: 0, active: true, targetIndex: idx
+                    });
+                }
+            }
+            for(let p of flyingBases) {
+                if(p.active && p.progress < 1) {
+                    p.progress += 0.022;
+                    if(p.progress >= 1) { p.progress = 1; p.active = false; }
+                }
+            }
+            flyingBases = flyingBases.filter(p => p.active || p.progress < 1);
+        }
+        
+        function startUnwind() {
+            if(animFrame) cancelAnimationFrame(animFrame);
+            if(unwindProgress >= 0.99 && synthesisProgress > 0) resetToInitial();
+            currentMode = "unwinding";
+            function step() {
+                if(unwindProgress < 1) {
+                    unwindProgress += 0.007;
+                    if(unwindProgress > 1) unwindProgress = 1;
+                    renderScene();
+                    animFrame = requestAnimationFrame(step);
+                } else {
+                    currentMode = "idle";
+                    renderScene();
+                    animFrame = null;
+                }
+            }
+            if(unwindProgress < 1) step(); else renderScene();
+        }
+        
+        function startSynthesis() {
+            if(unwindProgress < 0.98) {
+                document.getElementById('expText').innerHTML = "<strong>⚠️ 请先完成解旋过程！</strong><br>解旋酶打开双链形成复制叉后，聚合酶才能开始合成。";
+                setTimeout(()=>updateStatusText(), 1500);
+                return;
+            }
+            if(animFrame) cancelAnimationFrame(animFrame);
+            currentMode = "synthesizing";
+            flyingBases = [];
+            function stepSynth() {
+                if(synthesisProgress < 1) {
+                    synthesisProgress += 0.005;
+                    if(synthesisProgress > 1) synthesisProgress = 1;
+                    updateFlyingParticles(synthesisProgress);
+                    renderScene();
+                    animFrame = requestAnimationFrame(stepSynth);
+                } else {
+                    flyingBases = [];
+                    renderScene();
+                    currentMode = "idle";
+                    animFrame = null;
+                }
+            }
+            if(synthesisProgress < 1) stepSynth(); else renderScene();
+        }
+        
+        function resetToInitial() {
+            if(animFrame) cancelAnimationFrame(animFrame);
+            unwindProgress = 0;
+            synthesisProgress = 0;
+            currentMode = "idle";
+            flyingBases = [];
+            renderScene();
+            updateStatusText();
+        }
+        
+        function updateStatusText() {
+            const statusDiv = document.getElementById('phaseStatus');
+            const expDiv = document.getElementById('expText');
+            if(unwindProgress === 0 && synthesisProgress === 0) {
+                statusDiv.innerHTML = "🧬 完整双螺旋 · 彩色碱基配对 A-T / G-C";
+                expDiv.innerHTML = "<strong>📘 起始双螺旋</strong><br>两条链反向平行，彩色圆形标识代表碱基：<span style='background:#55b58a; padding:2px 10px; border-radius:20px; color:white;'>A</span> 与 <span style='background:#4a90b0; padding:2px 10px; border-radius:20px; color:white;'>T</span> 配对，<span style='background:#e09d3e; padding:2px 10px; border-radius:20px; color:white;'>G</span> 与 <span style='background:#c26b3a; padding:2px 10px; border-radius:20px; color:white;'>C</span> 配对。解旋酶（橙色）将启动复制。";
+            } else if(unwindProgress > 0 && unwindProgress < 1) {
+                statusDiv.innerHTML = "🔓 解旋酶（橙色）打开复制叉 · 双链分开";
+                expDiv.innerHTML = "<strong>🔓 解旋酶作用</strong><br>利用ATP水解，破坏碱基间氢键，形成复制叉。两条单链暴露出模板方向：上链3'→5'，下链5'→3'。";
+            } else if(unwindProgress >= 0.99 && synthesisProgress < 1) {
+                statusDiv.innerHTML = "⚡ DNA聚合酶（蓝色）合成前导链 & 后随链冈崎片段";
+                expDiv.innerHTML = "<strong>⚡ DNA聚合酶 III 不对称复制</strong><br>前导链模板3'→5'，可连续合成5'→3'新链；后随链模板5'→3'，合成方向相反，只能不连续合成冈崎片段，随后由连接酶缝合。游离dNTP按碱基互补配对规则飞入。";
+            } else if(synthesisProgress >= 1) {
+                statusDiv.innerHTML = "✅ 半保留复制完成 → 两个子代DNA双螺旋";
+                expDiv.innerHTML = "<strong>🧬 半保留复制终局</strong><br>每个子代DNA包含一条亲代链和一条新链，方向性正确，前导链/后随链机制确保完整复制。";
+            }
+        }
+        
+        document.getElementById('resetBtn').addEventListener('click', resetToInitial);
+        document.getElementById('unwindBtn').addEventListener('click', startUnwind);
+        document.getElementById('polymeraseBtn').addEventListener('click', startSynthesis);
+        
+        resetToInitial();
+    })();
+</script>
+</body>
+</html>

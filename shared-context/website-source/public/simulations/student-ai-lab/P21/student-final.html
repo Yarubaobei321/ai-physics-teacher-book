@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>牛顿摆 · 动量守恒与能量守恒 | 高中物理互动演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef2f7 0%, #dce5ec 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .newton-main {
+            max-width: 1400px;
+            width: 100%;
+            background: #ffffffdd;
+            backdrop-filter: blur(0px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.3);
+            padding: 1.2rem 1.8rem 1.8rem;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .header h1 {
+            font-size: 28px;
+            color: #1a4d62;
+        }
+        .header .sub {
+            font-size: 16px;
+            color: #2f6d80;
+        }
+
+        .main-demo {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .canvas-box {
+            flex: 3;
+            min-width: 320px;
+            background: #fefcf5;
+            border-radius: 1.8rem;
+            padding: 12px 8px;
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fffef7;
+            border-radius: 1.2rem;
+            cursor: grab;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        canvas:active { cursor: grabbing; }
+
+        .info-panel {
+            flex: 1.4;
+            background: #f4fafe;
+            border-radius: 1.6rem;
+            padding: 1rem 1.2rem;
+            border: 1px solid #cfe0ec;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .formula-card {
+            background: #eef3e9;
+            border-radius: 1.2rem;
+            padding: 12px 12px;
+            text-align: center;
+            border-left: 6px solid #2c9c7a;
+        }
+        .formula-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a5d4e;
+            margin-bottom: 8px;
+        }
+        .formula-content {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 500;
+            background: #ffffffaa;
+            padding: 8px;
+            border-radius: 1rem;
+            color: #004070;
+        }
+        .formula-content p {
+            margin: 4px 0;
+        }
+
+        .data-area {
+            background: #ffffffcc;
+            border-radius: 1.2rem;
+            padding: 8px 12px;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 6px 0;
+            border-bottom: 1px solid #cde0ec;
+            font-size: 18px;
+        }
+        .data-label {
+            font-weight: 600;
+            color: #1f5e73;
+        }
+        .data-value {
+            font-family: monospace;
+            font-size: 22px;
+            font-weight: 700;
+            color: #004070;
+            background: #eef3fc;
+            padding: 2px 12px;
+            border-radius: 32px;
+        }
+        .unit {
+            font-size: 14px;
+            margin-left: 4px;
+        }
+
+        .control-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin: 0.8rem 0 1rem;
+        }
+        button {
+            font-size: 22px;
+            font-weight: 500;
+            padding: 0.5rem 1.8rem;
+            border: none;
+            background: #2c5a6e;
+            color: white;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        button:hover {
+            background: #1f4457;
+            transform: translateY(-2px);
+        }
+        .reset-btn { background: #5f7f6e; }
+        .reset-btn:hover { background: #3e5b4b; }
+        .stop-btn { background: #9e5a3a; }
+        .stop-btn:hover { background: #7e452b; }
+
+        .custom-panel {
+            background: #eef3f0;
+            border-radius: 1.4rem;
+            padding: 0.8rem 1rem;
+            margin-top: 0.4rem;
+        }
+        .custom-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a5d4e;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .balls-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            justify-content: space-between;
+        }
+        .ball-card {
+            background: #fff9ef;
+            border-radius: 1rem;
+            padding: 6px 8px;
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        .ball-card h4 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: #2c6b5e;
+        }
+        .slider-group {
+            margin: 4px 0;
+        }
+        .slider-group label {
+            font-size: 13px;
+            font-weight: 500;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 2px 0;
+        }
+        .num-val {
+            font-size: 14px;
+            font-weight: bold;
+            background: #e0e9f0;
+            padding: 0 6px;
+            border-radius: 20px;
+        }
+        .footer-note {
+            font-size: 13px;
+            text-align: center;
+            color: #5c7e8c;
+            margin-top: 12px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0.2s, opacity 0.2s;
+        }
+        .modal-overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+        .modal-card {
+            background: #fefef7;
+            max-width: 500px;
+            width: 85%;
+            border-radius: 2rem;
+            padding: 2rem 1.8rem;
+            text-align: center;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.3);
+            border-top: 6px solid #2c9c7a;
+            animation: modalPop 0.3s ease;
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .modal-card h2 {
+            font-size: 28px;
+            color: #1a4d62;
+            margin-bottom: 16px;
+        }
+        .modal-card .principle-text {
+            font-size: 18px;
+            text-align: left;
+            background: #eef3f0;
+            padding: 16px;
+            border-radius: 1.2rem;
+            margin: 16px 0;
+            line-height: 1.5;
+        }
+        .principle-text p {
+            margin: 8px 0;
+        }
+        .principle-text .formula {
+            font-family: monospace;
+            font-weight: bold;
+            background: #ffffffaa;
+            padding: 4px;
+            border-radius: 12px;
+            display: inline-block;
+        }
+        .exit-btn {
+            background: #2c5a6e;
+            font-size: 20px;
+            padding: 10px 28px;
+            margin-top: 8px;
+            display: inline-block;
+            cursor: pointer;
+            border-radius: 48px;
+            color: white;
+            border: none;
+            transition: 0.2s;
+        }
+        .exit-btn:hover {
+            background: #1f4457;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 900px) {
+            .main-demo { flex-direction: column; }
+            .data-value { font-size: 18px; }
+            button { font-size: 18px; padding: 0.4rem 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="newton-main">
+    <div class="header">
+        <h1>⚛️ 牛顿摆 · 完全弹性碰撞</h1>
+        <div class="sub">理想模型 | 动量守恒 & 机械能守恒 | 演示速度加快50% | g = 10 m/s²</div>
+    </div>
+
+    <div class="main-demo">
+        <div class="canvas-box">
+            <canvas id="newtonCanvas" width="1100" height="480" style="width:100%; aspect-ratio:1100/480"></canvas>
+            <div style="text-align: center; margin-top: 8px; font-size: 16px;">
+                🖱️ 鼠标拖拽任意小球设定初始角度 → 点击【开始摆动】 | 实时显示水平动量与能量
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="formula-card">
+                <div class="formula-title">📐 牛顿摆物理定律</div>
+                <div class="formula-content">
+                    <p>✨ 动量守恒：<strong>Σ mᵢ vₓᵢ = 常量</strong></p>
+                    <p>✨ 动能守恒：<strong>Σ ½ mᵢ vᵢ² = 常量</strong> (弹性碰撞)</p>
+                    <p>✨ 等质量时速度完全传递</p>
+                    <p style="font-size:14px; margin-top:4px;">⚡ 完全弹性碰撞 · 无能量损失</p>
+                </div>
+            </div>
+            <div class="data-area">
+                <div class="data-row">
+                    <span class="data-label">🔄 水平总动量 Pₓ</span>
+                    <span><span class="data-value" id="totalMomentum">0.00</span><span class="unit">kg·m/s</span></span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">⚡ 总动能 Eₖ</span>
+                    <span><span class="data-value" id="totalKinetic">0.00</span><span class="unit">J</span></span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">📈 总势能 Eₚ</span>
+                    <span><span class="data-value" id="totalPotential">0.00</span><span class="unit">J</span></span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">🔁 总机械能 Eₜₒₜ</span>
+                    <span><span class="data-value" id="totalMechanical">0.00</span><span class="unit">J</span></span>
+                </div>
+            </div>
+            <div style="background:#e2edf5; border-radius:1rem; padding:6px; text-align:center; font-size:15px;">
+                ✅ 碰撞前后总动量 & 总机械能严格守恒（数值稳定）
+            </div>
+        </div>
+    </div>
+
+    <div class="control-bar">
+        <button id="startBtn">▶ 开始摆动 (速度+50%)</button>
+        <button id="stopBtn" class="stop-btn">⏹️ 停止摆动 & 原理展示</button>
+        <button id="resetBtn" class="reset-btn">⟳ 复位静止</button>
+    </div>
+
+    <div class="custom-panel">
+        <div class="custom-title">🎛️ 自定义小球参数 (质量 / 初始角度) — 调节后需点击【开始摆动】生效</div>
+        <div class="balls-grid" id="ballsControlGrid"></div>
+        <div class="footer-note">
+            💡 提示：拖拽小球可直观设定角度 | 演示速度已提升至150% | 所有物理计算基于完全弹性碰撞，无空气阻力
+        </div>
+    </div>
+</div>
+
+<!-- 原理展示模态框 -->
+<div id="principleModal" class="modal-overlay">
+    <div class="modal-card">
+        <h2>📖 牛顿摆物理原理</h2>
+        <div class="principle-text">
+            <p><strong>🔹 动量守恒定律</strong><br>
+            系统在水平方向不受外力，总动量保持不变：<br>
+            <span class="formula">Σ mᵢ vₓᵢ = 恒量</span></p>
+            <p><strong>🔹 机械能守恒（完全弹性碰撞）</strong><br>
+            碰撞前后总动能与势能之和不变：<br>
+            <span class="formula">Σ (½ mᵢ vᵢ² + mᵢ g hᵢ) = 恒量</span></p>
+            <p><strong>🔹 等质量传递规律</strong><br>
+            当小球质量相等时，速度完全传递，一侧小球拉起后另一侧等数量小球以相同速度弹出。</p>
+            <p><strong>⚡ 理想模型：</strong>无空气阻力，无能量损失，符合高中物理理想化模型。</p>
+        </div>
+        <div id="exitBtnContainer"></div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ---------- 牛顿摆核心参数 (演示速度加快50%) ----------
+        const canvas = document.getElementById('newtonCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = 1100, height = 480;
+        canvas.width = width;
+        canvas.height = height;
+
+        const BALL_COUNT = 5;
+        const BALL_RADIUS = 20;
+        const ROPE_LEN = 145;
+        const G = 10.0;
+        const SPEED_FACTOR = 1.5;
+        const DAMP = 0.0;
+        
+        let balls = [];              // {angle, angularVel}
+        let masses = new Array(BALL_COUNT).fill(1.0);
+        let userAnglesDeg = new Array(BALL_COUNT).fill(0);
+        
+        let pivotsX = [];
+        const pivotY = 85;
+        
+        let running = false;
+        let animationId = null;
+        let dragging = false;
+        let dragIndex = -1;
+        let lastTimestamp = 0;
+        
+        // 模态框相关
+        const modal = document.getElementById('principleModal');
+        let timeoutId = null;
+        
+        // 控制按钮
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        
+        // ---------- 辅助函数：禁用/启用主按钮（保持样式）----------
+        function setButtonsEnabled(enabled) {
+            if (enabled) {
+                startBtn.disabled = false;
+                stopBtn.disabled = false;
+                resetBtn.disabled = false;
+                startBtn.style.opacity = '1';
+                stopBtn.style.opacity = '1';
+                resetBtn.style.opacity = '1';
+                startBtn.style.cursor = 'pointer';
+                stopBtn.style.cursor = 'pointer';
+                resetBtn.style.cursor = 'pointer';
+            } else {
+                startBtn.disabled = true;
+                stopBtn.disabled = true;
+                resetBtn.disabled = true;
+                startBtn.style.opacity = '0.5';
+                stopBtn.style.opacity = '0.5';
+                resetBtn.style.opacity = '0.5';
+                startBtn.style.cursor = 'not-allowed';
+                stopBtn.style.cursor = 'not-allowed';
+                resetBtn.style.cursor = 'not-allowed';
+            }
+        }
+        
+        // 判断模态框是否激活
+        function isModalActive() {
+            return modal.classList.contains('active');
+        }
+        
+        // 复位所有小球（角度归零、速度归零、滑块同步）
+        function resetSimulation() {
+            running = false;
+            for (let i = 0; i < BALL_COUNT; i++) {
+                userAnglesDeg[i] = 0;
+                balls[i].angle = 0;
+                balls[i].angularVel = 0;
+                const angleSlider = document.getElementById(`angle_slider_${i}`);
+                const angleSpan = document.getElementById(`angle_val_${i}`);
+                if (angleSlider) angleSlider.value = 0;
+                if (angleSpan) angleSpan.innerText = "0";
+            }
+            draw();
+            updateDataDisplay();
+        }
+        
+        // 关闭模态框并复位所有数据（数据归位，回到演示初始状态）
+        function closeModalAndReset() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            modal.classList.remove('active');
+            // 复位所有小球数据 (角度归零、停止运动)
+            resetSimulation();
+            // 重新启用控制按钮
+            setButtonsEnabled(true);
+            // 确保 running = false (resetSimulation已做)
+            draw();
+            updateDataDisplay();
+        }
+        
+        // 显示原理模态框，2秒后显示退出按钮
+        function showPrincipleModal() {
+            if (isModalActive()) return; // 已经打开则不再重复打开
+            // 清除之前的定时器
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+            // 清空退出按钮容器
+            const exitContainer = document.getElementById('exitBtnContainer');
+            exitContainer.innerHTML = '';
+            // 显示模态框
+            modal.classList.add('active');
+            // 禁用主控制按钮
+            setButtonsEnabled(false);
+            // 2秒后显示退出按钮
+            timeoutId = setTimeout(() => {
+                const btn = document.createElement('button');
+                btn.textContent = '✖ 退出原理演示 & 复位数据';
+                btn.className = 'exit-btn';
+                btn.onclick = () => {
+                    closeModalAndReset();
+                };
+                exitContainer.appendChild(btn);
+                timeoutId = null;
+            }, 2000);
+        }
+        
+        // 停止摆动并弹出原理展示
+        function stopAndShowPrinciple() {
+            if (isModalActive()) return; // 已经弹窗则不再重复
+            if (running) {
+                running = false;   // 立即停止摆动
+            }
+            showPrincipleModal();
+        }
+        
+        // ---------- 几何与物理引擎 (完全弹性碰撞，无阻尼) ----------
+        function updatePivots() {
+            const totalSpan = (BALL_COUNT - 1) * (BALL_RADIUS * 2);
+            const startX = (width - totalSpan) / 2;
+            pivotsX = [];
+            for (let i = 0; i < BALL_COUNT; i++) {
+                pivotsX.push(startX + i * (BALL_RADIUS * 2));
+            }
+        }
+        
+        function getBallPosition(idx, angleRad) {
+            const px = pivotsX[idx];
+            const py = pivotY;
+            const offsetX = ROPE_LEN * Math.sin(angleRad);
+            const offsetY = ROPE_LEN * Math.cos(angleRad);
+            return { x: px + offsetX, y: py + offsetY };
+        }
+        
+        function initBallsState() {
+            balls = [];
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const rad = userAnglesDeg[i] * Math.PI / 180;
+                balls.push({ angle: rad, angularVel: 0.0 });
+            }
+        }
+        
+        function computeHorizontalVelocities() {
+            let vx = new Array(BALL_COUNT).fill(0);
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const theta = balls[i].angle;
+                const linearSpeed = balls[i].angularVel * ROPE_LEN;
+                vx[i] = linearSpeed * Math.cos(theta);
+            }
+            return vx;
+        }
+        
+        function applyHorizontalVelocities(vx) {
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const theta = balls[i].angle;
+                let cost = Math.cos(theta);
+                if (Math.abs(cost) < 0.08) cost = 0.08;
+                let newOmega = vx[i] / (ROPE_LEN * cost);
+                newOmega = Math.min(Math.max(newOmega, -20), 20);
+                balls[i].angularVel = newOmega;
+            }
+        }
+        
+        function handleCollisions() {
+            let vx = computeHorizontalVelocities();
+            let collided = false;
+            for (let i = 0; i < BALL_COUNT - 1; i++) {
+                const p1 = getBallPosition(i, balls[i].angle);
+                const p2 = getBallPosition(i+1, balls[i+1].angle);
+                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if (dist < BALL_RADIUS * 2 - 1.2) {
+                    const m1 = masses[i];
+                    const m2 = masses[i+1];
+                    const v1 = vx[i];
+                    const v2 = vx[i+1];
+                    const newV1 = ((m1 - m2) * v1 + 2 * m2 * v2) / (m1 + m2);
+                    const newV2 = ((m2 - m1) * v2 + 2 * m1 * v1) / (m1 + m2);
+                    vx[i] = newV1;
+                    vx[i+1] = newV2;
+                    collided = true;
+                }
+            }
+            if (collided) {
+                applyHorizontalVelocities(vx);
+                // 轻微位置修正，避免视觉重叠
+                for (let i = 0; i < BALL_COUNT - 1; i++) {
+                    let p1 = getBallPosition(i, balls[i].angle);
+                    let p2 = getBallPosition(i+1, balls[i+1].angle);
+                    let dist2 = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                    if (dist2 < BALL_RADIUS * 2 - 1.0) {
+                        let overlap = (BALL_RADIUS * 2 - dist2) * 0.3;
+                        let dx = p2.x - p1.x;
+                        let dy = p2.y - p1.y;
+                        let len = Math.hypot(dx, dy);
+                        if (len > 0.01) {
+                            let nx = dx / len;
+                            let ny = dy / len;
+                            let newAng1 = Math.atan2(p1.x - nx * overlap - pivotsX[i], p1.y - ny * overlap - pivotY);
+                            let newAng2 = Math.atan2(p2.x + nx * overlap - pivotsX[i+1], p2.y + ny * overlap - pivotY);
+                            if (!isNaN(newAng1)) balls[i].angle = Math.min(Math.max(newAng1, -1.45), 1.45);
+                            if (!isNaN(newAng2)) balls[i+1].angle = Math.min(Math.max(newAng2, -1.45), 1.45);
+                        }
+                    }
+                }
+            }
+        }
+        
+        function updatePhysics(deltaSec) {
+            if (!running) return;
+            if (deltaSec > 0.033) deltaSec = 0.033;
+            const dt = deltaSec * SPEED_FACTOR;
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const theta = balls[i].angle;
+                const alpha = -(G / ROPE_LEN) * Math.sin(theta);
+                balls[i].angularVel += alpha * dt;
+                balls[i].angularVel *= (1 - DAMP);
+                balls[i].angle += balls[i].angularVel * dt;
+                const maxAng = Math.PI / 2.2;
+                if (balls[i].angle > maxAng) {
+                    balls[i].angle = maxAng;
+                    balls[i].angularVel *= -0.05;
+                }
+                if (balls[i].angle < -maxAng) {
+                    balls[i].angle = -maxAng;
+                    balls[i].angularVel *= -0.05;
+                }
+            }
+            handleCollisions();
+        }
+        
+        function computeMetrics() {
+            let totalPx = 0;
+            let totalKinetic = 0;
+            let totalPotential = 0;
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const theta = balls[i].angle;
+                const omega = balls[i].angularVel;
+                const vLinear = omega * ROPE_LEN;
+                const vx = vLinear * Math.cos(theta);
+                const m = masses[i];
+                totalPx += m * vx;
+                totalKinetic += 0.5 * m * (vLinear * vLinear);
+                const h = ROPE_LEN * (1 - Math.cos(theta));
+                totalPotential += m * G * h;
+            }
+            const totalMechanical = totalKinetic + totalPotential;
+            return { totalPx, totalKinetic, totalPotential, totalMechanical };
+        }
+        
+        function updateDataDisplay() {
+            const metrics = computeMetrics();
+            document.getElementById('totalMomentum').innerText = metrics.totalPx.toFixed(2);
+            document.getElementById('totalKinetic').innerText = metrics.totalKinetic.toFixed(2);
+            document.getElementById('totalPotential').innerText = metrics.totalPotential.toFixed(2);
+            document.getElementById('totalMechanical').innerText = metrics.totalMechanical.toFixed(2);
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = "#cbae86";
+            ctx.fillRect(0, height - 24, width, 24);
+            ctx.fillStyle = "#a37e54";
+            ctx.fillRect(0, height - 26, width, 6);
+            ctx.beginPath();
+            ctx.moveTo(25, pivotY);
+            ctx.lineTo(width - 25, pivotY);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = "#8b6946";
+            ctx.stroke();
+            
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const pos = getBallPosition(i, balls[i].angle);
+                ctx.beginPath();
+                ctx.moveTo(pivotsX[i], pivotY);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "#5e4b38";
+                ctx.stroke();
+                
+                const grad = ctx.createRadialGradient(pos.x - 5, pos.y - 6, 5, pos.x, pos.y, BALL_RADIUS);
+                grad.addColorStop(0, "#d1e2f0");
+                grad.addColorStop(1, "#4b6e86");
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, BALL_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.strokeStyle = "#2f566b";
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(pos.x - 4, pos.y - 5, 5, 0, Math.PI * 2);
+                ctx.fillStyle = "#ffffffaa";
+                ctx.fill();
+                ctx.font = "bold 14px 'Segoe UI'";
+                ctx.fillStyle = "#1f3b44";
+                ctx.shadowBlur = 0;
+                ctx.fillText(`${masses[i].toFixed(1)}kg`, pos.x - 13, pos.y - 13);
+            }
+            
+            if (!running && !dragging && !isModalActive()) {
+                ctx.font = "18px 'Segoe UI'";
+                ctx.fillStyle = "#2c7a6e";
+                ctx.fillText("⏸ 点击「开始摆动」", 30, 60);
+            } else if (dragging && !running && !isModalActive()) {
+                ctx.font = "18px 'Segoe UI'";
+                ctx.fillStyle = "#227a8f";
+                ctx.fillText("🎯 释放后点击开始", 30, 60);
+            } else if (running && !isModalActive()) {
+                ctx.font = "16px 'Segoe UI'";
+                ctx.fillStyle = "#1f5e44";
+                ctx.fillText("⚡ 演示中 (速度+50%)", 30, 60);
+            }
+        }
+        
+        // ---------- 拖拽交互（模态框激活时禁止拖拽）----------
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(Math.max(canvasX, 0), width);
+            canvasY = Math.min(Math.max(canvasY, 0), height);
+            return { mx: canvasX, my: canvasY };
+        }
+        
+        function findDraggedBall(mx, my) {
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const pos = getBallPosition(i, balls[i].angle);
+                if (Math.hypot(mx - pos.x, my - pos.y) <= BALL_RADIUS + 8) return i;
+            }
+            return -1;
+        }
+        
+        function updateDragAngle(mx, my, idx) {
+            if (idx === -1) return;
+            const dx = mx - pivotsX[idx];
+            const dy = my - pivotY;
+            let rawAngle = Math.atan2(dx, dy);
+            rawAngle = Math.min(Math.max(rawAngle, -Math.PI / 2.2), Math.PI / 2.2);
+            balls[idx].angle = rawAngle;
+            balls[idx].angularVel = 0;
+            userAnglesDeg[idx] = rawAngle * 180 / Math.PI;
+            const angleSlider = document.getElementById(`angle_slider_${idx}`);
+            if (angleSlider) angleSlider.value = userAnglesDeg[idx];
+            const angleValSpan = document.getElementById(`angle_val_${idx}`);
+            if (angleValSpan) angleValSpan.innerText = userAnglesDeg[idx].toFixed(0);
+            draw();
+            updateDataDisplay();
+        }
+        
+        function onDragStart(e) {
+            if (running) return;
+            if (isModalActive()) return; // 模态框打开时禁止拖拽
+            e.preventDefault();
+            const { mx, my } = getCanvasCoords(e);
+            const idx = findDraggedBall(mx, my);
+            if (idx !== -1) {
+                dragging = true;
+                dragIndex = idx;
+                updateDragAngle(mx, my, dragIndex);
+            }
+        }
+        
+        function onDragMove(e) {
+            if (!dragging || dragIndex === -1 || running) return;
+            if (isModalActive()) return;
+            e.preventDefault();
+            const { mx, my } = getCanvasCoords(e);
+            updateDragAngle(mx, my, dragIndex);
+        }
+        
+        function onDragEnd(e) {
+            dragging = false;
+            dragIndex = -1;
+        }
+        
+        // ---------- 参数滑块构建 ----------
+        function rebuildSliders() {
+            const container = document.getElementById('ballsControlGrid');
+            container.innerHTML = '';
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const card = document.createElement('div');
+                card.className = 'ball-card';
+                card.innerHTML = `
+                    <h4>⚽ 小球 ${i+1}</h4>
+                    <div class="slider-group">
+                        <label>⚖️ 质量 (kg) <span id="mass_val_${i}" class="num-val">${masses[i].toFixed(1)}</span></label>
+                        <input type="range" id="mass_slider_${i}" min="0.4" max="2.5" step="0.05" value="${masses[i]}">
+                    </div>
+                    <div class="slider-group">
+                        <label>📐 初始角度 (°) <span id="angle_val_${i}" class="num-val">${userAnglesDeg[i].toFixed(0)}</span></label>
+                        <input type="range" id="angle_slider_${i}" min="-45" max="45" step="1" value="${userAnglesDeg[i]}">
+                    </div>
+                `;
+                container.appendChild(card);
+                
+                const massSlider = document.getElementById(`mass_slider_${i}`);
+                const angleSlider = document.getElementById(`angle_slider_${i}`);
+                massSlider.addEventListener('input', (idx => (e) => {
+                    masses[idx] = parseFloat(e.target.value);
+                    document.getElementById(`mass_val_${idx}`).innerText = masses[idx].toFixed(1);
+                    if (!running && !isModalActive()) updateDataDisplay();
+                })(i));
+                angleSlider.addEventListener('input', (idx => (e) => {
+                    const newDeg = parseFloat(e.target.value);
+                    userAnglesDeg[idx] = newDeg;
+                    document.getElementById(`angle_val_${idx}`).innerText = newDeg.toFixed(0);
+                    if (!running && !isModalActive()) {
+                        balls[idx].angle = newDeg * Math.PI / 180;
+                        balls[idx].angularVel = 0;
+                        draw();
+                        updateDataDisplay();
+                    }
+                })(i));
+            }
+        }
+        
+        // 开始摆动：同步滑块数据，启用物理演化
+        function startSimulation() {
+            if (isModalActive()) return;
+            for (let i = 0; i < BALL_COUNT; i++) {
+                const massSlider = document.getElementById(`mass_slider_${i}`);
+                if (massSlider) masses[i] = parseFloat(massSlider.value);
+                const angleSlider = document.getElementById(`angle_slider_${i}`);
+                if (angleSlider) userAnglesDeg[i] = parseFloat(angleSlider.value);
+            }
+            for (let i = 0; i < BALL_COUNT; i++) {
+                balls[i].angle = userAnglesDeg[i] * Math.PI / 180;
+                balls[i].angularVel = 0;
+            }
+            running = true;
+            draw();
+            updateDataDisplay();
+        }
+        
+        // 动画循环
+        function animate(currentTimeMs) {
+            const nowSec = currentTimeMs / 1000;
+            if (lastTimestamp === 0) {
+                lastTimestamp = nowSec;
+                requestAnimationFrame(animate);
+                return;
+            }
+            let dt = Math.min(0.033, nowSec - lastTimestamp);
+            if (dt > 0.001 && running && !isModalActive()) {
+                updatePhysics(dt);
+                updateDataDisplay();
+                draw();
+            } else {
+                draw();
+            }
+            lastTimestamp = nowSec;
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 初始化
+        function init() {
+            updatePivots();
+            for (let i = 0; i < BALL_COUNT; i++) {
+                masses[i] = 1.0;
+                userAnglesDeg[i] = 0;
+            }
+            initBallsState();
+            rebuildSliders();
+            draw();
+            updateDataDisplay();
+            
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, { passive: false });
+            window.addEventListener('touchmove', onDragMove, { passive: false });
+            window.addEventListener('touchend', onDragEnd);
+            
+            startBtn.addEventListener('click', startSimulation);
+            stopBtn.addEventListener('click', stopAndShowPrinciple);
+            resetBtn.addEventListener('click', resetSimulation);
+            
+            running = false;
+            lastTimestamp = 0;
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

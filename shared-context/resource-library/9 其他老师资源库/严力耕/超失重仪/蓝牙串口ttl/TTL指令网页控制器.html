@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 TTL指令控制器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 900px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .status-panel {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #667eea;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .status-label {
+            font-weight: 600;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .status-value {
+            color: #333;
+            font-weight: 500;
+            font-size: 1.1em;
+        }
+        
+        .connected {
+            color: #10b981;
+        }
+        
+        .disconnected {
+            color: #ef4444;
+        }
+        
+        .scanning {
+            color: #f59e0b;
+        }
+        
+        .instructions-panel {
+            margin-bottom: 30px;
+        }
+        
+        .panel-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .commands-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        
+        .command-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            padding: 25px 20px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .command-btn:hover:not(:disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .command-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .command-btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .command-code {
+            font-family: 'Courier New', Consolas, monospace;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+        
+        .control-panel {
+            margin-bottom: 30px;
+        }
+        
+        .control-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .btn {
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-width: 200px;
+        }
+        
+        .btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .connect-btn {
+            background: #10b981;
+            color: white;
+        }
+        
+        .connect-btn:hover:not(:disabled) {
+            background: #0da271;
+        }
+        
+        .disconnect-btn {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .disconnect-btn:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        .log-panel {
+            background: #1a1a1a;
+            color: #00ff00;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .log-title {
+            color: #fff;
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .log-content {
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.9em;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .log-line {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .device-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .info-box {
+            background: #f0f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #e0f2fe;
+        }
+        
+        .info-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        
+        .info-value {
+            font-size: 1.1em;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .status-led {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .led-connected {
+            background: #10b981;
+            box-shadow: 0 0 10px #10b981;
+        }
+        
+        .led-disconnected {
+            background: #ef4444;
+        }
+        
+        .led-scanning {
+            background: #f59e0b;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .commands-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .control-buttons {
+                flex-direction: column;
+            }
+            
+            .btn {
+                min-width: 100%;
+            }
+            
+            .device-info {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 ESP32 TTL指令控制器</h1>
+            <p class="subtitle">通过Web蓝牙控制ESP32的GPIO17发送TTL指令</p>
+        </header>
+        
+        <section class="status-panel">
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="status-label">
+                        <span id="statusLed" class="status-led led-disconnected"></span>
+                        连接状态
+                    </div>
+                    <div id="status" class="status-value disconnected">未连接</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">📱 设备名称</div>
+                    <div id="deviceName" class="status-value">-</div>
+                </div>
+                <div class="status-item">
+                    <div class="status-label">📤 已发送指令</div>
+                    <div id="sentCount" class="status-value">0</div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="instructions-panel">
+            <h2 class="panel-title">📋 可用指令</h2>
+            <div class="commands-grid">
+                <button class="command-btn" id="cmd1" disabled onclick="sendCommand(0)">
+                    <span>🚀上升</span>
+                </button>
+                <button class="command-btn" id="cmd2" disabled onclick="sendCommand(1)">
+                    <span>🚀 下降</span>
+                </button>
+                <button class="command-btn" id="cmd3" disabled onclick="sendCommand(2)">
+                    <span>🚀 电机失能（刹车）</span>
+                </button>
+                <button class="command-btn" id="cmd4" disabled onclick="sendCommand(3)">
+                    <span>🚀 电机使能（先选择上升或下降）</span>
+                </button>
+            </div>
+        </section>
+        
+        <section class="control-panel">
+            <div class="control-buttons">
+                <button class="btn connect-btn" id="connectBtn" onclick="connectDevice()">
+                    <span>🔍 扫描并连接</span>
+                </button>
+                <button class="btn disconnect-btn" id="disconnectBtn" onclick="disconnectDevice()" disabled>
+                    <span>❌ 断开连接</span>
+                </button>
+            </div>
+        </section>
+        
+        <div class="device-info">
+            <div class="info-box">
+                <div class="info-label">🔧 GPIO引脚</div>
+                <div class="info-value">TX: GPIO17</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">⚡ 波特率</div>
+                <div class="info-value">115200</div>
+            </div>
+            <div class="info-box">
+                <div class="info-label">📡 协议</div>
+                <div class="info-value">Web蓝牙 + UART</div>
+            </div>
+        </div>
+        
+        <section class="log-panel">
+            <div class="log-title">📋 操作日志</div>
+            <div id="logContent" class="log-content">
+                <div class="log-line">等待连接ESP32设备...</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // BLE服务UUID定义
+        const SERVICE_UUID = 0x1234;
+        const COMMAND_CHAR_UUID = 0x5678;
+        
+        // 转换为蓝牙UUID格式
+        const BLE_SERVICE_UUID = `0000${SERVICE_UUID.toString(16).padStart(4, '0')}-0000-1000-8000-00805f9b34fb`;
+        const BLE_COMMAND_CHAR_UUID = `0000${COMMAND_CHAR_UUID.toString(16).padStart(4, '0')}-0000-1000-8000-00805f9b34fb`;
+        
+        // 全局变量
+        let device = null;
+        let server = null;
+        let characteristic = null;
+        let sentCount = 0;
+        let isConnected = false;
+        
+        // 更新状态显示
+        function updateStatus(connected, deviceName = '-') {
+            const statusElement = document.getElementById('status');
+            const statusLed = document.getElementById('statusLed');
+            const deviceNameElement = document.getElementById('deviceName');
+            const sentCountElement = document.getElementById('sentCount');
+            const connectBtn = document.getElementById('connectBtn');
+            const disconnectBtn = document.getElementById('disconnectBtn');
+            const commandButtons = document.querySelectorAll('.command-btn');
+            
+            isConnected = connected;
+            
+            if (connected) {
+                statusElement.textContent = '已连接';
+                statusElement.className = 'status-value connected';
+                statusLed.className = 'status-led led-connected';
+                deviceNameElement.textContent = deviceName;
+                
+                commandButtons.forEach(btn => btn.disabled = false);
+                connectBtn.disabled = true;
+                disconnectBtn.disabled = false;
+                
+                log(`✅ 已连接到设备: ${deviceName}`);
+            } else {
+                statusElement.textContent = '未连接';
+                statusElement.className = 'status-value disconnected';
+                statusLed.className = 'status-led led-disconnected';
+                deviceNameElement.textContent = '-';
+                
+                commandButtons.forEach(btn => btn.disabled = true);
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+            }
+            
+            sentCountElement.textContent = sentCount;
+        }
+        
+        // 更新扫描状态
+        function updateScanStatus(scanning) {
+            const statusElement = document.getElementById('status');
+            const statusLed = document.getElementById('statusLed');
+            
+            if (scanning) {
+                statusElement.textContent = '扫描中...';
+                statusElement.className = 'status-value scanning';
+                statusLed.className = 'status-led led-scanning';
+            }
+        }
+        
+        // 日志函数
+        function log(message) {
+            const logElement = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString();
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+            logLine.textContent = `[${timestamp}] ${message}`;
+            logElement.prepend(logLine);
+            
+            // 限制日志数量
+            if (logElement.children.length > 20) {
+                logElement.removeChild(logElement.lastChild);
+            }
+        }
+        
+        // 检查浏览器是否支持Web蓝牙
+        function checkBluetoothSupport() {
+            if (!navigator.bluetooth) {
+                log('❌ 您的浏览器不支持Web蓝牙API');
+                log('请使用Chrome 56+、Edge 79+、Opera 43+或Android WebView');
+                return false;
+            }
+            return true;
+        }
+        
+        // 连接设备
+        async function connectDevice() {
+            if (!checkBluetoothSupport()) {
+                return;
+            }
+            
+            try {
+                log('🔍 正在扫描ESP32设备...');
+                updateScanStatus(true);
+                
+                // 请求蓝牙设备
+                device = await navigator.bluetooth.requestDevice({
+                    filters: [
+                        { name: 'ESP32-TTL-Controller' }
+                    ],
+                    optionalServices: [BLE_SERVICE_UUID]
+                });
+                
+                updateScanStatus(false);
+                
+                if (!device) {
+                    log('❌ 未选择设备');
+                    return;
+                }
+                
+                log(`📱 找到设备: ${device.name || '未知设备'}`);
+                log('🔗 正在连接...');
+                
+                // 监听设备断开事件
+                device.addEventListener('gattserverdisconnected', onDisconnected);
+                
+                // 连接GATT服务器
+                server = await device.gatt.connect();
+                
+                // 获取服务
+                log('🔄 获取服务...');
+                const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+                
+                // 获取特征
+                log('🔄 获取特征...');
+                characteristic = await service.getCharacteristic(BLE_COMMAND_CHAR_UUID);
+                
+                // 更新状态
+                updateStatus(true, device.name || 'ESP32设备');
+                log('✅ 连接成功！可以发送指令了');
+                
+            } catch (error) {
+                updateScanStatus(false);
+                updateStatus(false);
+                
+                if (error.name === 'NotFoundError') {
+                    log('❌ 未找到ESP32设备，请确保：');
+                    log('1. ESP32已上电并运行程序');
+                    log('2. 设备已开始广播');
+                    log('3. 蓝牙已开启并可被发现');
+                } else if (error.name === 'NetworkError') {
+                    log('❌ 连接失败，请检查设备距离');
+                } else if (error.name === 'SecurityError') {
+                    log('❌ 权限被拒绝，请允许蓝牙访问');
+                } else if (error.name === 'InvalidStateError') {
+                    log('❌ 设备已连接或正在连接');
+                } else {
+                    log(`❌ 连接失败: ${error.message || error}`);
+                }
+            }
+        }
+        
+        // 断开连接
+        async function disconnectDevice() {
+            if (device && device.gatt.connected) {
+                try {
+                    log('🔌 正在断开连接...');
+                    await device.gatt.disconnect();
+                } catch (error) {
+                    log(`❌ 断开连接时出错: ${error.message || error}`);
+                }
+            } else {
+                updateStatus(false);
+            }
+        }
+        
+        // 断开连接事件处理
+        function onDisconnected(event) {
+            log('🔌 设备已断开连接');
+            updateStatus(false);
+        }
+        
+        // 发送指令到ESP32
+        async function sendCommand(commandIndex) {
+            if (!characteristic || !isConnected) {
+                log('❌ 错误：未连接到设备');
+                return;
+            }
+            
+            try {
+                // 创建命令数据（一个字节的索引）
+                const commandData = new Uint8Array([commandIndex]);
+                
+                // 写入特征值
+                await characteristic.writeValue(commandData);
+                
+                // 更新计数
+                sentCount++;
+                document.getElementById('sentCount').textContent = sentCount;
+                
+                // 按钮动画反馈
+                const button = document.getElementById(`cmd${commandIndex + 1}`);
+                const originalBg = button.style.background;
+                button.style.background = 'linear-gradient(135deg, #10b981 0%, #0da271 100%)';
+                
+                setTimeout(() => {
+                    button.style.background = originalBg;
+                }, 300);
+                
+                // 显示发送的指令
+                const commands = [
+                    'AA 55 01 02 03 AA',
+                    'BB 66 04 05 06 BB',
+                    'CC 77 07 08 09 CC',
+                    'DD 88 0A 0B 0C DD'
+                ];
+                
+                log(`🚀 已发送指令 ${commandIndex + 1};
+                
+            } catch (error) {
+                log(`❌ 发送失败: ${error.message || error}`);
+                
+                // 如果发送失败，尝试重新连接
+                if (error.message.includes('disconnected') || error.message.includes('not connected')) {
+                    updateStatus(false);
+                }
+            }
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            log('📱 TTL指令控制器已就绪');
+            log('点击"扫描并连接"按钮开始使用');
+            
+            // 检查蓝牙支持
+            if (!checkBluetoothSupport()) {
+                document.getElementById('connectBtn').disabled = true;
+                document.getElementById('connectBtn').textContent = '❌ 不支持蓝牙';
+            }
+        });
+        
+        // 页面关闭前断开连接
+        window.addEventListener('beforeunload', () => {
+            if (device && device.gatt.connected) {
+                device.gatt.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

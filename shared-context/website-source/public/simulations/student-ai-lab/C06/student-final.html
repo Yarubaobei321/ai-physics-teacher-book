@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pH值与氢离子物质的量计算 - 高中化学交互演示</title>
+    <style>
+        :root {
+            --bg: #f5f0eb;
+            --card-bg: #ffffff;
+            --text: #2c2416;
+            --text-secondary: #5c5347;
+            --accent: #e8784a;
+            --accent-blue: #4a90d9;
+            --border: #e8e0d5;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.10);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+            --radius-sm: 8px;
+            --radius: 14px;
+            --radius-lg: 20px;
+            --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(160deg, #f9f5ef 0%, #f0e8da 30%, #f5f0e8 60%, #eef3f0 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+            padding: 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #d94040 0%, #e8784a 14%, #e8a840 28%, #4caf84 50%, #4a90d9 72%, #6b4cd9 100%);
+            z-index: 100;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding-top: 6px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 18px 20px 10px;
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--accent-blue), transparent);
+            border-radius: 3px;
+        }
+        .header .icon-row {
+            font-size: 38px;
+            margin-bottom: 4px;
+            letter-spacing: 4px;
+        }
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #3d3226;
+            letter-spacing: 0.02em;
+            margin-bottom: 2px;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            letter-spacing: 0.03em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 20px;
+        }
+        @media (max-width: 720px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            .header h1 {
+                font-size: 1.35rem;
+            }
+        }
+
+        .ph-scale-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            padding: 20px 18px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+        .ph-scale-card .card-label {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .ph-scale-outer {
+            position: relative;
+            width: 56px;
+            height: 360px;
+            display: flex;
+            align-items: stretch;
+            cursor: pointer;
+            user-select: none;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .ph-scale-track {
+            width: 100%;
+            height: 100%;
+            border-radius: 28px;
+            background: linear-gradient(to bottom,
+                    #c0392b 0%, #d94040 3.5%, #e85d3a 10%, #f08a40 18%,
+                    #f5b041 25%, #f7d44a 32%, #c8d84a 39%, #8cc84a 46%,
+                    #4caf84 50%, #4caf84 54%, #43a88a 58%, #3d9ec0 64%,
+                    #4a90d9 72%, #5b7ed4 80%, #6b4cd9 90%, #5b3abf 96.5%, #3d2680 100%);
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.18), var(--shadow-sm);
+            position: relative;
+            transition: box-shadow var(--transition);
+        }
+        .ph-scale-track:hover {
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25), var(--shadow-md);
+        }
+        .ph-scale-indicator {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid #333;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+            z-index: 5;
+            pointer-events: none;
+            transition: top 0.15s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 0.78rem;
+            color: #222;
+        }
+        .ph-scale-ticks {
+            position: absolute;
+            top: 0;
+            left: -32px;
+            right: -32px;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .ph-scale-tick {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            white-space: nowrap;
+            pointer-events: none;
+            letter-spacing: 0.02em;
+        }
+        .ph-current-display {
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding: 6px 18px;
+            border-radius: 20px;
+            letter-spacing: 0.03em;
+            transition: all var(--transition);
+            min-width: 80px;
+        }
+        .ph-current-display.acid {
+            background: #fde8e4;
+            color: #b84030;
+        }
+        .ph-current-display.neutral {
+            background: #e6f5ee;
+            color: #2d7a50;
+        }
+        .ph-current-display.base {
+            background: #e4ecfa;
+            color: #3058a0;
+        }
+
+        .calc-card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            padding: 20px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .calc-card .section-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: -4px;
+        }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .input-group label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #4a4038;
+            letter-spacing: 0.02em;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .input-box {
+            flex: 1;
+            min-width: 100px;
+            padding: 10px 14px;
+            border: 2px solid #e0d8cc;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-family: var(--font-mono);
+            font-weight: 500;
+            background: #fdfcf9;
+            color: #2c2416;
+            transition: all var(--transition);
+            outline: none;
+            letter-spacing: 0.02em;
+        }
+        .input-box:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(232, 120, 74, 0.12);
+            background: #fff;
+        }
+        .input-box.small {
+            max-width: 110px;
+            min-width: 70px;
+            text-align: center;
+        }
+        .unit-select {
+            padding: 10px 10px;
+            border: 2px solid #e0d8cc;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-weight: 600;
+            background: #fdfcf9;
+            color: #2c2416;
+            cursor: pointer;
+            outline: none;
+            transition: all var(--transition);
+            min-width: 60px;
+            letter-spacing: 0.02em;
+        }
+        .unit-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(232, 120, 74, 0.12);
+        }
+        .swap-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #e0d8cc;
+            background: #fdfcf9;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            flex-shrink: 0;
+            color: #5c5347;
+        }
+        .swap-btn:hover {
+            background: #f5ede2;
+            border-color: #c8b89a;
+            color: #3d3226;
+            transform: rotate(180deg);
+        }
+        .result-box {
+            background: linear-gradient(135deg, #fdfcf8 0%, #f8f5ef 100%);
+            border: 2px solid #e8e0d5;
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            transition: all var(--transition);
+        }
+        .result-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 0.92rem;
+        }
+        .result-label {
+            font-weight: 600;
+            color: #4a4038;
+            letter-spacing: 0.02em;
+        }
+        .result-value {
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 1.05rem;
+            color: #2c2416;
+            background: #fff;
+            padding: 5px 12px;
+            border-radius: 6px;
+            border: 1px solid #e8e0d5;
+            letter-spacing: 0.02em;
+            transition: all var(--transition);
+        }
+        .result-value.highlight {
+            background: #fff8f2;
+            border-color: #e8b880;
+            color: #a0502a;
+            font-size: 1.15rem;
+            animation: pulseHighlight 0.6s ease-out;
+        }
+        @keyframes pulseHighlight {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(232, 120, 74, 0);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(232, 120, 74, 0.15);
+            }
+        }
+        .formula-display {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: #6b5e4e;
+            background: #fdfcf8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px dashed #e0d8cc;
+            letter-spacing: 0.03em;
+            text-align: center;
+            word-break: break-all;
+        }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 9px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+            transition: all var(--transition);
+            font-family: inherit;
+            white-space: nowrap;
+        }
+        .btn-preset {
+            background: #f5ede2;
+            color: #5c4030;
+            border: 1.5px solid #e0d0b8;
+        }
+        .btn-preset:hover {
+            background: #ede0cd;
+            border-color: #c8a878;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-preset:active {
+            transform: scale(0.96);
+            transition: 0.1s;
+        }
+        .btn-reset {
+            background: #fff;
+            color: #5c5347;
+            border: 1.5px solid #d8d0c4;
+        }
+        .btn-reset:hover {
+            background: #f5f0e8;
+            border-color: #b8a898;
+        }
+
+        .knowledge-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+        }
+        .knowledge-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            padding: 15px 16px;
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .knowledge-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+        .knowledge-card .kc-icon {
+            font-size: 1.6rem;
+            margin-bottom: 4px;
+        }
+        .knowledge-card h4 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #3d3226;
+            letter-spacing: 0.02em;
+        }
+        .knowledge-card p {
+            font-size: 0.8rem;
+            color: #5c5347;
+            line-height: 1.5;
+            margin: 0;
+        }
+        .knowledge-card .formula-sm {
+            display: inline-block;
+            background: #fdfcf8;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin: 3px 2px;
+            border: 1px solid #e8e0d5;
+            letter-spacing: 0.03em;
+        }
+
+        .tip-bar {
+            background: #fffdf7;
+            border: 1px solid #e8d8b0;
+            border-left: 4px solid #e8a840;
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            font-size: 0.82rem;
+            color: #6b4e20;
+            letter-spacing: 0.02em;
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        .tip-bar .tip-icon {
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #a09888;
+            padding: 8px;
+            letter-spacing: 0.03em;
+        }
+
+        @media (max-width: 500px) {
+            .ph-scale-outer {
+                width: 40px;
+                height: 260px;
+            }
+            .ph-scale-indicator {
+                width: 34px;
+                height: 34px;
+                font-size: 0.65rem;
+                border-width: 3px;
+            }
+            .ph-scale-tick {
+                font-size: 0.55rem;
+            }
+            .ph-scale-ticks {
+                left: -22px;
+                right: -22px;
+            }
+            .input-box {
+                font-size: 0.9rem;
+                padding: 8px 10px;
+            }
+            .result-value {
+                font-size: 0.9rem;
+            }
+            .calc-card {
+                padding: 14px 12px;
+                gap: 10px;
+            }
+            .knowledge-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 标题 -->
+        <div class="header">
+            <div class="icon-row">🧪⚗️🔬</div>
+            <h1>pH值与氢离子物质的量计算</h1>
+            <p class="subtitle">高中化学 · 交互式演示工具 · 基于物质的量浓度</p>
+        </div>
+
+        <!-- 主体 -->
+        <div class="main-grid">
+            <!-- pH标尺可视化 -->
+            <div class="ph-scale-card" id="phScaleCard">
+                <span class="card-label">📏 pH 标尺</span>
+                <div class="ph-scale-outer" id="phScaleOuter">
+                    <div class="ph-scale-track" id="phScaleTrack"></div>
+                    <div class="ph-scale-indicator" id="phScaleIndicator">7</div>
+                    <div class="ph-scale-ticks" id="phScaleTicks"></div>
+                </div>
+                <div class="ph-current-display neutral" id="phCurrentDisplay">pH = 7.00 · 中性</div>
+                <div style="font-size:0.75rem;color:#8c8070;text-align:center;line-height:1.5;">
+                    👆 点击标尺或拖动调整 pH 值
+                </div>
+            </div>
+
+            <!-- 计算器面板 -->
+            <div class="calc-card" id="calcCard">
+                <span class="section-title">🧮 计算器</span>
+
+                <!-- pH 输入 -->
+                <div class="input-group">
+                    <label for="inputPH">溶液 pH 值</label>
+                    <div class="input-row">
+                        <input type="number" class="input-box" id="inputPH" value="7.00" step="0.01" placeholder="输入pH值">
+                        <span style="font-weight:600;color:#4a4038;">pH</span>
+                    </div>
+                </div>
+
+                <!-- 互换按钮 -->
+                <div style="display:flex;justify-content:center;">
+                    <button class="swap-btn" id="swapBtn" title="pH ↔ [H⁺] 互换计算">⇅</button>
+                </div>
+
+                <!-- [H⁺] 输入 -->
+                <div class="input-group">
+                    <label for="inputHplus">氢离子浓度 [H⁺]</label>
+                    <div class="input-row">
+                        <input type="text" class="input-box" id="inputHplus" value="1×10⁻⁷" placeholder="如 0.001 或 1×10⁻³">
+                        <span style="font-weight:600;color:#4a4038;">mol/L</span>
+                    </div>
+                    <div style="font-size:0.7rem;color:#8c8070;">支持科学计数法，如 1e-7、0.001、1×10⁻³</div>
+                </div>
+
+                <!-- 体积输入 -->
+                <div class="input-group">
+                    <label for="inputVolume">溶液体积 V</label>
+                    <div class="input-row">
+                        <input type="number" class="input-box small" id="inputVolume" value="100" step="0.1" min="0.001" placeholder="体积">
+                        <select class="unit-select" id="volumeUnit">
+                            <option value="mL" selected>mL（毫升）</option>
+                            <option value="L">L（升）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 结果展示 -->
+                <div class="result-box" id="resultBox">
+                    <div class="result-row">
+                        <span class="result-label">🔬 [H⁺] =</span>
+                        <span class="result-value" id="resultHplus">1×10⁻⁷ mol/L</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="result-label">📐 n(H⁺) =</span>
+                        <span class="result-value highlight" id="resultNHplus">1×10⁻⁸ mol</span>
+                    </div>
+                    <div class="formula-display" id="formulaDisplay">
+                        n(H⁺) = [H⁺] × V = 1×10⁻⁷ mol/L × 0.100 L = 1×10⁻⁸ mol
+                    </div>
+                </div>
+
+                <!-- 预设示例按钮 -->
+                <div style="font-weight:600;font-size:0.82rem;color:#4a4038;letter-spacing:0.03em;">📋 常用示例：</div>
+                <div class="btn-row" id="presetBtns">
+                    <button class="btn btn-preset" data-ph="0" data-vol="100">pH=0 强酸</button>
+                    <button class="btn btn-preset" data-ph="1" data-vol="50">pH=1 胃酸</button>
+                    <button class="btn btn-preset" data-ph="3" data-vol="200">pH=3 醋酸</button>
+                    <button class="btn btn-preset" data-ph="5" data-vol="100">pH=5 雨水</button>
+                    <button class="btn btn-preset" data-ph="7" data-vol="100">pH=7 纯水</button>
+                    <button class="btn btn-preset" data-ph="10" data-vol="50">pH=10 弱碱</button>
+                    <button class="btn btn-preset" data-ph="13" data-vol="25">pH=13 强碱</button>
+                </div>
+                <button class="btn btn-reset" id="resetBtn">🔄 重置为默认</button>
+            </div>
+        </div>
+
+        <!-- 提示条 -->
+        <div class="tip-bar">
+            <span class="tip-icon">💡</span>
+            <span>
+                <strong>温馨提示：</strong>本工具基于<strong>物质的量浓度</strong>计算。计算氢离子物质的量时，请注意<strong>体积单位换算</strong>：1 mL = 0.001 L。pH 适用于稀溶液（通常[H⁺] ≤ 1 mol/L），且假定溶液体积与水的体积近似。
+            </span>
+        </div>
+
+        <!-- 知识卡片 -->
+        <div class="knowledge-cards">
+            <div class="knowledge-card">
+                <div class="kc-icon">📖</div>
+                <h4>pH 的定义</h4>
+                <p>pH 是氢离子浓度的<strong>负对数</strong>：<br>
+                    <span class="formula-sm">pH = −lg[H⁺]</span><br>
+                    其中 [H⁺] 的单位为 <strong>mol/L</strong>。
+                </p>
+            </div>
+            <div class="knowledge-card">
+                <div class="kc-icon">🔄</div>
+                <h4>反推 [H⁺]</h4>
+                <p>已知 pH 求氢离子浓度：<br>
+                    <span class="formula-sm">[H⁺] = 10<sup>−pH</sup> mol/L</span><br>
+                    例如 pH=3 时，[H⁺]=10⁻³ mol/L。
+                </p>
+            </div>
+            <div class="knowledge-card">
+                <div class="kc-icon">⚖️</div>
+                <h4>物质的量计算</h4>
+                <p>氢离子的物质的量：<br>
+                    <span class="formula-sm">n(H⁺) = [H⁺] × V</span><br>
+                    V 为溶液体积（单位：<strong>L</strong>），n 的单位为 <strong>mol</strong>。
+                </p>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">
+            🧪 高中化学学习工具 · pH值与氢离子物质的量计算 · 基于物质的量浓度
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ============ DOM元素 ============
+            const inputPH = document.getElementById('inputPH');
+            const inputHplus = document.getElementById('inputHplus');
+            const inputVolume = document.getElementById('inputVolume');
+            const volumeUnit = document.getElementById('volumeUnit');
+            const resultHplus = document.getElementById('resultHplus');
+            const resultNHplus = document.getElementById('resultNHplus');
+            const formulaDisplay = document.getElementById('formulaDisplay');
+            const phScaleOuter = document.getElementById('phScaleOuter');
+            const phScaleTrack = document.getElementById('phScaleTrack');
+            const phScaleIndicator = document.getElementById('phScaleIndicator');
+            const phScaleTicks = document.getElementById('phScaleTicks');
+            const phCurrentDisplay = document.getElementById('phCurrentDisplay');
+            const swapBtn = document.getElementById('swapBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const presetBtns = document.getElementById('presetBtns');
+
+            // ============ 常量 ============
+            const DEFAULT_PH = 7.0;
+            const DEFAULT_VOLUME = 100; // mL
+
+            // ============ 状态 ============
+            let currentPH = DEFAULT_PH;
+            let currentVolumeML = DEFAULT_VOLUME;
+            let currentVolumeUnit = 'mL';
+
+            // 防止事件循环更新的标志（用于程序化修改输入框时忽略 input 事件）
+            let ignoreInputEvents = false;
+
+            // ============ 工具函数 ============
+            /** 安全地程序化更新输入框（自动忽略触发的 input 事件） */
+            function updateInputsSafely(fn) {
+                ignoreInputEvents = true;
+                fn();
+                // 使用宏任务延迟重置标志，确保异步触发的 input 事件也被忽略
+                setTimeout(() => {
+                    ignoreInputEvents = false;
+                }, 0);
+            }
+
+            /** 将数字格式化为科学计数法HTML字符串 */
+            function formatScientific(num) {
+                if (num === 0) return '0';
+                if (isNaN(num) || !isFinite(num)) return '—';
+                if (Math.abs(num) >= 0.01 && Math.abs(num) <= 9999 &&
+                    Math.abs(num - Math.round(num * 1e10) / 1e10) < 1e-12) {
+                    const trimmed = parseFloat(num.toFixed(10));
+                    if (Math.abs(trimmed) >= 0.01) {
+                        if (Number.isInteger(trimmed)) return trimmed.toString();
+                        let decimals = 10;
+                        while (decimals > 1 && Math.abs(trimmed - parseFloat(trimmed.toFixed(decimals - 1))) < 1e-12) {
+                            decimals--;
+                        }
+                        return trimmed.toFixed(Math.min(decimals, 6));
+                    }
+                }
+                const exp = Math.floor(Math.log10(Math.abs(num)));
+                const mantissa = num / Math.pow(10, exp);
+                const mantissaRounded = parseFloat(mantissa.toFixed(4));
+                if (Math.abs(mantissaRounded - 1) < 1e-10) {
+                    return `10<sup>${exp}</sup>`;
+                }
+                return `${mantissaRounded}×10<sup>${exp}</sup>`;
+            }
+
+            /** 将科学计数法转为纯文本（用于输入框显示） */
+            function formatScientificText(num) {
+                if (num === 0) return '0';
+                if (isNaN(num) || !isFinite(num)) return '—';
+                if (Math.abs(num) >= 0.01 && Math.abs(num) <= 9999 &&
+                    Math.abs(num - Math.round(num * 1e10) / 1e10) < 1e-12) {
+                    const trimmed = parseFloat(num.toFixed(10));
+                    if (Math.abs(trimmed) >= 0.01) {
+                        if (Number.isInteger(trimmed)) return trimmed.toString();
+                        let decimals = 10;
+                        while (decimals > 1 && Math.abs(trimmed - parseFloat(trimmed.toFixed(decimals - 1))) < 1e-12) {
+                            decimals--;
+                        }
+                        return trimmed.toFixed(Math.min(decimals, 6));
+                    }
+                }
+                const exp = Math.floor(Math.log10(Math.abs(num)));
+                const mantissa = num / Math.pow(10, exp);
+                const mantissaRounded = parseFloat(mantissa.toFixed(4));
+                if (Math.abs(mantissaRounded - 1) < 1e-10) {
+                    return `10^${exp}`;
+                }
+                return `${mantissaRounded}×10^${exp}`;
+            }
+
+            /** 解析用户输入的科学计数法 */
+            function parseHplusInput(str) {
+                if (!str || str.trim() === '') return NaN;
+                let s = str.trim();
+                s = s.replace(/×/g, 'e');
+                s = s.replace(/x/gi, 'e');
+                s = s.replace(/·/g, 'e');
+                s = s.replace(/⁻/g, '-');
+                s = s.replace(/⁰/g, '0');
+                s = s.replace(/¹/g, '1');
+                s = s.replace(/²/g, '2');
+                s = s.replace(/³/g, '3');
+                s = s.replace(/⁴/g, '4');
+                s = s.replace(/⁵/g, '5');
+                s = s.replace(/⁶/g, '6');
+                s = s.replace(/⁷/g, '7');
+                s = s.replace(/⁸/g, '8');
+                s = s.replace(/⁹/g, '9');
+                s = s.replace(/(\d+)\s*\^\s*(-?\d+)/gi, '$1e$2');
+                s = s.replace(/\s+/g, '');
+                const num = parseFloat(s);
+                return num;
+            }
+
+            function formatPH(ph) {
+                if (isNaN(ph) || !isFinite(ph)) return '—';
+                return ph.toFixed(2);
+            }
+
+            // ============ 核心计算 ============
+            function calcHplusFromPH(ph) {
+                return Math.pow(10, -ph);
+            }
+
+            function calcPHFromHplus(hplus) {
+                if (hplus <= 0 || isNaN(hplus) || !isFinite(hplus)) return NaN;
+                return -Math.log10(hplus);
+            }
+
+            function getVolumeInLiters(volumeValue, unit) {
+                const v = parseFloat(volumeValue);
+                if (isNaN(v) || v < 0) return NaN;
+                if (unit === 'mL') return v / 1000;
+                return v;
+            }
+
+            function calcNHplus(hplus, volumeL) {
+                if (isNaN(hplus) || isNaN(volumeL) || !isFinite(hplus) || !isFinite(volumeL)) return NaN;
+                return hplus * volumeL;
+            }
+
+            // ============ 更新所有显示 ============
+            function updateAllFromPH(ph) {
+                const hplus = calcHplusFromPH(ph);
+                const volumeL = getVolumeInLiters(currentVolumeML, currentVolumeUnit);
+                const nHplus = calcNHplus(hplus, volumeL);
+
+                // 更新结果区域
+                resultHplus.innerHTML = formatScientific(hplus) + ' mol/L';
+                if (!isNaN(nHplus)) {
+                    resultNHplus.innerHTML = formatScientific(nHplus) + ' mol';
+                } else {
+                    resultNHplus.innerHTML = '—';
+                }
+
+                // 更新计算公式展示
+                if (!isNaN(volumeL) && !isNaN(nHplus) && !isNaN(hplus)) {
+                    const hplusStr = formatScientificText(hplus);
+                    const volStr = volumeL.toFixed(3);
+                    const nStr = formatScientificText(nHplus);
+                    formulaDisplay.innerHTML =
+                        `n(H⁺) = [H⁺] × V = ${hplusStr} mol/L × ${volStr} L = <strong>${nStr} mol</strong>`;
+                } else {
+                    formulaDisplay.innerHTML = '请检查输入数值是否合理';
+                }
+
+                // 更新pH标尺和标签
+                updatePHScale(ph);
+                updatePHDisplayTag(ph);
+
+                // 同步状态
+                currentPH = ph;
+
+                // 同步更新输入框（在安全包裹内调用）
+                updateInputsSafely(() => {
+                    inputPH.value = formatPH(ph);
+                    inputHplus.value = formatScientificText(hplus);
+                });
+            }
+
+            function updateAllFromHplus(hplus) {
+                if (isNaN(hplus) || hplus <= 0 || !isFinite(hplus)) return;
+                const ph = calcPHFromHplus(hplus);
+                if (isNaN(ph) || !isFinite(ph)) return;
+                currentPH = ph;
+                updateAllFromPH(ph);
+                // 额外确保H+输入框显示正确格式
+                updateInputsSafely(() => {
+                    inputHplus.value = formatScientificText(hplus);
+                });
+            }
+
+            function updatePHScale(ph) {
+                let clampedPH = Math.max(-1, Math.min(15, ph));
+                let fraction = clampedPH / 14;
+                let topPercent = fraction * 100;
+                topPercent = Math.max(2, Math.min(98, topPercent));
+                phScaleIndicator.style.top = topPercent + '%';
+                phScaleIndicator.textContent = (ph >= 0 && ph <= 14) ? formatPH(ph) : (ph < 0 ? '<0' : '>14');
+            }
+
+            function updatePHDisplayTag(ph) {
+                phCurrentDisplay.classList.remove('acid', 'neutral', 'base');
+                let label;
+                if (ph < 6.5) {
+                    phCurrentDisplay.classList.add('acid');
+                    label = `pH = ${formatPH(ph)} · 酸性`;
+                } else if (ph > 7.5) {
+                    phCurrentDisplay.classList.add('base');
+                    label = `pH = ${formatPH(ph)} · 碱性`;
+                } else {
+                    phCurrentDisplay.classList.add('neutral');
+                    label = `pH = ${formatPH(ph)} · 中性`;
+                }
+                phCurrentDisplay.textContent = label;
+            }
+
+            // ============ 标尺刻度生成 ============
+            function generateTicks() {
+                phScaleTicks.innerHTML = '';
+                for (let ph = 0; ph <= 14; ph++) {
+                    const tick = document.createElement('span');
+                    tick.className = 'ph-scale-tick';
+                    const fraction = ph / 14;
+                    const topPercent = fraction * 100;
+                    tick.style.top = topPercent + '%';
+                    tick.textContent = ph;
+                    phScaleTicks.appendChild(tick);
+                }
+            }
+
+            // ============ 标尺交互 ============
+            let isDragging = false;
+
+            function getPHFromEvent(e) {
+                const rect = phScaleTrack.getBoundingClientRect();
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const relativeY = clientY - rect.top;
+                const fraction = Math.max(0, Math.min(1, relativeY / rect.height));
+                return fraction * 14;
+            }
+
+            function handleScaleStart(e) {
+                isDragging = true;
+                const ph = getPHFromEvent(e);
+                currentPH = ph;
+                updateAllFromPH(ph);
+                e.preventDefault();
+            }
+
+            function handleScaleMove(e) {
+                if (!isDragging) return;
+                const ph = getPHFromEvent(e);
+                currentPH = ph;
+                updateAllFromPH(ph);
+                e.preventDefault();
+            }
+
+            function handleScaleEnd(e) {
+                if (isDragging) {
+                    const ph = getPHFromEvent(e);
+                    currentPH = ph;
+                    updateAllFromPH(ph);
+                }
+                isDragging = false;
+            }
+
+            phScaleTrack.addEventListener('mousedown', handleScaleStart);
+            phScaleTrack.addEventListener('touchstart', handleScaleStart, { passive: false });
+            document.addEventListener('mousemove', handleScaleMove);
+            document.addEventListener('touchmove', handleScaleMove, { passive: false });
+            document.addEventListener('mouseup', handleScaleEnd);
+            document.addEventListener('touchend', handleScaleEnd);
+            phScaleOuter.addEventListener('mousedown', function(e) {
+                if (e.target === phScaleOuter || e.target === phScaleTicks || e.target.classList.contains('ph-scale-tick')) {
+                    handleScaleStart(e);
+                }
+            });
+
+            // ============ 输入框事件 ============
+            inputPH.addEventListener('input', function() {
+                if (ignoreInputEvents) return;
+                const ph = parseFloat(this.value);
+                if (!isNaN(ph) && isFinite(ph)) {
+                    currentPH = ph;
+                    updateAllFromPH(ph);
+                }
+            });
+            inputPH.addEventListener('change', function() {
+                if (ignoreInputEvents) return;
+                const ph = parseFloat(this.value);
+                if (isNaN(ph) || !isFinite(ph)) {
+                    updateInputsSafely(() => {
+                        this.value = formatPH(currentPH);
+                    });
+                    return;
+                }
+                currentPH = ph;
+                updateAllFromPH(ph);
+            });
+
+            inputHplus.addEventListener('input', function() {
+                if (ignoreInputEvents) return;
+                const hplus = parseHplusInput(this.value);
+                if (!isNaN(hplus) && hplus > 0 && isFinite(hplus)) {
+                    updateAllFromHplus(hplus);
+                }
+            });
+            inputHplus.addEventListener('change', function() {
+                if (ignoreInputEvents) return;
+                const hplus = parseHplusInput(this.value);
+                if (isNaN(hplus) || hplus <= 0 || !isFinite(hplus)) {
+                    updateInputsSafely(() => {
+                        this.value = formatScientificText(calcHplusFromPH(currentPH));
+                    });
+                    return;
+                }
+                updateAllFromHplus(hplus);
+            });
+
+            inputVolume.addEventListener('input', function() {
+                if (ignoreInputEvents) return;
+                const v = parseFloat(this.value);
+                if (!isNaN(v) && v >= 0) {
+                    currentVolumeML = v;
+                    updateAllFromPH(currentPH);
+                }
+            });
+            inputVolume.addEventListener('change', function() {
+                if (ignoreInputEvents) return;
+                const v = parseFloat(this.value);
+                if (isNaN(v) || v < 0) {
+                    updateInputsSafely(() => {
+                        this.value = currentVolumeML;
+                    });
+                    return;
+                }
+                currentVolumeML = v;
+                updateAllFromPH(currentPH);
+            });
+
+            volumeUnit.addEventListener('change', function() {
+                if (ignoreInputEvents) return;
+                currentVolumeUnit = this.value;
+                updateAllFromPH(currentPH);
+            });
+
+            // ============ 按钮事件 ============
+            swapBtn.addEventListener('click', function() {
+                const hplus = calcHplusFromPH(currentPH);
+                updateInputsSafely(() => {
+                    inputHplus.value = formatScientificText(hplus);
+                });
+                inputHplus.focus();
+                inputHplus.select();
+                updateAllFromHplus(hplus);
+                swapBtn.style.transform = 'rotate(180deg)';
+                setTimeout(() => { swapBtn.style.transform = ''; }, 300);
+            });
+
+            resetBtn.addEventListener('click', function() {
+                currentPH = DEFAULT_PH;
+                currentVolumeML = DEFAULT_VOLUME;
+                currentVolumeUnit = 'mL';
+                updateInputsSafely(() => {
+                    inputPH.value = formatPH(DEFAULT_PH);
+                    inputHplus.value = formatScientificText(calcHplusFromPH(DEFAULT_PH));
+                    inputVolume.value = DEFAULT_VOLUME;
+                    volumeUnit.value = 'mL';
+                });
+                updateAllFromPH(DEFAULT_PH);
+            });
+
+            // 预设示例按钮
+            presetBtns.addEventListener('click', function(e) {
+                const btn = e.target.closest('.btn-preset');
+                if (!btn) return;
+                const ph = parseFloat(btn.dataset.ph);
+                const vol = parseFloat(btn.dataset.vol);
+                if (!isNaN(ph) && !isNaN(vol)) {
+                    currentPH = ph;
+                    currentVolumeML = vol;
+                    currentVolumeUnit = 'mL';
+                    updateInputsSafely(() => {
+                        inputPH.value = formatPH(ph);
+                        inputHplus.value = formatScientificText(calcHplusFromPH(ph));
+                        inputVolume.value = vol;
+                        volumeUnit.value = 'mL';
+                    });
+                    updateAllFromPH(ph);
+                    document.getElementById('resultBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    resultNHplus.classList.remove('highlight');
+                    void resultNHplus.offsetWidth;
+                    resultNHplus.classList.add('highlight');
+                }
+            });
+
+            // ============ 键盘微调pH ============
+            document.addEventListener('keydown', function(e) {
+                if (document.activeElement === inputPH) {
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const newPH = Math.min(14, currentPH + 0.1);
+                        currentPH = newPH;
+                        updateAllFromPH(newPH);
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const newPH = Math.max(0, currentPH - 0.1);
+                        currentPH = newPH;
+                        updateAllFromPH(newPH);
+                    }
+                }
+            });
+
+            // ============ 初始化 ============
+            function init() {
+                generateTicks();
+                currentPH = DEFAULT_PH;
+                currentVolumeML = DEFAULT_VOLUME;
+                currentVolumeUnit = 'mL';
+                updateAllFromPH(DEFAULT_PH);
+                updateInputsSafely(() => {
+                    inputPH.value = formatPH(DEFAULT_PH);
+                    inputHplus.value = formatScientificText(calcHplusFromPH(DEFAULT_PH));
+                    inputVolume.value = DEFAULT_VOLUME;
+                    volumeUnit.value = 'mL';
+                });
+                updatePHScale(DEFAULT_PH);
+                updatePHDisplayTag(DEFAULT_PH);
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>

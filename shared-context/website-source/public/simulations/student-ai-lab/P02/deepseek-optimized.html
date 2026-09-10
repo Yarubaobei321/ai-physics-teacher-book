@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>动量守恒定律 · 一维三球碰撞数字实验</title>
+<style>
+  :root{--bd:#e2e8f0;--tx:#0f172a;--mut:#64748b;--c1:#3b82f6;--c2:#ef4444;--c3:#22c55e;}
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:'Segoe UI',system-ui,'PingFang SC','Microsoft YaHei',sans-serif;
+    background:#f1f5f9;color:var(--tx);
+    display:flex;justify-content:center;
+  }
+  .wrap{width:1440px;max-width:100%;padding:14px 20px;display:flex;flex-direction:column;gap:12px;}
+  header h1{font-size:21px;margin:0 0 4px;}
+  header .note{color:var(--mut);font-size:13px;line-height:1.6;}
+  header .badge{display:inline-block;background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe;
+    border-radius:6px;padding:2px 8px;margin-right:6px;font-size:12px;}
+  .card{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px 16px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .card h2{font-size:15px;margin:0 0 10px;color:#1e293b;border-left:4px solid #6366f1;padding-left:8px;}
+  #simCanvas{width:100%;height:auto;display:block;background:linear-gradient(#f8fafc,#eef2ff);border-radius:8px;border:1px solid var(--bd);}
+  .main{display:grid;grid-template-columns:360px 1fr;gap:14px;align-items:start;}
+  .control-group{display:flex;flex-direction:column;gap:12px;}
+  .ball-card{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;background:#fcfdff;}
+  .ball-card h3{font-size:14px;margin:0 0 8px;display:flex;align-items:center;gap:8px;}
+  .dot{width:14px;height:8px;border-radius:4px;display:inline-block;}
+  .row{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;}
+  .row .lbl{font-size:12px;color:var(--mut);display:flex;justify-content:space-between;}
+  .row input[type=range]{width:100%;accent-color:#6366f1;cursor:pointer;}
+  .row .val{font-weight:700;color:#1e293b;}
+  .e-group{padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:#fdf4ff;}
+  .e-group .lbl{font-size:12px;color:var(--mut);display:flex;justify-content:space-between;margin-bottom:4px;}
+  .e-type{font-size:12px;color:#7c3aed;font-weight:700;margin-top:6px;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{flex:1;padding:10px 12px;border:none;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;}
+  .btn-play{background:#6366f1;color:#fff;}
+  .btn-play:hover{background:#4f46e5;}
+  .btn-reset{background:#e2e8f0;color:#334155;}
+  .btn-reset:hover{background:#cbd5e1;}
+  .data-area{display:flex;flex-direction:column;gap:12px;}
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .metric{background:#f8fafc;border:1px solid var(--bd);border-radius:10px;padding:10px;text-align:center;}
+  .metric .k{font-size:12px;color:var(--mut);}
+  .metric .v{font-size:18px;font-weight:800;margin-top:2px;}
+  .metric .u{font-size:11px;color:var(--mut);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{border:1px solid var(--bd);padding:6px 8px;text-align:center;}
+  th{background:#f1f5f9;color:#334155;}
+  td.p0{color:var(--c1);font-weight:700;}
+  td.p1{color:var(--c2);font-weight:700;}
+  td.p2{color:var(--c3);font-weight:700;}
+  .cons-tip{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;padding:8px 10px;font-size:13px;color:#065f46;}
+  .conclusion p{font-size:13px;color:#334155;line-height:1.7;margin:6px 0;}
+  .conclusion .q{color:#7c3aed;font-weight:700;}
+  @media(max-width:1100px){.main{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="card">
+    <h1>动量守恒定律 · 一维三球碰撞数字实验（光滑水平面 · 系统不受外力）</h1>
+    <div class="note">
+      <span class="badge">光滑水平面</span><span class="badge">系统不受外力 → Σp 守恒</span>
+      <span class="badge">取向右为正方向</span><span class="badge">SI 单位</span>
+      <br>调节三球质量(m)、初速度(v₀)与恢复系数(e)，播放后观察碰撞过程，比对<b>碰前 / 碰后</b>的动量与动能数据。
+    </div>
+  </header>
+
+  <div class="card" style="padding:10px;">
+    <canvas id="simCanvas" width="1280" height="280" role="img"
+      aria-label="一维光滑水平面上三个小球的碰撞动画。蓝(球1)、红(球2)、绿(球3)从左向右依次排列，箭头表示速度方向与大小，右侧箭头表示正方向向右。"></canvas>
+  </div>
+
+  <div class="main">
+    <!-- 控制区 -->
+    <div class="card">
+      <h2>控制区</h2>
+      <div class="control-group" id="controls"></div>
+      <div class="e-group" style="margin-top:12px;">
+        <div class="lbl"><span>恢复系数 e</span><span class="val" id="eVal">1.00</span></div>
+        <input type="range" id="eSlider" min="0" max="1" step="0.05" value="1">
+        <div class="e-type" id="eType">弹性碰撞（总动能守恒）</div>
+      </div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-play" id="playBtn">播放</button>
+        <button class="btn btn-reset" id="resetBtn">重置</button>
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div class="lbl"><span>仿真速度</span><span id="spdVal">1×</span></div>
+        <input type="range" id="speedSlider" min="0.5" max="2.5" step="0.25" value="1">
+      </div>
+    </div>
+
+    <!-- 数据区 -->
+    <div class="data-area">
+      <div class="card">
+        <h2>实时数据（播放中）</h2>
+        <div class="metrics">
+          <div class="metric"><div class="k">系统总动量 Σp</div><div class="v" id="liveSumP">–</div><div class="u">kg·m/s</div></div>
+          <div class="metric"><div class="k">系统总动能 ΣEk</div><div class="v" id="liveSumEk">–</div><div class="u">J</div></div>
+          <div class="metric"><div class="k">动量守恒偏差 |ΔΣp|</div><div class="v" id="liveDev">–</div><div class="u">kg·m/s</div></div>
+        </div>
+        <table style="margin-top:10px;">
+          <thead><tr><th>球</th><th>质量 m (kg)</th><th>速度 v (m/s)</th><th>动量 p (kg·m/s)</th><th>动能 Ek (J)</th></tr></thead>
+          <tbody id="liveBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>碰撞前后对照表（碰后 = 全部碰撞结束后的末态）</h2>
+        <table>
+          <thead><tr><th>项目</th><th>碰前（初始）</th><th>碰后（末态）</th></tr></thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+        <div class="cons-tip" id="consTip" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card conclusion">
+        <h2>观察与结论</h2>
+        <p><span class="q">想一想：</span>改变质量、初速度或恢复系数（弹性/非弹性/完全非弹性），观察“系统总动量 Σp”在碰前与碰后是否始终相等？总动能 ΣEk 是否也一定守恒？</p>
+        <p><span class="q">我的结论：</span>当系统<b>不受外力</b>时，碰前总动量与碰后总动量数值相等且方向一致，即<b>系统动量守恒</b>；而总动能仅在弹性碰撞（e=1）时才守恒，非弹性碰撞会有动能损失（转化为内能）。</p>
+        <p style="color:#64748b;font-size:12px;">提示：将 e 设为 1（弹性）与 0（完全非弹性）各做一次，对比前后总动能变化，即可归纳出"动量守恒与是否弹性无关"这一结论。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas=document.getElementById('simCanvas');
+  const ctx=canvas.getContext('2d');
+  const LANE={min:0,max:10};
+  const margin=40;
+
+  const colors=['#3b82f6','#ef4444','#22c55e'];
+  const ballNames=['球①','球②','球③'];
+  const ballDefs=[
+    {name:'球①',color:'#3b82f6',m:2,v:3},
+    {name:'球②',color:'#ef4444',m:1,v:0},
+    {name:'球③',color:'#22c55e',m:1,v:0}
+  ];
+
+  let m=[2,1,1];
+  let initV=[3,0,0];
+  let initX=[1.5,5.0,8.0];
+  let e=1;
+  let v=[...initV];
+  let x=[...initX];
+  let r=[0,0,0];
+  let simTime=0;
+  let nextCollisionTime=Infinity;
+  let collisionPair=null;
+  let finalVel=[...initV];
+  let running=false;
+  let speed=1;
+  let lastTs=0;
+
+  const massSliders=[],velSliders=[],massVals=[],velVals=[];
+  const eSlider=document.getElementById('eSlider');
+  const eVal=document.getElementById('eVal');
+  const eType=document.getElementById('eType');
+  const playBtn=document.getElementById('playBtn');
+  const resetBtn=document.getElementById('resetBtn');
+  const speedSlider=document.getElementById('speedSlider');
+  const spdVal=document.getElementById('spdVal');
+
+  function pxPerM(){return (canvas.width-2*margin)/LANE.max;}
+  function toPx(xm){return margin+xm*pxPerM();}
+  function computeRadii(){for(let i=0;i<3;i++) r[i]=0.25*Math.cbrt(m[i]);}
+
+  function computeNext(){
+    let best=Infinity;let pair=null;
+    for(let i=0;i<2;i++){
+      const j=i+1;
+      const denom=v[i]-v[j];
+      const num=x[j]-x[i]-r[i]-r[j];
+      if(v[i]>v[j]){
+        const t=Math.max(0,num/denom);
+        if(simTime+t<best){best=simTime+t;pair=[i,j];}
+      }
+    }
+    nextCollisionTime=best;collisionPair=pair;
+  }
+
+  function applyCollision(pair){
+    const i=pair[0],j=pair[1];
+    const mi=m[i],mj=m[j];
+    const vi=v[i],vj=v[j];
+    const c=(mi*vi+mj*vj)/(mi+mj);
+    v[i]=c-mj*e*(vi-vj)/(mi+mj);
+    v[j]=c+mi*e*(vi-vj)/(mi+mj);
+  }
+
+  function update(dt){
+    let remaining=dt;let guard=0;
+    while(remaining>1e-9 && guard++<100){
+      if(!isFinite(nextCollisionTime)){
+        for(let i=0;i<3;i++) x[i]+=v[i]*remaining;
+        simTime+=remaining;remaining=0;
+      }else{
+        const tCol=nextCollisionTime-simTime;
+        if(tCol>remaining+1e-9){
+          for(let i=0;i<3;i++) x[i]+=v[i]*remaining;
+          simTime+=remaining;remaining=0;
+        }else{
+          const dt2=Math.max(0,tCol);
+          for(let i=0;i<3;i++) x[i]+=v[i]*dt2;
+          simTime+=dt2;remaining-=dt2;
+          if(collisionPair) applyCollision(collisionPair);
+          computeNext();
+        }
+      }
+    }
+  }
+
+  function simulateFinal(){
+    let xf=[...initX],vf=[...initV];
+    let rf=m.map(mm=>0.25*Math.cbrt(mm));
+    let guard=0;
+    while(guard++<500){
+      let best=Infinity,pair=null;
+      for(let i=0;i<2;i++){
+        const j=i+1;
+        const denom=vf[i]-vf[j];
+        const num=xf[j]-xf[i]-rf[i]-rf[j];
+        if(vf[i]>vf[j]){
+          const tt=Math.max(0,num/denom);
+          if(tt<best){best=tt;pair=[i,j];}
+        }
+      }
+      if(!isFinite(best)) break;
+      for(let i=0;i<3;i++) xf[i]+=vf[i]*best;
+      const i=pair[0],j=pair[1];
+      const c=(m[i]*vf[i]+m[j]*vf[j])/(m[i]+m[j]);
+      vf[i]=c-m[j]*e*(vf[i]-vf[j])/(m[i]+m[j]);
+      vf[j]=c+m[i]*e*(vf[i]-vf[j])/(m[i]+m[j]);
+    }
+    return vf;
+  }
+
+  function resetSim(){
+    v=[...initV];x=[...initX];simTime=0;
+    computeRadii();computeNext();
+  }
+
+  function refresh(){
+    computeRadii();resetSim();
+    finalVel=simulateFinal();
+    updateLive();updateTable();render();
+  }
+
+  function readParams(){
+    for(let i=0;i<3;i++){
+      m[i]=parseFloat(massSliders[i].value);
+      initV[i]=parseFloat(velSliders[i].value);
+    }
+    e=parseFloat(eSlider.value);
+    eVal.textContent=e.toFixed(2);
+    eType.textContent = e>=0.999?'弹性碰撞（总动能守恒）':
+                        (e<=0.001?'完全非弹性碰撞（共同速度，动能损失最大）':'非弹性碰撞（部分动能损失）');
+  }
+
+  (function buildControls(){
+    const c=document.getElementById('controls');
+    ballDefs.forEach((bd,i)=>{
+      const card=document.createElement('div');
+      card.className='ball-card';
+      card.innerHTML=`<h3><span class="dot" style="background:${colors[i]}"></span>${bd.name}</h3>
+        <div class="row"><div class="lbl"><span>质量 m</span><span class="val" id="mv${i}">${bd.m}.00 kg</span></div>
+          <input type="range" id="ms${i}" min="0.5" max="5" step="0.1" value="${bd.m}"></div>
+        <div class="row" style="margin-bottom:0;"><div class="lbl"><span>初速度 v₀</span><span class="val" id="vv${i}">${bd.v}.00 m/s</span></div>
+          <input type="range" id="vs${i}" min="-5" max="5" step="0.1" value="${bd.v}"></div>`;
+      c.appendChild(card);
+      massSliders[i]=card.querySelector('#ms'+i);
+      velSliders[i]=card.querySelector('#vs'+i);
+      massVals[i]=card.querySelector('#mv'+i);
+      velVals[i]=card.querySelector('#vv'+i);
+      massSliders[i].addEventListener('input',()=>{
+        const val=parseFloat(massSliders[i].value);
+        massVals[i].textContent=val.toFixed(2)+' kg';
+        readParams();refresh();
+      });
+      velSliders[i].addEventListener('input',()=>{
+        const val=parseFloat(velSliders[i].value);
+        velVals[i].textContent=(val>=0?'+':'')+val.toFixed(2)+' m/s';
+        readParams();refresh();
+      });
+    });
+    eSlider.addEventListener('input',()=>{readParams();refresh();});
+    speedSlider.addEventListener('input',()=>{speed=parseFloat(speedSlider.value);spdVal.textContent=speed.toFixed(2).replace(/\.?0+$/,'')+'×';});
+    playBtn.addEventListener('click',()=>{
+      running=!running;
+      playBtn.textContent=running?'暂停':'播放';
+      lastTs=0;
+    });
+    resetBtn.addEventListener('click',()=>{
+      running=false;playBtn.textContent='播放';lastTs=0;
+      readParams();refresh();
+    });
+  })();
+
+  function fmt(x){return (Math.round(x*100)/100).toFixed(2);}
+  function pOf(i,vel){return m[i]*(vel?vel[i]:v[i]);}
+  function ekSum(vel){let s=0;for(let i=0;i<3;i++)s+=0.5*m[i]*vel[i]*vel[i];return s;}
+  function pSum(vel){let s=0;for(let i=0;i<3;i++)s+=m[i]*vel[i];return s;}
+
+  function updateLive(){
+    const body=document.getElementById('liveBody');
+    let html='';
+    for(let i=0;i<3;i++){
+      const p=m[i]*v[i];
+      const ek=0.5*m[i]*v[i]*v[i];
+      html+=`<tr><td class="p${i}">${ballNames[i]}</td><td>${fmt(m[i])}</td><td>${v[i]>=0?'+':''}${fmt(v[i])}</td><td>${p>=0?'+':''}${fmt(p)}</td><td>${fmt(ek)}</td></tr>`;
+    }
+    body.innerHTML=html;
+    const sp=pSum(v), sek=ekSum(v), dev=Math.abs(sp-pSum(initV));
+    document.getElementById('liveSumP').textContent=(sp>=0?'+':'')+fmt(sp);
+    document.getElementById('liveSumEk').textContent=fmt(sek);
+    document.getElementById('liveDev').textContent=fmt(dev);
+  }
+
+  function updateTable(){
+    const body=document.getElementById('cmpBody');
+    const rows=[
+      {label:'球① 动量 p₁',b:pOf(0,initV),a:pOf(0,finalVel),u:'kg·m/s'},
+      {label:'球② 动量 p₂',b:pOf(1,initV),a:pOf(1,finalVel),u:'kg·m/s'},
+      {label:'球③ 动量 p₃',b:pOf(2,initV),a:pOf(2,finalVel),u:'kg·m/s'},
+      {label:'系统总动量 Σp',b:pSum(initV),a:pSum(finalVel),u:'kg·m/s'},
+      {label:'系统总动能 ΣEk',b:ekSum(initV),a:ekSum(finalVel),u:'J'},
+    ];
+    let html='';
+    rows.forEach(rr=>{
+      html+=`<tr><td>${rr.label}</td>
+        <td>${rr.b>=0?'+':''}${fmt(rr.b)} ${rr.u}</td>
+        <td>${rr.a>=0?'+':''}${fmt(rr.a)} ${rr.u}</td></tr>`;
+    });
+    body.innerHTML=html;
+    const dp=pSum(initV), da=pSum(finalVel);
+    const dEk=ekSum(initV)-ekSum(finalVel);
+    document.getElementById('consTip').innerHTML=
+      `✔ Σp 碰前 = 碰后 = <b>${fmt(dp)} kg·m/s</b>（动量守恒成立）　|　ΣEk 变化：${fmt(dEk)} J（${dEk>1e-6?`损失 ${fmt(dEk)} J（非弹性）`:dEk<-1e-6?`增加 ${fmt(-dEk)} J`:'不变（弹性）'}）`;
+  }
+
+  function render(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const y=canvas.height*0.55;
+    const ppm=pxPerM();
+    ctx.strokeStyle='#94a3b8';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(margin,y);ctx.lineTo(canvas.width-margin,y);ctx.stroke();
+    ctx.fillStyle='#94a3b8';ctx.font='12px sans-serif';ctx.textAlign='center';
+    for(let k=0;k<=10;k+=2){
+      const px=margin+k*ppm;
+      ctx.fillText(k+' m',px,y+20);
+      ctx.beginPath();ctx.moveTo(px,y-8);ctx.lineTo(px,y+8);ctx.stroke();
+    }
+    ctx.fillStyle='#334155';ctx.textAlign='right';
+    ctx.fillText('→ 正方向(向右)',canvas.width-margin,24);
+    for(let i=0;i<3;i++){
+      const pr=r[i]*ppm;
+      const px=toPx(x[i]);
+      ctx.beginPath();ctx.arc(px,y+6,pr,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,.08)';ctx.fill();
+      ctx.beginPath();ctx.arc(px,y,pr,0,Math.PI*2);
+      ctx.fillStyle=colors[i];ctx.fill();
+      ctx.strokeStyle='#1e293b';ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle='#fff';ctx.font='bold '+Math.max(13,Math.round(pr*0.7))+'px sans-serif';
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('m'+(i+1),px,y);
+      if(Math.abs(v[i])>0.005){
+        const len=Math.max(18,Math.min(80,Math.abs(v[i])*16));
+        const dir=Math.sign(v[i]);
+        const ay=y+pr+10;
+        ctx.strokeStyle=colors[i];ctx.lineWidth=3;
+        ctx.beginPath();ctx.moveTo(px,ay);ctx.lineTo(px+dir*len,ay);ctx.stroke();
+        ctx.fillStyle=colors[i];
+        ctx.beginPath();
+        ctx.moveTo(px+dir*len,ay);
+        ctx.lineTo(px+dir*len-dir*9,ay-5);
+        ctx.lineTo(px+dir*len-dir*9,ay+5);
+        ctx.closePath();ctx.fill();
+        ctx.font='11px sans-serif';ctx.textBaseline='alphabetic';
+        ctx.fillText(v[i].toFixed(1)+' m/s',px+dir*len/2-14,ay+16);
+      }
+    }
+    ctx.textAlign='start';ctx.textBaseline='alphabetic';
+  }
+
+  function frame(ts){
+    if(running){
+      if(!lastTs)lastTs=ts;
+      const dt=(ts-lastTs)/1000*speed;
+      lastTs=ts;
+      if(dt>0) update(dt);
+    }else lastTs=0;
+    render();
+    updateLive();
+    requestAnimationFrame(frame);
+  }
+
+  readParams();
+  refresh();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

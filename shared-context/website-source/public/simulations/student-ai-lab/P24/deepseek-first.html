@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>机械能守恒定律 - 交互式物理模拟实验</title>
+    <style>
+        * {
+            user-select: none; /* 避免拖拽时选中文本，提升体验 */
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+        }
+        .experiment-container {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            padding: 1.2rem 1.8rem 1.8rem 1.8rem;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.8);
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+            background: #fff;
+            cursor: pointer;
+        }
+        .info-panel {
+            margin-top: 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            background: #1e2a3ecc;
+            background: linear-gradient(135deg, #1e2a3e 0%, #0f1724 100%);
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 0.8rem 1.8rem;
+            color: white;
+            box-shadow: 0 8px 14px rgba(0,0,0,0.2);
+        }
+        .energy-meters {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+            row-gap: 0.5rem;
+        }
+        .meter {
+            background: rgba(0,0,0,0.5);
+            border-radius: 2rem;
+            padding: 0.3rem 1rem;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .meter span:first-child {
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            opacity: 0.8;
+        }
+        .meter span:last-child {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-left: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .kinetic { border-left: 5px solid #f97316; }
+        .potential { border-left: 5px solid #3b82f6; }
+        .total { border-left: 5px solid #10b981; }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: #0f172a80;
+            padding: 0.3rem 1rem;
+            border-radius: 3rem;
+        }
+        .controls label {
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        input[type="range"] {
+            width: 180px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #cbd5e1;
+            border-radius: 5px;
+            outline: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #facc15;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 4px white;
+            border: none;
+        }
+        .height-value {
+            background: #00000066;
+            padding: 0.2rem 0.8rem;
+            border-radius: 2rem;
+            font-family: monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        button {
+            background: #facc15;
+            border: none;
+            color: #1e293b;
+            font-weight: bold;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        button:hover {
+            background: #ffdd44;
+            transform: scale(1.02);
+        }
+        .note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 0.8rem;
+            color: #334155;
+            background: #f1f5f9cc;
+            border-radius: 1rem;
+            padding: 0.2rem;
+        }
+        @media (max-width: 700px) {
+            .experiment-container { padding: 1rem; }
+            .meter span:last-child { font-size: 1rem; }
+            .controls { gap: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="experiment-container">
+        <canvas id="simCanvas" width="900" height="450" style="width:100%; height:auto; max-width:900px; aspect-ratio:900/450"></canvas>
+        
+        <div class="info-panel">
+            <div class="energy-meters">
+                <div class="meter kinetic">
+                    <span>⚡ 动能 Ek</span>
+                    <span id="kineticVal">0.00 J</span>
+                </div>
+                <div class="meter potential">
+                    <span>📈 势能 Ep</span>
+                    <span id="potentialVal">0.00 J</span>
+                </div>
+                <div class="meter total">
+                    <span>🔷 总机械能 E</span>
+                    <span id="totalVal">0.00 J</span>
+                </div>
+            </div>
+            <div class="controls">
+                <label>🎚️ 小球初始高度 (拖动改变势能):</label>
+                <input type="range" id="heightSlider" min="0" max="280" step="1" value="220">
+                <span class="height-value" id="heightDisplay">2.20 m</span>
+                <button id="resetBtn">⟳ 释放/重置</button>
+            </div>
+        </div>
+        <div class="note">
+            💡 理想无摩擦单摆 / 竖直圆轨简化模型 | 机械能守恒: Ek + Ep = 常量 (忽略阻力) | 拖动滑块改变起始高度, 点击释放后小球摆动, 能量相互转换
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- 物理参数 & 画布元素 -----
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 尺寸自适应 (保持逻辑分辨率 900x450)
+        const CANVAS_W = 900;
+        const CANVAS_H = 450;
+        canvas.width = CANVAS_W;
+        canvas.height = CANVAS_H;
+        
+        // 几何定义: 单摆/轨道圆心 O (x0, y0)
+        // 为了让视觉更像圆弧摆动，采用一个虚拟摆长 L，小球在圆弧上运动
+        const pivotX = 450;      // 悬挂点/圆心 X (中心偏下一点更显摆动)
+        const pivotY = 80;       // 圆心Y坐标 (为了让轨道在下部)
+        const radius = 270;      // 摆长/圆弧半径 (px) -> 确保最低点Y = pivotY + radius = 350，在画布内(450)
+        // 最低点Y = 80+270 = 350; 最高允许角度对应的Y范围安全
+        
+        // 角度范围限制: 为了效果美观且符合物理，最大角度约75度 (确保小球不低于画布)
+        const maxThetaRad = 75 * Math.PI / 180;   // 约1.309 rad
+        // 最小角度 -maxThetaRad, 允许对称摆动
+        
+        // 物理量 (真实模拟)
+        let currentTheta = 0.0;      // 当前角度 rad (0 = 最低点)
+        let currentOmega = 0.0;       // 角速度 rad/s
+        let currentAlpha = 0.0;        // 角加速度用于数值积分
+        
+        // 重力加速度 (px/s^2 实际我们映射为物理摆的角加速度公式)
+        // 为了使得数值合理且动画流畅，重力加速度取 g = 980 px/s^2 (模拟真实重力感觉)
+        const g = 980;               // px/s^2
+        // 摆长(半径) 以米为单位对于能量计算？为了直观显示焦耳，我们定义参考质量 m=0.2kg, 并设定比例尺
+        // 实际显示能量数值不需要过于真实焦耳但要有守恒感: 设定质量 m = 0.2 kg, 重力加速度 g_real = 9.8 m/s²。
+        // 但我们绘图使用像素，能量转换高度差基于真实物理比例: 设定1像素高度 = 0.01 米 (这样最大高度280px => 2.8m)
+        // 这样能量变化清晰易懂。符合现实观感。
+        const meterPerPixel = 0.01;     // 1px = 0.01 m   => 280px = 2.8m
+        const mass = 0.2;              // 质量 0.2 kg
+        const g_real = 9.8;            // 重力加速度 m/s²
+        
+        // 由角度求高度差 (相对于最低点的高度) 单位 米
+        function getHeightFromTheta(theta) {
+            // 几何: 相对最低点的高度差 h = L * (1 - cos(theta)) ， L 长度米
+            const L_m = radius * meterPerPixel;   // 摆长米数
+            const h = L_m * (1 - Math.cos(theta));
+            return Math.max(0, h);
+        }
+        
+        // 获取当前势能 (Joule)
+        function getPotentialEnergy(theta) {
+            const h = getHeightFromTheta(theta);
+            return mass * g_real * h;
+        }
+        
+        // 获取动能 (Joule) 由角速度计算线速度 v = L * omega (弧度角速度 rad/s)
+        function getKineticEnergy(theta, omega) {
+            const L_m = radius * meterPerPixel;
+            const v = L_m * omega;
+            return 0.5 * mass * v * v;
+        }
+        
+        // 总机械能
+        function getTotalEnergy(theta, omega) {
+            return getPotentialEnergy(theta) + getKineticEnergy(theta, omega);
+        }
+        
+        // 根据角度获取小球在画布上的坐标 (x, y)
+        function getBallPos(theta) {
+            const x = pivotX + radius * Math.sin(theta);
+            const y = pivotY + radius * Math.cos(theta);
+            return { x, y };
+        }
+        
+        // 动力学更新：欧拉-克罗默方法 (更好稳定)
+        // 角加速度 alpha = - (g_real / L) * sin(theta)   (标准单摆角加速度)
+        function computeAlpha(theta) {
+            const L_m = radius * meterPerPixel;
+            return -(g_real / L_m) * Math.sin(theta);
+        }
+        
+        // 动画状态
+        let animationId = null;
+        let isAnimating = false;    // 是否释放摆动中
+        let lastTimestamp = 0;
+        
+        // 用户设定的初始角度 (基于滑块高度)
+        let targetStartHeight_px = 220;   // px高度 (相对于最低点的高度差)
+        
+        // 将高度差(px)转换为初始角度theta0 (相对于最低点)
+        function thetaFromHeightPx(heightPx) {
+            // 高度米 = heightPx * meterPerPixel
+            const h_m = heightPx * meterPerPixel;
+            const L_m = radius * meterPerPixel;
+            // h = L (1 - cosθ)
+            if (h_m >= L_m) return maxThetaRad;
+            const cosVal = 1 - (h_m / L_m);
+            let theta = Math.acos(Math.min(1.0, Math.max(-1.0, cosVal)));
+            // 正负随意，我们取正角度（右侧）
+            return theta;
+        }
+        
+        // 根据初始角度同步滑块显示 & 高度显示
+        function updateSliderFromTheta(theta) {
+            const L_m = radius * meterPerPixel;
+            const h_m = L_m * (1 - Math.cos(theta));
+            const h_px = h_m / meterPerPixel;
+            const clampedPx = Math.min(280, Math.max(0, h_px));
+            document.getElementById('heightSlider').value = clampedPx;
+            document.getElementById('heightDisplay').innerText = clampedPx.toFixed(1) + " m";
+            targetStartHeight_px = clampedPx;
+        }
+        
+        // 重置/释放动作: 将当前角度设置为由滑块高度决定的最大摆角，并且速度归零 (从静止释放)
+        function resetToStart() {
+            // 停止当前动画循环并重新开始（如果正在模拟）
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            // 根据滑块值设定起始角度
+            const startTheta = thetaFromHeightPx(targetStartHeight_px);
+            currentTheta = startTheta;
+            currentOmega = 0.0;
+            isAnimating = true;
+            // 开始动画
+            lastTimestamp = performance.now();
+            function animate(now) {
+                if (!isAnimating) return;
+                let dt = Math.min(0.033, (now - lastTimestamp) / 1000);
+                if (dt <= 0) {
+                    lastTimestamp = now;
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                lastTimestamp = now;
+                // 限制dt最大0.033秒保证稳定
+                dt = Math.min(dt, 0.033);
+                // 半隐式欧拉 (速度先更新，再更新角度)
+                const alpha = computeAlpha(currentTheta);
+                currentOmega += alpha * dt;
+                currentTheta += currentOmega * dt;
+                
+                // 边界处理: 超出最大角度时做简单反弹+能量损失为0 (完美弹性)
+                // 但因机械能守恒仿真，超出范围不应发生，若因数值误差导致，修正回边界并反转角速度(保持守恒)
+                if (currentTheta > maxThetaRad) {
+                    currentTheta = maxThetaRad - (currentTheta - maxThetaRad);
+                    currentOmega = -currentOmega;
+                }
+                if (currentTheta < -maxThetaRad) {
+                    currentTheta = -maxThetaRad - (currentTheta + maxThetaRad);
+                    currentOmega = -currentOmega;
+                }
+                
+                // 更新界面上的能量数值
+                updateEnergyDisplay();
+                drawCanvas();
+                
+                // 继续动画
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            // 先绘制一帧
+            updateEnergyDisplay();
+            drawCanvas();
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 停止并切换到手动/静态位置（根据滑块调整静止角度）
+        function stopAndSetStatic() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            isAnimating = false;
+            // 根据当前滑块高度设定小球静止角度 (静止释放点)
+            const staticTheta = thetaFromHeightPx(targetStartHeight_px);
+            currentTheta = staticTheta;
+            currentOmega = 0.0;
+            updateEnergyDisplay();
+            drawCanvas();
+        }
+        
+        // 更新HTML能量数值
+        function updateEnergyDisplay() {
+            const ep = getPotentialEnergy(currentTheta);
+            const ek = getKineticEnergy(currentTheta, currentOmega);
+            const total = ep + ek;
+            document.getElementById('kineticVal').innerHTML = ek.toFixed(2) + " J";
+            document.getElementById('potentialVal').innerHTML = ep.toFixed(2) + " J";
+            document.getElementById('totalVal').innerHTML = total.toFixed(2) + " J";
+            // 高度显示实时位置的高度 (针对当前角度)
+            const curHeightM = getHeightFromTheta(currentTheta);
+            const curHeightPx = curHeightM / meterPerPixel;
+            // 仅展示滑块上方实时高度便于理解 (但不影响滑块值，仅在info panel展示实时高度)
+            // 额外在滑块旁加实时? 为了方便，添加一个辅助标记
+            const realtimeHeightSpan = document.getElementById('realtimeHeight');
+            if(realtimeHeightSpan) realtimeHeightSpan.innerText = curHeightPx.toFixed(1);
+        }
+        
+        // 绘制美丽轨道、小球、能量柱示意图
+        function drawCanvas() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+            
+            // 背景极简星空感
+            const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H);
+            grad.addColorStop(0, '#f8fafc');
+            grad.addColorStop(1, '#e2e8f0');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+            
+            // 绘制辅助虚线圆弧 (轨道)
+            ctx.beginPath();
+            ctx.arc(pivotX, pivotY, radius, -maxThetaRad, maxThetaRad);
+            ctx.strokeStyle = '#94a3b8';
+            ctx.setLineDash([8, 6]);
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 绘制中心悬挂点
+            ctx.beginPath();
+            ctx.arc(pivotX, pivotY, 6, 0, 2*Math.PI);
+            ctx.fillStyle = '#475569';
+            ctx.shadowBlur = 0;
+            ctx.fill();
+            ctx.fillStyle = '#cbd5e1';
+            ctx.beginPath();
+            ctx.arc(pivotX, pivotY, 3, 0, 2*Math.PI);
+            ctx.fill();
+            
+            // 绘制连接线 (摆线)
+            const ballPos = getBallPos(currentTheta);
+            ctx.beginPath();
+            ctx.moveTo(pivotX, pivotY);
+            ctx.lineTo(ballPos.x, ballPos.y);
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            
+            // 绘制小球 (立体渐变)
+            const gradient = ctx.createRadialGradient(ballPos.x-5, ballPos.y-5, 3, ballPos.x, ballPos.y, 17);
+            gradient.addColorStop(0, '#f97316');
+            gradient.addColorStop(1, '#c2410c');
+            ctx.beginPath();
+            ctx.arc(ballPos.x, ballPos.y, 15, 0, 2*Math.PI);
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = "rgba(0,0,0,0.3)";
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(ballPos.x-2, ballPos.y-3, 4, 0, 2*Math.PI);
+            ctx.fillStyle = "#fff9c4";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            // 高光
+            ctx.beginPath();
+            ctx.arc(ballPos.x-4, ballPos.y-5, 2, 0, 2*Math.PI);
+            ctx.fillStyle = "white";
+            ctx.fill();
+            
+            // 能量柱状图 (动态显示当前动能/势能比值)
+            const ep = getPotentialEnergy(currentTheta);
+            const ek = getKineticEnergy(currentTheta, currentOmega);
+            const totalE = ep + ek;
+            const maxEnergyRef = totalE > 0.01 ? totalE : 1.0;
+            const epRatio = ep / maxEnergyRef;
+            const ekRatio = ek / maxEnergyRef;
+            
+            const barX = 30, barY_start = 70;
+            const barWidth = 28, maxBarHeight = 110;
+            // 势能条 (蓝色)
+            ctx.fillStyle = '#3b82f6cc';
+            ctx.fillRect(barX, barY_start + maxBarHeight - epRatio * maxBarHeight, barWidth, epRatio * maxBarHeight);
+            ctx.fillStyle = '#1e3a8a';
+            ctx.fillRect(barX, barY_start + maxBarHeight - epRatio * maxBarHeight, barWidth, 2);
+            ctx.fillStyle = '#facc15';
+            ctx.font = "bold 12px 'Segoe UI'";
+            ctx.fillText("Ep", barX+6, barY_start-5);
+            
+            // 动能条 (橙色)
+            const barX2 = barX + barWidth + 12;
+            ctx.fillStyle = '#f97316cc';
+            ctx.fillRect(barX2, barY_start + maxBarHeight - ekRatio * maxBarHeight, barWidth, ekRatio * maxBarHeight);
+            ctx.fillStyle = '#c2410c';
+            ctx.fillRect(barX2, barY_start + maxBarHeight - ekRatio * maxBarHeight, barWidth, 2);
+            ctx.fillStyle = "#facc15";
+            ctx.fillText("Ek", barX2+6, barY_start-5);
+            
+            // 绘制实时高度辅助线(虚线水平)
+            const groundY = pivotY + radius; // 最低点坐标
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(CANVAS_W, groundY);
+            ctx.strokeStyle = '#64748b';
+            ctx.setLineDash([5, 6]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#334155';
+            ctx.font = "12px monospace";
+            ctx.fillText("零势能参考面", CANVAS_W-100, groundY-4);
+            
+            // 当前高度标尺
+            const curHeightM = getHeightFromTheta(currentTheta);
+            const curHeightPx = curHeightM / meterPerPixel;
+            ctx.fillStyle = '#0f172a';
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillText(`当前高度: ${curHeightPx.toFixed(1)} cm / ${curHeightM.toFixed(2)} m`, 30, 40);
+            // 显示当前角度值
+            ctx.fillStyle = '#475569';
+            ctx.font = "12px monospace";
+            ctx.fillText(`摆角: ${(currentTheta*180/Math.PI).toFixed(1)}°`, 30, 60);
+            
+            // 在滑块上方显示实时高度指示(增加附加)
+            if(!document.getElementById('realtimeHeight')) {
+                // 动态创建展示当前高度的元素 (改良显示)
+                const sliderDiv = document.querySelector('.controls');
+                if(sliderDiv && !document.getElementById('realtimeHeight')) {
+                    const rtSpan = document.createElement('span');
+                    rtSpan.id = 'realtimeHeight';
+                    rtSpan.style.background = "#00000066";
+                    rtSpan.style.padding = "0.2rem 0.8rem";
+                    rtSpan.style.borderRadius = "2rem";
+                    rtSpan.style.fontSize = "0.75rem";
+                    rtSpan.style.marginLeft = "8px";
+                    rtSpan.innerText = curHeightPx.toFixed(1);
+                    sliderDiv.appendChild(rtSpan);
+                }
+            } else {
+                document.getElementById('realtimeHeight').innerText = curHeightPx.toFixed(1);
+            }
+            // 额外绘制机械能守恒徽章
+            const totalVal = document.getElementById('totalVal').innerText;
+            ctx.fillStyle = '#10b981';
+            ctx.font = "italic 12px 'Segoe UI'";
+            ctx.fillText(`总机械能 ≈ ${totalVal}`, CANVAS_W-150, 35);
+        }
+        
+        // 滑块交互: 当手动拖动时，停止动画，将小球静止在滑块对应的初始高度位置
+        function onHeightSliderChange() {
+            if (isAnimating) {
+                // 如果正在运动，先停止动画
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                isAnimating = false;
+            }
+            const pxVal = parseFloat(document.getElementById('heightSlider').value);
+            targetStartHeight_px = pxVal;
+            document.getElementById('heightDisplay').innerText = pxVal.toFixed(1) + " m";
+            const newTheta = thetaFromHeightPx(pxVal);
+            currentTheta = newTheta;
+            currentOmega = 0.0;
+            updateEnergyDisplay();
+            drawCanvas();
+        }
+        
+        // 释放: 基于当前角度静止释放（让小球从当前位置无初速摆动)
+        function releaseSimulation() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            // 使用当前角度并且角速度归零开始摆动
+            currentOmega = 0.0;
+            isAnimating = true;
+            lastTimestamp = performance.now();
+            function animateRelease(now) {
+                if (!isAnimating) return;
+                let dt = Math.min(0.033, (now - lastTimestamp) / 1000);
+                if (dt <= 0) {
+                    lastTimestamp = now;
+                    requestAnimationFrame(animateRelease);
+                    return;
+                }
+                lastTimestamp = now;
+                const alpha = computeAlpha(currentTheta);
+                currentOmega += alpha * dt;
+                currentTheta += currentOmega * dt;
+                if (currentTheta > maxThetaRad) {
+                    currentTheta = maxThetaRad - (currentTheta - maxThetaRad);
+                    currentOmega = -currentOmega;
+                }
+                if (currentTheta < -maxThetaRad) {
+                    currentTheta = -maxThetaRad - (currentTheta + maxThetaRad);
+                    currentOmega = -currentOmega;
+                }
+                updateEnergyDisplay();
+                drawCanvas();
+                animationId = requestAnimationFrame(animateRelease);
+            }
+            updateEnergyDisplay();
+            drawCanvas();
+            animationId = requestAnimationFrame(animateRelease);
+        }
+        
+        // 重置按钮: 用滑块当前高度设定并释放 (从静止开始摆动)
+        function resetAndPlay() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+            }
+            // 重新设置角度为滑块指定静止释放角
+            const startTheta = thetaFromHeightPx(targetStartHeight_px);
+            currentTheta = startTheta;
+            currentOmega = 0.0;
+            isAnimating = true;
+            lastTimestamp = performance.now();
+            function animateReset(now) {
+                if (!isAnimating) return;
+                let dt = Math.min(0.033, (now - lastTimestamp) / 1000);
+                if (dt <= 0) {
+                    lastTimestamp = now;
+                    requestAnimationFrame(animateReset);
+                    return;
+                }
+                lastTimestamp = now;
+                const alpha = computeAlpha(currentTheta);
+                currentOmega += alpha * dt;
+                currentTheta += currentOmega * dt;
+                if (currentTheta > maxThetaRad) {
+                    currentTheta = maxThetaRad - (currentTheta - maxThetaRad);
+                    currentOmega = -currentOmega;
+                }
+                if (currentTheta < -maxThetaRad) {
+                    currentTheta = -maxThetaRad - (currentTheta + maxThetaRad);
+                    currentOmega = -currentOmega;
+                }
+                updateEnergyDisplay();
+                drawCanvas();
+                animationId = requestAnimationFrame(animateReset);
+            }
+            updateEnergyDisplay();
+            drawCanvas();
+            animationId = requestAnimationFrame(animateReset);
+        }
+        
+        // 事件绑定
+        const slider = document.getElementById('heightSlider');
+        const resetBtn = document.getElementById('resetBtn');
+        slider.addEventListener('input', onHeightSliderChange);
+        resetBtn.addEventListener('click', resetAndPlay);
+        // 额外, 点击canvas可以自由切换静止/释放? 简化：双击释放？做个双击释放更好体验，单击亦可触发释放 (方便)
+        canvas.addEventListener('dblclick', () => {
+            if(isAnimating) {
+                // 如果在动画中，双击可以暂停并静止在当前角度
+                if(animationId){ cancelAnimationFrame(animationId); animationId = null;}
+                isAnimating = false;
+                drawCanvas();
+            } else {
+                releaseSimulation();
+            }
+        });
+        // 初始化默认模拟: 设置高度220px，静止显示
+        targetStartHeight_px = 220;
+        document.getElementById('heightSlider').value = 220;
+        document.getElementById('heightDisplay').innerText = "2.20 m";
+        currentTheta = thetaFromHeightPx(220);
+        currentOmega = 0.0;
+        isAnimating = false;
+        updateEnergyDisplay();
+        drawCanvas();
+    })();
+</script>
+</body>
+</html>

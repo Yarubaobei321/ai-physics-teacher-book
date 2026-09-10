@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>导数小实验 · 二次函数切线</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动滑块时误选文字 */
+        }
+        body {
+            background: #eef2f5;
+            font-family: 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .card {
+            max-width: 1000px;
+            width: 100%;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        .header {
+            background: #1e4668;
+            color: white;
+            padding: 1.2rem 1.5rem;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+        }
+        .header p {
+            margin: 0.3rem 0 0;
+            opacity: 0.85;
+        }
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            padding: 1.5rem;
+        }
+        .graph {
+            flex: 2;
+            min-width: 260px;
+            background: #fefefe;
+            border-radius: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 0.5rem;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 1px solid #dce5ec;
+        }
+        .panel {
+            flex: 1;
+            min-width: 220px;
+            background: #f9fbfd;
+            border-radius: 1.5rem;
+            padding: 1rem 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        .slider-box {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        input {
+            width: 100%;
+            cursor: pointer;
+            accent-color: #1e4668;
+        }
+        .value-card {
+            background: linear-gradient(135deg, #e2ecf5, #d4e2ed);
+            border-radius: 1.2rem;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .slope-number {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: monospace;
+            background: white;
+            display: inline-block;
+            padding: 0.1rem 1rem;
+            border-radius: 3rem;
+            margin-top: 8px;
+            color: #1e4668;
+        }
+        .explain {
+            font-size: 0.85rem;
+            line-height: 1.45;
+            color: #2c4b66;
+            border-top: 1px solid #d0dee9;
+            padding-top: 0.8rem;
+        }
+        button {
+            background: #1e4668;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            padding: 0.8rem;
+            border-top: 1px solid #e2e8f0;
+            color: #5f7a8c;
+        }
+        @media (max-width: 680px) {
+            .slope-number { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>📐 导数直观理解 · 二次函数 f(x)=x²</h1>
+        <p>切线的斜率 = 导数值 | 拖动下方滑块，观察切线变化</p>
+    </div>
+    <div class="content">
+        <div class="graph">
+            <canvas id="mainCanvas" width="700" height="400" style="width:100%; height:auto; aspect-ratio:700/400"></canvas>
+        </div>
+        <div class="panel">
+            <div class="slider-box">
+                <div class="slider-label">
+                    <span>🔍 观察点 x₀ =</span>
+                    <span id="xValue" style="font-weight:700;">0.00</span>
+                </div>
+                <input type="range" id="xSlider" min="-2.2" max="2.2" step="0.02" value="1.0">
+                <div style="display: flex; justify-content: space-between; font-size:0.7rem; margin-top:5px;">
+                    <span>-2.2</span><span>0</span><span>2.2</span>
+                </div>
+            </div>
+            <div class="value-card">
+                <div style="font-weight:500;">📈 该点切线斜率 (导数值)</div>
+                <div class="slope-number" id="slopeDisplay">0.00</div>
+                <div style="font-size:0.8rem; margin-top:6px;" id="tangentLine">切线: y = ?</div>
+                <button id="resetViewBtn">⟳ 重置视角 (x=1.0)</button>
+            </div>
+            <div class="explain">
+                <strong>💡 科普小贴士</strong><br>
+                • 函数 f(x) = x²，导数 f'(x) = 2x<br>
+                • 导数就是切线的斜率 → 正值递增，负值递减<br>
+                • 滑块越靠近0，切线越平缓 (斜率接近0)<br>
+                <strong>⚡ 可交互验证</strong>：任意位置看切线与曲线“贴”在一起。
+            </div>
+        </div>
+    </div>
+    <footer>🎓 拖动滑块 | 切线斜率 = 2·x₀  简洁展示导数的几何意义</footer>
+</div>
+
+<script>
+    (function(){
+        // ---------- 1. 定义函数与导数 ----------
+        const f = (x) => x * x;          // f(x) = x²
+        const fPrime = (x) => 2 * x;     // f'(x) = 2x
+
+        // ---------- 2. 绘图范围 ----------
+        const xMin = -2.4;
+        const xMax = 2.4;
+        const yMin = -0.5;   // 让曲线底部留一点空间
+        const yMax = 5.8;     // x=±2.4 时 y≈5.76
+
+        // ---------- 3. Canvas 准备 ----------
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = 700, height = 400;
+        canvas.width = width;
+        canvas.height = height;
+
+        // 坐标映射函数
+        function toX(px) { return ((px / width) * (xMax - xMin)) + xMin; }
+        function toY(py) { return yMax - ((py / height) * (yMax - yMin)); }
+        function toPixelX(x) { return ((x - xMin) / (xMax - xMin)) * width; }
+        function toPixelY(y) { return height - ((y - yMin) / (yMax - yMin)) * height; }
+
+        // 当前 x0
+        let x0 = 1.0;
+
+        // DOM 元素
+        const slider = document.getElementById('xSlider');
+        const xValueSpan = document.getElementById('xValue');
+        const slopeDisplay = document.getElementById('slopeDisplay');
+        const tangentLineSpan = document.getElementById('tangentLine');
+        const resetBtn = document.getElementById('resetViewBtn');
+
+        // 更新文字数值
+        function updateText() {
+            let fx0 = f(x0);
+            let slope = fPrime(x0);
+            xValueSpan.innerText = x0.toFixed(3);
+            slopeDisplay.innerText = slope.toFixed(4);
+            tangentLineSpan.innerHTML = `切线: y = ${slope.toFixed(3)}·(x ${x0>=0?'−':'+'} ${Math.abs(x0).toFixed(3)}) + ${fx0.toFixed(3)}`;
+        }
+
+        // 画背景网格+坐标轴
+        function drawGrid() {
+            ctx.save();
+            ctx.strokeStyle = "#cbdae6";
+            ctx.lineWidth = 0.6;
+            // 画竖线 (每0.5单位)
+            for(let x = -2.0; x <= 2.0; x+=0.5) {
+                let px = toPixelX(x);
+                if(px>=0 && px<=width){
+                    ctx.beginPath();
+                    ctx.moveTo(px, 0);
+                    ctx.lineTo(px, height);
+                    ctx.stroke();
+                }
+            }
+            // 画横线 (每1单位)
+            for(let y = -0; y <= 5.5; y+=1.0) {
+                let py = toPixelY(y);
+                if(py>=0 && py<=height){
+                    ctx.beginPath();
+                    ctx.moveTo(0, py);
+                    ctx.lineTo(width, py);
+                    ctx.stroke();
+                }
+            }
+            // 画X轴和Y轴
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = "#2c5e7a";
+            let axisY0 = toPixelY(0);
+            if(axisY0>=0 && axisY0<=height) {
+                ctx.moveTo(0, axisY0);
+                ctx.lineTo(width, axisY0);
+                ctx.stroke();
+            }
+            let axisX0 = toPixelX(0);
+            if(axisX0>=0 && axisX0<=width) {
+                ctx.moveTo(axisX0, 0);
+                ctx.lineTo(axisX0, height);
+                ctx.stroke();
+            }
+            // 简单标注
+            ctx.font = "11px 'Segoe UI'";
+            ctx.fillStyle = "#2c5e7a";
+            ctx.fillText("x", width-10, axisY0-5);
+            ctx.fillText("y", axisX0+8, 14);
+            ctx.fillText("0", axisX0+3, axisY0-3);
+            ctx.restore();
+        }
+
+        // 绘制函数曲线
+        function drawCurve() {
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "#1f6392";
+            let step = (xMax - xMin) / 800;
+            let first = true;
+            for(let x = xMin; x <= xMax; x += step) {
+                let y = f(x);
+                if(y < yMin-0.3 || y > yMax+0.3) {
+                    first = true;
+                    continue;
+                }
+                let px = toPixelX(x);
+                let py = toPixelY(y);
+                if(px<0 || px>width || py<0 || py>height) {
+                    first = true;
+                    continue;
+                }
+                if(first) {
+                    ctx.moveTo(px, py);
+                    first = false;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+        }
+
+        // 绘制切线 + 切点
+        function drawTangent() {
+            let x0val = x0;
+            let y0val = f(x0val);
+            let slope = fPrime(x0val);
+            
+            // 切线两个端点 (延展到整个x区间)
+            let xStart = xMin;
+            let xEnd = xMax;
+            let yStart = slope * (xStart - x0val) + y0val;
+            let yEnd = slope * (xEnd - x0val) + y0val;
+            
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "#e06c2e";
+            ctx.setLineDash([8, 6]);
+            ctx.moveTo(toPixelX(xStart), toPixelY(yStart));
+            ctx.lineTo(toPixelX(xEnd), toPixelY(yEnd));
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 切点大圆点
+            let px0 = toPixelX(x0val);
+            let py0 = toPixelY(y0val);
+            ctx.beginPath();
+            ctx.fillStyle = "#e06c2e";
+            ctx.arc(px0, py0, 6, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(px0, py0, 2.5, 0, 2*Math.PI);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 绘制辅助文字 (显示当前点坐标)
+        function drawCoordLabel() {
+            let x0val = x0;
+            let y0val = f(x0val);
+            let px = toPixelX(x0val);
+            let py = toPixelY(y0val);
+            if(px > width-90 || px < 30 || py < 25) return;
+            ctx.save();
+            ctx.font = "500 12px monospace";
+            ctx.fillStyle = "#1e4668";
+            ctx.shadowBlur = 0;
+            ctx.fillText(`(${x0val.toFixed(3)}, ${y0val.toFixed(3)})`, px+10, py-8);
+            ctx.restore();
+        }
+
+        // 整体绘图
+        function redraw() {
+            ctx.clearRect(0, 0, width, height);
+            drawGrid();
+            drawCurve();
+            drawTangent();
+            drawCoordLabel();
+        }
+
+        // 滑块事件 & 全部更新
+        function updateFromSlider() {
+            x0 = parseFloat(slider.value);
+            updateText();
+            redraw();
+        }
+
+        // 重置位置
+        function resetView() {
+            slider.value = "1.0";
+            x0 = 1.0;
+            updateText();
+            redraw();
+        }
+
+        // 监听滑块
+        slider.addEventListener('input', updateFromSlider);
+        resetBtn.addEventListener('click', resetView);
+
+        // 窗口尺寸保持比例 (canvas CSS 不变，内部像素固定，不用额外)
+        function handleResize() {
+            // 无需重新设置像素，但重绘保证
+            redraw();
+        }
+        window.addEventListener('resize', () => { setTimeout(redraw, 30); });
+        
+        // 初始化绘图
+        updateFromSlider();
+    })();
+</script>
+</body>
+</html>

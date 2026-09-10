@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>动量守恒·完全参数可调物理实验室 | 3B1B风格</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动时选中文字，但不影响输入框编辑 */
+        }
+        body {
+            background: #0a0c10;
+            font-family: 'Segoe UI', 'SF Pro Text', 'Inter', 'Latin Modern Math', monospace;
+            color: #eef4ff;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+        /* 介绍区域 */
+        .intro-section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 1rem;
+        }
+        .intro-card {
+            background: rgba(18, 22, 32, 0.85);
+            backdrop-filter: blur(6px);
+            border-radius: 2rem;
+            border: 1px solid rgba(93, 158, 255, 0.3);
+            padding: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.5);
+        }
+        .intro-card h1 {
+            font-size: 2.4rem;
+            background: linear-gradient(135deg, #ffffff, #7aa2f7);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+        .intro-card h2 {
+            color: #ffde9e;
+            margin: 1.5rem 0 0.5rem;
+            border-left: 4px solid #5d9eff;
+            padding-left: 1rem;
+        }
+        .formula-block {
+            background: #0f1119;
+            padding: 0.9rem;
+            border-radius: 1.2rem;
+            text-align: center;
+            margin: 1rem 0;
+            border: 1px solid #2a3448;
+        }
+        .highlight {
+            color: #ffd966;
+            font-weight: bold;
+        }
+        .applications-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin: 1.2rem 0;
+        }
+        .app-card {
+            background: #0f131e;
+            border-radius: 1rem;
+            padding: 0.8rem;
+            border-left: 3px solid #5d9eff;
+        }
+        .btn-scroll {
+            display: inline-block;
+            margin-top: 1rem;
+            background: #1e2a3a;
+            border: 1px solid #5d9eff;
+            padding: 0.5rem 1.8rem;
+            border-radius: 2rem;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .experiment-section {
+            max-width: 1300px;
+            margin: 1rem auto 2rem;
+            padding: 0 1.5rem;
+        }
+        .exp-container {
+            background: rgba(16, 20, 28, 0.8);
+            backdrop-filter: blur(3px);
+            border-radius: 2rem;
+            border: 1px solid rgba(72, 97, 130, 0.6);
+            padding: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .tab-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .tab-btn {
+            background: #1a1f2c;
+            border: 1px solid #2e3b4e;
+            padding: 0.5rem 1.4rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #bbd4ff;
+        }
+        .tab-btn.active {
+            background: #2d3b54;
+            border-color: #5d9eff;
+            color: white;
+            box-shadow: 0 0 8px #5d9eff66;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: #0c0f16;
+            border-radius: 1.4rem;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 1000 / 420;
+            cursor: pointer;
+        }
+        .params-panel {
+            margin-top: 1.2rem;
+            background: #10141e;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            border: 1px solid #29324a;
+        }
+        .param-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.8rem;
+        }
+        .param-row label {
+            font-size: 0.75rem;
+            width: 90px;
+            color: #bbd4ff;
+            font-weight: 500;
+        }
+        input[type="range"] {
+            flex: 2;
+            min-width: 180px;
+            background: #1e2538;
+            height: 4px;
+            border-radius: 10px;
+            -webkit-appearance: none;
+        }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-thumb {
+            width: 16px;
+            height: 16px;
+            background: #5d9eff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px #5d9eff;
+            border: none;
+        }
+        .num-input {
+            width: 85px;
+            background: #0b0f18;
+            border: 1px solid #3a4a6e;
+            border-radius: 1rem;
+            padding: 5px 8px;
+            color: #ffecb3;
+            font-family: monospace;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        .stats-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .stat-card {
+            background: #0f131e;
+            border-radius: 1.2rem;
+            padding: 0.5rem 1rem;
+            text-align: center;
+            flex: 1;
+            border: 1px solid #2a3650;
+        }
+        .stat-number {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: monospace;
+            color: #ffd966;
+        }
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.8rem;
+            justify-content: center;
+        }
+        button {
+            background: #1e2a3a;
+            border: 1px solid #4a6085;
+            color: #eef4ff;
+            padding: 0.4rem 1.4rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #2d3b54;
+            border-color: #7aa2f7;
+            transform: scale(0.97);
+        }
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            width: auto;
+        }
+        .footnote {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #6a7c9e;
+            margin-top: 1rem;
+            border-top: 1px solid #1e2a3a;
+            padding-top: 0.8rem;
+        }
+        .derivation {
+            background: #0c1020;
+            border-radius: 1rem;
+            padding: 0.9rem;
+            margin: 1rem 0;
+            border-left: 4px solid #ffaa44;
+        }
+    </style>
+</head>
+<body>
+
+<div class="intro-section" id="intro">
+    <div class="intro-card">
+        <h1>⚡ 动量 · 冲量 · 碰撞 · 爆炸</h1>
+        <p><strong class="highlight">动量 \( \vec{p}=m\vec{v} \)</strong> —— 物体运动“惯性”的量度。<br>
+        <strong class="highlight">冲量 \( \vec{I}=\int \vec{F} dt \)</strong> —— 力对时间的累积，改变动量。</p>
+        <div class="formula-block">\[ \boxed{\vec{I} = \Delta \vec{p}} \quad \text{(动量定理)} \]</div>
+        <h2>📐 动量守恒定律 & 推导</h2>
+        <div class="derivation">
+            📖 系统合外力为零时，总动量守恒：\( m_1v_1 + m_2v_2 = m_1v_1' + m_2v_2' \)。<br>
+            恢复系数 \( e = \frac{v_2' - v_1'}{v_1 - v_2} \)，决定碰撞弹性。
+        </div>
+        <h2>🌟 生活中的应用</h2>
+        <div class="applications-grid">
+            <div class="app-card"><h3>🚗 安全气囊</h3>延长Δ t，减小冲击力</div>
+            <div class="app-card"><h3>🚀 火箭推进</h3>反冲，动量守恒</div>
+            <div class="app-card"><h3>🔫 枪械反冲</h3>子弹向前，枪身后坐</div>
+            <div class="app-card"><h3>💣 炮弹爆炸</h3>碎片总动量不变</div>
+            <div class="app-card"><h3>🎯 子弹木块</h3>完全非弹性碰撞</div>
+        </div>
+        <div style="text-align: center;"><button class="btn-scroll" id="scrollToExpBtn">🔬 进入实验 ↓</button></div>
+    </div>
+</div>
+
+<div class="experiment-section" id="experimentArea">
+    <div class="exp-container">
+        <div class="tab-bar">
+            <button class="tab-btn active" data-tab="car">🚘 小车碰撞实验</button>
+            <button class="tab-btn" data-tab="bullet">🔫 子弹打木块</button>
+            <button class="tab-btn" data-tab="explosion">💥 炮弹爆炸</button>
+        </div>
+        <canvas id="physicsCanvas" width="1000" height="420"></canvas>
+        <div id="paramsContainer" class="params-panel"></div>
+        <div class="stats-row">
+            <div class="stat-card"><div class="stat-label">总动量 (kg·m/s)</div><div class="stat-number" id="totalMomentum">0.00</div></div>
+            <div class="stat-card"><div class="stat-label">总动能 (J)</div><div class="stat-number" id="totalEnergy">0.00</div><div id="extraInfo" style="font-size:0.7rem;"></div></div>
+            <div class="stat-card"><div class="stat-label">事件计数</div><div class="stat-number" id="eventCount">0</div><div id="stateMsg" style="font-size:0.7rem;">就绪</div></div>
+        </div>
+        <div class="btn-group"><button id="resetBtn">⟳ 重置</button><button id="fireBtn" style="background:#2a3a55;">▶ 发射/启动</button></div>
+        <div class="footnote">✨ 所有参数均可<strong>拖动滑块</strong>或<strong>手动输入小数</strong>，实时生效。</div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- 物理边界 & 全局 -----
+        const LEFT_WALL = 40, RIGHT_WALL = 960, GROUND_Y = 220;
+        let currentTab = "car";
+        let simActive = false;
+        let lastTimestamp = 0;
+        let animId = null;
+
+        // ----- 小车碰撞数据 -----
+        let car = {
+            m1: 1.2, m2: 1.8, v1: 2.0, v2: 0.0, x1: 150, x2: 800,
+            e: 1.0, scene: "walls", collisionCount: 0, smoothDone: false
+        };
+        // ----- 子弹木块数据 -----
+        let bullet = {
+            mB: 0.8, mW: 2.5, vB: 14.0, vW: 0.0,
+            xB: 70, xW: 550, embedded: false, mergedM: 3.3, mergedV: 0, mergedX: 550
+        };
+        // ----- 爆炸数据 -----
+        let explosion = {
+            totalM: 8.0, vShell: 4.0, xShell: 500, exploded: false, fragments: [], numFrag: 3
+        };
+
+        const canvas = document.getElementById('physicsCanvas');
+        const ctx = canvas.getContext('2d');
+        const totalMomentumSpan = document.getElementById('totalMomentum');
+        const totalEnergySpan = document.getElementById('totalEnergy');
+        const eventCountSpan = document.getElementById('eventCount');
+        const stateMsgSpan = document.getElementById('stateMsg');
+        const extraInfoSpan = document.getElementById('extraInfo');
+        const resetBtn = document.getElementById('resetBtn');
+        const fireBtn = document.getElementById('fireBtn');
+        const paramsDiv = document.getElementById('paramsContainer');
+
+        // ----- 辅助更新UI -----
+        function updateStats() {
+            if(currentTab === "car") {
+                let p = car.m1 * car.v1 + car.m2 * car.v2;
+                let ke = 0.5*car.m1*car.v1*car.v1 + 0.5*car.m2*car.v2*car.v2;
+                totalMomentumSpan.innerText = p.toFixed(4);
+                totalEnergySpan.innerText = ke.toFixed(4);
+                extraInfoSpan.innerHTML = `e=${car.e.toFixed(2)} | 碰撞:${car.collisionCount}`;
+                eventCountSpan.innerText = car.collisionCount;
+                stateMsgSpan.innerText = simActive ? (car.scene==='walls'?'墙壁反弹':'光滑路面') : '待发射';
+            }
+            else if(currentTab === "bullet") {
+                let p = bullet.embedded ? (bullet.mergedM * bullet.mergedV) : (bullet.mB * bullet.vB + bullet.mW * bullet.vW);
+                let ke = bullet.embedded ? 0.5*bullet.mergedM*bullet.mergedV*bullet.mergedV : 0.5*bullet.mB*bullet.vB*bullet.vB + 0.5*bullet.mW*bullet.vW*bullet.vW;
+                totalMomentumSpan.innerText = p.toFixed(4);
+                totalEnergySpan.innerText = ke.toFixed(4);
+                extraInfoSpan.innerText = bullet.embedded ? '子弹已嵌入' : '等待碰撞';
+                eventCountSpan.innerText = bullet.embedded ? 1 : 0;
+                stateMsgSpan.innerText = simActive ? (bullet.embedded ? '共速滑动' : '飞行中') : '待发射';
+            }
+            else if(currentTab === "explosion") {
+                if(!explosion.exploded) {
+                    let p = explosion.totalM * explosion.vShell;
+                    let ke = 0.5 * explosion.totalM * explosion.vShell * explosion.vShell;
+                    totalMomentumSpan.innerText = p.toFixed(4);
+                    totalEnergySpan.innerText = ke.toFixed(4);
+                    extraInfoSpan.innerText = `未爆炸 | 预设${explosion.numFrag}块`;
+                    eventCountSpan.innerText = 0;
+                } else {
+                    let totalP = 0, totalKE = 0;
+                    for(let f of explosion.fragments) { totalP += f.m * f.v; totalKE += 0.5 * f.m * f.v * f.v; }
+                    totalMomentumSpan.innerText = totalP.toFixed(4);
+                    totalEnergySpan.innerText = totalKE.toFixed(4);
+                    extraInfoSpan.innerText = `已爆炸 | 碎片${explosion.fragments.length}`;
+                    eventCountSpan.innerText = 1;
+                }
+                stateMsgSpan.innerText = simActive ? (explosion.exploded ? '碎片飞散' : '炮弹飞行') : '就绪';
+            }
+        }
+
+        // ----- 绘图函数 (优雅)-----
+        function drawCar(x,y,color,label,vel) { let w=44,h=28; ctx.fillStyle=color; ctx.beginPath(); ctx.roundRect(x-w/2, y-h/2, w, h, 8); ctx.fill(); ctx.fillStyle="white"; ctx.font="bold 10px monospace"; ctx.fillText(label, x-15, y+2); ctx.fillStyle="#ffecb3"; ctx.fillText(`${vel.toFixed(1)}m/s`, x-18, y-12); }
+        function drawBullet(x,y,color,label,vel) { ctx.fillStyle=color; ctx.beginPath(); ctx.ellipse(x, y, 14, 7, 0, 0, 2*Math.PI); ctx.fill(); ctx.fillStyle="#111"; ctx.font="9px monospace"; ctx.fillText(label, x-14, y-4); ctx.fillStyle="#ffecb3"; ctx.fillText(`${vel.toFixed(1)}m/s`, x-14, y-14); }
+        function drawBlock(x,y,color,label,vel) { let w=50,h=34; ctx.fillStyle=color; ctx.beginPath(); ctx.roundRect(x-w/2, y-h/2, w, h, 6); ctx.fill(); ctx.fillStyle="#111"; ctx.font="bold 10px monospace"; ctx.fillText(label, x-20, y+3); ctx.fillStyle="#ffecb3"; ctx.fillText(`${vel.toFixed(1)}m/s`, x-22, y-14); }
+        function drawShell(x,y,color,label,vel) { ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x, y-5, 18, 0, 2*Math.PI); ctx.fill(); ctx.fillStyle="white"; ctx.font="9px monospace"; ctx.fillText(label, x-18, y-14); ctx.fillText(`${vel.toFixed(1)}m/s`, x-18, y-26); }
+        function drawFragment(x,y,color,label,vel) { ctx.fillStyle=color; ctx.beginPath(); ctx.rect(x-10, y-14, 20, 14); ctx.fill(); ctx.fillStyle="white"; ctx.font="8px monospace"; ctx.fillText(label, x-12, y-8); ctx.fillText(`${vel.toFixed(1)}`, x-10, y-2); }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#1a202c"; ctx.fillRect(0, GROUND_Y+18, canvas.width, 8);
+            ctx.fillStyle = "#32405c"; ctx.fillRect(0, GROUND_Y+21, canvas.width, 4);
+            ctx.beginPath(); ctx.strokeStyle = "#4a5a7a"; ctx.setLineDash([8,10]);
+            ctx.moveTo(LEFT_WALL-10, GROUND_Y+22); ctx.lineTo(RIGHT_WALL+10, GROUND_Y+22); ctx.stroke();
+            ctx.setLineDash([]);
+            if(currentTab === "car") {
+                drawCar(car.x1, GROUND_Y, "#3b82f6", `${car.m1.toFixed(1)}kg`, car.v1);
+                drawCar(car.x2, GROUND_Y, "#f97316", `${car.m2.toFixed(1)}kg`, car.v2);
+                ctx.fillStyle="#bbd9ff"; ctx.font="10px monospace";
+                ctx.fillText(`v1=${car.v1.toFixed(2)}`, car.x1-30, GROUND_Y-18);
+                ctx.fillText(`v2=${car.v2.toFixed(2)}`, car.x2-30, GROUND_Y-18);
+            } else if(currentTab === "bullet") {
+                if(bullet.embedded) drawBlock(bullet.mergedX, GROUND_Y, "#a855f7", `共速 ${bullet.mergedM.toFixed(1)}kg`, bullet.mergedV);
+                else {
+                    drawBullet(bullet.xB, GROUND_Y-8, "#facc15", `子弹 ${bullet.mB.toFixed(1)}kg`, bullet.vB);
+                    drawBlock(bullet.xW, GROUND_Y, "#4ade80", `木块 ${bullet.mW.toFixed(1)}kg`, bullet.vW);
+                }
+            } else if(currentTab === "explosion") {
+                if(!explosion.exploded) drawShell(explosion.xShell, GROUND_Y, "#ff8c42", `${explosion.totalM}kg`, explosion.vShell);
+                else for(let f of explosion.fragments) drawFragment(f.x, GROUND_Y + Math.sin(f.x*0.02)*4, f.color, `${f.m.toFixed(1)}kg`, f.v);
+            }
+        }
+        
+        // ----- 物理更新 -----
+        function updatePhysics(dt) {
+            if(!simActive) return;
+            let safeDt = Math.min(dt, 0.033);
+            if(currentTab === "car") {
+                let nx1 = car.x1 + car.v1 * safeDt * 200;
+                let nx2 = car.x2 + car.v2 * safeDt * 200;
+                if(car.scene === "walls") {
+                    if(nx1-28 <= LEFT_WALL && car.v1<0) { car.v1 = -car.v1 * car.e; nx1 = LEFT_WALL+28; car.collisionCount++; }
+                    if(nx2+28 >= RIGHT_WALL && car.v2>0) { car.v2 = -car.v2 * car.e; nx2 = RIGHT_WALL-28; car.collisionCount++; }
+                    nx1 = Math.min(Math.max(nx1, LEFT_WALL+28), RIGHT_WALL-28);
+                    nx2 = Math.min(Math.max(nx2, LEFT_WALL+28), RIGHT_WALL-28);
+                } else {
+                    nx1 = Math.min(Math.max(nx1, LEFT_WALL+28), RIGHT_WALL-28);
+                    nx2 = Math.min(Math.max(nx2, LEFT_WALL+28), RIGHT_WALL-28);
+                }
+                let dist = nx2 - nx1;
+                if(dist <= 56 && car.v1 > car.v2 && !(car.scene==="smooth" && car.smoothDone)) {
+                    let sumM = car.m1+car.m2, dv = car.v1-car.v2;
+                    let v1n = car.v1 - (1+car.e)*(car.m2/sumM)*dv;
+                    let v2n = car.v2 + (1+car.e)*(car.m1/sumM)*dv;
+                    car.v1 = v1n; car.v2 = v2n;
+                    let overlap = 56 - dist;
+                    nx1 -= overlap * (car.m2/sumM); nx2 += overlap * (car.m1/sumM);
+                    car.collisionCount++;
+                    if(car.scene === "smooth") car.smoothDone = true;
+                }
+                car.x1 = nx1; car.x2 = nx2;
+                if(car.scene==="smooth" && car.smoothDone && Math.abs(car.v1-car.v2)<0.02) simActive=false;
+            }
+            else if(currentTab === "bullet") {
+                if(bullet.embedded) {
+                    let nx = bullet.mergedX + bullet.mergedV * safeDt * 200;
+                    nx = Math.min(Math.max(nx, LEFT_WALL+20), RIGHT_WALL-20);
+                    bullet.mergedX = nx;
+                    if(Math.abs(bullet.mergedV)<0.02 && nx>RIGHT_WALL-60) simActive=false;
+                } else {
+                    let nxB = bullet.xB + bullet.vB * safeDt * 200;
+                    let nxW = bullet.xW + bullet.vW * safeDt * 200;
+                    if(Math.abs(nxB - nxW) < 32 && bullet.vB > bullet.vW) {
+                        let totalM = bullet.mB + bullet.mW;
+                        let commonV = (bullet.mB * bullet.vB + bullet.mW * bullet.vW)/totalM;
+                        bullet.embedded = true;
+                        bullet.mergedM = totalM;
+                        bullet.mergedV = commonV;
+                        bullet.mergedX = (bullet.mB * nxB + bullet.mW * nxW)/totalM;
+                        simActive = false;
+                        stateMsgSpan.innerText = "子弹嵌入木块，完全非弹性";
+                    } else {
+                        bullet.xB = Math.min(Math.max(nxB, LEFT_WALL+12), RIGHT_WALL-12);
+                        bullet.xW = Math.min(Math.max(nxW, LEFT_WALL+20), RIGHT_WALL-20);
+                    }
+                }
+            }
+            else if(currentTab === "explosion") {
+                if(!explosion.exploded) {
+                    let nx = explosion.xShell + explosion.vShell * safeDt * 200;
+                    explosion.xShell = Math.min(Math.max(nx, LEFT_WALL+20), RIGHT_WALL-20);
+                } else {
+                    for(let f of explosion.fragments) {
+                        f.x += f.v * safeDt * 200;
+                        f.x = Math.min(Math.max(f.x, LEFT_WALL+8), RIGHT_WALL-8);
+                    }
+                    if(explosion.fragments.every(f=>Math.abs(f.v)<0.05)) simActive=false;
+                }
+            }
+            updateStats(); draw();
+        }
+        
+        // 重置实验 (不清除参数值，仅重置运动标志)
+        function resetExperiment() {
+            simActive = false;
+            if(currentTab === "car") {
+                car = { ...car, x1:150, x2:800, v1:car.v1, v2:car.v2, collisionCount:0, smoothDone:false };
+                let sceneRad = document.querySelector('input[name="carScene"]:checked');
+                if(sceneRad) car.scene = sceneRad.value;
+                else car.scene = "walls";
+            } else if(currentTab === "bullet") {
+                bullet = { ...bullet, xB:70, xW:550, embedded:false, mergedV:0 };
+            } else if(currentTab === "explosion") {
+                explosion = { ...explosion, xShell:500, exploded:false, fragments:[] };
+                let n = parseInt(document.getElementById('fragCountSlider')?.value || 3);
+                explosion.numFrag = n;
+            }
+            updateStats(); draw();
+        }
+        
+        // 启动/发射
+        function startSim() {
+            if(currentTab === "car") {
+                car.collisionCount = 0; car.smoothDone = false;
+                simActive = true;
+            } else if(currentTab === "bullet") {
+                if(bullet.embedded) resetExperiment();
+                bullet.embedded = false;
+                simActive = true;
+            } else if(currentTab === "explosion") {
+                if(!explosion.exploded) {
+                    let n = explosion.numFrag;
+                    let totalM = explosion.totalM;
+                    let v0 = explosion.vShell;
+                    let masses = [];
+                    let remaining = totalM;
+                    for(let i=0;i<n-1;i++) { let m = (Math.random()*0.5+0.3)*totalM/n; masses.push(m); remaining-=m; }
+                    masses.push(remaining);
+                    let totalP0 = totalM * v0;
+                    let velList = [], sumMV = 0;
+                    for(let i=0;i<n;i++) {
+                        let sign = Math.random()>0.5?1:-1;
+                        let base = v0 + sign*(2+Math.random()*6);
+                        velList.push(base);
+                        sumMV += masses[i]*base;
+                    }
+                    let corr = (totalP0 - sumMV)/totalM;
+                    velList = velList.map(v=>v+corr);
+                    let colors = ["#ff6b6b","#4ecdc4","#ffe66d","#a37cff","#ff9f4a"];
+                    let frags = [];
+                    for(let i=0;i<n;i++) frags.push({ m:parseFloat(masses[i].toFixed(3)), v:velList[i], x:explosion.xShell, color:colors[i%colors.length] });
+                    explosion.fragments = frags;
+                    explosion.exploded = true;
+                    simActive = true;
+                    updateStats(); draw(); renderParamsPanel();
+                    return;
+                } else { resetExperiment(); startSim(); }
+            }
+            updateStats();
+        }
+        
+        // ***** 核心修复：支持小数拖动与手动输入 *****
+        function bindFloatParam(sliderId, numId, setter) {
+            let slider = document.getElementById(sliderId);
+            let numInput = document.getElementById(numId);
+            if(!slider || !numInput) return;
+            const updateFromSlider = () => {
+                let val = parseFloat(slider.value);
+                if(!isNaN(val)) {
+                    numInput.value = val.toFixed(3);
+                    setter(val);
+                    resetExperiment();
+                }
+            };
+            const updateFromNumber = () => {
+                let val = parseFloat(numInput.value);
+                if(!isNaN(val)) {
+                    slider.value = val;
+                    setter(val);
+                    resetExperiment();
+                }
+            };
+            slider.addEventListener('input', updateFromSlider);
+            numInput.addEventListener('change', updateFromNumber);
+        }
+        
+        function bindIntParam(sliderId, numId, setter) {
+            let slider = document.getElementById(sliderId);
+            let numInput = document.getElementById(numId);
+            if(!slider || !numInput) return;
+            const update = () => {
+                let val = parseInt(slider.value, 10);
+                if(!isNaN(val)) {
+                    numInput.value = val;
+                    setter(val);
+                    resetExperiment();
+                }
+            };
+            const updateNum = () => {
+                let val = parseInt(numInput.value, 10);
+                if(!isNaN(val)) {
+                    slider.value = val;
+                    setter(val);
+                    resetExperiment();
+                }
+            };
+            slider.addEventListener('input', update);
+            numInput.addEventListener('change', updateNum);
+        }
+        
+        // 动态渲染参数面板
+        function renderParamsPanel() {
+            paramsDiv.innerHTML = "";
+            if(currentTab === "car") {
+                paramsDiv.innerHTML = `
+                    <div class="param-row"><label>小车1质量(kg)</label><input type="range" id="m1s" min="0.1" max="30" step="0.05" value="${car.m1}"><input id="m1n" class="num-input" value="${car.m1}"></div>
+                    <div class="param-row"><label>小车1速度(m/s)</label><input type="range" id="v1s" min="-25" max="25" step="0.2" value="${car.v1}"><input id="v1n" class="num-input" value="${car.v1}"></div>
+                    <div class="param-row"><label>小车2质量(kg)</label><input type="range" id="m2s" min="0.1" max="30" step="0.05" value="${car.m2}"><input id="m2n" class="num-input" value="${car.m2}"></div>
+                    <div class="param-row"><label>小车2速度(m/s)</label><input type="range" id="v2s" min="-25" max="25" step="0.2" value="${car.v2}"><input id="v2n" class="num-input" value="${car.v2}"></div>
+                    <div class="param-row"><label>恢复系数 e</label><input type="range" id="es" min="0" max="1" step="0.01" value="${car.e}"><input id="en" class="num-input" value="${car.e}"></div>
+                    <div class="param-row"><label>场景</label><div class="radio-group"><label><input type="radio" name="carScene" value="walls" ${car.scene==='walls'?'checked':''}>墙壁间</label><label><input type="radio" name="carScene" value="smooth" ${car.scene==='smooth'?'checked':''}>光滑路面</label></div></div>
+                `;
+                bindFloatParam('m1s','m1n',(v)=>car.m1=v);
+                bindFloatParam('v1s','v1n',(v)=>car.v1=v);
+                bindFloatParam('m2s','m2n',(v)=>car.m2=v);
+                bindFloatParam('v2s','v2n',(v)=>car.v2=v);
+                bindFloatParam('es','en',(v)=>car.e=v);
+                document.querySelectorAll('input[name="carScene"]').forEach(r=>r.onchange=()=>{ car.scene=r.value; resetExperiment(); });
+            }
+            else if(currentTab === "bullet") {
+                paramsDiv.innerHTML = `
+                    <div class="param-row"><label>子弹质量(kg)</label><input type="range" id="mb" min="0.1" max="15" step="0.05" value="${bullet.mB}"><input id="mbn" class="num-input" value="${bullet.mB}"></div>
+                    <div class="param-row"><label>子弹速度(m/s)</label><input type="range" id="vb" min="-25" max="25" step="0.2" value="${bullet.vB}"><input id="vbn" class="num-input" value="${bullet.vB}"></div>
+                    <div class="param-row"><label>木块质量(kg)</label><input type="range" id="mw" min="0.5" max="35" step="0.2" value="${bullet.mW}"><input id="mwn" class="num-input" value="${bullet.mW}"></div>
+                    <div class="param-row"><label>木块速度(m/s)</label><input type="range" id="vw" min="-15" max="15" step="0.2" value="${bullet.vW}"><input id="vwn" class="num-input" value="${bullet.vW}"></div>
+                `;
+                bindFloatParam('mb','mbn',(v)=>bullet.mB=v);
+                bindFloatParam('vb','vbn',(v)=>bullet.vB=v);
+                bindFloatParam('mw','mwn',(v)=>bullet.mW=v);
+                bindFloatParam('vw','vwn',(v)=>bullet.vW=v);
+            }
+            else if(currentTab === "explosion") {
+                paramsDiv.innerHTML = `
+                    <div class="param-row"><label>炮弹质量(kg)</label><input type="range" id="shellM" min="2" max="30" step="0.5" value="${explosion.totalM}"><input id="shellMn" class="num-input" value="${explosion.totalM}"></div>
+                    <div class="param-row"><label>炮弹初速(m/s)</label><input type="range" id="shellV" min="-20" max="20" step="0.2" value="${explosion.vShell}"><input id="shellVn" class="num-input" value="${explosion.vShell}"></div>
+                    <div class="param-row"><label>碎片数量</label><input type="range" id="fragCountSlider" min="2" max="5" step="1" value="${explosion.numFrag}"><input id="fragNum" class="num-input" value="${explosion.numFrag}"></div>
+                `;
+                bindFloatParam('shellM','shellMn',(v)=>explosion.totalM=v);
+                bindFloatParam('shellV','shellVn',(v)=>explosion.vShell=v);
+                bindIntParam('fragCountSlider','fragNum',(v)=>{ explosion.numFrag=v; resetExperiment(); });
+            }
+        }
+        
+        // 动画循环
+        function animate(now) {
+            if(!lastTimestamp) { lastTimestamp = now; requestAnimationFrame(animate); return; }
+            let dt = Math.min(0.033, (now - lastTimestamp)/1000);
+            if(dt>0.001) updatePhysics(dt);
+            lastTimestamp = now;
+            requestAnimationFrame(animate);
+        }
+        
+        // 选项卡切换
+        function switchTab(tabId) {
+            currentTab = tabId;
+            document.querySelectorAll('.tab-btn').forEach(btn=>btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[data-tab="${tabId}"]`).classList.add('active');
+            resetExperiment();
+            renderParamsPanel();
+        }
+        
+        document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>switchTab(btn.getAttribute('data-tab'))));
+        resetBtn.addEventListener('click',()=>resetExperiment());
+        fireBtn.addEventListener('click',()=>startSim());
+        document.getElementById('scrollToExpBtn').addEventListener('click',()=>document.getElementById('experimentArea').scrollIntoView({behavior:'smooth'}));
+        
+        if(!window.CanvasRenderingContext2D.prototype.roundRect){
+            window.CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){ if(w<2*r) r=w/2; if(h<2*r) r=h/2; this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); return this; };
+        }
+        
+        resetExperiment();
+        renderParamsPanel();
+        animate();
+    })();
+</script>
+</body>
+</html>

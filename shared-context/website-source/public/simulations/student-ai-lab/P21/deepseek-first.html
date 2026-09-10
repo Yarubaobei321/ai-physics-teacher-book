@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>牛顿摆：动量守恒与能量守恒演示 | 高中物理交互模拟</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动时选中文字/图像，提升交互清爽度 */
+        }
+
+        body {
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f7 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+            padding: 20px;
+        }
+
+        /* 主卡片容器：简洁卡片风格，优雅阴影 */
+        .sim-card {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(0px);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.05);
+            padding: 1.8rem 2rem 2rem 2rem;
+            transition: all 0.2s ease;
+        }
+
+        /* 标题区 */
+        .title-area {
+            text-align: center;
+            margin-bottom: 1.8rem;
+        }
+        .title-area h1 {
+            font-size: 28px;  /* 近似24号但标题略大醒目 */
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            color: #1a2c3e;
+            margin-bottom: 0.3rem;
+        }
+        .title-area .sub {
+            font-size: 18px;
+            color: #2c5a6e;
+            border-top: 1px solid #cbdde9;
+            display: inline-block;
+            padding-top: 6px;
+            font-weight: 500;
+        }
+
+        /* 画布容器，居中并适应宽高 */
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.8rem;
+            background: #fefef7;
+            border-radius: 2rem;
+            padding: 12px 0;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 8px 20px rgba(0,0,0,0.05);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fffdf7;
+            border-radius: 1.5rem;
+            cursor: grab;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+        }
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        /* 交互控制面板，简单直观 */
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.2rem;
+            margin-bottom: 1.8rem;
+            align-items: center;
+        }
+        button {
+            font-size: 24px;   /* 按钮文字24号，符合排版要求 */
+            font-weight: 500;
+            padding: 0.5rem 1.6rem;
+            border: none;
+            background: #2c5a6e;
+            color: white;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            font-family: inherit;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            background: #1f4457;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .reset-btn {
+            background: #5f7f6e;
+        }
+        .reset-btn:hover {
+            background: #4a6557;
+        }
+        .info-note {
+            background: #e9f0f5;
+            padding: 0.5rem 1rem;
+            border-radius: 48px;
+            font-size: 20px;
+            font-weight: 500;
+            color: #1c4c61;
+            display: inline-flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+        .info-note span {
+            font-weight: 700;
+            background: #ffffffb3;
+            padding: 0 8px;
+            border-radius: 32px;
+        }
+
+        /* 知识说明区: 图文搭配 + 24号字体主体 */
+        .knowledge-section {
+            background: #f0f4f9;
+            border-radius: 1.8rem;
+            padding: 1.5rem 1.8rem;
+            margin-top: 0.5rem;
+            border-left: 6px solid #2c5a6e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .knowledge-section h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e3b4a;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .knowledge-section h3:before {
+            content: "⚛️";
+            font-size: 28px;
+        }
+        .knowledge-text {
+            font-size: 24px;      /* 主体文字24号 */
+            line-height: 1.45;
+            color: #1f3b44;
+            font-weight: 450;
+        }
+        .knowledge-text p {
+            margin-bottom: 14px;
+        }
+        .law-box {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            margin-top: 18px;
+            justify-content: space-between;
+        }
+        .law-card {
+            background: #ffffffcc;
+            backdrop-filter: blur(2px);
+            flex: 1;
+            min-width: 180px;
+            border-radius: 1.2rem;
+            padding: 12px 16px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            font-size: 24px;
+            font-weight: 500;
+            border: 1px solid #cde1ec;
+        }
+        .law-card span {
+            display: block;
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+        .footer-tip {
+            text-align: center;
+            margin-top: 18px;
+            font-size: 18px;
+            color: #4a6f7e;
+        }
+
+        @media (max-width: 700px) {
+            .sim-card {
+                padding: 1.2rem;
+            }
+            button {
+                font-size: 20px;
+                padding: 0.4rem 1.2rem;
+            }
+            .knowledge-text {
+                font-size: 20px;
+            }
+            .law-card {
+                font-size: 20px;
+            }
+            .info-note {
+                font-size: 18px;
+            }
+        }
+        /* 确保canvas尺寸自适应但保持物理比例 */
+    </style>
+</head>
+<body>
+<div class="sim-card">
+    <div class="title-area">
+        <h1>⚡ 牛顿摆 · 动量守恒与能量守恒</h1>
+        <div class="sub">碰撞中动量与动能传递 | 理想无能量损失模型</div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="newtonCradleCanvas" width="900" height="400" style="width:100%; height:auto; max-width:900px; aspect-ratio:900/400"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <button id="swingLeftBtn">← 拉起左侧小球</button>
+        <button id="swingRightBtn">右侧小球拉起 →</button>
+        <button id="resetBtn" class="reset-btn">⟳ 复位静止</button>
+        <div class="info-note">
+            📐 点击并<span>拖动小球</span>任意角度释放 | 也可用按钮
+        </div>
+    </div>
+
+    <div class="knowledge-section">
+        <h3>📖 牛顿摆中的物理原理</h3>
+        <div class="knowledge-text">
+            <p>牛顿摆完美展示了<strong>弹性碰撞</strong>中的<strong>动量守恒</strong>和<strong>动能守恒</strong>（理想情况）。当一侧小球撞击静止球列时，动量通过碰撞依次传递，导致另一侧等数量小球以几乎相同的速度弹出。</p>
+            <div class="law-box">
+                <div class="law-card"><span>🔁 动量守恒</span> m₁v₁ + m₂v₂ = 常数</div>
+                <div class="law-card"><span>⚡ 动能守恒</span> ½mv² 之和不变 (弹性碰撞)</div>
+                <div class="law-card"><span>🎯 等质量传递</span> 速度完全传递，最外侧球弹出</div>
+            </div>
+            <p>💡 <strong>交互小技巧</strong>：鼠标拖拽任意小球左右摆动（模拟人为释放），松开瞬间物理引擎会根据角度模拟重力摆动。点击按钮可将最外侧小球拉起到约35°再释放。复位让所有小球静止竖直。</p>
+        </div>
+    </div>
+    <div class="footer-tip">
+        🌟 基于真实物理模拟：重力加速度 g = 9.8 m/s²，绳长固定，碰撞为完全弹性
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- 物理参数配置 (保证准确性与牛顿摆特性) -----
+        const canvas = document.getElementById('newtonCradleCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 让画布尺寸高清适配，固定逻辑分辨率 900x400 (适合牛顿摆布局)
+        const width = 900;
+        const height = 400;
+        canvas.width = width;
+        canvas.height = height;
+        
+        // 牛顿摆参数: 5个小球，等质量，等绳长
+        const BALL_COUNT = 5;
+        const BALL_RADIUS = 20;          // 半径20px
+        const ROPE_LEN = 140;             // 绳长140px (从悬挂点到球心)
+        const GRAVITY = 9.8;              // 重力加速度 m/s² → 但是在像素空间使用 9.8 * px转换因子？为了稳定摆动，转换使用真实时间delta
+        // 为了保证视觉摆动周期真实且稳定，我们采用实际物理积分，比例尺: 1px = 0.01m? 不重要，加速度因子统一用相对值，因为牛顿摆角度运动只依赖g/绳长。
+        // 但我们采用角度动力学: 角加速度 alpha = - (g / L) * sin(theta) , 阻尼极低近似0（几乎无能量损失，体现守恒）
+        // 设置空气阻尼系数非常小以保证长时间摆动但近似守恒，更符合教学: damping=0.002 (极轻微阻尼演示微妙衰减，但直观感受几乎永久摆动)
+        // 但为了让演示更“理想”，可设0，但复位方便，保留极小阻尼避免数值漂移，不影响动量守恒概念。
+        const DAMP_AIR = 0.001;      // 每帧阻尼 0.1% 几乎不衰减，突出守恒。
+        const ELASTIC_COEFF = 1.0;    // 完全弹性碰撞系数
+        
+        // 小球数据结构
+        let balls = [];
+        // 悬挂点坐标 (每个小球一个悬挂点，等间距排列)
+        let pivotX = [];
+        const pivotY = 70;            // 悬挂点纵坐标 (固定)
+        // 小球初始间隔(相邻悬挂点间距)
+        const spacing = (width - 100) / (BALL_COUNT - 1); // 让最左最右距离边缘50px左右
+        const startX = 50;             // 第一个悬挂点x
+        
+        // 鼠标交互拖拽相关
+        let dragging = false;
+        let dragIndex = -1;            // 当前拖拽的小球索引
+        let dragAngle = 0;             // 拖拽时记录的当前角度
+        let mouseX = 0, mouseY = 0;
+        
+        // 动画控制
+        let lastTimestamp = 0;
+        let animFrameId = null;
+        let paused = false;
+        
+        // ----- 辅助函数: 角度与坐标转换 -----
+        // 根据小球索引和当前角度(弧度，竖直向下为0，左负右正) 计算球心位置
+        function getPositionFromAngle(idx, angleRad) {
+            const px = pivotX[idx];
+            const py = pivotY;
+            const offsetX = ROPE_LEN * Math.sin(angleRad);
+            const offsetY = ROPE_LEN * Math.cos(angleRad);
+            return { x: px + offsetX, y: py + offsetY };
+        }
+        
+        // 根据小球当前位置计算相对于悬挂点的角度(范围 -PI/2 到 PI/2 左右)
+        function computeAngleFromPosition(idx, posX, posY) {
+            const dx = posX - pivotX[idx];
+            const dy = posY - pivotY[idx];
+            let angle = Math.atan2(dx, dy);   // atan2(dx, dy) 返回相对于竖直向下的偏移角，竖直方向dy为正时角度0
+            // 角度范围 [-PI, PI] 合理
+            if(angle > Math.PI/2) angle = Math.PI/2;
+            if(angle < -Math.PI/2) angle = -Math.PI/2;
+            return angle;
+        }
+        
+        // 动能和动量显示更新(动态效果) 但知识卡片已经说明，这里添加一个动态提示牌？
+        // 为了更直观，在canvas角落添加速度方向提示太复杂，保持整洁。
+        
+        // 初始化/重置所有小球状态 (角度 0，角速度0)
+        function initBalls(resetVelocities = true) {
+            balls = [];
+            for (let i = 0; i < BALL_COUNT; i++) {
+                balls.push({
+                    angle: 0.0,           // 弧度，0为竖直下垂
+                    angularVel: 0.0,      // 角速度 (rad/s)
+                });
+            }
+            if(resetVelocities){
+                // 额外确保所有速度归零
+                for(let i=0;i<BALL_COUNT;i++) balls[i].angularVel = 0;
+            }
+        }
+        
+        // 更新悬挂点坐标 (窗口缩放重算保持视觉)
+        function updatePivots() {
+            pivotX.length = 0;
+            for(let i = 0; i < BALL_COUNT; i++){
+                pivotX.push(startX + i * spacing);
+            }
+        }
+        
+        // 碰撞检测与处理 (基于瞬时速度的动量交换 - 完全弹性碰撞)
+        // 原理: 检查相邻小球之间的最小距离，当小于2倍半径时发生碰撞，并交换角速度（因为等质量，且碰撞位于切向瞬间改变速度，根据角速度换算线速度，由于绳约束复杂？
+        // 严格来说牛顿摆是悬挂碰撞，碰撞时沿水平方向动量交换。使用简化模型: 当两球心水平距离小于等于2R时，交换沿碰撞方向的线速度(角速度影响)。
+        // 更精确: 根据当前角度估算每个小球瞬时水平线速度 v_x = omega * L * cos(theta)，碰撞时交换水平线速度，再转为角速度。
+        // 为了保证看起来符合牛顿摆特性（外侧球飞出），使用经典动量交换方法。
+        function handleCollisions() {
+            // 计算每个小球的瞬时水平线速度 (垂直于绳方向的速度分量投影到水平方向)
+            let vx = new Array(BALL_COUNT).fill(0);
+            for(let i=0; i<BALL_COUNT; i++){
+                const theta = balls[i].angle;
+                // 线速度大小 = angularVel * ROPE_LEN, 方向垂直于绳，水平分量: 速度方向角 = theta + PI/2, 水平分量 v_line * cos(theta)? 更准确:
+                // 小球实际速度矢量: 切向速度 v_t = angularVel * L, 方向垂直于绳(角度 = theta + PI/2)
+                // 水平分量: v_t * cos(theta + PI/2) = v_t * (-sin(theta)) = -angularVel * L * sin(theta)
+                // 绝对值不重要，但符号: 角度为正时小球偏右，水平速度向右为正交换碰撞合理。 简化取水平速度 = angularVel * L * cos(theta)?? 再梳理：
+                // 竖直向下参考0，角速度正向(逆时针)使得角度增大(向右摆)，切向方向垂直于绳指向右前下，水平分量正向。经过推导 v_horizontal = angularVel * ROPE_LEN * cos(theta)
+                // 验证：theta=0竖直，cos0=1 水平速度正比于角速度;  theta 越大cos越小, 合理。选用。
+                const linearVel = balls[i].angularVel * ROPE_LEN;
+                vx[i] = linearVel * Math.cos(balls[i].angle);
+            }
+            
+            // 检测相邻碰撞并交换水平动量（等质量完全弹性交换速度）
+            let collided = false;
+            for(let i=0; i<BALL_COUNT-1; i++){
+                const p1 = getPositionFromAngle(i, balls[i].angle);
+                const p2 = getPositionFromAngle(i+1, balls[i+1].angle);
+                const dist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+                if(dist < BALL_RADIUS * 2 - 0.5) { // 碰撞容差
+                    // 交换水平速度
+                    const temp = vx[i];
+                    vx[i] = vx[i+1];
+                    vx[i+1] = temp;
+                    collided = true;
+                }
+            }
+            if(collided){
+                // 将更新后的水平速度转回角速度: v_h = angularVel_new * L * cos(theta) → angularVel_new = v_h / (L * cos(theta))
+                for(let i=0; i<BALL_COUNT; i++){
+                    const theta = balls[i].angle;
+                    let cost = Math.cos(theta);
+                    if(Math.abs(cost) < 0.05) cost = 0.05; // 避免除零
+                    const newAngularVel = vx[i] / (ROPE_LEN * cost);
+                    // 限制角速度范围避免飞升 (视觉合理)
+                    balls[i].angularVel = Math.min(Math.max(newAngularVel, -12), 12);
+                }
+            }
+        }
+        
+        // 物理积分 (欧拉半隐式更稳定)
+        function updatePhysics(deltaSec) {
+            if(deltaSec > 0.03) deltaSec = 0.03; // 限制最大步长
+            
+            // 先根据重力计算角加速度 (alpha = - (g/L) * sin(theta) )
+            for(let i=0; i<BALL_COUNT; i++){
+                const theta = balls[i].angle;
+                const alpha = -(GRAVITY / ROPE_LEN) * Math.sin(theta);
+                // 欧拉更新角速度，并且加极轻微阻尼保持演示特性
+                balls[i].angularVel += alpha * deltaSec;
+                // 空气阻尼 (极轻微以保证长时间演示不影响动量守恒直观)
+                balls[i].angularVel *= (1 - DAMP_AIR);
+                // 更新角度
+                balls[i].angle += balls[i].angularVel * deltaSec;
+                // 边界限制: 最大摆动角度不超过85度 (~1.48 rad) 避免视觉穿模
+                const maxAngle = Math.PI / 2.2;
+                if(balls[i].angle > maxAngle) {
+                    balls[i].angle = maxAngle;
+                    balls[i].angularVel *= -0.2; // 轻微回弹限制但不影响物理趋势
+                }
+                if(balls[i].angle < -maxAngle) {
+                    balls[i].angle = -maxAngle;
+                    balls[i].angularVel *= -0.2;
+                }
+            }
+            // 碰撞处理 (动量交换核心)
+            handleCollisions();
+            
+            // 额外同步一次避免角度误差累积造成的重叠
+            for(let i=0;i<BALL_COUNT-1;i++){
+                let p1 = getPositionFromAngle(i, balls[i].angle);
+                let p2 = getPositionFromAngle(i+1, balls[i+1].angle);
+                let dist = Math.hypot(p1.x-p2.x, p1.y-p2.y);
+                if(dist < BALL_RADIUS*2 - 0.2){
+                    // 轻微推开避免黏连，不影响动量特性
+                    let overlap = (BALL_RADIUS*2 - dist) * 0.3;
+                    let dx = p2.x - p1.x;
+                    let dy = p2.y - p1.y;
+                    let len = Math.hypot(dx,dy);
+                    if(len>0.01){
+                        let nx = dx/len;
+                        let ny = dy/len;
+                        let newAng1 = computeAngleFromPosition(i, p1.x - nx*overlap, p1.y - ny*overlap);
+                        let newAng2 = computeAngleFromPosition(i+1, p2.x + nx*overlap, p2.y + ny*overlap);
+                        balls[i].angle = newAng1;
+                        balls[i+1].angle = newAng2;
+                    }
+                }
+            }
+        }
+        
+        // ----- 交互：拖拽逻辑 -----
+        function getMouseCoord(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;   // canvas物理尺寸和逻辑尺寸比例
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if(e.touches){
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(Math.max(canvasX, 0), width);
+            canvasY = Math.min(Math.max(canvasY, 0), height);
+            return { mx: canvasX, my: canvasY };
+        }
+        
+        function findDraggedBall(mx, my){
+            for(let i=0;i<BALL_COUNT;i++){
+                const pos = getPositionFromAngle(i, balls[i].angle);
+                const dx = mx - pos.x;
+                const dy = my - pos.y;
+                if(Math.hypot(dx,dy) <= BALL_RADIUS+8){
+                    return i;
+                }
+            }
+            return -1;
+        }
+        
+        function onDragStart(e){
+            e.preventDefault();
+            const { mx, my } = getMouseCoord(e);
+            const idx = findDraggedBall(mx, my);
+            if(idx !== -1){
+                dragging = true;
+                dragIndex = idx;
+                // 把当前小球角速度置零，跟随鼠标
+                balls[dragIndex].angularVel = 0;
+                updateDragAngleFromMouse(mx, my);
+            }
+        }
+        
+        function updateDragAngleFromMouse(mx, my){
+            if(dragIndex === -1) return;
+            const dx = mx - pivotX[dragIndex];
+            const dy = my - pivotY[dragIndex];
+            let rawAngle = Math.atan2(dx, dy);
+            rawAngle = Math.min(Math.max(rawAngle, -Math.PI/2.2), Math.PI/2.2);
+            balls[dragIndex].angle = rawAngle;
+            balls[dragIndex].angularVel = 0;
+        }
+        
+        function onDragMove(e){
+            if(!dragging || dragIndex === -1) return;
+            e.preventDefault();
+            const { mx, my } = getMouseCoord(e);
+            updateDragAngleFromMouse(mx, my);
+        }
+        
+        function onDragEnd(e){
+            if(dragging && dragIndex !== -1){
+                // 释放时根据当前角度相对竖直的势能给一个小角速度自然摆动，但速度为0也可以缓慢释放: 为了让释放自然，速度设0但重力自然加速
+                // 为了体验更好，不清除速度就已经0了，保留角度让其自由下落。
+                // 但如果有较大角度，重力会自动摆动
+                dragging = false;
+                dragIndex = -1;
+            }
+        }
+        
+        // 按钮事件: 拉起最左或最右小球
+        function pullLeft(){
+            // 让所有小球静止，然后设置最左边小球角度 35度 (约0.61 rad)
+            for(let i=0;i<BALL_COUNT;i++){
+                balls[i].angle = 0;
+                balls[i].angularVel = 0;
+            }
+            balls[0].angle = 0.62;   // 约35度
+            balls[0].angularVel = 0;
+        }
+        
+        function pullRight(){
+            for(let i=0;i<BALL_COUNT;i++){
+                balls[i].angle = 0;
+                balls[i].angularVel = 0;
+            }
+            balls[BALL_COUNT-1].angle = -0.62;
+            balls[BALL_COUNT-1].angularVel = 0;
+        }
+        
+        function resetSystem(){
+            for(let i=0;i<BALL_COUNT;i++){
+                balls[i].angle = 0;
+                balls[i].angularVel = 0;
+            }
+            dragging = false;
+            dragIndex = -1;
+        }
+        
+        // ----- 绘图部分 图文并茂，精致小球-----
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            // 绘制木质底座
+            ctx.fillStyle = "#d9c8a9";
+            ctx.shadowBlur = 0;
+            ctx.fillRect(0, height-18, width, 20);
+            ctx.fillStyle = "#b59a6b";
+            ctx.fillRect(0, height-20, width, 6);
+            // 绘制悬挂支架
+            ctx.beginPath();
+            ctx.moveTo(20, pivotY);
+            ctx.lineTo(width-20, pivotY);
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = "#8b6946";
+            ctx.stroke();
+            for(let i=0;i<BALL_COUNT;i++){
+                ctx.beginPath();
+                ctx.moveTo(pivotX[i], pivotY);
+                const pos = getPositionFromAngle(i, balls[i].angle);
+                ctx.lineTo(pos.x, pos.y);
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = "#726854";
+                ctx.stroke();
+            }
+            // 绘制小球 金属质感
+            for(let i=0;i<BALL_COUNT;i++){
+                const pos = getPositionFromAngle(i, balls[i].angle);
+                const grad = ctx.createRadialGradient(pos.x-5, pos.y-5, 5, pos.x, pos.y, BALL_RADIUS);
+                grad.addColorStop(0, "#c0d0e0");
+                grad.addColorStop(1, "#4e6a7c");
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, BALL_RADIUS, 0, Math.PI*2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = "rgba(0,0,0,0.2)";
+                ctx.strokeStyle = "#2c4a5e";
+                ctx.lineWidth = 1.2;
+                ctx.stroke();
+                // 高光
+                ctx.beginPath();
+                ctx.arc(pos.x-4, pos.y-4, 5, 0, Math.PI*2);
+                ctx.fillStyle = "#ffffff80";
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+            // 如果拖拽中显示一个指示标记
+            if(dragging && dragIndex !== -1){
+                ctx.font = "bold 20px 'Segoe UI'";
+                ctx.fillStyle = "#2a6b7c";
+                ctx.shadowBlur = 0;
+                ctx.fillText("⚡ 释放后摆动", 20, 50);
+            }
+        }
+        
+        // 动画循环
+        let lastTime = performance.now() / 1000;
+        function animate(nowMs){
+            const nowSec = nowMs / 1000;
+            let dt = Math.min(0.033, nowSec - lastTime);
+            if(dt > 0.001 && !dragging){
+                updatePhysics(dt);
+            }
+            lastTime = nowSec;
+            draw();
+            requestAnimationFrame(animate);
+        }
+        
+        // 事件绑定及触摸兼容
+        function bindEvents(){
+            canvas.addEventListener('mousedown', onDragStart);
+            window.addEventListener('mousemove', onDragMove);
+            window.addEventListener('mouseup', onDragEnd);
+            canvas.addEventListener('touchstart', onDragStart, {passive:false});
+            window.addEventListener('touchmove', onDragMove, {passive:false});
+            window.addEventListener('touchend', onDragEnd);
+            document.getElementById('swingLeftBtn').addEventListener('click', pullLeft);
+            document.getElementById('swingRightBtn').addEventListener('click', pullRight);
+            document.getElementById('resetBtn').addEventListener('click', resetSystem);
+        }
+        
+        function setup(){
+            updatePivots();
+            initBalls(true);
+            bindEvents();
+            lastTime = performance.now() / 1000;
+            animate(lastTime*1000);
+        }
+        
+        setup();
+    })();
+</script>
+</body>
+</html>

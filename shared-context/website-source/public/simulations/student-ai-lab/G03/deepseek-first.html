@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>河流地貌 · 高中地理必修一 | 交互式3D演示</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Microsoft YaHei", "苹方", "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 50px;
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      letter-spacing: 2px;
+    }
+    #info h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #info h1 span {
+      font-weight: 300;
+      color: #aaccff;
+    }
+
+    /* 目录面板 */
+    #menu-panel {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      background: rgba(20, 20, 30, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 20px 25px;
+      color: #ddd;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 220px;
+      z-index: 10;
+    }
+    #menu-panel h3 {
+      margin: 0 0 5px 0;
+      font-weight: 400;
+      color: #aaa;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 8px;
+    }
+    .menu-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #ccc;
+      padding: 12px 18px;
+      border-radius: 16px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: left;
+      font-weight: 400;
+      backdrop-filter: blur(5px);
+      letter-spacing: 1px;
+    }
+    .menu-btn:hover {
+      background: rgba(100, 150, 255, 0.3);
+      border-color: rgba(255,255,255,0.6);
+      color: white;
+      transform: translateX(5px);
+    }
+    .menu-btn.active {
+      background: #3a6ea5;
+      border-color: #8ab3ff;
+      color: white;
+      box-shadow: 0 0 20px rgba(58,110,165,0.7);
+      font-weight: 500;
+    }
+
+    /* 详情卡片 */
+    #detail-card {
+      position: absolute;
+      bottom: 30px;
+      right: 30px;
+      width: 320px;
+      background: rgba(10, 15, 25, 0.85);
+      backdrop-filter: blur(25px);
+      border-radius: 28px;
+      padding: 25px;
+      color: #f0f0f0;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.25);
+      z-index: 10;
+      transition: all 0.4s ease;
+      pointer-events: auto;
+    }
+    #detail-title {
+      font-size: 1.8rem;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: #fff;
+      letter-spacing: 2px;
+      border-left: 5px solid #5b9bd5;
+      padding-left: 15px;
+    }
+    #detail-sub {
+      font-size: 0.9rem;
+      color: #a0c0f0;
+      margin-bottom: 18px;
+      font-style: italic;
+    }
+    #detail-logic {
+      background: rgba(255,255,255,0.08);
+      border-radius: 18px;
+      padding: 15px 18px;
+      margin: 15px 0;
+      border-left: 3px solid #ffb347;
+    }
+    #detail-logic h4 {
+      margin: 0 0 8px 0;
+      color: #ffb347;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+    #detail-logic p {
+      margin: 0;
+      line-height: 1.7;
+      font-size: 0.9rem;
+      color: #ddd;
+    }
+    #detail-desc {
+      line-height: 1.8;
+      font-size: 0.95rem;
+      color: #ccc;
+      margin-top: 15px;
+    }
+    .close-detail {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .close-detail:hover {
+      color: white;
+    }
+
+    /* 提示 */
+    #hint {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 0.8rem;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 20px;
+      border-radius: 20px;
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+    }
+
+    @media (max-width: 750px) {
+      #menu-panel {
+        bottom: 20px;
+        left: 20px;
+        padding: 15px;
+        gap: 8px;
+      }
+      .menu-btn {
+        padding: 10px 14px;
+        font-size: 0.9rem;
+      }
+      #detail-card {
+        width: 260px;
+        bottom: 20px;
+        right: 20px;
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <h1>🌊 河流地貌 <span>| 必修一</span></h1>
+  </div>
+
+  <!-- 目录 -->
+  <div id="menu-panel">
+    <h3>📖 地貌目录</h3>
+    <button class="menu-btn active" data-landform="v-valley">⛰️ V型谷</button>
+    <button class="menu-btn" data-landform="waterfall">💧 瀑布</button>
+    <button class="menu-btn" data-landform="meander">🌀 河曲与牛轭湖</button>
+    <button class="menu-btn" data-landform="floodplain">🌾 河漫滩</button>
+    <button class="menu-btn" data-landform="alluvial">🏞️ 冲积平原</button>
+    <button class="menu-btn" data-landform="delta">🌊 三角洲</button>
+  </div>
+
+  <!-- 详情卡片 -->
+  <div id="detail-card">
+    <button class="close-detail" id="close-detail-btn">✕</button>
+    <div id="detail-title">V型谷</div>
+    <div id="detail-sub">河流上游 · 下蚀为主</div>
+    <div id="detail-logic">
+      <h4>🔍 形成逻辑链</h4>
+      <p id="logic-text">落差大 → 流速快 → 下蚀强烈 → 河谷加深，两岸陡峭 → 形成V形横剖面。</p>
+    </div>
+    <div id="detail-desc">
+      位于河流上游，水流深切基岩，谷坡陡峻，谷底狭窄，是河流发育初期的典型标志。
+    </div>
+  </div>
+  
+  <div id="hint">🖱️ 鼠标拖动旋转视角 | 📜 滚轮缩放 | 👆 点击左侧按钮切换地貌</div>
+
+  <!-- 引入 Three.js 核心库以及扩展 -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // --- 初始化场景、相机、渲染器 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a1030); // 深邃夜空蓝背景
+    // 添加一些星星效果
+    for (let i = 0; i < 400; i++) {
+      const star = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 2, 2),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      star.position.set((Math.random() - 0.5) * 80, (Math.random() - 0.5) * 40 + 8, (Math.random() - 0.5) * 50 - 10);
+      scene.add(star);
+    }
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 200);
+    camera.position.set(12, 7, 14);
+    camera.lookAt(0, 1.5, 0);
+
+    // WebGL渲染器
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    // CSS2渲染器用于文字标签
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none'; // 让点击穿透到按钮
+    document.body.appendChild(labelRenderer.domElement);
+
+    // 控制器
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 1.8, 0);
+    controls.maxPolarAngle = Math.PI / 1.8;
+    controls.minDistance = 5;
+    controls.maxDistance = 35;
+    controls.update();
+
+    // --- 光照 ---
+    const ambientLight = new THREE.AmbientLight(0x404066);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+    dirLight.position.set(10, 20, 5);
+    dirLight.castShadow = true;
+    dirLight.receiveShadow = true;
+    dirLight.shadow.mapSize.width = 1024;
+    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.camera.near = 1;
+    dirLight.shadow.camera.far = 60;
+    dirLight.shadow.camera.left = -15;
+    dirLight.shadow.camera.right = 15;
+    dirLight.shadow.camera.top = 15;
+    dirLight.shadow.camera.bottom = -8;
+    scene.add(dirLight);
+    
+    const fillLight = new THREE.DirectionalLight(0x88aacc, 0.7);
+    fillLight.position.set(-5, 2, 8);
+    scene.add(fillLight);
+
+    // 雾效增强景深感
+    scene.fog = new THREE.Fog(0x0a1030, 8, 35);
+
+    // --- 全局组：当前展示的地貌模型 ---
+    const landformGroup = new THREE.Group();
+    scene.add(landformGroup);
+    
+    // 用于存储标签对象以便更新
+    let currentLabels = [];
+
+    // --- 工具函数：创建文本标签 ---
+    function createLabel(text, position, color = '#ffffff', fontSize = '0.9rem') {
+      const div = document.createElement('div');
+      div.textContent = text;
+      div.style.color = color;
+      div.style.fontSize = fontSize;
+      div.style.fontWeight = 'bold';
+      div.style.textShadow = '1px 1px 3px black';
+      div.style.background = 'rgba(0,0,0,0.7)';
+      div.style.padding = '2px 12px';
+      div.style.borderRadius = '20px';
+      const label = new CSS2DObject(div);
+      label.position.copy(position);
+      return label;
+    }
+
+    // --- 清除当前地貌 ---
+    function clearLandform() {
+      while(landformGroup.children.length > 0) {
+        landformGroup.remove(landformGroup.children[0]);
+      }
+      // 移除标签
+      currentLabels.forEach(label => landformGroup.remove(label));
+      currentLabels = [];
+    }
+
+    // --- 基础地面网格 (公共) ---
+    function addBaseGrid() {
+      const gridHelper = new THREE.GridHelper(10, 20, 0x335577, 0x224466);
+      gridHelper.position.y = -0.01;
+      landformGroup.add(gridHelper);
+    }
+
+    // --- 各个地貌构建函数 (返回包含模型细节的函数) ---
+
+    function buildVValley() {
+      clearLandform();
+      addBaseGrid();
+      // 创建V型谷：两座倾斜的山体夹着狭窄河谷
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0x6b7b8d, roughness: 0.7, metalness: 0.2 });
+      const rockMat2 = new THREE.MeshStandardMaterial({ color: 0x5a6b7a, roughness: 0.8 });
+      
+      // 左侧山体 (使用倾斜的立方体)
+      const leftMountain = new THREE.Mesh(new THREE.ConeGeometry(2.4, 4.5, 8), rockMat);
+      leftMountain.position.set(-2.2, 1.8, 0);
+      leftMountain.castShadow = true;
+      leftMountain.receiveShadow = true;
+      landformGroup.add(leftMountain);
+      
+      const rightMountain = new THREE.Mesh(new THREE.ConeGeometry(2.2, 4.2, 8), rockMat2);
+      rightMountain.position.set(2.1, 1.7, 0);
+      rightMountain.castShadow = true;
+      rightMountain.receiveShadow = true;
+      landformGroup.add(rightMountain);
+      
+      // 河谷底部狭窄的河道
+      const riverBed = new THREE.Mesh(
+        new THREE.BoxGeometry(0.7, 0.2, 5),
+        new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.5 })
+      );
+      riverBed.position.set(0, -0.2, 0);
+      riverBed.receiveShadow = true;
+      landformGroup.add(riverBed);
+      
+      // 水流效果 (半透明蓝色)
+      const water = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.15, 4.8),
+        new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.7, emissive: new THREE.Color(0x0a1a2a) })
+      );
+      water.position.set(0, -0.05, 0);
+      landformGroup.add(water);
+      
+      // 标签
+      const label1 = createLabel('V型谷', new THREE.Vector3(0, 3.2, 0.8), '#ffd966', '1rem');
+      const label2 = createLabel('陡峭谷坡', new THREE.Vector3(-2.8, 2.5, 0.5), '#cccccc', '0.8rem');
+      const label3 = createLabel('狭窄河床', new THREE.Vector3(0, -0.7, 1.2), '#aaccff', '0.8rem');
+      currentLabels.push(label1, label2, label3);
+      landformGroup.add(label1);
+      landformGroup.add(label2);
+      landformGroup.add(label3);
+    }
+
+    function buildWaterfall() {
+      clearLandform();
+      addBaseGrid();
+      // 上层岩石平台与下层
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0x7c8b9c, roughness: 0.6 });
+      const upperPlat = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.6, 3.5), rockMat);
+      upperPlat.position.set(0, 2.5, -0.8);
+      upperPlat.castShadow = true;
+      upperPlat.receiveShadow = true;
+      landformGroup.add(upperPlat);
+      
+      const lowerPlat = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.5, 4), new THREE.MeshStandardMaterial({ color: 0x5d6d7e, roughness: 0.7 }));
+      lowerPlat.position.set(0, -0.4, 0.8);
+      lowerPlat.receiveShadow = true;
+      landformGroup.add(lowerPlat);
+      
+      // 悬崖面
+      const cliff = new THREE.Mesh(new THREE.BoxGeometry(4.2, 2.8, 0.4), rockMat);
+      cliff.position.set(0, 1.1, 0.3);
+      cliff.castShadow = true;
+      cliff.receiveShadow = true;
+      landformGroup.add(cliff);
+      
+      // 瀑布水流
+      const waterfallStream = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 2.6, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x5dade2, transparent: true, opacity: 0.55, emissive: new THREE.Color(0x0a2a4a) })
+      );
+      waterfallStream.position.set(0, 1.2, 0.45);
+      landformGroup.add(waterfallStream);
+      
+      // 下方水潭
+      const pool = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.3, 1.6, 0.4, 16),
+        new THREE.MeshStandardMaterial({ color: 0x2e86c1, transparent: true, opacity: 0.8 })
+      );
+      pool.position.set(0, -0.45, 1.4);
+      landformGroup.add(pool);
+      
+      const lbl1 = createLabel('瀑布', new THREE.Vector3(0, 3.5, 0.2), '#ffb347', '1rem');
+      const lbl2 = createLabel('陡崖', new THREE.Vector3(1.8, 1.6, 0.9), '#ddd', '0.8rem');
+      const lbl3 = createLabel('侵蚀坑', new THREE.Vector3(0, -0.9, 2.0), '#aaccff', '0.8rem');
+      currentLabels.push(lbl1, lbl2, lbl3);
+      landformGroup.add(lbl1, lbl2, lbl3);
+    }
+
+    function buildMeander() {
+      clearLandform();
+      addBaseGrid();
+      // 弯曲的河道和平原
+      const plainMat = new THREE.MeshStandardMaterial({ color: 0x4a6b3a, roughness: 0.9 });
+      const plain = new THREE.Mesh(new THREE.BoxGeometry(6, 0.3, 5), plainMat);
+      plain.position.set(0, -0.4, 0);
+      plain.receiveShadow = true;
+      landformGroup.add(plain);
+      
+      // 用多个圆柱体模拟弯曲河道
+      const waterMat = new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.7 });
+      const points = [
+        {x: -1.8, z: -1.5}, {x: -0.9, z: -0.6}, {x: 0.4, z: 0.2}, {x: 1.6, z: -0.3}, {x: 1.8, z: 1.2}
+      ];
+      points.forEach((p, i) => {
+        const segment = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 0.25, 8), waterMat);
+        segment.position.set(p.x, -0.05, p.z);
+        segment.receiveShadow = true;
+        landformGroup.add(segment);
+      });
+      // 牛轭湖 (废弃河道)
+      const oxbow = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.25, 8, 16), 
+        new THREE.MeshStandardMaterial({ color: 0x2c3e50, transparent: true, opacity: 0.6 }));
+      oxbow.position.set(-1.2, -0.1, 1.5);
+      oxbow.rotation.x = Math.PI/2;
+      landformGroup.add(oxbow);
+      
+      const lbl1 = createLabel('河曲', new THREE.Vector3(0.5, 0.8, -0.8), '#ffb347', '1rem');
+      const lbl2 = createLabel('牛轭湖', new THREE.Vector3(-1.6, 0.7, 2.1), '#cccccc', '0.8rem');
+      currentLabels.push(lbl1, lbl2);
+      landformGroup.add(lbl1, lbl2);
+    }
+
+    function buildFloodplain() {
+      clearLandform();
+      addBaseGrid();
+      const plainMat = new THREE.MeshStandardMaterial({ color: 0x5a7d4a, roughness: 0.9 });
+      const plain = new THREE.Mesh(new THREE.BoxGeometry(7, 0.2, 6), plainMat);
+      plain.position.set(0, -0.3, 0);
+      plain.receiveShadow = true;
+      landformGroup.add(plain);
+      
+      // 河漫滩沉积物
+      const sediment = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.15, 5.5), 
+        new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.9, transparent: true, opacity: 0.7 }));
+      sediment.position.set(0, -0.1, 0);
+      landformGroup.add(sediment);
+      
+      // 主河道
+      const river = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.25, 6.2), 
+        new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.8 }));
+      river.position.set(0, -0.05, 0);
+      landformGroup.add(river);
+      
+      const lbl1 = createLabel('河漫滩', new THREE.Vector3(0, 0.9, 1.8), '#ffb347', '1rem');
+      const lbl2 = createLabel('洪水沉积', new THREE.Vector3(2.2, 0.4, -1.5), '#ddccaa', '0.8rem');
+      currentLabels.push(lbl1, lbl2);
+      landformGroup.add(lbl1, lbl2);
+    }
+
+    function buildAlluvial() {
+      clearLandform();
+      addBaseGrid();
+      const plainMat = new THREE.MeshStandardMaterial({ color: 0x6b8e4a, roughness: 0.8 });
+      const plain = new THREE.Mesh(new THREE.BoxGeometry(8, 0.3, 7), plainMat);
+      plain.position.set(0, -0.4, 0);
+      plain.receiveShadow = true;
+      landformGroup.add(plain);
+      
+      // 冲积层
+      const layer = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.25, 6.5), 
+        new THREE.MeshStandardMaterial({ color: 0xb89a7a, roughness: 0.9 }));
+      layer.position.set(0, 0.0, 0);
+      landformGroup.add(layer);
+      
+      const river = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.3, 7.2), 
+        new THREE.MeshStandardMaterial({ color: 0x2980b9, transparent: true, opacity: 0.8 }));
+      river.position.set(0, 0.1, 0);
+      landformGroup.add(river);
+      
+      const lbl1 = createLabel('冲积平原', new THREE.Vector3(0, 1.2, 2.0), '#ffb347', '1rem');
+      currentLabels.push(lbl1);
+      landformGroup.add(lbl1);
+    }
+
+    function buildDelta() {
+      clearLandform();
+      addBaseGrid();
+      const waterMat = new THREE.MeshStandardMaterial({ color: 0x1a5276, transparent: true, opacity: 0.5, roughness: 0.3 });
+      const sea = new THREE.Mesh(new THREE.BoxGeometry(8, 0.2, 6), waterMat);
+      sea.position.set(0, -0.5, 0.8);
+      landformGroup.add(sea);
+      
+      // 三角洲沉积体
+      const deltaShape = new THREE.ConeGeometry(2.8, 0.9, 16);
+      const deltaMat = new THREE.MeshStandardMaterial({ color: 0xcdaf95, roughness: 0.7 });
+      const delta = new THREE.Mesh(deltaShape, deltaMat);
+      delta.position.set(0, 0.0, -0.5);
+      delta.castShadow = true;
+      delta.receiveShadow = true;
+      landformGroup.add(delta);
+      
+      // 分流河道
+      for (let i = -1; i <= 1; i+=2) {
+        const branch = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.15, 1.8), 
+          new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.8 }));
+        branch.position.set(i*0.9, 0.25, -1.2);
+        branch.rotation.y = i*0.4;
+        landformGroup.add(branch);
+      }
+      
+      const lbl1 = createLabel('三角洲', new THREE.Vector3(0, 1.2, -1.0), '#ffb347', '1rem');
+      const lbl2 = createLabel('河口沉积', new THREE.Vector3(1.8, 0.6, -1.8), '#ddccaa', '0.8rem');
+      currentLabels.push(lbl1, lbl2);
+      landformGroup.add(lbl1, lbl2);
+    }
+
+    // --- 地貌映射 ---
+    const landformBuilders = {
+      'v-valley': buildVValley,
+      'waterfall': buildWaterfall,
+      'meander': buildMeander,
+      'floodplain': buildFloodplain,
+      'alluvial': buildAlluvial,
+      'delta': buildDelta
+    };
+
+    // --- 更新UI详情卡片 ---
+    const details = {
+      'v-valley': {
+        title: 'V型谷',
+        sub: '河流上游 · 下蚀为主',
+        logic: '地势落差大 → 水流速度快 → 下蚀作用强烈 → 河谷不断加深，两岸岩石陡峭 → 横剖面呈V字形。',
+        desc: '常见于河流上游山区，水流深切基岩，谷坡陡峻，谷底狭窄，是河流发育初期的典型标志。'
+      },
+      'waterfall': {
+        title: '瀑布',
+        sub: '河床陡坎 · 溯源侵蚀',
+        logic: '岩性差异或断层 → 软硬岩层抗蚀力不同 → 水流淘蚀软岩层 → 形成陡坎与跌水 → 瀑布后退（溯源侵蚀）。',
+        desc: '河水在流经断层、凹陷等地区时垂直跌落。瀑布是河流侵蚀作用的重要表现，常伴随壶穴形成。'
+      },
+      'meander': {
+        title: '河曲与牛轭湖',
+        sub: '中下游 · 侧蚀与沉积',
+        logic: '河道弯曲 → 凹岸侵蚀、凸岸沉积 → 河曲愈加弯曲 → 洪水冲断曲流颈 → 裁弯取直 → 废弃河道形成牛轭湖。',
+        desc: '河曲是河流侧蚀作用的产物，凹岸水深流急发生侵蚀，凸岸水浅流缓发生堆积，使河道不断摆动。'
+      },
+      'floodplain': {
+        title: '河漫滩',
+        sub: '洪水期淹没 · 沉积形成',
+        logic: '洪水期河水溢出河床 → 流速降低 → 泥沙在两岸沉积 → 反复泛滥沉积 → 形成宽坦的河漫滩平原。',
+        desc: '位于河床两侧，只在洪水期被淹没。由河流的横向输沙与沉积作用形成，土壤肥沃。'
+      },
+      'alluvial': {
+        title: '冲积平原',
+        sub: '河流堆积 · 广阔平原',
+        logic: '河流搬运泥沙 → 下游坡度减缓 → 流速降低 → 泥沙大量沉积 → 长期堆积形成辽阔的冲积平原。',
+        desc: '由河流沉积作用形成，地势平坦，土层深厚，是重要的农业区，如华北平原。'
+      },
+      'delta': {
+        title: '三角洲',
+        sub: '河口沉积 · 扇形堆积',
+        logic: '河流入海/湖 → 流速骤减 → 泥沙快速沉积 → 形成扇形堆积体 → 河道分叉 → 三角洲不断向海推进。',
+        desc: '出现在河流入海口，因水体流速降低及海水顶托，泥沙沉积形成低平三角洲，如长江三角洲。'
+      }
+    };
+
+    function updateDetailUI(landformKey) {
+      const data = details[landformKey];
+      document.getElementById('detail-title').textContent = data.title;
+      document.getElementById('detail-sub').textContent = data.sub;
+      document.getElementById('logic-text').textContent = data.logic;
+      document.getElementById('detail-desc').textContent = data.desc;
+      
+      // 更新按钮激活状态
+      document.querySelectorAll('.menu-btn').forEach(btn => {
+        if(btn.dataset.landform === landformKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    // --- 切换地貌函数 ---
+    function switchToLandform(key) {
+      if (landformBuilders[key]) {
+        landformBuilders[key]();
+        updateDetailUI(key);
+      }
+    }
+
+    // --- 绑定UI按钮事件 ---
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const landform = e.currentTarget.dataset.landform;
+        switchToLandform(landform);
+      });
+    });
+
+    // 关闭详情卡片按钮 (保留卡片可见，但可隐藏; 这里简单设置为仍然可见，或者可以添加功能)
+    document.getElementById('close-detail-card')?.addEventListener('click', () => {
+      document.getElementById('detail-card').style.display = 'none';
+    });
+    // 重新显示卡片 (点击任意菜单按钮时恢复)
+    document.querySelectorAll('.menu-btn').forEach(b => {
+      b.addEventListener('click', () => {
+        document.getElementById('detail-card').style.display = 'block';
+      });
+    });
+
+    // --- 窗口大小调整 ---
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    // --- 动画循环 ---
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      // 轻微动态效果：让水流或标签有呼吸感（可选）
+      // 这里简单旋转一点星星？不做了。
+      
+      controls.update();
+      
+      // 渲染主场景
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+
+    // 默认加载V型谷
+    switchToLandform('v-valley');
+    animate();
+    
+    console.log('🌍 河流地貌3D展示已启动！使用左侧菜单切换地貌。');
+  </script>
+</body>
+</html>

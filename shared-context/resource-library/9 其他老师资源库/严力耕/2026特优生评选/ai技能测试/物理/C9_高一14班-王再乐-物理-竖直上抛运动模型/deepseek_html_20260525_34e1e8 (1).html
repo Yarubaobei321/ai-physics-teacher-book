@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中物理 · 竖直上抛运动（含知识点）</title>
+    <style>
+        :root {
+            --bg: #f5f2eb;
+            --card-bg: #ffffff;
+            --text: #2c2416;
+            --text-secondary: #5c5347;
+            --accent: #e07b3c;
+            --accent2: #3b7dd8;
+            --accent-rise: #e0533d;
+            --accent-fall: #3b7dd8;
+            --surface: #faf8f5;
+            --border: #e0d9cc;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.10);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .main-container {
+            width: 100%;
+            max-width: 1050px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .header { text-align: center; padding: 6px 0; }
+        .header h1 {
+            font-size: 1.75rem; font-weight: 700; letter-spacing: 0.03em;
+            color: #2c2416; display: inline-flex; align-items: center; gap: 10px;
+        }
+        .header h1 .icon {
+            display: inline-block; width: 38px; height: 38px; border-radius: 50%;
+            background: linear-gradient(135deg, #e07b3c, #e0533d);
+            color: #fff; font-size: 1.2rem; line-height: 38px; text-align: center;
+        }
+        .header .subtitle { font-size: 0.9rem; color: var(--text-secondary); margin-top: 2px; }
+        .content-row { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+        .animation-card {
+            flex: 1 1 560px; min-width: 380px; max-width: 620px;
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow-lg); padding: 16px 18px 14px;
+            display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border);
+        }
+        .canvas-wrapper {
+            position: relative; background: #fdfcfa; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); overflow: hidden; cursor: default;
+            aspect-ratio: 11 / 10; min-height: 360px;
+        }
+        .canvas-wrapper canvas { display: block; width: 100%; height: 100%; }
+        .canvas-badge {
+            position: absolute; top: 10px; right: 14px; font-size: 0.75rem;
+            color: var(--text-secondary); background: rgba(255, 255, 255, 0.85);
+            padding: 4px 10px; border-radius: 20px; pointer-events: none;
+            letter-spacing: 0.03em; border: 1px solid var(--border);
+        }
+        .side-panel {
+            flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; min-width: 280px;
+        }
+        .card {
+            background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); padding: 14px 16px; border: 1px solid var(--border);
+        }
+        .card h3 {
+            font-size: 0.95rem; font-weight: 650; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 7px; color: #3d3427;
+        }
+        .card h3 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        .dot-rise { background: var(--accent-rise); }
+        .dot-fall { background: var(--accent-fall); }
+        .dot-gold { background: #e0a030; }
+        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+        .data-item {
+            background: var(--surface); border-radius: 8px; padding: 9px 11px;
+            display: flex; flex-direction: column; gap: 2px; border: 1px solid transparent;
+            transition: var(--transition);
+        }
+        .data-item.highlight { border-color: #e0a030; background: #fffef8; }
+        .data-label { font-size: 0.72rem; color: var(--text-secondary); font-weight: 500; }
+        .data-value {
+            font-size: 1.2rem; font-weight: 700; font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+            color: #2c2416;
+        }
+        .data-value.rise-color { color: #c0392b; }
+        .data-value.fall-color { color: #2b6cb0; }
+        .data-unit { font-size: 0.7rem; font-weight: 500; color: var(--text-secondary); }
+        .status-badge {
+            display: inline-block; padding: 5px 14px; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 650; letter-spacing: 0.04em; transition: var(--transition);
+        }
+        .status-ready { background: #eef2f7; color: #555; }
+        .status-rising { background: #fde8e5; color: #c0392b; animation: pulse-rise 1s ease-in-out infinite; }
+        .status-falling { background: #e3edf9; color: #2b6cb0; animation: pulse-fall 1s ease-in-out infinite; }
+        .status-peak { background: #fef9e7; color: #b8860b; }
+        .status-landed { background: #eef2f0; color: #4a6b5d; }
+        @keyframes pulse-rise { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
+        @keyframes pulse-fall { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
+        .slider-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 2px; }
+        .slider-group label {
+            font-size: 0.82rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; color: #3d3427;
+        }
+        .slider-group label span.val { font-weight: 700; color: var(--accent); font-size: 0.9rem; min-width: 55px; text-align: right; }
+        input[type="range"] {
+            -webkit-appearance: none; width: 100%; height: 7px; border-radius: 10px;
+            background: linear-gradient(to right, #e0d5c5, #d4c4ae); outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 26px; height: 26px; border-radius: 50%;
+            background: #fff; border: 3px solid var(--accent); cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: var(--transition);
+        }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn {
+            flex: 1; min-width: 60px; padding: 10px 16px; border-radius: 25px; border: none;
+            font-size: 0.85rem; font-weight: 650; cursor: pointer; transition: var(--transition); font-family: inherit;
+        }
+        .btn-launch { background: var(--accent); color: #fff; box-shadow: 0 3px 12px rgba(224,123,60,0.35); }
+        .btn-pause { background: #fff; color: #3d3427; border: 2px solid #d4c4ae; }
+        .btn-reset { background: #fff; color: #8b7355; border: 2px solid #e0d5c5; }
+        .btn:active { transform: scale(0.96); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+        .mini-chart-card {
+            background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow);
+            padding: 10px 14px; border: 1px solid var(--border);
+        }
+        .mini-chart-card h4 { font-size: 0.8rem; font-weight: 650; color: #3d3427; margin-bottom: 6px; text-align: center; }
+        .mini-chart-card canvas { display: block; width: 100%; aspect-ratio: 3/2; border-radius: 6px; background: #fdfcfa; }
+        .formula-bar {
+            display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: center;
+            padding: 10px 16px; background: var(--card-bg); border-radius: var(--radius);
+            box-shadow: var(--shadow); border: 1px solid var(--border); font-size: 0.82rem;
+        }
+        .formula-item {
+            background: var(--surface); padding: 5px 12px; border-radius: 6px;
+            font-family: 'SF Mono', 'Consolas', 'Menlo', monospace;
+            font-weight: 600; white-space: nowrap; color: #3d3427; border: 1px solid transparent;
+        }
+        .formula-item.key { border-color: #e0a030; background: #fffef8; color: #8b6914; }
+
+        /* 知识点卡片 */
+        .knowledge-card {
+            background: #fefdf9;
+            border-left: 4px solid #e0a030;
+        }
+        .knowledge-card h3 {
+            color: #8b6914;
+        }
+        .knowledge-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .knowledge-list li {
+            font-size: 0.82rem;
+            line-height: 1.5;
+            color: #4a3f2e;
+            padding-left: 18px;
+            position: relative;
+        }
+        .knowledge-list li::before {
+            content: "●";
+            position: absolute;
+            left: 0;
+            color: #e0a030;
+            font-size: 0.75rem;
+            top: 2px;
+        }
+        .knowledge-list li strong {
+            color: #c0611b;
+        }
+        .knowledge-list li em {
+            font-style: normal;
+            background: #fef3e4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            color: #b45f2e;
+        }
+
+        @media (max-width: 750px) {
+            .content-row { flex-direction: column; }
+            .animation-card { min-width: auto; max-width: none; }
+            .canvas-wrapper { aspect-ratio: 4/3; min-height: 280px; }
+            .side-panel { min-width: auto; }
+            .header h1 { font-size: 1.35rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="header">
+        <h1><span class="icon">↑</span>竖直上抛运动</h1>
+        <p class="subtitle">高中物理 · 匀变速直线运动模型</p>
+    </div>
+    <div class="content-row">
+        <!-- 左侧动画区域 -->
+        <div class="animation-card">
+            <div class="canvas-wrapper" id="animWrapper">
+                <canvas id="mainCanvas"></canvas>
+                <span class="canvas-badge" id="badgeStatus">⏳ 准备发射</span>
+            </div>
+            <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                <div class="slider-group" style="flex:1; min-width:140px;">
+                    <label>初速度 v₀ <span class="val" id="valV0">18.0 m/s</span></label>
+                    <input type="range" id="sliderV0" min="4" max="30" value="18" step="0.5">
+                </div>
+                <div class="slider-group" style="flex:1; min-width:120px;">
+                    <label>重力加速度 g <span class="val" id="valG">9.8 m/s²</span></label>
+                    <input type="range" id="sliderG" min="3" max="20" value="9.8" step="0.1">
+                </div>
+                <div class="slider-group" style="flex:0 0 100px; min-width:80px;">
+                    <label>时间缩放 <span class="val" id="valTS">1.0×</span></label>
+                    <input type="range" id="sliderTS" min="0.3" max="2.5" value="1" step="0.1">
+                </div>
+            </div>
+            <div class="btn-row">
+                <button class="btn btn-launch" id="btnLaunch">🚀 发 射</button>
+                <button class="btn btn-pause" id="btnPause" disabled>⏯️ 暂 停</button>
+                <button class="btn btn-reset" id="btnReset">↺ 重 置</button>
+            </div>
+        </div>
+
+        <!-- 右侧面板：数据 + 图表 + 知识点 -->
+        <div class="side-panel">
+            <div class="card">
+                <h3>📊 实时数据 &nbsp;<span class="status-badge status-ready" id="statusBadge">准备就绪</span></h3>
+                <div class="data-grid">
+                    <div class="data-item" id="dataTime"><span class="data-label">⏱ 时间 t</span><span class="data-value">0.00<span class="data-unit"> s</span></span></div>
+                    <div class="data-item" id="dataHeight"><span class="data-label">📏 高度 h</span><span class="data-value">0.00<span class="data-unit"> m</span></span></div>
+                    <div class="data-item" id="dataSpeed"><span class="data-label">⚡ 速度 v</span><span class="data-value">0.00<span class="data-unit"> m/s</span></span></div>
+                    <div class="data-item" id="dataAccel"><span class="data-label">🎯 加速度 a</span><span class="data-value">−g<span class="data-unit"></span></span></div>
+                    <div class="data-item highlight" id="dataMaxH"><span class="data-label">⭐ 最大高度</span><span class="data-value">--<span class="data-unit"> m</span></span></div>
+                    <div class="data-item highlight" id="dataTotalT"><span class="data-label">🔄 全程时间</span><span class="data-value">--<span class="data-unit"> s</span></span></div>
+                </div>
+            </div>
+            <div class="mini-chart-card">
+                <h4>📈 高度-时间图 h(t) — 抛物线</h4>
+                <canvas id="chartHt"></canvas>
+            </div>
+            <div class="mini-chart-card">
+                <h4>📉 速度-时间图 v(t) （↑ 向上为正）</h4>
+                <canvas id="chartVt"></canvas>
+            </div>
+
+            <!-- ★ 新增知识点卡片 -->
+            <div class="card knowledge-card">
+                <h3>📚 运动特点（知识点标注）</h3>
+                <ul class="knowledge-list">
+                    <li><strong>加速度恒定：</strong>始终为重力加速度 <em>g</em>，方向竖直向下。</li>
+                    <li><strong>上升阶段：</strong>匀减速直线运动，速度减小，到达最高点瞬间速度为零。</li>
+                    <li><strong>下降阶段：</strong>自由落体运动（初速度为零），匀加速下落。</li>
+                    <li><strong>对称性·时间：</strong>上升时间 = 下降时间 = <em>v₀/g</em>，总时间 = <em>2v₀/g</em>。</li>
+                    <li><strong>对称性·速度：</strong>落回抛出点时速度大小等于初速度，方向相反。</li>
+                    <li><strong>对称性·空间：</strong><em>相同高度位置，速度大小相等，方向相反。</em></li>
+                    <li><strong>最高点特性：</strong><em>v = 0</em>，<em>a = g ≠ 0</em>，物体并非处于平衡状态。</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部公式栏 -->
+    <div class="formula-bar">
+        <span class="formula-item">v = v₀ − gt</span>
+        <span class="formula-item">h = v₀t − ½gt²</span>
+        <span class="formula-item key">h<sub>max</sub> = v₀²/(2g)</span>
+        <span class="formula-item">t<sub>上升</sub> = v₀/g</span>
+        <span class="formula-item key">t<sub>总</sub> = 2v₀/g</span>
+        <span class="formula-item">v<sub>落地</sub> = −v₀</span>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ==================== DOM 元素 ====================
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const chartHtCanvas = document.getElementById('chartHt');
+        const chartHtCtx = chartHtCanvas.getContext('2d');
+        const chartVtCanvas = document.getElementById('chartVt');
+        const chartVtCtx = chartVtCanvas.getContext('2d');
+        const animWrapper = document.getElementById('animWrapper');
+
+        const sliderV0 = document.getElementById('sliderV0');
+        const sliderG = document.getElementById('sliderG');
+        const sliderTS = document.getElementById('sliderTS');
+        const valV0 = document.getElementById('valV0');
+        const valG = document.getElementById('valG');
+        const valTS = document.getElementById('valTS');
+        const btnLaunch = document.getElementById('btnLaunch');
+        const btnPause = document.getElementById('btnPause');
+        const btnReset = document.getElementById('btnReset');
+        const statusBadge = document.getElementById('statusBadge');
+        const badgeStatus = document.getElementById('badgeStatus');
+        const dataTime = document.getElementById('dataTime');
+        const dataHeight = document.getElementById('dataHeight');
+        const dataSpeed = document.getElementById('dataSpeed');
+        const dataAccel = document.getElementById('dataAccel');
+        const dataMaxH = document.getElementById('dataMaxH');
+        const dataTotalT = document.getElementById('dataTotalT');
+
+        // ==================== 物理参数 ====================
+        let v0 = parseFloat(sliderV0.value);
+        let g = parseFloat(sliderG.value);
+        let timeScale = parseFloat(sliderTS.value);
+        let tRise = v0 / g;
+        let tTotal = 2 * v0 / g;
+        let hMax = (v0 * v0) / (2 * g);
+
+        const STATE = { READY:'ready', RISING:'rising', FALLING:'falling', PEAK:'peak', LANDED:'landed', PAUSED:'paused' };
+        let simState = STATE.READY;
+        let simTime = 0;
+        let pausedTime = 0;
+        let animId = null;
+        let lastFrameTime = null;
+        let trailPoints = [];
+        let timeMarkers = [];
+
+        function computeTimeMarkers() {
+            timeMarkers = [];
+            const dt = 0.25;
+            for (let t = dt; t < tTotal; t += dt) {
+                const y = v0 * t - 0.5 * g * t * t;
+                const v = v0 - g * t;
+                timeMarkers.push({ t, y: Math.max(0, y), isRising: v > 0.001 });
+            }
+            if (!timeMarkers.some(m => Math.abs(m.t - tRise) < 0.15) && tRise > 0.05) {
+                timeMarkers.push({ t: tRise, y: hMax, isRising: false });
+                timeMarkers.sort((a,b) => a.t - b.t);
+            }
+        }
+
+        function updateDerived() {
+            tRise = v0 / g;
+            tTotal = 2 * v0 / g;
+            hMax = (v0 * v0) / (2 * g);
+            computeTimeMarkers();
+        }
+
+        function resizeMainCanvas() {
+            const rect = animWrapper.getBoundingClientRect();
+            const w = rect.width, h = rect.height;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            if (mainCanvas.width !== w*dpr || mainCanvas.height !== h*dpr) {
+                mainCanvas.width = w*dpr;
+                mainCanvas.height = h*dpr;
+                mainCanvas.style.width = w+'px';
+                mainCanvas.style.height = h+'px';
+                mainCtx.setTransform(1,0,0,1,0,0);
+                mainCtx.scale(dpr, dpr);
+            }
+        }
+
+        function resizeChartCanvas(canvas, ctx) {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const w = rect.width - 28;
+            const h = w * (2/3);
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            if (canvas.width !== w*dpr || canvas.height !== h*dpr) {
+                canvas.width = w*dpr;
+                canvas.height = h*dpr;
+                canvas.style.width = w+'px';
+                canvas.style.height = h+'px';
+                ctx.setTransform(1,0,0,1,0,0);
+                ctx.scale(dpr, dpr);
+            }
+            return { w, h };
+        }
+
+        function drawMainAnimation() {
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            const W = mainCanvas.width / dpr;
+            const H = mainCanvas.height / dpr;
+            mainCtx.clearRect(0,0,W,H);
+            const marginLeft=75, marginRight=30, marginTop=35, marginBottom=55;
+            const plotW = W - marginLeft - marginRight;
+            const plotH = H - marginTop - marginBottom;
+            const groundY = marginTop + plotH;
+            const originX = marginLeft, originY = groundY;
+            const displayMaxH = Math.max(hMax*1.15, 2);
+            const scaleY = plotH / displayMaxH;
+            const ballRadius = Math.max(10, Math.min(22, plotW*0.04));
+
+            function physToPixel(phyY) { return originY - phyY * scaleY; }
+
+            mainCtx.strokeStyle='#e8e2d6'; mainCtx.lineWidth=0.6; mainCtx.setLineDash([4,8]);
+            const gridStep = calcGridStep(displayMaxH);
+            for (let hm=0; hm<=displayMaxH+gridStep; hm+=gridStep) {
+                const y=physToPixel(hm);
+                if(y>marginTop-5){ mainCtx.beginPath(); mainCtx.moveTo(originX,y); mainCtx.lineTo(originX+plotW,y); mainCtx.stroke(); }
+            }
+            mainCtx.setLineDash([]);
+
+            mainCtx.strokeStyle='#5c4a3a'; mainCtx.lineWidth=3;
+            mainCtx.beginPath(); mainCtx.moveTo(originX-10,originY); mainCtx.lineTo(originX+plotW+10,originY); mainCtx.stroke();
+            mainCtx.fillStyle='#5c4a3a'; mainCtx.font='600 12px "PingFang SC","Microsoft YaHei",sans-serif'; mainCtx.textAlign='right';
+            mainCtx.fillText('地面 y=0', originX-14, originY-8);
+
+            mainCtx.fillStyle='#8b7b65'; mainCtx.font='11px "PingFang SC","Microsoft YaHei",sans-serif'; mainCtx.textAlign='right';
+            for (let hm=0; hm<=displayMaxH+gridStep*0.5; hm+=gridStep) {
+                const y=physToPixel(hm);
+                if(y>marginTop-8 && y<originY) {
+                    mainCtx.fillText(hm.toFixed(1)+' m', originX-8, y+4);
+                    mainCtx.strokeStyle='#c4b8a5'; mainCtx.lineWidth=0.8;
+                    mainCtx.beginPath(); mainCtx.moveTo(originX-3,y); mainCtx.lineTo(originX+plotW,y); mainCtx.stroke();
+                }
+            }
+
+            if (hMax>0.01) {
+                const peakY = physToPixel(hMax);
+                mainCtx.strokeStyle='#e0a030'; mainCtx.lineWidth=1.8; mainCtx.setLineDash([6,5]);
+                mainCtx.beginPath(); mainCtx.moveTo(originX,peakY); mainCtx.lineTo(originX+plotW,peakY); mainCtx.stroke();
+                mainCtx.setLineDash([]);
+                mainCtx.fillStyle='#b8860b'; mainCtx.font='bold 12px "PingFang SC","Microsoft YaHei",sans-serif'; mainCtx.textAlign='left';
+                mainCtx.fillText('⭐ 最高点 '+hMax.toFixed(2)+' m', originX+plotW*0.55, peakY-8);
+            }
+
+            const trailX = originX + plotW * 0.35;
+            timeMarkers.forEach(marker => {
+                if (marker.y>=0 && marker.y<=hMax*1.05) {
+                    const my = physToPixel(Math.min(marker.y, displayMaxH));
+                    if (my>marginTop && my<originY) {
+                        const alpha = marker.isRising ? 0.55 : 0.45;
+                        mainCtx.fillStyle = marker.isRising ? `rgba(220,80,50,${alpha})` : `rgba(55,110,190,${alpha})`;
+                        mainCtx.beginPath(); mainCtx.arc(trailX, my, 4.5, 0, Math.PI*2); mainCtx.fill();
+                        mainCtx.strokeStyle='rgba(255,255,255,0.7)'; mainCtx.lineWidth=1; mainCtx.stroke();
+                        mainCtx.fillStyle = marker.isRising ? '#c0392b' : '#2b6cb0';
+                        mainCtx.font='9px "PingFang SC","Microsoft YaHei",sans-serif'; mainCtx.textAlign='left';
+                        mainCtx.fillText(marker.t.toFixed(1)+'s', trailX+8, my+3);
+                    }
+                }
+            });
+
+            mainCtx.strokeStyle='rgba(150,130,110,0.4)'; mainCtx.lineWidth=1.5; mainCtx.setLineDash([3,6]);
+            const trajTopY = physToPixel(Math.min(hMax, displayMaxH));
+            mainCtx.beginPath(); mainCtx.moveTo(trailX, originY); mainCtx.lineTo(trailX, Math.max(trajTopY, marginTop)); mainCtx.stroke();
+            mainCtx.setLineDash([]);
+
+            let ballPhyY=0, currentV=0, ballInAir=false;
+            if (simState===STATE.READY) { ballPhyY=0; currentV=v0; }
+            else if (simState===STATE.LANDED) { ballPhyY=0; currentV=-v0; }
+            else if (simState===STATE.PAUSED) {
+                ballPhyY = Math.max(0, v0*pausedTime - 0.5*g*pausedTime*pausedTime);
+                currentV = v0 - g*pausedTime;
+                ballInAir = pausedTime < tTotal && ballPhyY>0.001;
+            } else {
+                ballPhyY = Math.max(0, v0*simTime - 0.5*g*simTime*simTime);
+                currentV = v0 - g*simTime;
+                ballInAir = simTime < tTotal && ballPhyY>0.001;
+            }
+            const ballScreenY = physToPixel(Math.min(ballPhyY, displayMaxH));
+            const ballX = trailX;
+
+            if (ballPhyY>0.05) {
+                const shadowAlpha = Math.max(0.05, 0.25 - ballPhyY/(displayMaxH*3));
+                mainCtx.fillStyle = `rgba(0,0,0,${shadowAlpha})`;
+                mainCtx.beginPath(); mainCtx.ellipse(ballX, originY+4, ballRadius*0.85, ballRadius*0.3, 0, 0, Math.PI*2); mainCtx.fill();
+            }
+
+            const gradient = mainCtx.createRadialGradient(ballX-ballRadius*0.3, ballScreenY-ballRadius*0.35, ballRadius*0.1, ballX, ballScreenY, ballRadius);
+            if (simState===STATE.RISING || (simState===STATE.PAUSED && currentV>0.01)) {
+                gradient.addColorStop(0,'#ff9070'); gradient.addColorStop(0.55,'#e0533d'); gradient.addColorStop(1,'#a02b1f');
+            } else if (simState===STATE.FALLING || (simState===STATE.PAUSED && currentV<-0.01) || simState===STATE.LANDED) {
+                gradient.addColorStop(0,'#7db8f0'); gradient.addColorStop(0.55,'#3b7dd8'); gradient.addColorStop(1,'#1a4a80');
+            } else if (simState===STATE.PEAK) {
+                gradient.addColorStop(0,'#ffeaa0'); gradient.addColorStop(0.55,'#e0a030'); gradient.addColorStop(1,'#8b5e14');
+            } else {
+                gradient.addColorStop(0,'#ffaa80'); gradient.addColorStop(0.55,'#e07b3c'); gradient.addColorStop(1,'#a04a20');
+            }
+            mainCtx.fillStyle = gradient;
+            mainCtx.beginPath(); mainCtx.arc(ballX, ballScreenY, ballRadius, 0, Math.PI*2); mainCtx.fill();
+            mainCtx.strokeStyle='rgba(255,255,255,0.5)'; mainCtx.lineWidth=2; mainCtx.stroke();
+            mainCtx.fillStyle='rgba(255,255,255,0.35)';
+            mainCtx.beginPath(); mainCtx.arc(ballX-ballRadius*0.3, ballScreenY-ballRadius*0.35, ballRadius*0.3, 0, Math.PI*2); mainCtx.fill();
+
+            if (ballInAir && Math.abs(currentV)>0.05) {
+                const arrowScale = scaleY * 0.75;
+                const arrowLen = Math.abs(currentV) * arrowScale;
+                const maxArrowLen = plotH * 0.55;
+                const clampedLen = Math.min(arrowLen, maxArrowLen);
+                const dir = currentV>0 ? -1 : 1;
+                const startY = ballScreenY + (currentV>0 ? -ballRadius-4 : ballRadius+4);
+                const endY = startY + dir * clampedLen;
+                mainCtx.strokeStyle = currentV>0 ? '#e0533d' : '#3b7dd8'; mainCtx.lineWidth=3.5; mainCtx.lineCap='round';
+                mainCtx.beginPath(); mainCtx.moveTo(ballX, startY); mainCtx.lineTo(ballX, endY); mainCtx.stroke();
+                const headSize = Math.min(12, clampedLen*0.35);
+                mainCtx.fillStyle = mainCtx.strokeStyle;
+                mainCtx.beginPath(); mainCtx.moveTo(ballX, endY);
+                mainCtx.lineTo(ballX-headSize*0.7, endY-dir*headSize);
+                mainCtx.lineTo(ballX+headSize*0.7, endY-dir*headSize);
+                mainCtx.closePath(); mainCtx.fill();
+                mainCtx.fillStyle = mainCtx.strokeStyle;
+                mainCtx.font='bold 11px "PingFang SC","Microsoft YaHei",sans-serif'; mainCtx.textAlign='left';
+                mainCtx.fillText((currentV>0?'+':'')+currentV.toFixed(1)+' m/s', ballX+ballRadius+8, (startY+endY)/2+4);
+            }
+
+            if (ballInAir && trailPoints.length>1) {
+                for (let i=0; i<trailPoints.length; i++) {
+                    const tp = trailPoints[i];
+                    const alpha = 0.35 * (i / trailPoints.length);
+                    const ty = physToPixel(Math.min(tp.y, displayMaxH));
+                    if (ty>marginTop && ty<originY) {
+                        const r = ballRadius * 0.35 * (i / trailPoints.length);
+                        mainCtx.fillStyle = tp.isRising ? `rgba(220,80,50,${alpha})` : `rgba(55,110,190,${alpha})`;
+                        mainCtx.beginPath(); mainCtx.arc(trailX, ty, Math.max(1.5,r), 0, Math.PI*2); mainCtx.fill();
+                    }
+                }
+            }
+
+            mainCtx.fillStyle='#e0533d'; mainCtx.beginPath(); mainCtx.arc(originX+plotW-100, marginTop+10, 6, 0, Math.PI*2); mainCtx.fill();
+            mainCtx.fillStyle='#3d3427'; mainCtx.font='11px "PingFang SC","Microsoft YaHei",sans-serif'; mainCtx.textAlign='left';
+            mainCtx.fillText('上升阶段', originX+plotW-88, marginTop+14);
+            mainCtx.fillStyle='#3b7dd8'; mainCtx.beginPath(); mainCtx.arc(originX+plotW-100, marginTop+28, 6, 0, Math.PI*2); mainCtx.fill();
+            mainCtx.fillText('下降阶段', originX+plotW-88, marginTop+32);
+            mainCtx.fillStyle='#6b5d4f'; mainCtx.textAlign='center';
+            mainCtx.fillText('高度 h', originX-32, marginTop+plotH/2);
+            mainCtx.fillText('时间标记点 (间隔0.25s)', originX+plotW*0.35, originY+38);
+        }
+
+        function calcGridStep(maxH) {
+            if (maxH<=3) return 0.5; if (maxH<=8) return 1; if (maxH<=20) return 2; if (maxH<=50) return 5; return 10;
+        }
+
+        function drawChartHt() {
+            const dim = resizeChartCanvas(chartHtCanvas, chartHtCtx);
+            const W=dim.w, H=dim.h, ctx=chartHtCtx;
+            const mx=40, my=15, mr=20, mb=32;
+            const pw=W-mx-mr, ph=H-my-mb;
+            const ox=mx, oy=my+ph;
+            ctx.fillStyle='#fdfcfa'; ctx.fillRect(0,0,W,H);
+            ctx.strokeStyle='#e8e2d6'; ctx.lineWidth=0.5; ctx.setLineDash([3,5]);
+            for(let i=1;i<=4;i++){ ctx.beginPath(); ctx.moveTo(ox,oy-(ph/4)*i); ctx.lineTo(ox+pw,oy-(ph/4)*i); ctx.stroke(); }
+            for(let i=1;i<=4;i++){ ctx.beginPath(); ctx.moveTo(ox+(pw/4)*i,my); ctx.lineTo(ox+(pw/4)*i,oy); ctx.stroke(); }
+            ctx.setLineDash([]);
+            ctx.strokeStyle='#5c4a3a'; ctx.lineWidth=1.8;
+            ctx.beginPath(); ctx.moveTo(ox,my); ctx.lineTo(ox,oy); ctx.lineTo(ox+pw,oy); ctx.stroke();
+            ctx.fillStyle='#5c4a3a'; ctx.font='10px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.textAlign='center';
+            ctx.fillText('时间 t / s', ox+pw/2, oy+22);
+            ctx.save(); ctx.translate(ox-22, my+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('高度 h / m',0,0); ctx.restore();
+            const htMaxT=tTotal*1.08, htMaxH=hMax*1.12;
+            for(let i=0;i<=4;i++) ctx.fillText((htMaxT/4*i).toFixed(1), ox+(pw/4)*i, oy+16);
+            ctx.textAlign='right';
+            for(let i=0;i<=4;i++) ctx.fillText((htMaxH/4*i).toFixed(1), ox-5, oy-(ph/4)*i+4);
+            ctx.strokeStyle='#e07b3c'; ctx.lineWidth=2.2; ctx.beginPath();
+            let first=true;
+            for(let i=0;i<=200;i++){ const t=(htMaxT/200)*i; const h=Math.max(0,v0*t-0.5*g*t*t); const sx=ox+(t/htMaxT)*pw, sy=oy-(h/htMaxH)*ph; if(first){ctx.moveTo(sx,sy);first=false;} else ctx.lineTo(sx,sy); }
+            ctx.stroke();
+            let currentT=0;
+            if(simState===STATE.READY) currentT=0; else if(simState===STATE.LANDED) currentT=tTotal;
+            else if(simState===STATE.PAUSED) currentT=pausedTime; else currentT=simTime;
+            currentT=Math.min(currentT,tTotal);
+            const currentH=Math.max(0,v0*currentT-0.5*g*currentT*currentT);
+            const cx=ox+(currentT/htMaxT)*pw, cy=oy-(currentH/htMaxH)*ph;
+            if(currentT<=htMaxT && cx<=ox+pw+5){
+                ctx.fillStyle='#e0533d'; ctx.beginPath(); ctx.arc(cx,cy,6,0,Math.PI*2); ctx.fill();
+                ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+            }
+        }
+
+        function drawChartVt() {
+            const dim = resizeChartCanvas(chartVtCanvas, chartVtCtx);
+            const W=dim.w, H=dim.h, ctx=chartVtCtx;
+            const mx=40, my=15, mr=20, mb=32;
+            const pw=W-mx-mr, ph=H-my-mb;
+            const ox=mx, oy=my+ph/2;
+            ctx.fillStyle='#fdfcfa'; ctx.fillRect(0,0,W,H);
+            ctx.strokeStyle='#e8e2d6'; ctx.lineWidth=0.5; ctx.setLineDash([3,5]);
+            for(let i=-2;i<=2;i++){ const y=oy+(ph/4)*i; if(y>my&&y<my+ph){ ctx.beginPath(); ctx.moveTo(ox,y); ctx.lineTo(ox+pw,y); ctx.stroke(); } }
+            for(let i=1;i<=4;i++){ ctx.beginPath(); ctx.moveTo(ox+(pw/4)*i,my); ctx.lineTo(ox+(pw/4)*i,oy+ph/2); ctx.stroke(); }
+            ctx.setLineDash([]);
+            ctx.strokeStyle='#5c4a3a'; ctx.lineWidth=1.8;
+            ctx.beginPath(); ctx.moveTo(ox,my); ctx.lineTo(ox,oy+ph/2); ctx.lineTo(ox+pw,oy+ph/2); ctx.stroke();
+            ctx.strokeStyle='#999'; ctx.lineWidth=1.2; ctx.setLineDash([2,3]);
+            ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(ox+pw,oy); ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle='#5c4a3a'; ctx.font='10px "PingFang SC","Microsoft YaHei",sans-serif'; ctx.textAlign='center';
+            ctx.fillText('时间 t / s', ox+pw/2, oy+ph/2+22);
+            ctx.save(); ctx.translate(ox-22, my+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('速度 v / (m/s) ↑',0,0); ctx.restore();
+            const vtMaxT=tTotal*1.08, vtMaxV=v0*1.15;
+            for(let i=0;i<=4;i++) ctx.fillText((vtMaxT/4*i).toFixed(1), ox+(pw/4)*i, oy+ph/2+16);
+            ctx.textAlign='right';
+            for(let i=-2;i<=2;i++){ const vVal=(vtMaxV/2)*i; const y=oy-(vVal/vtMaxV)*ph; if(y>my-5&&y<my+ph+5) ctx.fillText(vVal.toFixed(0), ox-5, y+4); }
+            ctx.strokeStyle='#3b7dd8'; ctx.lineWidth=2.2; ctx.beginPath();
+            const vStartY=oy-(v0/vtMaxV)*ph;
+            const vEndY=oy-((-v0)/vtMaxV)*ph;
+            const vEndX=ox+(tTotal/vtMaxT)*pw;
+            ctx.moveTo(ox, vStartY);
+            ctx.lineTo(Math.min(vEndX, ox+pw), Math.max(my, Math.min(my+ph, vEndY)));
+            ctx.stroke();
+            let currentT=0;
+            if(simState===STATE.READY) currentT=0; else if(simState===STATE.LANDED) currentT=tTotal;
+            else if(simState===STATE.PAUSED) currentT=pausedTime; else currentT=simTime;
+            currentT=Math.min(currentT,tTotal);
+            const currentV=v0-g*currentT;
+            const cvx=ox+(currentT/vtMaxT)*pw;
+            const cvy=oy-(currentV/vtMaxV)*ph;
+            if(currentT<=vtMaxT && cvx<=ox+pw+5 && cvy>my-10 && cvy<my+ph+10){
+                ctx.fillStyle=currentV>=0?'#e0533d':'#3b7dd8';
+                ctx.beginPath(); ctx.arc(cvx,cvy,6,0,Math.PI*2); ctx.fill();
+                ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+            }
+        }
+
+        function updateDataPanel() {
+            let t, h, v;
+            if (simState===STATE.READY) { t=0; h=0; v=v0; }
+            else if (simState===STATE.LANDED) { t=tTotal; h=0; v=-v0; }
+            else if (simState===STATE.PAUSED) { t=pausedTime; h=Math.max(0,v0*t-0.5*g*t*t); v=v0-g*t; }
+            else { t=simTime; h=Math.max(0,v0*t-0.5*g*t*t); v=v0-g*t; }
+            const setVal = (el, val, unit, cls) => {
+                const span = el.querySelector('.data-value');
+                span.innerHTML = val + '<span class="data-unit">' + unit + '</span>';
+                span.className = 'data-value' + (cls ? ' '+cls : '');
+            };
+            setVal(dataTime, t.toFixed(3), ' s');
+            setVal(dataHeight, h.toFixed(2), ' m');
+            setVal(dataSpeed, (v>=0?'+':'')+v.toFixed(2), ' m/s', v>0.01?'rise-color':(v<-0.01?'fall-color':''));
+            setVal(dataAccel, '−g', '');
+            setVal(dataMaxH, hMax.toFixed(2), ' m');
+            setVal(dataTotalT, tTotal.toFixed(3), ' s');
+            statusBadge.textContent = getStateLabel();
+            statusBadge.className = 'status-badge ' + getStateClass();
+            badgeStatus.textContent = getBadgeText();
+        }
+
+        function getStateLabel() {
+            switch(simState){
+                case STATE.READY: return '准备就绪';
+                case STATE.RISING: return '⬆ 上升中';
+                case STATE.PEAK: return '⭐ 最高点';
+                case STATE.FALLING: return '⬇ 下降中';
+                case STATE.LANDED: return '✓ 已落地';
+                case STATE.PAUSED: return '⏸ 已暂停';
+            }
+        }
+        function getStateClass() {
+            switch(simState){
+                case STATE.READY: return 'status-ready';
+                case STATE.RISING: return 'status-rising';
+                case STATE.PEAK: return 'status-peak';
+                case STATE.FALLING: return 'status-falling';
+                case STATE.LANDED: return 'status-landed';
+                default: return 'status-ready';
+            }
+        }
+        function getBadgeText() {
+            switch(simState){
+                case STATE.READY: return '⏳ 准备发射';
+                case STATE.RISING: return '🔴 上升阶段';
+                case STATE.PEAK: return '⭐ 到达最高点！';
+                case STATE.FALLING: return '🔵 下降阶段';
+                case STATE.LANDED: return '✅ 已落地';
+                case STATE.PAUSED: return '⏸ 暂停中';
+            }
+        }
+
+        function updateSimState() {
+            if (simState===STATE.READY||simState===STATE.LANDED||simState===STATE.PAUSED) return;
+            if (simTime>=tTotal || (v0*simTime-0.5*g*simTime*simTime)<=-0.001) {
+                simTime=tTotal; simState=STATE.LANDED; trailPoints=[]; onLanded(); return;
+            }
+            const h=v0*simTime-0.5*g*simTime*simTime;
+            const v=v0-g*simTime;
+            if (h>=hMax-0.0005 && v<=0.001 && v>=-0.001 && simState===STATE.RISING) simState=STATE.PEAK;
+            else if (v<-0.001 && simState===STATE.PEAK) simState=STATE.FALLING;
+            else if (v>0.001 && simState===STATE.READY) simState=STATE.RISING;
+            trailPoints.push({ y:h, t:simTime, isRising:v>0.001 });
+            if (trailPoints.length > 60) trailPoints.shift();
+        }
+
+        function onLanded() {
+            trailPoints=[]; updateDataPanel(); drawAll();
+            btnPause.disabled=true; btnLaunch.disabled=false; btnLaunch.textContent='🔄 重新发射';
+        }
+
+        function animate(timestamp) {
+            if (!lastFrameTime) lastFrameTime=timestamp;
+            let dt = (timestamp-lastFrameTime)/1000;
+            if (dt<=0) dt=0.016; if (dt>0.2) dt=0.2;
+            lastFrameTime=timestamp;
+            if (simState===STATE.RISING||simState===STATE.FALLING||simState===STATE.PEAK) {
+                simTime += dt * timeScale;
+                updateSimState();
+            }
+            updateDataPanel(); drawAll();
+            if (simState===STATE.LANDED||simState===STATE.READY||simState===STATE.PAUSED) {
+                lastFrameTime=null; animId=null; return;
+            }
+            animId=requestAnimationFrame(animate);
+        }
+
+        function drawAll() { drawMainAnimation(); drawChartHt(); drawChartVt(); }
+
+        function startAnimation() {
+            if (animId) { cancelAnimationFrame(animId); animId=null; }
+            lastFrameTime=null;
+            if (simState===STATE.PAUSED) {
+                simTime=pausedTime;
+                const h=v0*simTime-0.5*g*simTime*simTime;
+                const v=v0-g*simTime;
+                if (h>=hMax-0.0005 && Math.abs(v)<0.01) simState=STATE.PEAK;
+                else if (v>0.001) simState=STATE.RISING;
+                else if (v<-0.001) simState=STATE.FALLING;
+                else if (simTime>=tTotal) simState=STATE.LANDED;
+            } else if (simState===STATE.READY||simState===STATE.LANDED) {
+                simTime=0; trailPoints=[]; simState=STATE.RISING;
+            }
+            btnPause.disabled=false; btnLaunch.disabled=true; btnLaunch.textContent='🚀 发射中...';
+            updateDataPanel(); drawAll();
+            animId=requestAnimationFrame(animate);
+        }
+
+        function pauseAnimation() {
+            if (simState===STATE.RISING||simState===STATE.FALLING||simState===STATE.PEAK) {
+                pausedTime=simTime; simState=STATE.PAUSED;
+                if (animId) { cancelAnimationFrame(animId); animId=null; }
+                lastFrameTime=null; btnPause.textContent='▶ 继 续'; btnLaunch.disabled=false; btnLaunch.textContent='🚀 发射';
+                updateDataPanel(); drawAll();
+            } else if (simState===STATE.PAUSED) {
+                simTime=pausedTime;
+                const h=v0*simTime-0.5*g*simTime*simTime;
+                const v=v0-g*simTime;
+                if (h>=hMax-0.0005 && Math.abs(v)<0.01) simState=STATE.PEAK;
+                else if (v>0.001) simState=STATE.RISING;
+                else if (v<-0.001) simState=STATE.FALLING;
+                else if (simTime>=tTotal) simState=STATE.LANDED;
+                btnPause.textContent='⏯️ 暂 停'; btnLaunch.disabled=true; btnLaunch.textContent='🚀 发射中...';
+                updateDataPanel(); drawAll(); lastFrameTime=null;
+                animId=requestAnimationFrame(animate);
+            }
+        }
+
+        function resetSimulation() {
+            if (animId) { cancelAnimationFrame(animId); animId=null; }
+            lastFrameTime=null; simState=STATE.READY; simTime=0; pausedTime=0; trailPoints=[];
+            btnPause.disabled=true; btnPause.textContent='⏯️ 暂 停'; btnLaunch.disabled=false; btnLaunch.textContent='🚀 发 射';
+            updateDerived(); updateDataPanel(); drawAll();
+        }
+
+        sliderV0.addEventListener('input', ()=>{
+            v0=parseFloat(sliderV0.value); valV0.textContent=v0.toFixed(1)+' m/s';
+            updateDerived(); if(simState===STATE.READY||simState===STATE.LANDED) resetSimulation();
+        });
+        sliderG.addEventListener('input', ()=>{
+            g=parseFloat(sliderG.value); valG.textContent=g.toFixed(1)+' m/s²';
+            updateDerived(); if(simState===STATE.READY||simState===STATE.LANDED) resetSimulation();
+        });
+        sliderTS.addEventListener('input', ()=>{ timeScale=parseFloat(sliderTS.value); valTS.textContent=timeScale.toFixed(1)+'×'; });
+        btnLaunch.addEventListener('click', ()=>{
+            if(simState===STATE.LANDED||simState===STATE.READY||simState===STATE.PAUSED){
+                resetSimulation(); setTimeout(()=>{ if(simState===STATE.READY) startAnimation(); },80);
+            }
+        });
+        btnPause.addEventListener('click', pauseAnimation);
+        btnReset.addEventListener('click', resetSimulation);
+        document.addEventListener('keydown', (e)=>{
+            if(e.target.tagName==='INPUT') return;
+            if(e.key===' '){ e.preventDefault(); if(simState===STATE.READY||simState===STATE.LANDED){resetSimulation();setTimeout(()=>{if(simState===STATE.READY)startAnimation();},80);} else if(simState!==STATE.READY) pauseAnimation(); }
+            else if(e.key.toLowerCase()==='r'){ e.preventDefault(); resetSimulation(); }
+            else if(e.key.toLowerCase()==='p'){ e.preventDefault(); if(simState===STATE.RISING||simState===STATE.FALLING||simState===STATE.PEAK||simState===STATE.PAUSED) pauseAnimation(); }
+        });
+        window.addEventListener('resize', ()=>{ drawAll(); });
+        updateDerived();
+        setTimeout(()=>{ drawAll(); },150);
+    })();
+</script>
+</body>
+</html>

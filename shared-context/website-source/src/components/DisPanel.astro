@@ -1,0 +1,1338 @@
+---
+const experimentModes = ['力传感器', '距离传感器', '单头光电门', '双头光电门', '两单头光电门', '两双头光电门'];
+---
+
+<section class="section-band bg-white">
+  <div class="page-shell">
+    <div class="mb-8 max-w-3xl">
+      <p class="eyebrow">WEB DIS</p>
+      <h1 class="mt-3 text-3xl font-black text-ink sm:text-4xl">网页版 DIS</h1>
+      <p class="mt-4 leading-8 text-slate-700">
+        支持通过 ESP32 BLE 接收力、距离和光电门数据，并实时记录实验结果。光电门测速原理可参考
+        <a href="/photogate-comparison/" class="font-bold text-yucai-700 underline underline-offset-2">单头与双头光电门对比</a>。
+      </p>
+    </div>
+
+    <div class="tool-surface overflow-hidden">
+      <div class="grid border-b border-slate-200 bg-white lg:grid-cols-[1fr_360px]">
+        <div class="p-5">
+          <div id="photogate-charts-row" class="mb-0 flex w-full min-w-0 flex-col gap-4">
+            <div class="min-w-0">
+              <p id="photogate-speed-caption" class="mb-2 hidden text-xs font-bold text-slate-600">速度 / m/s</p>
+              <canvas id="dis-chart" class="h-[420px] w-full rounded-md bg-slate-950" aria-label="DIS 实时实验曲线" />
+            </div>
+            <div id="photogate-time-chart-block" class="min-w-0 hidden">
+              <p id="photogate-time-caption" class="mb-2 text-xs font-bold text-slate-600">时间</p>
+              <canvas id="photogate-time-chart" class="h-[220px] w-full rounded-md bg-slate-950" aria-label="光电门挡光时间或双门时间差图" />
+            </div>
+          </div>
+          <div id="photogate-event-panel" class="mt-4 hidden rounded-md border border-slate-200 bg-white">
+            <div class="border-b border-slate-200 px-4 py-3">
+              <h2 id="photogate-event-title" class="text-sm font-bold text-ink">双头光电门测量记录</h2>
+            </div>
+            <div class="max-h-56 overflow-auto">
+              <table class="w-full text-left text-sm">
+                <thead class="sticky top-0 bg-slate-100 text-xs font-bold text-slate-600">
+                  <tr id="photogate-table-head">
+                    <th class="px-4 py-3">序号</th>
+                    <th class="px-4 py-3">在线时间</th>
+                    <th class="px-4 py-3">设备时间 / s</th>
+                    <th class="px-4 py-3">速度 / m/s</th>
+                  </tr>
+                </thead>
+                <tbody id="photogate-table-body" class="divide-y divide-slate-100 text-slate-700">
+                  <tr>
+                    <td class="px-4 py-4 text-slate-500" colspan="4">等待光电门触发</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <aside class="border-t border-slate-200 p-6 lg:border-l lg:border-t-0">
+          <label for="experiment-mode" class="block text-sm font-bold text-ink">实验模式</label>
+          <select id="experiment-mode" class="focus-ring mt-3 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm">
+            {experimentModes.map((mode) => <option selected={mode === '距离传感器'}>{mode}</option>)}
+          </select>
+
+          <div id="ble-name-prefix-row" class="mt-4 hidden">
+            <label for="ble-name-prefix" class="block text-sm font-bold text-ink">蓝牙名称前缀</label>
+            <input
+              id="ble-name-prefix"
+              class="focus-ring mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              value="ESP32-dis"
+              autocomplete="off"
+            />
+          </div>
+
+          <div id="obstacle-width-row" class="mt-4 hidden">
+            <label for="obstacle-width-cm" class="block text-sm font-bold text-ink">遮光物宽度 / cm</label>
+            <input
+              id="obstacle-width-cm"
+              class="focus-ring mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
+              type="number"
+              value="1.00"
+              min="0.01"
+              step="0.01"
+              inputmode="decimal"
+            />
+          </div>
+
+          <div class="mt-6 grid grid-cols-[minmax(0,1fr)_7.5rem_minmax(0,0.9fr)] gap-2">
+            <div class="h-24 min-w-0 rounded-md bg-yucai-50 px-3 py-3">
+              <p id="current-value-label" class="text-xs font-bold text-slate-500">位移</p>
+              <p id="current-value" class="mt-2 overflow-hidden whitespace-nowrap font-mono tabular-nums text-[15px] font-black leading-7 text-yucai-800">0.00 cm</p>
+            </div>
+            <div class="h-24 min-w-0 rounded-md bg-slate-100 px-3 py-3">
+              <p id="current-time-label" class="text-xs font-bold text-slate-500">时间</p>
+              <p id="current-time" class="mt-2 overflow-hidden whitespace-nowrap font-mono tabular-nums text-[15px] font-black leading-7 text-ink">0.000 s</p>
+            </div>
+            <div class="h-24 min-w-0 rounded-md bg-slate-100 px-3 py-3">
+              <p class="text-xs font-bold text-slate-500">数据点</p>
+              <p id="sample-count" class="mt-2 overflow-hidden whitespace-nowrap font-mono tabular-nums text-[15px] font-black leading-7 text-ink">0</p>
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-3">
+            <div class="grid grid-cols-2 gap-3">
+              <button id="ble-connect-prefix" class="focus-ring h-11 rounded-md bg-yucai-700 px-3 text-sm font-bold text-white transition hover:bg-yucai-800">
+                按名称连接
+              </button>
+              <button id="ble-connect-all" class="focus-ring h-11 rounded-md border border-yucai-600 px-3 text-sm font-bold text-yucai-700 transition hover:bg-yucai-50">
+                搜索所有蓝牙
+              </button>
+            </div>
+            <button id="toggle-stream" class="focus-ring h-11 rounded-md bg-signal px-4 text-sm font-bold text-ink transition hover:bg-[#e49412]">
+              暂停采集
+            </button>
+            <button id="clear-data" class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+              清空数据
+            </button>
+            <button id="export-csv" class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+              导出 CSV
+            </button>
+            <button id="export-screenshot" class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+              导出截图
+            </button>
+          </div>
+
+          <p id="ble-status" class="mt-6 text-sm font-bold text-yucai-800">请连接蓝牙设备，当前模式将使用真实 BLE 数据</p>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.querySelector<HTMLCanvasElement>('#dis-chart');
+    const photogateTimeChart = document.querySelector<HTMLCanvasElement>('#photogate-time-chart');
+    const photogateChartsRow = document.querySelector<HTMLDivElement>('#photogate-charts-row');
+    const photogateTimeChartBlock = document.querySelector<HTMLDivElement>('#photogate-time-chart-block');
+    const photogateSpeedCaption = document.querySelector<HTMLParagraphElement>('#photogate-speed-caption');
+    const photogateTimeCaption = document.querySelector<HTMLParagraphElement>('#photogate-time-caption');
+    const photogateEventPanel = document.querySelector<HTMLDivElement>('#photogate-event-panel');
+    const photogateEventTitle = document.querySelector<HTMLHeadingElement>('#photogate-event-title');
+    const photogateTableHead = document.querySelector<HTMLTableRowElement>('#photogate-table-head');
+    const photogateTableBody = document.querySelector<HTMLTableSectionElement>('#photogate-table-body');
+    const modeSelect = document.querySelector<HTMLSelectElement>('#experiment-mode');
+    const bleNamePrefixRow = document.querySelector<HTMLDivElement>('#ble-name-prefix-row');
+    const bleNamePrefixInput = document.querySelector<HTMLInputElement>('#ble-name-prefix');
+    const obstacleWidthRow = document.querySelector<HTMLDivElement>('#obstacle-width-row');
+    const obstacleWidthInput = document.querySelector<HTMLInputElement>('#obstacle-width-cm');
+    const currentValueLabel = document.querySelector<HTMLParagraphElement>('#current-value-label');
+    const currentTimeLabel = document.querySelector<HTMLParagraphElement>('#current-time-label');
+    const valueLabel = document.querySelector<HTMLParagraphElement>('#current-value');
+    const timeLabel = document.querySelector<HTMLParagraphElement>('#current-time');
+    const countLabel = document.querySelector<HTMLParagraphElement>('#sample-count');
+    const statusLabel = document.querySelector<HTMLParagraphElement>('#ble-status');
+    const connectPrefixButton = document.querySelector<HTMLButtonElement>('#ble-connect-prefix');
+    const connectAllButton = document.querySelector<HTMLButtonElement>('#ble-connect-all');
+    const toggleButton = document.querySelector<HTMLButtonElement>('#toggle-stream');
+    const clearButton = document.querySelector<HTMLButtonElement>('#clear-data');
+    const exportButton = document.querySelector<HTMLButtonElement>('#export-csv');
+    const screenshotButton = document.querySelector<HTMLButtonElement>('#export-screenshot');
+
+    type Sample = {
+      index: number;
+      time: number;
+      deviceTime: number;
+      onlineTimeMs: number | null;
+      value: number;
+      blockTime?: number;
+      timeInterval?: number;
+      obstacleWidthCm?: number;
+      gateId?: number;
+      gateDelta?: number;
+    };
+    type ExperimentMode = '力传感器' | '距离传感器' | '单头光电门' | '双头光电门' | '两单头光电门' | '两双头光电门';
+    type BluetoothRequestFilter = {
+      name?: string;
+      namePrefix?: string;
+      services?: string[];
+    };
+    type BluetoothRequestOptions = {
+      filters?: BluetoothRequestFilter[];
+      acceptAllDevices?: boolean;
+      optionalServices?: string[];
+    };
+    type BluetoothRemoteGATTCharacteristicLike = EventTarget & {
+      startNotifications: () => Promise<BluetoothRemoteGATTCharacteristicLike>;
+      value?: DataView;
+    };
+    type BluetoothRemoteGATTServiceLike = {
+      getCharacteristic: (characteristicUuid: string) => Promise<BluetoothRemoteGATTCharacteristicLike>;
+    };
+    type BluetoothRemoteGATTServerLike = {
+      connected?: boolean;
+      disconnect: () => void;
+      getPrimaryService: (serviceUuid: string) => Promise<BluetoothRemoteGATTServiceLike>;
+    };
+    type BluetoothDeviceLike = {
+      name?: string;
+      gatt?: BluetoothRemoteGATTServerLike & { connect: () => Promise<BluetoothRemoteGATTServerLike> };
+    };
+    type BluetoothLike = {
+      requestDevice: (options: BluetoothRequestOptions) => Promise<BluetoothDeviceLike>;
+    };
+    type BlePacketFormat = 'value-time' | 'gate-speed-block-time' | 'gate-speed-delta-time';
+    type BleSample = {
+      byteLength: number;
+      value: number;
+      time: number;
+      blockTime?: number;
+      gateId?: number;
+      gateDelta?: number;
+    };
+    type DisModeConfig = {
+      mode: ExperimentMode;
+      bleSupported: boolean;
+      valueLabel: string;
+      valueUnit: string;
+      valuePrecision: number;
+      csvValueHeader: string;
+      csvFileName: string;
+      chartYAxis: string;
+      waitingText: string;
+      idleStatus: string;
+      receivingStatus: string;
+      defaultDeviceNamePrefix?: string;
+      deviceKind?: string;
+      timeReadoutLabel?: string;
+      eventView?: boolean;
+      eventTitle?: string;
+      eventEmptyText?: string;
+      requiresObstacleWidth?: boolean;
+      packetFormat: BlePacketFormat;
+    };
+
+    const samples: Sample[] = [];
+    let running = true;
+    const phyphoxExperimentServiceUuid = 'cddf0001-30f7-4671-8b43-5e40ba53514a';
+    const phyphoxDataServiceUuid = 'cddf1001-30f7-4671-8b43-5e40ba53514a';
+    const phyphoxDataCharacteristicUuid = 'cddf1002-30f7-4671-8b43-5e40ba53514a';
+    const phyphoxServiceUuids = [phyphoxExperimentServiceUuid, phyphoxDataServiceUuid];
+    const maxSamples = 800;
+    const disModeStorageKey = 'yucai-dis-selected-mode';
+    let bleDataCharacteristic: BluetoothRemoteGATTCharacteristicLike | null = null;
+    let selectedBleDevice: BluetoothDeviceLike | null = null;
+    let bleDeviceName = '';
+    let bleTimeOffset: number | null = null;
+    let onlineTimeOffsetMs: number | null = null;
+    let onlineTimeSource: 'server' | 'local' = 'local';
+    let sampleSequence = 0;
+    let activeModeConfig: DisModeConfig;
+
+    const disModeConfigs: Record<ExperimentMode, DisModeConfig> = {
+      力传感器: {
+        mode: '力传感器',
+        bleSupported: true,
+        valueLabel: '力',
+        valueUnit: 'N',
+        valuePrecision: 3,
+        csvValueHeader: 'force_N',
+        csvFileName: 'web-dis-force-data.csv',
+        chartYAxis: '力 / N',
+        waitingText: '等待 ESP32-force 力传感器数据',
+        idleStatus: '请连接 ESP32-force01 等力传感器蓝牙设备，力传感器将使用真实 BLE 数据',
+        receivingStatus: '正在接收真实力数据',
+        defaultDeviceNamePrefix: 'ESP32-force',
+        deviceKind: '力传感器',
+        packetFormat: 'value-time'
+      },
+      距离传感器: {
+        mode: '距离传感器',
+        bleSupported: true,
+        valueLabel: '位移',
+        valueUnit: 'cm',
+        valuePrecision: 2,
+        csvValueHeader: 'displacement_cm',
+        csvFileName: 'web-dis-distance-data.csv',
+        chartYAxis: '位移 / cm',
+        waitingText: '等待 ESP32-dis 距离传感器数据',
+        idleStatus: '请连接 ESP32-dis01 等距离传感器蓝牙设备，距离传感器将使用真实 BLE 数据',
+        receivingStatus: '正在接收真实距离数据',
+        defaultDeviceNamePrefix: 'ESP32-dis',
+        deviceKind: '距离传感器',
+        packetFormat: 'value-time'
+      },
+      单头光电门: {
+        mode: '单头光电门',
+        bleSupported: true,
+        valueLabel: '速度',
+        valueUnit: 'm/s',
+        valuePrecision: 4,
+        csvValueHeader: 'block_time_s',
+        csvFileName: 'web-dis-single-photogate-data.csv',
+        chartYAxis: '速度 / m/s',
+        waitingText: '等待 ESP32-sgate 单头光电门遮光时间数据',
+        idleStatus: '请连接 ESP32-sgate01 等单头光电门蓝牙设备，单头光电门将使用真实 BLE 数据',
+        receivingStatus: '正在接收真实单头光电门数据',
+        defaultDeviceNamePrefix: 'ESP32-sgate',
+        deviceKind: '光电门',
+        timeReadoutLabel: '在线时间',
+        eventView: true,
+        eventTitle: '单头光电门测量记录',
+        eventEmptyText: '等待单头光电门触发',
+        requiresObstacleWidth: true,
+        packetFormat: 'value-time'
+      },
+      双头光电门: {
+        mode: '双头光电门',
+        bleSupported: true,
+        valueLabel: '速度',
+        valueUnit: 'm/s',
+        valuePrecision: 4,
+        csvValueHeader: 'speed_m_per_s',
+        csvFileName: 'web-dis-double-photogate-data.csv',
+        chartYAxis: '速度 / m/s',
+        waitingText: '等待 ESP32-gate 光电门速度数据',
+        idleStatus: '请连接 ESP32-gate01 等光电门蓝牙设备，双头光电门将使用真实 BLE 数据',
+        receivingStatus: '正在接收真实双头光电门数据',
+        defaultDeviceNamePrefix: 'ESP32-gate',
+        deviceKind: '光电门',
+        timeReadoutLabel: '在线时间',
+        eventView: true,
+        eventTitle: '双头光电门测量记录',
+        eventEmptyText: '等待双头光电门触发',
+        packetFormat: 'value-time'
+      },
+      两单头光电门: {
+        mode: '两单头光电门',
+        bleSupported: true,
+        valueLabel: '速度',
+        valueUnit: 'm/s',
+        valuePrecision: 4,
+        csvValueHeader: 'speed_m_per_s',
+        csvFileName: 'web-dis-two-single-photogates-data.csv',
+        chartYAxis: '速度 / m/s',
+        waitingText: '等待 ESP32-2sgate 两单头光电门数据',
+        idleStatus: '请连接 ESP32-2sgate01 等两单头光电门蓝牙设备，网页将读取光电门编号、速度、挡光时间和设备时间',
+        receivingStatus: '正在接收真实两单头光电门数据',
+        defaultDeviceNamePrefix: 'ESP32-2sgate',
+        deviceKind: '两单头光电门',
+        timeReadoutLabel: '在线时间',
+        eventView: true,
+        eventTitle: '两单头光电门测量记录',
+        eventEmptyText: '等待两单头光电门触发',
+        packetFormat: 'gate-speed-block-time'
+      },
+      两双头光电门: {
+        mode: '两双头光电门',
+        bleSupported: true,
+        valueLabel: '速度',
+        valueUnit: 'm/s',
+        valuePrecision: 4,
+        csvValueHeader: 'speed_m_per_s',
+        csvFileName: 'web-dis-two-double-photogates-data.csv',
+        chartYAxis: '速度 / m/s',
+        waitingText: '等待 ESP32-2gate 两双头光电门数据',
+        idleStatus: '请连接 ESP32-2gate01 等两双头光电门蓝牙设备，网页将读取光电门编号、速度、双门时间差和设备时间',
+        receivingStatus: '正在接收真实两双头光电门数据',
+        defaultDeviceNamePrefix: 'ESP32-2gate',
+        deviceKind: '两双头光电门',
+        timeReadoutLabel: '在线时间',
+        eventView: true,
+        eventTitle: '两双头光电门测量记录',
+        eventEmptyText: '等待两双头光电门触发',
+        packetFormat: 'gate-speed-delta-time'
+      }
+    };
+
+    activeModeConfig = disModeConfigs.距离传感器;
+
+    const getCurrentModeConfig = () => {
+      const mode = modeSelect?.value as ExperimentMode | undefined;
+      if (mode && mode in disModeConfigs) return disModeConfigs[mode];
+      return disModeConfigs.距离传感器;
+    };
+
+    const isExperimentMode = (mode: string | null): mode is ExperimentMode =>
+      mode !== null && mode in disModeConfigs;
+
+    const restoreSelectedMode = () => {
+      try {
+        const storedMode = sessionStorage.getItem(disModeStorageKey);
+        if (modeSelect && isExperimentMode(storedMode)) {
+          modeSelect.value = storedMode;
+        }
+      } catch (error) {
+        console.warn('[Web DIS] 无法读取保存的实验模式', error);
+      }
+    };
+
+    const saveSelectedMode = (mode: ExperimentMode) => {
+      try {
+        sessionStorage.setItem(disModeStorageKey, mode);
+      } catch (error) {
+        console.warn('[Web DIS] 无法保存实验模式', error);
+      }
+    };
+
+    const formatSampleValue = (value: number, modeConfig = activeModeConfig) =>
+      `${value.toFixed(modeConfig.valuePrecision)} ${modeConfig.valueUnit}`;
+
+    const getCurrentDeviceNamePrefix = (modeConfig = activeModeConfig) =>
+      bleNamePrefixInput?.value.trim() || modeConfig.defaultDeviceNamePrefix || '';
+
+    const isPhotogateEventMode = (modeConfig = activeModeConfig) => modeConfig.eventView === true;
+    const isSinglePhotogateMode = (modeConfig = activeModeConfig) => modeConfig.mode === '单头光电门';
+    const isTwoSinglePhotogateMode = (modeConfig = activeModeConfig) => modeConfig.mode === '两单头光电门';
+    const isTwoDoublePhotogateMode = (modeConfig = activeModeConfig) => modeConfig.mode === '两双头光电门';
+    const isFourGatePhotogateMode = (modeConfig = activeModeConfig) =>
+      isTwoSinglePhotogateMode(modeConfig) || isTwoDoublePhotogateMode(modeConfig);
+    const hasGateIdColumn = (modeConfig = activeModeConfig) =>
+      isTwoSinglePhotogateMode(modeConfig) || isTwoDoublePhotogateMode(modeConfig);
+    const hasBlockTimeColumn = (modeConfig = activeModeConfig) =>
+      isSinglePhotogateMode(modeConfig) || isTwoSinglePhotogateMode(modeConfig);
+    const hasGateDeltaColumn = (modeConfig = activeModeConfig) => isTwoDoublePhotogateMode(modeConfig);
+    const getPhotogateTimeChartLabel = (modeConfig = activeModeConfig) => {
+      if (isTwoSinglePhotogateMode(modeConfig)) return '挡光时间';
+      if (isSinglePhotogateMode(modeConfig)) return '遮光时间';
+      return '双门时间差';
+    };
+    const getBlockTimeTableHeader = (modeConfig = activeModeConfig) =>
+      isTwoSinglePhotogateMode(modeConfig) ? '挡光时间 / s' : '遮光时间 / s';
+
+    const getObstacleWidthCm = () => {
+      const width = Number.parseFloat(obstacleWidthInput?.value || '');
+      return Number.isFinite(width) && width > 0 ? width : 1;
+    };
+
+    const calculateSinglePhotogateSpeed = (blockTime: number, widthCm = getObstacleWidthCm()) => {
+      if (!Number.isFinite(blockTime) || blockTime <= 0) return 0;
+      return widthCm / 100 / blockTime;
+    };
+
+    const calculatePhotogateTimeInterval = (
+      sample: BleSample,
+      measuredValue: number,
+      blockTime: number | undefined,
+      modeConfig = activeModeConfig
+    ) => {
+      if (hasBlockTimeColumn(modeConfig)) {
+        return blockTime && Number.isFinite(blockTime) && blockTime > 0 ? blockTime : null;
+      }
+
+      if (isTwoDoublePhotogateMode(modeConfig)) {
+        return sample.gateDelta && Number.isFinite(sample.gateDelta) && sample.gateDelta > 0 ? sample.gateDelta : null;
+      }
+
+      if (Number.isFinite(measuredValue) && measuredValue > 0) {
+        return 0.01 / measuredValue;
+      }
+
+      return null;
+    };
+
+    const padNumber = (value: number, size = 2) => String(value).padStart(size, '0');
+
+    const formatOnlineTimestamp = (timeMs: number | null) => {
+      if (timeMs === null || !Number.isFinite(timeMs)) return '未校准';
+      const date = new Date(timeMs);
+      return [
+        `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`,
+        `${padNumber(date.getHours())}:${padNumber(date.getMinutes())}:${padNumber(date.getSeconds())}.${padNumber(date.getMilliseconds(), 3)}`
+      ].join(' ');
+    };
+
+    const formatOnlineClock = (timeMs: number | null) => {
+      if (timeMs === null || !Number.isFinite(timeMs)) return '未触发';
+      const date = new Date(timeMs);
+      return `${padNumber(date.getHours())}:${padNumber(date.getMinutes())}:${padNumber(date.getSeconds())}`;
+    };
+
+    const escapeCsvValue = (value: string) => `"${value.replaceAll('"', '""')}"`;
+
+    const getOnlineTimeNowMs = () => Date.now() + (onlineTimeOffsetMs ?? 0);
+
+    const calibrateOnlineTime = async () => {
+      try {
+        const startedAt = Date.now();
+        const response = await fetch(window.location.href, {
+          method: 'HEAD',
+          cache: 'no-store'
+        });
+        const endedAt = Date.now();
+        const serverDateHeader = response.headers.get('date');
+        const serverTimeMs = serverDateHeader ? Date.parse(serverDateHeader) : NaN;
+
+        if (!response.ok || !Number.isFinite(serverTimeMs)) {
+          throw new Error('服务器 Date 响应头不可用');
+        }
+
+        const estimatedServerNowMs = serverTimeMs + (endedAt - startedAt) / 2;
+        onlineTimeOffsetMs = estimatedServerNowMs - endedAt;
+        onlineTimeSource = 'server';
+        return true;
+      } catch (error) {
+        console.warn('[Web DIS] 在线时间校准失败，改用浏览器本机时间', error);
+        onlineTimeOffsetMs = 0;
+        onlineTimeSource = 'local';
+        return false;
+      }
+    };
+
+    const disChartSizeClasses = {
+      normal: 'h-[420px] w-full rounded-md bg-slate-950',
+      photogate: 'h-[300px] w-full rounded-md bg-slate-950',
+      fourGate: 'h-[240px] w-full rounded-md bg-slate-950'
+    };
+    const timeChartSizeClasses = {
+      photogate: 'h-[220px] w-full rounded-md bg-slate-950',
+      fourGate: 'h-[240px] w-full rounded-md bg-slate-950'
+    };
+
+    const updateMeasurementSurface = (modeConfig = activeModeConfig) => {
+      const eventMode = isPhotogateEventMode(modeConfig);
+      const fourGate = isFourGatePhotogateMode(modeConfig);
+      if (photogateEventPanel) photogateEventPanel.classList.toggle('hidden', !eventMode);
+      if (obstacleWidthRow) obstacleWidthRow.classList.toggle('hidden', !modeConfig.requiresObstacleWidth);
+      if (photogateEventTitle) photogateEventTitle.textContent = modeConfig.eventTitle || '光电门测量记录';
+
+      if (photogateTimeChartBlock) photogateTimeChartBlock.classList.toggle('hidden', !eventMode);
+      if (photogateChartsRow) {
+        photogateChartsRow.classList.toggle('gap-6', fourGate && eventMode);
+        photogateChartsRow.classList.toggle('gap-4', !(fourGate && eventMode));
+      }
+      if (photogateSpeedCaption) {
+        if (fourGate && eventMode) {
+          photogateSpeedCaption.classList.remove('hidden');
+          photogateSpeedCaption.textContent = '速度 / m/s';
+        } else {
+          photogateSpeedCaption.classList.add('hidden');
+        }
+      }
+      if (photogateTimeCaption) {
+        if (fourGate && eventMode) {
+          photogateTimeCaption.classList.remove('hidden');
+          photogateTimeCaption.textContent = hasGateDeltaColumn(modeConfig) ? '双门时间差 / s' : '挡光时间 / s';
+        } else {
+          photogateTimeCaption.classList.add('hidden');
+        }
+      }
+
+      if (canvas) {
+        if (!eventMode) canvas.className = disChartSizeClasses.normal;
+        else if (fourGate) canvas.className = disChartSizeClasses.fourGate;
+        else canvas.className = disChartSizeClasses.photogate;
+      }
+      if (photogateTimeChart && eventMode) {
+        photogateTimeChart.className = fourGate ? timeChartSizeClasses.fourGate : timeChartSizeClasses.photogate;
+      }
+      resizeCanvas();
+      resizePhotogateTimeCanvas();
+    };
+
+    const syncModeDisplay = (modeConfig = getCurrentModeConfig(), updateStatus = false, resetDevicePrefix = false) => {
+      activeModeConfig = modeConfig;
+      if (bleNamePrefixInput && modeConfig.defaultDeviceNamePrefix && resetDevicePrefix) {
+        bleNamePrefixInput.value = modeConfig.defaultDeviceNamePrefix;
+      }
+      const deviceNamePrefix = getCurrentDeviceNamePrefix(modeConfig);
+      if (currentValueLabel) currentValueLabel.textContent = modeConfig.valueLabel;
+      if (currentTimeLabel) currentTimeLabel.textContent = modeConfig.timeReadoutLabel || '时间';
+      if (bleNamePrefixRow) bleNamePrefixRow.classList.toggle('hidden', !modeConfig.defaultDeviceNamePrefix);
+      if (bleNamePrefixInput && modeConfig.defaultDeviceNamePrefix && !bleNamePrefixInput.value.trim()) {
+        bleNamePrefixInput.value = modeConfig.defaultDeviceNamePrefix;
+      }
+      if (connectPrefixButton) connectPrefixButton.textContent = deviceNamePrefix ? `连接${deviceNamePrefix}` : '按名称连接';
+      if (connectAllButton) connectAllButton.textContent = '搜索所有蓝牙';
+      if (statusLabel && updateStatus) {
+        statusLabel.textContent = bleDeviceName
+          ? `已连接 ${bleDeviceName}，${modeConfig.receivingStatus}`
+          : modeConfig.idleStatus;
+      }
+      updateMeasurementSurface(modeConfig);
+      updateReadouts(modeConfig);
+      renderPhotogateTable();
+      draw();
+    };
+
+    const requestAllDisBluetoothDevices = (bluetooth: BluetoothLike) =>
+      bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: phyphoxServiceUuids
+      });
+
+    const requestDisBluetoothDevice = async (bluetooth: BluetoothLike, modeConfig: DisModeConfig) => {
+      const deviceNamePrefix = getCurrentDeviceNamePrefix(modeConfig);
+      if (deviceNamePrefix) {
+        return bluetooth.requestDevice({
+          filters: [{ namePrefix: deviceNamePrefix }],
+          optionalServices: [phyphoxDataServiceUuid]
+        });
+      }
+
+      try {
+        return await bluetooth.requestDevice({
+          filters: [{ services: [phyphoxExperimentServiceUuid] }],
+          optionalServices: [phyphoxDataServiceUuid]
+        });
+      } catch {
+        return bluetooth.requestDevice({
+          acceptAllDevices: true,
+          optionalServices: phyphoxServiceUuids
+        });
+      }
+    };
+
+    const disconnectCurrentBleDevice = () => {
+      if (bleDataCharacteristic) {
+        bleDataCharacteristic.removeEventListener('characteristicvaluechanged', handleBleNotification);
+        bleDataCharacteristic = null;
+      }
+
+      if (selectedBleDevice?.gatt?.connected) {
+        selectedBleDevice.gatt.disconnect();
+      }
+
+      selectedBleDevice = null;
+      bleDeviceName = '';
+    };
+
+    const connectWithRequest = async (
+      requestDevice: (bluetooth: BluetoothLike, modeConfig: DisModeConfig) => Promise<BluetoothDeviceLike>,
+      searchLabel: string
+    ) => {
+      const bluetoothNavigator = navigator as Navigator & {
+        bluetooth?: BluetoothLike;
+      };
+
+      if (!bluetoothNavigator.bluetooth) {
+        if (statusLabel) statusLabel.textContent = `当前浏览器不支持 Web Bluetooth，无法接收真实${activeModeConfig.valueLabel}数据`;
+        return;
+      }
+
+      try {
+        const currentModeConfig = getCurrentModeConfig();
+        syncModeDisplay(currentModeConfig);
+        if (!currentModeConfig.bleSupported) {
+          if (statusLabel) statusLabel.textContent = currentModeConfig.idleStatus;
+          return;
+        }
+
+        disconnectCurrentBleDevice();
+        if (statusLabel) statusLabel.textContent = searchLabel;
+        const device = await requestDevice(bluetoothNavigator.bluetooth, currentModeConfig);
+        const deviceName = device.name?.trim() || '未命名设备';
+
+        if (statusLabel) {
+          statusLabel.textContent = `已选择蓝牙设备：${deviceName}，正在连接 GATT...`;
+        }
+        await connectBleDataProbe(device, deviceName);
+
+        let onlineTimeStatus = '';
+        if (isPhotogateEventMode(currentModeConfig)) {
+          if (statusLabel) statusLabel.textContent = `已连接 ${deviceName}，正在校准在线时间...`;
+          const calibrated = await calibrateOnlineTime();
+          onlineTimeStatus = calibrated ? '在线时间已校准' : '在线时间校准失败，暂用本机时间';
+        }
+
+        samples.length = 0;
+        bleTimeOffset = null;
+        sampleSequence = 0;
+        updateReadouts();
+        renderPhotogateTable();
+        draw();
+        if (statusLabel) {
+          const timeNote = isPhotogateEventMode(currentModeConfig)
+            ? `，${onlineTimeStatus || (onlineTimeSource === 'server' ? '在线时间已校准' : '在线时间校准失败，使用本机时间')}`
+            : '';
+          statusLabel.textContent = `已连接 ${deviceName}，等待真实${currentModeConfig.valueLabel}数据${timeNote}`;
+        }
+      } catch (error) {
+        console.error('[Web DIS] 蓝牙连接或订阅失败', error);
+        if (error instanceof DOMException && error.name === 'NotFoundError') {
+          if (statusLabel) statusLabel.textContent = `未选择蓝牙设备，无法接收真实${activeModeConfig.valueLabel}数据`;
+          return;
+        }
+        if (statusLabel) statusLabel.textContent = `蓝牙连接或订阅失败，无法接收真实${activeModeConfig.valueLabel}数据`;
+      }
+    };
+
+    const parsePhyphoxDataPacket = (value: DataView, modeConfig = activeModeConfig): BleSample | null => {
+      if (modeConfig.packetFormat === 'gate-speed-block-time') {
+        if (value.byteLength < 16) return null;
+        const gateId = value.getFloat32(0, true);
+        const speed = value.getFloat32(4, true);
+        const blockTime = value.getFloat32(8, true);
+        const time = value.getFloat32(12, true);
+        if (!Number.isFinite(gateId) || !Number.isFinite(speed) || !Number.isFinite(blockTime) || !Number.isFinite(time)) return null;
+
+        return {
+          byteLength: value.byteLength,
+          value: speed,
+          gateId: Math.round(gateId),
+          blockTime,
+          time
+        };
+      }
+
+      if (modeConfig.packetFormat === 'gate-speed-delta-time') {
+        if (value.byteLength < 16) return null;
+        const gateId = value.getFloat32(0, true);
+        const speed = value.getFloat32(4, true);
+        const gateDelta = value.getFloat32(8, true);
+        const time = value.getFloat32(12, true);
+        if (!Number.isFinite(gateId) || !Number.isFinite(speed) || !Number.isFinite(gateDelta) || !Number.isFinite(time)) return null;
+
+        return {
+          byteLength: value.byteLength,
+          value: speed,
+          gateId: Math.round(gateId),
+          gateDelta,
+          time
+        };
+      }
+
+      if (value.byteLength < 8) return null;
+      const measuredValue = value.getFloat32(0, true);
+      const time = value.getFloat32(4, true);
+      if (!Number.isFinite(measuredValue) || !Number.isFinite(time)) return null;
+
+      return {
+        byteLength: value.byteLength,
+        value: measuredValue,
+        time
+      };
+    };
+
+    const updateReadouts = (modeConfig = activeModeConfig) => {
+      const latest = samples[samples.length - 1];
+      if (valueLabel) valueLabel.textContent = latest ? formatSampleValue(latest.value, modeConfig) : formatSampleValue(0, modeConfig);
+      if (timeLabel) {
+        timeLabel.textContent = isPhotogateEventMode(modeConfig)
+          ? formatOnlineClock(latest?.onlineTimeMs ?? null)
+          : latest
+            ? `${latest.time.toFixed(3)} s`
+            : '0.000 s';
+      }
+      if (countLabel) countLabel.textContent = String(samples.length);
+    };
+
+    const renderPhotogateTable = () => {
+      if (!photogateTableBody) return;
+
+      if (photogateTableHead) {
+        const columns = [
+          '序号',
+          ...(hasGateIdColumn() ? ['光电门'] : []),
+          '在线时间',
+          '设备时间 / s',
+          ...(hasBlockTimeColumn() ? [getBlockTimeTableHeader()] : []),
+          ...(isSinglePhotogateMode() ? ['遮光物宽度 / cm'] : []),
+          ...(hasGateDeltaColumn() ? ['双门时间差 / s'] : []),
+          '速度 / m/s'
+        ];
+        photogateTableHead.innerHTML = columns.map((column) => `<th class="px-4 py-3">${column}</th>`).join('');
+      }
+
+      if (!isPhotogateEventMode() || samples.length === 0) {
+        const colspan = 4
+          + (hasGateIdColumn() ? 1 : 0)
+          + (hasBlockTimeColumn() ? 1 : 0)
+          + (isSinglePhotogateMode() ? 1 : 0)
+          + (hasGateDeltaColumn() ? 1 : 0);
+        photogateTableBody.innerHTML = `<tr><td class="px-4 py-4 text-slate-500" colspan="${colspan}">${activeModeConfig.eventEmptyText || '等待光电门触发'}</td></tr>`;
+        return;
+      }
+
+      photogateTableBody.innerHTML = samples
+        .slice()
+        .reverse()
+        .map((sample) => {
+          return `
+            <tr>
+              <td class="px-4 py-3 font-bold text-ink">${sample.index}</td>
+              ${hasGateIdColumn() ? `<td class="px-4 py-3 font-mono">G${sample.gateId ?? '-'}</td>` : ''}
+              <td class="px-4 py-3 font-mono">${formatOnlineTimestamp(sample.onlineTimeMs)}</td>
+              <td class="px-4 py-3 font-mono">${sample.deviceTime.toFixed(3)}</td>
+              ${hasBlockTimeColumn() ? `<td class="px-4 py-3 font-mono">${(sample.blockTime ?? 0).toFixed(4)}</td>` : ''}
+              ${isSinglePhotogateMode() ? `<td class="px-4 py-3 font-mono">${(sample.obstacleWidthCm ?? getObstacleWidthCm()).toFixed(2)}</td>` : ''}
+              ${hasGateDeltaColumn() ? `<td class="px-4 py-3 font-mono">${(sample.gateDelta ?? 0).toFixed(4)}</td>` : ''}
+              <td class="px-4 py-3 font-mono font-bold text-yucai-800">${sample.value.toFixed(4)}</td>
+            </tr>
+          `;
+        })
+        .join('');
+    };
+
+    const appendBleSample = (sample: BleSample) => {
+      if (!running) return;
+      if (bleTimeOffset === null) bleTimeOffset = sample.time;
+      const relativeDeviceTime = Math.max(0, sample.time - bleTimeOffset);
+      const onlineTimeMs = isPhotogateEventMode() ? getOnlineTimeNowMs() : null;
+      const displayTime = relativeDeviceTime;
+      const obstacleWidthCm = isSinglePhotogateMode() ? getObstacleWidthCm() : undefined;
+      const blockTime = isSinglePhotogateMode() ? sample.value : sample.blockTime;
+      const measuredValue = isSinglePhotogateMode()
+        ? calculateSinglePhotogateSpeed(sample.value, obstacleWidthCm)
+        : sample.value;
+      const timeInterval = calculatePhotogateTimeInterval(sample, measuredValue, blockTime, activeModeConfig);
+
+      sampleSequence += 1;
+      samples.push({
+        index: sampleSequence,
+        time: displayTime,
+        deviceTime: relativeDeviceTime,
+        onlineTimeMs,
+        value: measuredValue,
+        blockTime,
+        timeInterval: timeInterval ?? undefined,
+        obstacleWidthCm,
+        gateId: sample.gateId,
+        gateDelta: sample.gateDelta
+      });
+      if (samples.length > maxSamples) samples.shift();
+
+      updateReadouts();
+      renderPhotogateTable();
+      draw();
+      if (statusLabel) {
+        const timeText = isPhotogateEventMode()
+          ? `在线时间 ${formatOnlineTimestamp(onlineTimeMs)}`
+          : `时间 ${displayTime.toFixed(3)} s`;
+        const rawParts = [
+          sample.gateId ? `光电门 G${sample.gateId}` : '',
+          blockTime ? `${getPhotogateTimeChartLabel()} ${blockTime.toFixed(4)} s` : '',
+          timeInterval && !blockTime && !sample.gateDelta ? `${getPhotogateTimeChartLabel()} ${timeInterval.toFixed(4)} s` : '',
+          sample.gateDelta ? `双门时间差 ${sample.gateDelta.toFixed(4)} s` : ''
+        ].filter(Boolean);
+        const rawText = rawParts.length ? `，${rawParts.join('，')}` : '';
+        statusLabel.textContent = `已连接 ${bleDeviceName}，BLE 数据：${activeModeConfig.valueLabel} ${formatSampleValue(measuredValue)}${rawText}，${timeText}`;
+      }
+    };
+
+    const getExpectedPacketBytes = (modeConfig = activeModeConfig) => {
+      if (modeConfig.packetFormat === 'gate-speed-block-time') return 16;
+      if (modeConfig.packetFormat === 'gate-speed-delta-time') return 16;
+      return 8;
+    };
+
+    const handleBleNotification = (event: Event) => {
+      const value = (event.target as BluetoothRemoteGATTCharacteristicLike | null)?.value;
+      if (!value) return;
+
+      const sample = parsePhyphoxDataPacket(value, activeModeConfig);
+      if (!sample) {
+        console.warn('[Web DIS] 收到无法解码的 BLE 数据包', { byteLength: value.byteLength });
+        if (statusLabel) statusLabel.textContent = `已连接 ${bleDeviceName}，收到 ${value.byteLength} 字节，等待 ${getExpectedPacketBytes()} 字节数据包`;
+        return;
+      }
+
+      appendBleSample(sample);
+    };
+
+    const connectBleDataProbe = async (device: BluetoothDeviceLike, deviceName: string) => {
+      if (!device.gatt) throw new Error('设备不支持 GATT 连接');
+
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(phyphoxDataServiceUuid);
+      const characteristic = await service.getCharacteristic(phyphoxDataCharacteristicUuid);
+
+      if (bleDataCharacteristic) {
+        bleDataCharacteristic.removeEventListener('characteristicvaluechanged', handleBleNotification);
+      }
+
+      bleDeviceName = deviceName;
+      selectedBleDevice = device;
+      bleDataCharacteristic = characteristic;
+      characteristic.addEventListener('characteristicvaluechanged', handleBleNotification);
+      await characteristic.startNotifications();
+    };
+
+    const resizeCanvas = () => {
+      if (!canvas) return;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+      canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+    };
+
+    const resizePhotogateTimeCanvas = () => {
+      if (!photogateTimeChart) return;
+      const ratio = window.devicePixelRatio || 1;
+      const rect = photogateTimeChart.getBoundingClientRect();
+      photogateTimeChart.width = Math.max(1, Math.floor(rect.width * ratio));
+      photogateTimeChart.height = Math.max(1, Math.floor(rect.height * ratio));
+    };
+
+    const drawPhotogateBarChart = (context: CanvasRenderingContext2D, width: number, height: number, ratio: number) => {
+      const padding = {
+        top: 24 * ratio,
+        right: 24 * ratio,
+        bottom: 58 * ratio,
+        left: 72 * ratio
+      };
+      const plotLeft = padding.left;
+      const plotTop = padding.top;
+      const plotWidth = Math.max(1, width - padding.left - padding.right);
+      const plotHeight = Math.max(1, height - padding.top - padding.bottom);
+      const plotBottom = plotTop + plotHeight;
+      const visible = samples.slice(-24);
+      const values = visible.map((sample) => sample.value);
+      const rawMax = values.length ? Math.max(...values) : 1;
+      const yMax = rawMax <= 0 ? 1 : rawMax * 1.18;
+      const yRange = Math.max(1, yMax);
+
+      const formatTick = (value: number) => {
+        if (Math.abs(value) >= 10) return value.toFixed(1);
+        return value.toFixed(2);
+      };
+
+      context.font = `${12 * ratio}px sans-serif`;
+      context.textBaseline = 'middle';
+      context.strokeStyle = 'rgba(183, 220, 255, 0.16)';
+      context.lineWidth = 1 * ratio;
+
+      for (let i = 0; i <= 5; i += 1) {
+        const y = plotTop + (plotHeight / 5) * i;
+        context.beginPath();
+        context.moveTo(plotLeft, y);
+        context.lineTo(plotLeft + plotWidth, y);
+        context.stroke();
+
+        const value = yMax - (yRange / 5) * i;
+        context.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        context.textAlign = 'right';
+        context.fillText(formatTick(value), plotLeft - 10 * ratio, y);
+      }
+
+      context.strokeStyle = 'rgba(226, 232, 240, 0.75)';
+      context.lineWidth = 1.5 * ratio;
+      context.beginPath();
+      context.moveTo(plotLeft, plotTop);
+      context.lineTo(plotLeft, plotBottom);
+      context.lineTo(plotLeft + plotWidth, plotBottom);
+      context.stroke();
+
+      context.fillStyle = 'rgba(226, 232, 240, 0.9)';
+      context.font = `${13 * ratio}px sans-serif`;
+      context.textAlign = 'center';
+      context.fillText('测量序号', plotLeft + plotWidth / 2, height - 18 * ratio);
+
+      context.save();
+      context.translate(20 * ratio, plotTop + plotHeight / 2);
+      context.rotate(-Math.PI / 2);
+      context.fillText(activeModeConfig.chartYAxis, 0, 0);
+      context.restore();
+
+      if (visible.length === 0) {
+        context.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        context.font = `${14 * ratio}px sans-serif`;
+        context.textAlign = 'center';
+        context.fillText(activeModeConfig.waitingText, plotLeft + plotWidth / 2, plotTop + plotHeight / 2);
+        return;
+      }
+
+      const slotWidth = plotWidth / Math.max(visible.length, 1);
+      const barWidth = Math.max(10 * ratio, Math.min(36 * ratio, slotWidth * 0.58));
+
+      visible.forEach((sample, position) => {
+        const xCenter = plotLeft + slotWidth * position + slotWidth / 2;
+        const barHeight = Math.max(2 * ratio, (sample.value / yRange) * plotHeight);
+        const x = xCenter - barWidth / 2;
+        const y = plotBottom - barHeight;
+        const isLatest = position === visible.length - 1;
+
+        context.fillStyle = isLatest ? '#f4a51c' : '#4ba6ff';
+        context.fillRect(x, y, barWidth, barHeight);
+
+        context.fillStyle = 'rgba(226, 232, 240, 0.76)';
+        context.font = `${11 * ratio}px sans-serif`;
+        context.textAlign = 'center';
+        context.fillText(String(sample.index), xCenter, plotBottom + 18 * ratio);
+      });
+    };
+
+    const drawPhotogateTimeChart = () => {
+      if (!photogateTimeChart) return;
+      const context = photogateTimeChart.getContext('2d');
+      if (!context) return;
+
+      const ratio = window.devicePixelRatio || 1;
+      const width = photogateTimeChart.width;
+      const height = photogateTimeChart.height;
+      context.clearRect(0, 0, width, height);
+      context.fillStyle = '#0f172a';
+      context.fillRect(0, 0, width, height);
+
+      const padding = {
+        top: 24 * ratio,
+        right: 24 * ratio,
+        bottom: 50 * ratio,
+        left: 72 * ratio
+      };
+      const plotLeft = padding.left;
+      const plotTop = padding.top;
+      const plotWidth = Math.max(1, width - padding.left - padding.right);
+      const plotHeight = Math.max(1, height - padding.top - padding.bottom);
+      const plotBottom = plotTop + plotHeight;
+      const visible = samples.slice(-24).filter((sample) => sample.timeInterval !== undefined);
+      const values = visible.map((sample) => sample.timeInterval ?? 0);
+      const rawMax = values.length ? Math.max(...values) : 1;
+      const yMax = rawMax <= 0 ? 1 : rawMax * 1.18;
+      const yRange = Math.max(0.001, yMax);
+
+      const formatTick = (value: number) => {
+        if (value >= 1) return value.toFixed(2);
+        if (value >= 0.1) return value.toFixed(3);
+        return value.toFixed(4);
+      };
+
+      context.font = `${12 * ratio}px sans-serif`;
+      context.textBaseline = 'middle';
+      context.strokeStyle = 'rgba(183, 220, 255, 0.16)';
+      context.lineWidth = 1 * ratio;
+
+      for (let i = 0; i <= 5; i += 1) {
+        const y = plotTop + (plotHeight / 5) * i;
+        context.beginPath();
+        context.moveTo(plotLeft, y);
+        context.lineTo(plotLeft + plotWidth, y);
+        context.stroke();
+
+        const value = yMax - (yRange / 5) * i;
+        context.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        context.textAlign = 'right';
+        context.fillText(formatTick(value), plotLeft - 10 * ratio, y);
+      }
+
+      context.strokeStyle = 'rgba(226, 232, 240, 0.75)';
+      context.lineWidth = 1.5 * ratio;
+      context.beginPath();
+      context.moveTo(plotLeft, plotTop);
+      context.lineTo(plotLeft, plotBottom);
+      context.lineTo(plotLeft + plotWidth, plotBottom);
+      context.stroke();
+
+      context.fillStyle = 'rgba(226, 232, 240, 0.9)';
+      context.font = `${13 * ratio}px sans-serif`;
+      context.textAlign = 'center';
+      context.fillText('测量序号', plotLeft + plotWidth / 2, height - 16 * ratio);
+
+      context.save();
+      context.translate(20 * ratio, plotTop + plotHeight / 2);
+      context.rotate(-Math.PI / 2);
+      context.fillText(`${getPhotogateTimeChartLabel()} / s`, 0, 0);
+      context.restore();
+
+      if (visible.length === 0) {
+        context.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        context.font = `${14 * ratio}px sans-serif`;
+        context.textAlign = 'center';
+        context.fillText(`等待${getPhotogateTimeChartLabel()}数据`, plotLeft + plotWidth / 2, plotTop + plotHeight / 2);
+        return;
+      }
+
+      const slotWidth = plotWidth / Math.max(visible.length, 1);
+      const barWidth = Math.max(10 * ratio, Math.min(36 * ratio, slotWidth * 0.58));
+
+      visible.forEach((sample, position) => {
+        const timeValue = sample.timeInterval ?? 0;
+        const xCenter = plotLeft + slotWidth * position + slotWidth / 2;
+        const barHeight = Math.max(2 * ratio, (timeValue / yRange) * plotHeight);
+        const x = xCenter - barWidth / 2;
+        const y = plotBottom - barHeight;
+        const isLatest = position === visible.length - 1;
+
+        context.fillStyle = isLatest ? '#f4a51c' : '#22c55e';
+        context.fillRect(x, y, barWidth, barHeight);
+
+        context.fillStyle = 'rgba(226, 232, 240, 0.76)';
+        context.font = `${11 * ratio}px sans-serif`;
+        context.textAlign = 'center';
+        context.fillText(String(sample.index), xCenter, plotBottom + 18 * ratio);
+      });
+    };
+
+    const draw = () => {
+      if (!canvas) return;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const ratio = window.devicePixelRatio || 1;
+      const padding = {
+        top: 28 * ratio,
+        right: 24 * ratio,
+        bottom: 56 * ratio,
+        left: 72 * ratio
+      };
+      const plotLeft = padding.left;
+      const plotTop = padding.top;
+      const plotWidth = Math.max(1, width - padding.left - padding.right);
+      const plotHeight = Math.max(1, height - padding.top - padding.bottom);
+      const plotBottom = plotTop + plotHeight;
+      context.clearRect(0, 0, width, height);
+
+      context.fillStyle = '#0f172a';
+      context.fillRect(0, 0, width, height);
+
+      if (isPhotogateEventMode()) {
+        drawPhotogateBarChart(context, width, height, ratio);
+        drawPhotogateTimeChart();
+        return;
+      }
+
+      const visible = samples.slice(-maxSamples);
+      const xMin = visible[0]?.time ?? 0;
+      const rawXMax = visible[visible.length - 1]?.time ?? 10;
+      const xMax = rawXMax > xMin ? rawXMax : xMin + 1;
+      const values = visible.map((sample) => sample.value);
+      const rawMin = values.length ? Math.min(...values) : -10;
+      const rawMax = values.length ? Math.max(...values) : 10;
+      const rawRange = rawMax - rawMin;
+      const yPadding = Math.max(0.5, rawRange * 0.12);
+      const yMin = rawRange === 0 ? rawMin - 1 : rawMin - yPadding;
+      const yMax = rawRange === 0 ? rawMax + 1 : rawMax + yPadding;
+      const yRange = Math.max(1, yMax - yMin);
+
+      const formatTick = (value: number) => {
+        const absValue = Math.abs(value);
+        if (absValue >= 100) return value.toFixed(0);
+        if (absValue >= 10) return value.toFixed(1);
+        return value.toFixed(2);
+      };
+
+      context.font = `${12 * ratio}px sans-serif`;
+      context.textBaseline = 'middle';
+
+      context.strokeStyle = 'rgba(183, 220, 255, 0.16)';
+      context.lineWidth = 1 * ratio;
+      for (let i = 0; i <= 5; i += 1) {
+        const y = plotTop + (plotHeight / 5) * i;
+        context.beginPath();
+        context.moveTo(plotLeft, y);
+        context.lineTo(plotLeft + plotWidth, y);
+        context.stroke();
+
+        const value = yMax - (yRange / 5) * i;
+        context.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        context.textAlign = 'right';
+        context.fillText(formatTick(value), plotLeft - 10 * ratio, y);
+      }
+
+      for (let i = 0; i <= 5; i += 1) {
+        const x = plotLeft + (plotWidth / 5) * i;
+        context.beginPath();
+        context.moveTo(x, plotTop);
+        context.lineTo(x, plotBottom);
+        context.stroke();
+
+        const value = xMin + ((xMax - xMin) / 5) * i;
+        context.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        context.textAlign = 'center';
+        context.fillText(formatTick(value), x, plotBottom + 18 * ratio);
+      }
+
+      context.strokeStyle = 'rgba(226, 232, 240, 0.75)';
+      context.lineWidth = 1.5 * ratio;
+      context.beginPath();
+      context.moveTo(plotLeft, plotTop);
+      context.lineTo(plotLeft, plotBottom);
+      context.lineTo(plotLeft + plotWidth, plotBottom);
+      context.stroke();
+
+      context.fillStyle = 'rgba(226, 232, 240, 0.9)';
+      context.font = `${13 * ratio}px sans-serif`;
+      context.textAlign = 'center';
+      context.fillText('时间 / s', plotLeft + plotWidth / 2, height - 18 * ratio);
+
+      context.save();
+      context.translate(20 * ratio, plotTop + plotHeight / 2);
+      context.rotate(-Math.PI / 2);
+      context.fillText(activeModeConfig.chartYAxis, 0, 0);
+      context.restore();
+
+      if (visible.length < 2) {
+        context.fillStyle = 'rgba(226, 232, 240, 0.78)';
+        context.font = `${14 * ratio}px sans-serif`;
+        context.textAlign = 'center';
+        context.fillText(activeModeConfig.waitingText, plotLeft + plotWidth / 2, plotTop + plotHeight / 2);
+        return;
+      }
+
+      context.strokeStyle = '#4ba6ff';
+      context.lineWidth = Math.max(2, ratio * 2);
+      context.beginPath();
+      visible.forEach((sample, index) => {
+        const x = plotLeft + ((sample.time - xMin) / (xMax - xMin)) * plotWidth;
+        const y = plotBottom - ((sample.value - yMin) / yRange) * plotHeight;
+        if (index === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.stroke();
+
+      const latest = visible[visible.length - 1];
+      const latestX = plotLeft + ((latest.time - xMin) / (xMax - xMin)) * plotWidth;
+      const latestY = plotBottom - ((latest.value - yMin) / yRange) * plotHeight;
+      context.fillStyle = '#f4a51c';
+      context.beginPath();
+      context.arc(latestX, latestY, 5 * ratio, 0, Math.PI * 2);
+      context.fill();
+    };
+
+    connectPrefixButton?.addEventListener('click', async () => {
+      const currentModeConfig = getCurrentModeConfig();
+      const deviceNamePrefix = getCurrentDeviceNamePrefix(currentModeConfig);
+      const deviceKind = currentModeConfig.deviceKind || 'BLE';
+      await connectWithRequest(
+        requestDisBluetoothDevice,
+        deviceNamePrefix ? `正在查找名称以 ${deviceNamePrefix} 开头的${deviceKind}设备...` : '正在查找 phyphox BLE 设备...'
+      );
+    });
+
+    connectAllButton?.addEventListener('click', async () => {
+      const currentModeConfig = getCurrentModeConfig();
+      const deviceKind = currentModeConfig.deviceKind || 'BLE 设备';
+      await connectWithRequest(
+        (bluetooth) => requestAllDisBluetoothDevices(bluetooth),
+        `正在显示所有可见的 BLE 设备，请选择你的 ESP32 ${deviceKind}...`
+      );
+    });
+
+    toggleButton?.addEventListener('click', () => {
+      running = !running;
+      if (toggleButton) toggleButton.textContent = running ? '暂停采集' : '继续采集';
+      if (statusLabel) {
+        statusLabel.textContent = running
+          ? bleDeviceName
+            ? `已连接 ${bleDeviceName}，${activeModeConfig.receivingStatus}`
+            : activeModeConfig.idleStatus
+          : '采集已暂停，蓝牙连接保持中';
+      }
+    });
+
+    clearButton?.addEventListener('click', () => {
+      samples.length = 0;
+      bleTimeOffset = null;
+      sampleSequence = 0;
+      updateReadouts();
+      renderPhotogateTable();
+      draw();
+      if (statusLabel) {
+        statusLabel.textContent = bleDeviceName
+          ? `已清空数据，继续接收 ${bleDeviceName} 的真实${activeModeConfig.valueLabel}数据`
+          : '数据已清空，请连接蓝牙设备';
+      }
+    });
+
+    exportButton?.addEventListener('click', () => {
+      const csv = isSinglePhotogateMode()
+        ? [
+            'index,online_time,device_time_s,block_time_s,obstacle_width_cm,speed_m_per_s',
+            ...samples.map((sample) => `${sample.index},${escapeCsvValue(formatOnlineTimestamp(sample.onlineTimeMs))},${sample.deviceTime.toFixed(3)},${(sample.blockTime ?? 0).toFixed(4)},${(sample.obstacleWidthCm ?? getObstacleWidthCm()).toFixed(2)},${sample.value.toFixed(4)}`)
+          ].join('\n')
+        : isTwoSinglePhotogateMode()
+        ? [
+            'index,gate_id,online_time,device_time_s,block_time_s,speed_m_per_s',
+            ...samples.map((sample) => `${sample.index},${sample.gateId ?? ''},${escapeCsvValue(formatOnlineTimestamp(sample.onlineTimeMs))},${sample.deviceTime.toFixed(3)},${(sample.blockTime ?? 0).toFixed(4)},${sample.value.toFixed(4)}`)
+          ].join('\n')
+        : isTwoDoublePhotogateMode()
+        ? [
+            'index,gate_id,online_time,device_time_s,gate_delta_s,speed_m_per_s',
+            ...samples.map((sample) => `${sample.index},${sample.gateId ?? ''},${escapeCsvValue(formatOnlineTimestamp(sample.onlineTimeMs))},${sample.deviceTime.toFixed(3)},${(sample.gateDelta ?? 0).toFixed(4)},${sample.value.toFixed(4)}`)
+          ].join('\n')
+        : isPhotogateEventMode()
+        ? [
+            'index,online_time,device_time_s,speed_m_per_s,time_interval_s',
+            ...samples.map((sample) => `${sample.index},${escapeCsvValue(formatOnlineTimestamp(sample.onlineTimeMs))},${sample.deviceTime.toFixed(3)},${sample.value.toFixed(4)},${(sample.timeInterval ?? 0).toFixed(4)}`)
+          ].join('\n')
+        : [`time_s,${activeModeConfig.csvValueHeader}`, ...samples.map((sample) => `${sample.time.toFixed(3)},${sample.value.toFixed(4)}`)].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = activeModeConfig.csvFileName;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    });
+
+    screenshotButton?.addEventListener('click', () => {
+      if (!canvas) return;
+
+      const exportCanvas = isPhotogateEventMode() && photogateTimeChart
+        ? (() => {
+            const ratio = window.devicePixelRatio || 1;
+            const merged = document.createElement('canvas');
+            const titleHeight = 34 * ratio;
+            const gap = 16 * ratio;
+            merged.width = Math.max(canvas.width, photogateTimeChart.width);
+            merged.height = canvas.height + photogateTimeChart.height + titleHeight * 2 + gap;
+            const context = merged.getContext('2d');
+            if (!context) return canvas;
+            context.fillStyle = '#0f172a';
+            context.fillRect(0, 0, merged.width, merged.height);
+            context.fillStyle = '#e2e8f0';
+            context.font = `${15 * ratio}px system-ui, sans-serif`;
+            context.fillText('速度图', 16 * ratio, 23 * ratio);
+            context.drawImage(canvas, 0, titleHeight);
+            const secondTop = titleHeight + canvas.height + gap;
+            context.fillText(`${getPhotogateTimeChartLabel()}图`, 16 * ratio, secondTop + 23 * ratio);
+            context.drawImage(photogateTimeChart, 0, secondTop + titleHeight);
+            return merged;
+          })()
+        : canvas;
+
+      exportCanvas.toBlob((blob) => {
+        if (!blob) {
+          if (statusLabel) statusLabel.textContent = '导出截图失败，请稍后重试';
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = activeModeConfig.csvFileName.replace('-data.csv', '-chart.png');
+        anchor.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    });
+
+    modeSelect?.addEventListener('change', () => {
+      const nextModeConfig = getCurrentModeConfig();
+      saveSelectedMode(nextModeConfig.mode);
+      disconnectCurrentBleDevice();
+      samples.length = 0;
+      bleTimeOffset = null;
+      sampleSequence = 0;
+      syncModeDisplay(nextModeConfig, true, true);
+    });
+
+    bleNamePrefixInput?.addEventListener('input', () => {
+      syncModeDisplay(getCurrentModeConfig(), true);
+    });
+
+    restoreSelectedMode();
+    resizeCanvas();
+    resizePhotogateTimeCanvas();
+    // Reload restores the select value after the input has already fallen back to its HTML default.
+    syncModeDisplay(getCurrentModeConfig(), true, true);
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      resizePhotogateTimeCanvas();
+      draw();
+    });
+  </script>
+</section>

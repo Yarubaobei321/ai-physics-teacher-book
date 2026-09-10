@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>河流地貌 · 高中地理必修一 | 交互式3D演示</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Microsoft YaHei", "苹方", "PingFang SC", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 50px;
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      letter-spacing: 2px;
+      z-index: 5;
+    }
+    #info h1 { margin: 0; font-size: 1.8rem; font-weight: 500; }
+    #info h1 span { font-weight: 300; color: #aaccff; }
+
+    #menu-panel {
+      position: absolute;
+      bottom: 30px;
+      left: 30px;
+      background: rgba(20, 20, 30, 0.85);
+      backdrop-filter: blur(20px);
+      border-radius: 24px;
+      padding: 20px 25px;
+      color: #ddd;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 200px;
+      z-index: 10;
+    }
+    #menu-panel h3 {
+      margin: 0 0 5px 0;
+      font-weight: 400;
+      color: #aaa;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+      padding-bottom: 8px;
+    }
+    .menu-btn {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #ccc;
+      padding: 12px 18px;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: left;
+    }
+    .menu-btn:hover { background: rgba(100, 150, 255, 0.3); border-color: rgba(255,255,255,0.6); color: white; }
+    .menu-btn.active { background: #3a6ea5; border-color: #8ab3ff; color: white; }
+
+    #detail-card {
+      position: absolute;
+      top: 100px;
+      right: 30px;
+      width: 300px;
+      background: rgba(10, 15, 25, 0.9);
+      backdrop-filter: blur(25px);
+      border-radius: 24px;
+      padding: 20px;
+      color: #f0f0f0;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.25);
+      z-index: 20;
+      cursor: move;
+      user-select: none;
+    }
+    #detail-title { font-size: 1.6rem; font-weight: 600; margin: 0 0 5px 0; color: #fff; border-left: 5px solid #5b9bd5; padding-left: 12px; }
+    #detail-sub { font-size: 0.85rem; color: #a0c0f0; margin-bottom: 12px; }
+    #detail-logic { background: rgba(255,255,255,0.06); border-radius: 14px; padding: 12px 15px; margin: 12px 0; border-left: 3px solid #ffb347; }
+    #detail-logic h4 { margin: 0 0 6px 0; color: #ffb347; font-size: 0.9rem; }
+    #detail-logic p { margin: 0; line-height: 1.6; font-size: 0.85rem; color: #ddd; }
+    .view-image-btn { background: #5b9bd5; border: none; color: white; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; margin-top: 10px; }
+
+    .image-modal {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.95);
+      padding: 20px;
+      border-radius: 20px;
+      z-index: 100;
+      border: 1px solid #444;
+      max-width: 80vw;
+      text-align: center;
+    }
+    .image-modal img { max-width: 100%; max-height: 65vh; border-radius: 10px; }
+    .close-modal { position: absolute; top: 10px; right: 15px; color: white; font-size: 1.5rem; cursor: pointer; }
+
+    #animation-controls {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px 25px;
+      border-radius: 40px;
+      backdrop-filter: blur(10px);
+      z-index: 15;
+    }
+    .ctrl-btn { background: rgba(255,255,255,0.15); border: none; color: white; font-size: 1.2rem; padding: 8px 20px; border-radius: 25px; cursor: pointer; }
+    #progress-bar { width: 120px; height: 6px; background: #333; border-radius: 3px; align-self: center; overflow: hidden; }
+    #progress-fill { width: 0%; height: 100%; background: #5b9bd5; }
+
+    #hint {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      color: rgba(255,255,255,0.45);
+      font-size: 0.75rem;
+      background: rgba(0,0,0,0.5);
+      padding: 5px 15px;
+      border-radius: 20px;
+      backdrop-filter: blur(5px);
+      z-index: 5;
+    }
+  </style>
+</head>
+<body>
+  <div id="info"><h1>🌊 河流地貌 <span>| 必修一</span></h1></div>
+  <div id="hint">🖱️ 拖动面板 | 📜 缩放 | ▶️ 动画控制</div>
+
+  <div id="menu-panel">
+    <h3>📖 地貌目录</h3>
+    <button class="menu-btn active" data-landform="v-valley">⛰️ V型谷</button>
+    <button class="menu-btn" data-landform="floodplain">🌾 河漫滩</button>
+    <button class="menu-btn" data-landform="alluvial">🏞️ 冲积平原</button>
+    <button class="menu-btn" data-landform="delta">🌊 三角洲</button>
+  </div>
+
+  <div id="detail-card">
+    <div id="detail-title">V型谷</div>
+    <div id="detail-sub">河流上游 · 下蚀为主</div>
+    <div id="detail-logic">
+      <h4>🔍 形成逻辑链</h4>
+      <p id="logic-text">落差大 → 流速快 → 下蚀强烈 → 河谷加深，两岸陡峭 → 形成V形横剖面。</p>
+    </div>
+    <div id="detail-desc">位于河流上游，水流深切基岩，谷坡陡峻，谷底狭窄。</div>
+    <button class="view-image-btn" id="view-image-btn">📷 查看真实地貌影像</button>
+  </div>
+
+  <div class="image-modal" id="image-modal">
+    <span class="close-modal" id="close-modal">✕</span>
+    <img id="modal-image" src="" alt="真实地貌图片">
+    <p style="color:#aaa; margin-top:8px;" id="modal-caption"></p>
+  </div>
+
+  <div id="animation-controls">
+    <button class="ctrl-btn" id="play-btn">▶ 播放</button>
+    <button class="ctrl-btn" id="pause-btn">⏸️ 暂停</button>
+    <button class="ctrl-btn" id="reset-btn">↺ 重置</button>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a1030);
+    scene.fog = new THREE.Fog(0x0a1030, 8, 35);
+    
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 200);
+    camera.position.set(10, 6, 12);
+    camera.lookAt(0, 1.5, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    document.body.appendChild(renderer.domElement);
+
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    document.body.appendChild(labelRenderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 1.8, 0);
+    controls.maxPolarAngle = Math.PI / 1.8;
+    controls.update();
+
+    scene.add(new THREE.AmbientLight(0x404066));
+    const dirLight = new THREE.DirectionalLight(0xffeedd, 1.2);
+    dirLight.position.set(10, 20, 5);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+    scene.add(new THREE.DirectionalLight(0x88aacc, 0.7).position.set(-5, 2, 8));
+
+    const landformGroup = new THREE.Group();
+    scene.add(landformGroup);
+    let currentLabels = [];
+    let animationId = null;
+    let animationProgress = 0;
+    let isPlaying = true;
+    let currentBuilder = null;
+
+    function createLabel(text, position, color = '#ffffff', bg = 'rgba(0,0,0,0.8)') {
+      const div = document.createElement('div');
+      div.textContent = text;
+      div.style.color = color;
+      div.style.fontWeight = 'bold';
+      div.style.fontSize = '0.9rem';
+      div.style.textShadow = '1px 1px 2px black';
+      div.style.background = bg;
+      div.style.padding = '2px 10px';
+      div.style.borderRadius = '15px';
+      const label = new CSS2DObject(div);
+      label.position.copy(position);
+      return label;
+    }
+
+    function clearLandform() {
+      while(landformGroup.children.length > 0) landformGroup.remove(landformGroup.children[0]);
+      currentLabels.forEach(l => landformGroup.remove(l));
+      currentLabels = [];
+      if (animationId) cancelAnimationFrame(animationId);
+    }
+
+    // ========== V型谷：河流向下切割 ==========
+    function buildVValley() {
+      clearLandform();
+      const groundGeo = new THREE.PlaneGeometry(12, 10);
+      const groundMat = new THREE.MeshStandardMaterial({ color: 0x3b5323, roughness: 0.9 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.rotation.x = -Math.PI/2;
+      ground.position.y = -2.5;
+      ground.receiveShadow = true;
+      landformGroup.add(ground);
+
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0x6b7b8d, roughness: 0.7, flatShading: true });
+      
+      const leftMountain = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 8), rockMat);
+      leftMountain.position.set(-2.5, 2, 0);
+      leftMountain.castShadow = true;
+      landformGroup.add(leftMountain);
+      
+      const rightMountain = new THREE.Mesh(new THREE.BoxGeometry(5, 5, 8), rockMat);
+      rightMountain.position.set(2.5, 2, 0);
+      rightMountain.castShadow = true;
+      landformGroup.add(rightMountain);
+
+      const riverGeo = new THREE.BoxGeometry(1.5, 0.3, 7.5);
+      const riverMat = new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.9 });
+      const river = new THREE.Mesh(riverGeo, riverMat);
+      river.position.set(0, 4.5, 0);
+      landformGroup.add(river);
+
+      const lblV = createLabel('V型谷', new THREE.Vector3(0, 5.5, 1.5), '#ffd966');
+      const lblRiver = createLabel('河流下切', new THREE.Vector3(1.5, 4.5, 2), '#aaccff');
+      const lblLeft = createLabel('陡峭谷坡', new THREE.Vector3(-3.5, 3, 1), '#ddd');
+      const lblRight = createLabel('陡峭谷坡', new THREE.Vector3(3.5, 3, 1), '#ddd');
+      currentLabels.push(lblV, lblRiver, lblLeft, lblRight);
+      landformGroup.add(lblV, lblRiver, lblLeft, lblRight);
+
+      return (progress) => {
+        river.position.y = 4.5 - progress * 5;
+        leftMountain.position.x = -2.5 - progress * 0.8;
+        rightMountain.position.x = 2.5 + progress * 0.8;
+        leftMountain.scale.x = 1 - progress * 0.3;
+        rightMountain.scale.x = 1 - progress * 0.3;
+        lblRiver.position.set(1.5, 4.5 - progress * 5, 2);
+        lblLeft.position.set(-3.5 - progress * 0.8, 3, 1);
+        lblRight.position.set(3.5 + progress * 0.8, 3, 1);
+      };
+    }
+
+    // ========== 河漫滩：河流向旁边侵蚀，枯水期露出河漫滩 ==========
+    function buildFloodplain() {
+      clearLandform();
+      const plainGeo = new THREE.PlaneGeometry(12, 10);
+      const plainMat = new THREE.MeshStandardMaterial({ color: 0x5a7d4a, roughness: 0.9 });
+      const plain = new THREE.Mesh(plainGeo, plainMat);
+      plain.rotation.x = -Math.PI/2;
+      plain.position.y = -0.8;
+      plain.receiveShadow = true;
+      landformGroup.add(plain);
+
+      const riverGeo = new THREE.BoxGeometry(1.5, 0.4, 9);
+      const riverMat = new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.9 });
+      const river = new THREE.Mesh(riverGeo, riverMat);
+      river.position.set(0, 0.2, 0);
+      landformGroup.add(river);
+
+      const sedimentMat = new THREE.MeshStandardMaterial({ color: 0xcdaf95, transparent: true, opacity: 0.7 });
+      const leftSed = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 9), sedimentMat);
+      leftSed.position.set(-2.3, -0.3, 0);
+      leftSed.scale.set(0.01, 1, 1);
+      landformGroup.add(leftSed);
+      
+      const rightSed = new THREE.Mesh(new THREE.BoxGeometry(3, 0.3, 9), sedimentMat);
+      rightSed.position.set(2.3, -0.3, 0);
+      rightSed.scale.set(0.01, 1, 1);
+      landformGroup.add(rightSed);
+
+      const lblFlood = createLabel('河漫滩', new THREE.Vector3(-2.5, 0.6, 2.5), '#ffb347');
+      const lblRiver = createLabel('河流', new THREE.Vector3(0, 0.8, -3), '#aaccff');
+      const lblErosion = createLabel('侵蚀岸', new THREE.Vector3(2, 0.6, 2), '#ff9999');
+      const lblDeposit = createLabel('沉积岸', new THREE.Vector3(-3, 0.6, -2), '#99ff99');
+      currentLabels.push(lblFlood, lblRiver, lblErosion, lblDeposit);
+      landformGroup.add(lblFlood, lblRiver, lblErosion, lblDeposit);
+
+      return (progress) => {
+        river.position.x = progress * 1.5;
+        river.scale.x = 1 - progress * 0.4;
+        leftSed.scale.x = progress * 1.5;
+        rightSed.scale.x = progress * 0.8;
+        leftSed.position.x = -2.3 + progress * 0.5;
+        lblFlood.position.x = -2.5 + progress * 0.5;
+        lblRiver.position.x = progress * 1.5;
+        lblErosion.position.x = 2 + progress * 1.5;
+        lblDeposit.position.x = -3 + progress * 0.5;
+      };
+    }
+
+    // ========== 冲积平原：河流携带泥沙在下游堆积 ==========
+    function buildAlluvial() {
+      clearLandform();
+      const plainGeo = new THREE.PlaneGeometry(14, 12);
+      const plainMat = new THREE.MeshStandardMaterial({ color: 0x6b8e4a, roughness: 0.8 });
+      const plain = new THREE.Mesh(plainGeo, plainMat);
+      plain.rotation.x = -Math.PI/2;
+      plain.position.y = -1;
+      plain.receiveShadow = true;
+      landformGroup.add(plain);
+
+      const river = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 0.4, 8),
+        new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.9 })
+      );
+      river.position.set(0, 0.3, -2);
+      landformGroup.add(river);
+
+      const layer = new THREE.Mesh(
+        new THREE.BoxGeometry(10, 0.1, 8),
+        new THREE.MeshStandardMaterial({ color: 0xb89a7a, roughness: 0.9, transparent: true, opacity: 0.8 })
+      );
+      layer.position.set(0, -0.3, 1);
+      layer.scale.y = 0.01;
+      landformGroup.add(layer);
+
+      // 添加多个沉积层展示
+      const layers = [];
+      for (let i = 0; i < 3; i++) {
+        const l = new THREE.Mesh(
+          new THREE.BoxGeometry(8 + i*1.5, 0.08, 6 + i*1.5),
+          new THREE.MeshStandardMaterial({ 
+            color: new THREE.Color().setHSL(0.1, 0.3, 0.5 + i*0.15), 
+            roughness: 0.9, 
+            transparent: true, 
+            opacity: 0.6 
+          })
+        );
+        l.position.set(0, -0.5 + i*0.1, 1);
+        l.scale.y = 0.01;
+        landformGroup.add(l);
+        layers.push(l);
+      }
+
+      const lblAlluvial = createLabel('冲积平原', new THREE.Vector3(0, 1.2, 3), '#ffb347');
+      const lblRiver = createLabel('河流', new THREE.Vector3(0, 0.8, -3), '#aaccff');
+      const lblSed = createLabel('泥沙沉积层', new THREE.Vector3(0, 0.5, 2), '#ddccaa');
+      const lblUpstream = createLabel('上游来沙', new THREE.Vector3(0, 1, -4), '#ffccaa');
+      currentLabels.push(lblAlluvial, lblRiver, lblSed, lblUpstream);
+      landformGroup.add(lblAlluvial, lblRiver, lblSed, lblUpstream);
+
+      return (progress) => {
+        layer.scale.set(0.5 + progress * 0.5, progress * 3, 0.5 + progress * 0.5);
+        layer.position.y = -0.5 + progress * 0.4;
+        river.scale.x = 1 + progress * 0.5;
+        river.scale.y = 1 - progress * 0.3;
+        
+        layers.forEach((l, i) => {
+          l.scale.y = progress * 2;
+          l.position.y = -0.6 + i * 0.08 + progress * 0.1;
+          l.scale.x = 0.6 + progress * 0.4;
+          l.scale.z = 0.6 + progress * 0.4;
+        });
+        
+        lblSed.position.y = 0.5 + progress * 0.2;
+      };
+    }
+
+    // ========== 三角洲：泥沙从河口出来后堆积 ==========
+    function buildDelta() {
+      clearLandform();
+      const seaGeo = new THREE.PlaneGeometry(14, 12);
+      const seaMat = new THREE.MeshStandardMaterial({ color: 0x1a5276, transparent: true, opacity: 0.7 });
+      const sea = new THREE.Mesh(seaGeo, seaMat);
+      sea.rotation.x = -Math.PI/2;
+      sea.position.y = -0.5;
+      landformGroup.add(sea);
+
+      const landGeo = new THREE.PlaneGeometry(6, 6);
+      const landMat = new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 0.9 });
+      const land = new THREE.Mesh(landGeo, landMat);
+      land.rotation.x = -Math.PI/2;
+      land.position.set(0, 0.1, -4);
+      landformGroup.add(land);
+
+      const river = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 0.3, 5),
+        new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.9 })
+      );
+      river.position.set(0, 0.3, -2.5);
+      landformGroup.add(river);
+
+      const deltaGeo = new THREE.ConeGeometry(0.3, 0.3, 16);
+      const deltaMat = new THREE.MeshStandardMaterial({ color: 0xcdaf95, roughness: 0.7 });
+      const delta = new THREE.Mesh(deltaGeo, deltaMat);
+      delta.position.set(0, -0.1, 0);
+      delta.scale.set(0.01, 0.01, 0.01);
+      delta.castShadow = true;
+      landformGroup.add(delta);
+
+      // 添加多个扇形沉积体
+      const fans = [];
+      for (let i = 0; i < 5; i++) {
+        const fanGeo = new THREE.ConeGeometry(0.5 + i*0.3, 0.2, 8);
+        const fanMat = new THREE.MeshStandardMaterial({ 
+          color: new THREE.Color().setHSL(0.12, 0.4, 0.5 + i*0.1), 
+          roughness: 0.7,
+          transparent: true,
+          opacity: 0.7
+        });
+        const fan = new THREE.Mesh(fanGeo, fanMat);
+        fan.position.set(0, -0.2, 0);
+        fan.scale.set(0.01, 0.01, 0.01);
+        landformGroup.add(fan);
+        fans.push(fan);
+      }
+
+      const branches = [];
+      for (let i = -1; i <= 1; i+=0.5) {
+        const branch = new THREE.Mesh(
+          new THREE.BoxGeometry(0.3, 0.15, 0.3),
+          new THREE.MeshStandardMaterial({ color: 0x3498db, transparent: true, opacity: 0.8 })
+        );
+        branch.position.set(0, 0.2, 0);
+        branch.visible = false;
+        landformGroup.add(branch);
+        branches.push(branch);
+      }
+
+      const lblDelta = createLabel('三角洲', new THREE.Vector3(0, 1.2, 0.5), '#ffb347');
+      const lblRiver = createLabel('河口', new THREE.Vector3(0, 0.8, -0.5), '#aaccff');
+      const lblSea = createLabel('海洋', new THREE.Vector3(3, 0.5, 3), '#6699cc');
+      const lblSediment = createLabel('泥沙堆积', new THREE.Vector3(0, 0.3, 1.5), '#ddccaa');
+      currentLabels.push(lblDelta, lblRiver, lblSea, lblSediment);
+      landformGroup.add(lblDelta, lblRiver, lblSea, lblSediment);
+
+      return (progress) => {
+        // 三角洲从河口向外生长
+        delta.scale.set(progress * 3, progress * 1.5, progress * 3);
+        delta.position.z = progress * 1.5;
+        delta.position.y = -0.2 + progress * 0.3;
+        
+        // 扇形沉积体逐渐展开
+        fans.forEach((fan, i) => {
+          const fanProgress = Math.max(0, progress - i * 0.15);
+          fan.scale.set(fanProgress * 2.5, fanProgress * 1.2, fanProgress * 2.5);
+          fan.position.z = fanProgress * 2;
+          fan.position.y = -0.25 + fanProgress * 0.15;
+          fan.rotation.x = Math.PI/2;
+        });
+        
+        // 分流河道
+        if (progress > 0.5) {
+          branches.forEach((b, i) => {
+            b.visible = true;
+            const angle = (i - 1) * 0.8 * (progress - 0.5) * 2;
+            b.position.set(Math.sin(angle) * progress * 2, 0.2, progress * 1.5);
+            b.rotation.y = angle;
+            b.scale.z = (progress - 0.5) * 4;
+          });
+        } else {
+          branches.forEach(b => b.visible = false);
+        }
+        
+        lblDelta.position.z = progress * 1.5 + 0.5;
+        lblSediment.position.z = progress * 1.5;
+      };
+    }
+
+    const builders = {
+      'v-valley': buildVValley,
+      'floodplain': buildFloodplain,
+      'alluvial': buildAlluvial,
+      'delta': buildDelta
+    };
+
+    const details = {
+      'v-valley': { 
+        title:'V型谷', sub:'雅鲁藏布江大峡谷', 
+        logic:'板块挤压→地壳抬升→河流剧烈下切→峡谷加深→V型谷形成。', 
+        desc:'雅鲁藏布江大峡谷是世界最深的峡谷，河流深切青藏高原，谷坡陡峻，谷底狭窄，横剖面呈V字形。',
+        img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Yarlung_Tsangpo_Grand_Canyon.jpg/800px-Yarlung_Tsangpo_Grand_Canyon.jpg',
+        caption:'雅鲁藏布江大峡谷（来源：Wikipedia）'
+      },
+      'floodplain': { 
+        title:'河漫滩', sub:'长江中游', 
+        logic:'洪水期河水溢出→流速降低→泥沙沉积→枯水期露出→河漫滩。', 
+        desc:'长江中游荆江河段河漫滩发育，洪水期被淹没，枯水期露出，土壤肥沃，是重要农业区。',
+        img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Yangtze_River_floodplain.jpg/800px-Yangtze_River_floodplain.jpg',
+        caption:'长江中游河漫滩（来源：Wikipedia）'
+      },
+      'alluvial': { 
+        title:'冲积平原', sub:'长江中下游平原', 
+        logic:'河流搬运泥沙→下游坡度减缓→流速降低→泥沙大量沉积→冲积平原。', 
+        desc:'长江中下游平原是我国重要的冲积平原，由长江及其支流携带的泥沙长期沉积形成，土壤深厚肥沃。',
+        img:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Yangtze_River_Delta_plain.jpg/800px-Yangtze_River_Delta_plain.jpg',
+        caption:'长江中下游平原（来源：Wikipedia）'
+      },
+      'delta': { 
+        title:'三角洲', sub:'黄河三角洲', 
+        logic:'河流入海→流速骤减→泥沙快速沉积→扇形堆积→三角洲推进。', 
+        desc:'黄河三角洲每年向海推进，是我国最年轻的土地，泥沙在河口处堆积形成扇形三角洲。',
+        img:'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Yellow_River_Delta.jpg/800px-Yellow_River_Delta.jpg',
+        caption:'黄河三角洲（来源：Wikipedia）'
+      }
+    };
+
+    function updateUI(key) {
+      const d = details[key];
+      document.getElementById('detail-title').textContent = d.title;
+      document.getElementById('detail-sub').textContent = d.sub;
+      document.getElementById('logic-text').textContent = d.logic;
+      document.getElementById('detail-desc').textContent = d.desc;
+      document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+      document.querySelector(`[data-landform="${key}"]`).classList.add('active');
+      document.getElementById('view-image-btn').onclick = () => {
+        document.getElementById('modal-image').src = d.img;
+        document.getElementById('modal-caption').textContent = d.caption;
+        document.getElementById('image-modal').style.display = 'block';
+      };
+    }
+
+    function switchTo(key) {
+      if (builders[key]) {
+        const updateFn = builders[key]();
+        currentBuilder = updateFn;
+        updateUI(key);
+        animationProgress = 0;
+        isPlaying = true;
+        document.getElementById('play-btn').textContent = '⏸️ 播放中';
+        animateFormation();
+      }
+    }
+
+    function animateFormation() {
+      if (!isPlaying || !currentBuilder) return;
+      animationProgress += 0.005;
+      if (animationProgress > 1) animationProgress = 1;
+      currentBuilder(animationProgress);
+      document.getElementById('progress-fill').style.width = (animationProgress * 100) + '%';
+      if (animationProgress < 1) {
+        animationId = requestAnimationFrame(animateFormation);
+      } else {
+        document.getElementById('play-btn').textContent = '▶ 播放';
+        isPlaying = false;
+      }
+    }
+
+    document.getElementById('play-btn').addEventListener('click', () => {
+      if (animationProgress >= 1) animationProgress = 0;
+      isPlaying = true;
+      document.getElementById('play-btn').textContent = '⏸️ 播放中';
+      animateFormation();
+    });
+    document.getElementById('pause-btn').addEventListener('click', () => {
+      isPlaying = false;
+      document.getElementById('play-btn').textContent = '▶ 播放';
+      if (animationId) cancelAnimationFrame(animationId);
+    });
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      animationProgress = 0;
+      if (currentBuilder) currentBuilder(0);
+      document.getElementById('progress-fill').style.width = '0%';
+      isPlaying = false;
+      document.getElementById('play-btn').textContent = '▶ 播放';
+    });
+
+    document.querySelectorAll('.menu-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => switchTo(e.target.dataset.landform));
+    });
+
+    const card = document.getElementById('detail-card');
+    let isDragging = false, offsetX, offsetY;
+    card.addEventListener('mousedown', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      isDragging = true;
+      offsetX = e.clientX - card.offsetLeft;
+      offsetY = e.clientY - card.offsetTop;
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        card.style.left = (e.clientX - offsetX) + 'px';
+        card.style.top = (e.clientY - offsetY) + 'px';
+        card.style.right = 'auto';
+      }
+    });
+    window.addEventListener('mouseup', () => isDragging = false);
+
+    document.getElementById('close-modal').addEventListener('click', () => {
+      document.getElementById('image-modal').style.display = 'none';
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function render() {
+      requestAnimationFrame(render);
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+
+    switchTo('v-valley');
+    render();
+  </script>
+</body>
+</html>

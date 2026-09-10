@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>动量守恒定律 - 高中物理交互式实验</title>
+    <style>
+        :root {
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #475569;
+            --ball1: #ef4444;
+            --ball1-glow: #fca5a5;
+            --ball2: #3b82f6;
+            --ball2-glow: #93c5fd;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.08);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --transition: 0.2s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background: #f0f4f8;
+            min-height: 100vh;
+            padding: 16px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* 顶部标题 */
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            color: #fff;
+            padding: 20px 28px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .header .icon {
+            font-size: 2.4rem;
+            flex-shrink: 0;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        /* 卡片通用 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px 24px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+        .card h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 0.03em;
+        }
+        .card h2 .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        /* 双列布局 */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 800px) {
+            .grid-2, .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Canvas区域 */
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            background: #fafbfc;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        .flash-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 2rem;
+            font-weight: 900;
+            color: #f59e0b;
+            pointer-events: none;
+            text-shadow: 0 0 25px rgba(245,158,11,0.8);
+            white-space: nowrap;
+        }
+        .flash-text.show {
+            animation: flashPop 0.65s ease-out forwards;
+        }
+        @keyframes flashPop {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+            35% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        /* 控制面板 */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 20px;
+            align-items: flex-end;
+        }
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 130px;
+            flex: 1;
+        }
+        .ctrl-group label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #64748b;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .ctrl-group input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 6px;
+            background: #e2e8f0;
+            outline: none;
+            cursor: pointer;
+        }
+        .ctrl-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #64748b;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+        .range-val {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #1e293b;
+            text-align: right;
+        }
+        .btn {
+            padding: 10px 22px;
+            border-radius: 22px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            letter-spacing: 0.03em;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        .btn-start {
+            background: #10b981;
+            color: #fff;
+            box-shadow: 0 3px 12px rgba(16,185,129,0.3);
+        }
+        .btn-start:hover { background: #059669; transform: translateY(-1px); }
+        .btn-reset {
+            background: #fff;
+            color: #475569;
+            border: 2px solid #e2e8f0;
+        }
+        .btn-reset:hover { background: #f8fafc; }
+        .btn-preset {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 7px 14px;
+            font-size: 0.76rem;
+            border-radius: 18px;
+            font-weight: 500;
+        }
+        .btn-preset:hover { background: #e2e8f0; }
+        .btn:active { transform: scale(0.96); }
+        .btn:disabled { opacity: 0.5; pointer-events: none; }
+
+        .type-btn-group {
+            display: flex;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+        .type-btn {
+            padding: 8px 18px;
+            border: none;
+            background: #f8fafc;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.82rem;
+            color: #64748b;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .type-btn.active {
+            background: #1e293b;
+            color: #fff;
+        }
+
+        /* 数据表格 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .data-table th, .data-table td {
+            padding: 7px 10px;
+            text-align: center;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .data-table th {
+            background: #f8fafc;
+            font-weight: 700;
+            color: #475569;
+            font-size: 0.75rem;
+            letter-spacing: 0.03em;
+        }
+        .data-table .highlight-row td {
+            background: #fffbeb;
+            font-weight: 700;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .badge-success { background: #d1fae5; color: #065f46; }
+        .badge-warning { background: #fef3c7; color: #92400e; }
+
+        /* 折线图 */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            margin-top: 8px;
+        }
+        .chart-container canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 实验材料、误差分析、实际应用、易错点 */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 800px) {
+            .info-grid { grid-template-columns: 1fr; }
+        }
+        .info-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 18px 20px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+        }
+        .info-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .info-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .info-card ul li {
+            padding: 3px 0;
+            font-size: 0.82rem;
+            color: #475569;
+            position: relative;
+            padding-left: 18px;
+        }
+        .info-card ul li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #3b82f6;
+            font-weight: 700;
+        }
+        .highlight-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+            font-size: 0.82rem;
+            color: #1e40af;
+        }
+        .warning-box {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 8px;
+            font-size: 0.82rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- 顶部 -->
+    <div class="header">
+        <span class="icon">⚛️</span>
+        <div>
+            <h1>动量守恒定律 · 交互式实验</h1>
+            <p class="subtitle">高中物理选修一 | p = mv | 碰撞前后总动量保持不变</p>
+        </div>
+    </div>
+
+    <!-- 模拟区域 -->
+    <div class="card">
+        <h2><span class="dot" style="background:#3b82f6;"></span>碰撞模拟实验</h2>
+        <div class="canvas-wrapper" id="canvasWrap">
+            <canvas id="mainCanvas"></canvas>
+            <div class="flash-text" id="flashText">💥 碰撞！</div>
+        </div>
+
+        <!-- 控制区 -->
+        <div class="controls" style="margin-top:12px;flex-wrap:wrap;">
+            <div class="ctrl-group">
+                <label>🔴 球1质量 m₁</label>
+                <input type="range" id="mass1" min="1" max="10" value="3" step="0.1">
+                <span class="range-val" id="mass1Val">3.0 kg</span>
+            </div>
+            <div class="ctrl-group">
+                <label>🔵 球2质量 m₂</label>
+                <input type="range" id="mass2" min="1" max="10" value="3" step="0.1">
+                <span class="range-val" id="mass2Val">3.0 kg</span>
+            </div>
+            <div class="ctrl-group">
+                <label>🔴 球1初速度 v₁</label>
+                <input type="range" id="vel1" min="0" max="6" value="3" step="0.1">
+                <span class="range-val" id="vel1Val">3.0 m/s</span>
+            </div>
+            <div class="ctrl-group">
+                <label>🔵 球2初速度 v₂</label>
+                <input type="range" id="vel2" min="-5" max="5" value="0" step="0.1">
+                <span class="range-val" id="vel2Val">0.0 m/s</span>
+            </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:12px;">
+            <span style="font-weight:600;font-size:0.84rem;">碰撞类型：</span>
+            <div class="type-btn-group" id="typeGroup">
+                <button class="type-btn active" data-type="elastic">弹性碰撞</button>
+                <button class="type-btn" data-type="inelastic">完全非弹性碰撞</button>
+            </div>
+            <button class="btn btn-start" id="btnStart">▶ 开始模拟</button>
+            <button class="btn btn-reset" id="btnReset">↺ 重置</button>
+            <button class="btn btn-preset" data-preset="equal">等质量交换</button>
+            <button class="btn btn-preset" data-preset="heavy1">大撞小</button>
+            <button class="btn btn-preset" data-preset="heavy2">小撞大</button>
+            <button class="btn btn-preset" data-preset="headon">迎面碰撞</button>
+        </div>
+    </div>
+
+    <!-- 数据对比 + 折线图 -->
+    <div class="grid-2">
+        <div class="card">
+            <h2><span class="dot" style="background:#f59e0b;"></span>数据对比表</h2>
+            <table class="data-table">
+                <thead>
+                <tr><th></th><th>碰撞前</th><th>碰撞后</th><th>变化量</th></tr>
+                </thead>
+                <tbody>
+                <tr><td>球1速度</td><td id="beforeV1">—</td><td id="afterV1">—</td><td id="diffV1">—</td></tr>
+                <tr><td>球2速度</td><td id="beforeV2">—</td><td id="afterV2">—</td><td id="diffV2">—</td></tr>
+                <tr><td>球1动量</td><td id="beforeP1">—</td><td id="afterP1">—</td><td id="diffP1">—</td></tr>
+                <tr><td>球2动量</td><td id="beforeP2">—</td><td id="afterP2">—</td><td id="diffP2">—</td></tr>
+                <tr class="highlight-row"><td>总动量</td><td id="beforePTotal">—</td><td id="afterPTotal">—</td><td id="diffPTotal">—</td></tr>
+                <tr><td>总动能</td><td id="beforeEk">—</td><td id="afterEk">—</td><td id="diffEk">—</td></tr>
+                </tbody>
+            </table>
+            <div style="margin-top:8px;text-align:center;">
+                <span id="conservationBadge" class="badge badge-success" style="display:none;">✅ 动量守恒验证通过</span>
+            </div>
+        </div>
+        <div class="card">
+            <h2><span class="dot" style="background:#ef4444;"></span>动量变化折线图</h2>
+            <div class="chart-container">
+                <canvas id="chartCanvas"></canvas>
+            </div>
+            <p style="font-size:0.7rem;color:#94a3b8;text-align:center;margin-top:4px;">红线=理论总动量 | 蓝点=实际测量值</p>
+        </div>
+    </div>
+
+    <!-- 四块内容：实验材料、误差分析、实际应用、易错点 -->
+    <div class="info-grid">
+        <!-- 实验材料 -->
+        <div class="info-card">
+            <h3>🧪 实验材料与器材</h3>
+            <ul>
+                <li>气垫导轨（减少摩擦）</li>
+                <li>两个滑块（可配重）</li>
+                <li>光电门 ×2（测速度）</li>
+                <li>数字计时器</li>
+                <li>电子天平（测质量）</li>
+                <li>水平尺（调平导轨）</li>
+                <li>弹簧碰撞装置 / 尼龙搭扣</li>
+            </ul>
+            <div class="highlight-box">
+                <strong>核心原理：</strong>在水平气垫导轨上，两滑块碰撞时合外力为零，系统动量守恒。光电门记录挡光时间，结合遮光片宽度计算瞬时速度。
+            </div>
+        </div>
+
+        <!-- 误差分析 -->
+        <div class="info-card">
+            <h3>📊 误差分析</h3>
+            <ul>
+                <li><strong>系统误差：</strong>导轨未完全水平→重力分量做功</li>
+                <li><strong>偶然误差：</strong>光电门计时精度有限</li>
+                <li><strong>操作误差：</strong>滑块释放时初速度不稳</li>
+                <li><strong>仪器误差：</strong>天平称量质量偏差</li>
+                <li><strong>空气阻力：</strong>气垫无法完全消除摩擦</li>
+            </ul>
+            <div class="warning-box">
+                <strong>如何减小误差：</strong><br>
+                ① 多次测量取平均值<br>
+                ② 使用水平尺反复校准导轨<br>
+                ③ 遮光片宽度选择适当（太窄信号弱，太宽误差大）<br>
+                ④ 滑块质量用精密天平（0.1g精度）
+            </div>
+        </div>
+
+        <!-- 实际应用：汽车碰撞 -->
+        <div class="info-card">
+            <h3>🚗 实际应用：汽车碰撞分析</h3>
+            <p style="font-size:0.82rem;color:#475569;margin-bottom:6px;">
+                <strong>场景：</strong>一辆轿车（1500kg）以20m/s追尾一辆静止的货车（8000kg）。
+            </p>
+            <p style="font-size:0.82rem;color:#475569;">
+                <strong>理论解释：</strong>
+            </p>
+            <ul>
+                <li>碰撞前总动量 = 1500×20 + 8000×0 = 30,000 kg·m/s</li>
+                <li>若完全非弹性碰撞，共同速度 v = 30000/(1500+8000) ≈ 3.16 m/s</li>
+                <li>轿车速度从20m/s骤降至3.16m/s → 巨大加速度 → 车内人员受伤</li>
+                <li><strong>安全设计原理：</strong>安全气囊延长碰撞时间（Δt↑），根据 F=Δp/Δt，冲击力减小</li>
+                <li>车头溃缩区吸收动能，保护乘员舱</li>
+            </ul>
+            <div class="highlight-box">
+                <strong>知识点：</strong>动量定理 F·Δt = Δp。碰撞时间越长，平均冲击力越小。这就是安全气囊、头盔、缓冲包装的原理。
+            </div>
+        </div>
+
+        <!-- 易错点 -->
+        <div class="info-card">
+            <h3>⚠️ 常见易错点</h3>
+            <ul>
+                <li><strong>矢量性遗忘：</strong>动量是矢量！方向相反时取负号。迎面相撞时 v₂ 为负值。</li>
+                <li><strong>系统选取：</strong>守恒条件是"系统合外力为零"。只分析碰撞物体，忽略摩擦力、重力分量。</li>
+                <li><strong>动能不守恒：</strong>完全非弹性碰撞动能损失最大，但动量依然守恒！两者不能混淆。</li>
+                <li><strong>相对速度：</strong>恢复系数 e = (v₂'-v₁')/(v₁-v₂)，弹性碰撞 e=1，非弹性 0≤e&lt;1。</li>
+                <li><strong>质量加权：</strong>速度分配与质量成反比。大质量物体速度变化小。</li>
+                <li><strong>瞬时性：</strong>碰撞过程时间极短，位移可忽略，但动量变化不可忽略。</li>
+            </ul>
+            <div class="warning-box">
+                <strong>判断技巧：</strong>先看系统是否受外力（水平面光滑/气垫导轨），再写动量守恒方程，最后代入动能条件。
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ============ DOM元素 ============
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const flashText = document.getElementById('flashText');
+        const chartCanvas = document.getElementById('chartCanvas');
+        const chartCtx = chartCanvas.getContext('2d');
+        const btnStart = document.getElementById('btnStart');
+        const btnReset = document.getElementById('btnReset');
+
+        // 滑块
+        const slMass1 = document.getElementById('mass1');
+        const slMass2 = document.getElementById('mass2');
+        const slVel1 = document.getElementById('vel1');
+        const slVel2 = document.getElementById('vel2');
+        const vm1 = document.getElementById('mass1Val');
+        const vm2 = document.getElementById('mass2Val');
+        const vv1 = document.getElementById('vel1Val');
+        const vv2 = document.getElementById('vel2Val');
+
+        // 数据展示
+        const els = {
+            beforeV1: document.getElementById('beforeV1'),
+            beforeV2: document.getElementById('beforeV2'),
+            beforeP1: document.getElementById('beforeP1'),
+            beforeP2: document.getElementById('beforeP2'),
+            beforePTotal: document.getElementById('beforePTotal'),
+            beforeEk: document.getElementById('beforeEk'),
+            afterV1: document.getElementById('afterV1'),
+            afterV2: document.getElementById('afterV2'),
+            afterP1: document.getElementById('afterP1'),
+            afterP2: document.getElementById('afterP2'),
+            afterPTotal: document.getElementById('afterPTotal'),
+            afterEk: document.getElementById('afterEk'),
+            diffV1: document.getElementById('diffV1'),
+            diffV2: document.getElementById('diffV2'),
+            diffP1: document.getElementById('diffP1'),
+            diffP2: document.getElementById('diffP2'),
+            diffPTotal: document.getElementById('diffPTotal'),
+            diffEk: document.getElementById('diffEk'),
+            badge: document.getElementById('conservationBadge'),
+        };
+
+        // ============ 物理参数 ============
+        const SCALE = 72;
+        let mass1 = 3.0, mass2 = 3.0;
+        let initVel1 = 3.0, initVel2 = 0.0;
+        let collisionType = 'elastic';
+        let trackLeft = 0.4, trackRight = 10.0;
+        let ball1 = { x: 0, v: 0, r: 0 };
+        let ball2 = { x: 0, v: 0, r: 0 };
+        let simRunning = false, collisionDone = false, merged = false, mergedV = 0, mergedOff = 0;
+        let beforeData = null, afterData = null;
+        let particles = [], lastTime = null, animId = null, cooldown = 0;
+        let canvasW = 800, canvasH = 280;
+        let chartDataPoints = []; // 存储总动量历史值用于折线图
+
+        function calcR(m) { return 0.15 + m * 0.025; }
+        function toPx(physX) {
+            const pl = 65, pr = canvasW - 65;
+            return pl + ((physX - trackLeft) / (trackRight - trackLeft)) * (pr - pl);
+        }
+        function toPhys(px) {
+            const pl = 65, pr = canvasW - 65;
+            return trackLeft + ((px - pl) / (pr - pl)) * (trackRight - trackLeft);
+        }
+        function trackY() { return canvasH * 0.5; }
+
+        function resizeCanvas() {
+            const wrap = document.getElementById('canvasWrap');
+            const w = Math.min(wrap.clientWidth - 4, 860);
+            canvasW = w;
+            canvasH = Math.round(w * 0.33);
+            if (canvasH < 200) canvasH = 200;
+            canvas.width = canvasW * 2;
+            canvas.height = canvasH * 2;
+            canvas.style.width = canvasW + 'px';
+            canvas.style.height = canvasH + 'px';
+            ctx.setTransform(2, 0, 0, 2, 0, 0);
+        }
+
+        function initPhysics() {
+            const tl = trackRight - trackLeft;
+            ball1.x = trackLeft + tl * 0.18;
+            ball2.x = trackLeft + tl * 0.60;
+            ball1.r = calcR(mass1);
+            ball2.r = calcR(mass2);
+            ball1.v = initVel1;
+            ball2.v = initVel2;
+            const md = ball1.r + ball2.r + 0.04;
+            if (ball2.x - ball1.x < md) {
+                ball2.x = ball1.x + md;
+                if (ball2.x + ball2.r > trackRight) { ball2.x = trackRight - ball2.r;
+                    ball1.x = ball2.x - md; }
+            }
+        }
+
+        function resetAll() {
+            simRunning = false;
+            collisionDone = false;
+            merged = false;
+            mergedV = 0;
+            mergedOff = 0;
+            beforeData = null;
+            afterData = null;
+            particles = [];
+            cooldown = 0;
+            lastTime = null;
+            chartDataPoints = [];
+            if (animId) cancelAnimationFrame(animId);
+            animId = null;
+            flashText.classList.remove('show');
+            btnStart.textContent = '▶ 开始模拟';
+            btnStart.disabled = false;
+            clearAfter();
+            els.badge.style.display = 'none';
+            updateBeforeDisplay();
+            drawChart();
+        }
+
+        function applyParams() {
+            mass1 = parseFloat(slMass1.value);
+            mass2 = parseFloat(slMass2.value);
+            initVel1 = parseFloat(slVel1.value);
+            initVel2 = parseFloat(slVel2.value);
+            ball1.r = calcR(mass1);
+            ball2.r = calcR(mass2);
+            ball1.v = initVel1;
+            ball2.v = initVel2;
+            initPhysics();
+            vm1.textContent = mass1.toFixed(1) + ' kg';
+            vm2.textContent = mass2.toFixed(1) + ' kg';
+            vv1.textContent = initVel1.toFixed(1) + ' m/s';
+            vv2.textContent = initVel2.toFixed(1) + ' m/s';
+            updateBeforeDisplay();
+            clearAfter();
+            els.badge.style.display = 'none';
+            chartDataPoints = [];
+            drawChart();
+        }
+
+        function updateBeforeDisplay() {
+            const p1 = mass1 * ball1.v, p2 = mass2 * ball2.v;
+            const pt = p1 + p2, ek = 0.5*mass1*ball1.v**2 + 0.5*mass2*ball2.v**2;
+            els.beforeV1.textContent = ball1.v.toFixed(2)+' m/s';
+            els.beforeV2.textContent = ball2.v.toFixed(2)+' m/s';
+            els.beforeP1.textContent = p1.toFixed(2);
+            els.beforeP2.textContent = p2.toFixed(2);
+            els.beforePTotal.textContent = pt.toFixed(2);
+            els.beforeEk.textContent = ek.toFixed(2)+' J';
+        }
+
+        function clearAfter() {
+            ['afterV1','afterV2','afterP1','afterP2','afterPTotal','afterEk',
+                'diffV1','diffV2','diffP1','diffP2','diffPTotal','diffEk'].forEach(id => {
+                els[id].textContent = '—';
+            });
+        }
+
+        function updateAfter(v1f, v2f) {
+            const p1f = mass1*v1f, p2f = mass2*v2f, ptf = p1f+p2f, ekf = 0.5*mass1*v1f**2 + 0.5*mass2*v2f**2;
+            els.afterV1.textContent = v1f.toFixed(2)+' m/s';
+            els.afterV2.textContent = v2f.toFixed(2)+' m/s';
+            els.afterP1.textContent = p1f.toFixed(2);
+            els.afterP2.textContent = p2f.toFixed(2);
+            els.afterPTotal.textContent = ptf.toFixed(2);
+            els.afterEk.textContent = ekf.toFixed(2)+' J';
+            if (beforeData) {
+                els.diffV1.textContent = (v1f - beforeData.v1).toFixed(2)+' m/s';
+                els.diffV2.textContent = (v2f - beforeData.v2).toFixed(2)+' m/s';
+                els.diffP1.textContent = (p1f - beforeData.p1).toFixed(2);
+                els.diffP2.textContent = (p2f - beforeData.p2).toFixed(2);
+                els.diffPTotal.textContent = (ptf - beforeData.pTotal).toFixed(3);
+                els.diffEk.textContent = (ekf - beforeData.ek).toFixed(2)+' J';
+                const diff = Math.abs(ptf - beforeData.pTotal);
+                els.badge.style.display = 'inline-block';
+                if (diff < 0.05) {
+                    els.badge.className = 'badge badge-success';
+                    els.badge.textContent = '✅ 动量守恒验证通过 (偏差<0.05)';
+                } else {
+                    els.badge.className = 'badge badge-warning';
+                    els.badge.textContent = '⚠️ 偏差: '+diff.toFixed(3)+' (可能因数值精度)';
+                }
+            }
+            // 添加图表数据点
+            if (beforeData) {
+                chartDataPoints.push({ label: '碰撞前', value: beforeData.pTotal });
+            }
+            chartDataPoints.push({ label: '碰撞后', value: ptf });
+            if (chartDataPoints.length > 8) chartDataPoints.shift();
+            drawChart();
+        }
+
+        function spawnParticles(px, py) {
+            for (let i=0;i<22;i++) {
+                const a = Math.random()*Math.PI*2;
+                const s = 50+Math.random()*250;
+                particles.push({ x:px, y:py, vx:Math.cos(a)*s, vy:Math.sin(a)*s-80, life:0.45+Math.random()*0.55,
+                    maxLife:0.45+Math.random()*0.55, r:1.2+Math.random()*2.8, color:Math.random()<0.5?'#f59e0b':(Math.random()<0.5?'#ef4444':'#3b82f6') });
+            }
+        }
+
+        function drawScene() {
+            ctx.clearRect(0,0,canvasW,canvasH);
+            // 网格
+            ctx.strokeStyle='rgba(180,190,200,0.2)';
+            ctx.lineWidth=0.5;
+            for(let x=25;x<canvasW;x+=25){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvasH);ctx.stroke();}
+            for(let y=25;y<canvasH;y+=25){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvasW,y);ctx.stroke();}
+            // 轨道
+            const ty = trackY();
+            const lx=toPx(trackLeft), rx=toPx(trackRight);
+            ctx.fillStyle='#e8ecf1';
+            ctx.fillRect(lx-6,ty-7,rx-lx+12,20);
+            ctx.strokeStyle='#c0c8d4';
+            ctx.lineWidth=1.5;
+            ctx.beginPath();ctx.roundRect(lx-6,ty-7,rx-lx+12,20,8);ctx.stroke();
+            ctx.fillStyle='#8899aa';
+            [lx,rx].forEach(ex=>{ctx.beginPath();ctx.arc(ex,ty+3,6,0,Math.PI*2);ctx.fill();});
+            // 球
+            function drawBall(px,py,r,color,glow,label,v) {
+                const cr = Math.max(r*SCALE,9);
+                ctx.fillStyle=glow+'40';
+                ctx.beginPath();ctx.arc(px,py,cr*1.6,0,Math.PI*2);ctx.fill();
+                const grad=ctx.createRadialGradient(px-cr*0.3,py-cr*0.35,cr*0.05,px,py,cr);
+                grad.addColorStop(0,'#fff');grad.addColorStop(0.3,color);grad.addColorStop(1,'#1a1a2e');
+                ctx.fillStyle=grad;ctx.beginPath();ctx.arc(px,py,cr,0,Math.PI*2);ctx.fill();
+                ctx.fillStyle='rgba(255,255,255,0.65)';
+                ctx.beginPath();ctx.arc(px-cr*0.3,py-cr*0.3,cr*0.2,0,Math.PI*2);ctx.fill();
+                ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(cr*0.5,10)}px Inter,sans-serif`;
+                ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(label,px,py);
+                if(Math.abs(v)>0.005){
+                    const ay=py-cr-12, al=Math.min(Math.abs(v)*20,65), ad=Math.sign(v);
+                    ctx.strokeStyle='rgba(30,35,45,0.7)';ctx.lineWidth=2.5;ctx.lineCap='round';
+                    ctx.beginPath();ctx.moveTo(px-ad*Math.min(al*0.3,18),ay);ctx.lineTo(px+ad*al,ay);ctx.stroke();
+                    ctx.fillStyle='rgba(30,35,45,0.8)';
+                    ctx.beginPath();ctx.moveTo(px+ad*al,ay);ctx.lineTo(px+ad*al-ad*7,ay-5);ctx.lineTo(px+ad*al-ad*7,ay+5);ctx.closePath();ctx.fill();
+                }
+            }
+            if(merged && collisionDone) {
+                const mx = ball1.x, b1x = mx - mergedOff/2, b2x = mx + mergedOff/2;
+                drawBall(toPx(b1x),ty,ball1.r,'#ef4444','#fca5a5','1',mergedV);
+                drawBall(toPx(b2x),ty,ball2.r,'#3b82f6','#93c5fd','2',mergedV);
+            } else {
+                drawBall(toPx(ball1.x),ty,ball1.r,'#ef4444','#fca5a5','1',ball1.v);
+                drawBall(toPx(ball2.x),ty,ball2.r,'#3b82f6','#93c5fd','2',ball2.v);
+            }
+            // 粒子
+            for(const p of particles) {
+                const alpha = Math.max(0,p.life/p.maxLife);
+                ctx.fillStyle = `rgba(${p.color==='#ef4444'?'239,68,68':p.color==='#3b82f6'?'59,130,246':'245,158,11'},${alpha})`;
+                ctx.beginPath();ctx.arc(p.x,p.y,p.r*alpha,0,Math.PI*2);ctx.fill();
+            }
+        }
+
+        function drawChart() {
+            const cw = chartCanvas.parentElement.clientWidth - 8;
+            const ch = 200;
+            chartCanvas.width = cw * 2;
+            chartCanvas.height = ch * 2;
+            chartCanvas.style.width = cw + 'px';
+            chartCanvas.style.height = ch + 'px';
+            const cx = chartCtx;
+            cx.setTransform(2,0,0,2,0,0);
+            cx.clearRect(0,0,cw,ch);
+            if(chartDataPoints.length===0) {
+                cx.fillStyle='#94a3b8';
+                cx.font='13px Inter,sans-serif';
+                cx.textAlign='center';
+                cx.fillText('运行模拟后显示动量变化折线图',cw/2,ch/2);
+                return;
+            }
+            // 坐标轴
+            const padL=45, padR=25, padT=20, padB=35;
+            const pw=cw-padL-padR, ph=ch-padT-padB;
+            cx.strokeStyle='#e2e8f0';cx.lineWidth=1;
+            cx.beginPath();cx.moveTo(padL,padT);cx.lineTo(padL,ch-padB);cx.lineTo(cw-padR,ch-padB);cx.stroke();
+            const vals = chartDataPoints.map(d=>d.value);
+            const minV = Math.min(...vals)-0.5, maxV = Math.max(...vals)+0.5;
+            const range = maxV-minV || 1;
+            // 理论总动量线（红色虚线）
+            if(beforeData) {
+                const thY = ch-padB - ((beforeData.pTotal-minV)/range)*ph;
+                cx.strokeStyle='rgba(239,68,68,0.7)';cx.lineWidth=2;cx.setLineDash([6,3]);
+                cx.beginPath();cx.moveTo(padL,thY);cx.lineTo(cw-padR,thY);cx.stroke();
+                cx.setLineDash([]);
+                cx.fillStyle='#ef4444';cx.font='11px Inter,sans-serif';cx.textAlign='right';
+                cx.fillText('理论总动量='+beforeData.pTotal.toFixed(2),cw-padR-5,thY-6);
+            }
+            // 数据点折线
+            cx.strokeStyle='#3b82f6';cx.lineWidth=2.5;
+            cx.beginPath();
+            const pts = chartDataPoints.map((d,i)=>{
+                const x = padL + (i/(chartDataPoints.length-1||1))*pw;
+                const y = ch-padB - ((d.value-minV)/range)*ph;
+                return {x,y,label:d.label,value:d.value};
+            });
+            for(let i=0;i<pts.length;i++) {
+                if(i===0) cx.moveTo(pts[i].x,pts[i].y);
+                else cx.lineTo(pts[i].x,pts[i].y);
+            }
+            cx.stroke();
+            // 数据点圆
+            for(const pt of pts) {
+                cx.fillStyle='#3b82f6';cx.beginPath();cx.arc(pt.x,pt.y,5,0,Math.PI*2);cx.fill();
+                cx.fillStyle='#fff';cx.beginPath();cx.arc(pt.x,pt.y,2.5,0,Math.PI*2);cx.fill();
+                cx.fillStyle='#1e293b';cx.font='10px Inter,sans-serif';cx.textAlign='center';
+                cx.fillText(pt.value.toFixed(2),pt.x,pt.y-10);
+            }
+            // Y轴标签
+            cx.fillStyle='#64748b';cx.font='10px Inter,sans-serif';cx.textAlign='right';
+            for(let i=0;i<=4;i++) {
+                const v = minV + (range*i/4);
+                const y = ch-padB - ((v-minV)/range)*ph;
+                cx.fillText(v.toFixed(1),padL-6,y+3);
+            }
+            cx.fillStyle='#64748b';cx.textAlign='center';cx.fillText('测量次序',cw/2,ch-5);
+        }
+
+        function animate(ts) {
+            if(!simRunning && particles.length===0 && !flashText.classList.contains('show')) {
+                drawScene();animId=null;return;
+            }
+            if(lastTime===null) lastTime=ts;
+            let dt = (ts-lastTime)/1000;
+            if(dt>0.08) dt=0.08;
+            lastTime=ts;
+            if(cooldown>0) cooldown-=dt;
+            if(simRunning) {
+                if(merged) {
+                    const nx = ball1.x + mergedV*dt;
+                    const hw = mergedOff/2 + Math.max(ball1.r,ball2.r);
+                    if(nx-hw<trackLeft){ball1.x=trackLeft+hw;mergedV=Math.abs(mergedV);spawnParticles(toPx(ball1.x-mergedOff/2),trackY());}
+                    else if(nx+hw>trackRight){ball1.x=trackRight-hw;mergedV=-Math.abs(mergedV);spawnParticles(toPx(ball1.x+mergedOff/2),trackY());}
+                    else ball1.x=nx;
+                    ball2.x=ball1.x;ball1.v=ball2.v=mergedV;
+                } else {
+                    ball1.x+=ball1.v*dt;ball2.x+=ball2.v*dt;
+                    [ball1,ball2].forEach(b=>{
+                        if(b.x-b.r<trackLeft){b.x=trackLeft+b.r;b.v=Math.abs(b.v);spawnParticles(toPx(b.x),trackY());}
+                        if(b.x+b.r>trackRight){b.x=trackRight-b.r;b.v=-Math.abs(b.v);spawnParticles(toPx(b.x),trackY());}
+                    });
+                    const dist = ball2.x-ball1.x, md = ball1.r+ball2.r, relV = ball1.v-ball2.v;
+                    if(!collisionDone && dist<=md && relV>0.001 && cooldown<=0) {
+                        collisionDone=true;cooldown=0.5;
+                        beforeData={v1:ball1.v,v2:ball2.v,p1:mass1*ball1.v,p2:mass2*ball2.v,pTotal:mass1*ball1.v+mass2*ball2.v,ek:0.5*mass1*ball1.v**2+0.5*mass2*ball2.v**2};
+                        const ov = md-dist;
+                        if(ov>0){const tm=mass1+mass2;ball1.x-=ov*(mass2/tm);ball2.x+=ov*(mass1/tm);}
+                        let v1f,v2f;
+                        if(collisionType==='elastic'){v1f=((mass1-mass2)*ball1.v+2*mass2*ball2.v)/(mass1+mass2);v2f=((mass2-mass1)*ball2.v+2*mass1*ball1.v)/(mass1+mass2);}
+                        else {v1f=v2f=(mass1*ball1.v+mass2*ball2.v)/(mass1+mass2);merged=true;mergedV=v1f;mergedOff=ball1.r+ball2.r;ball1.x=(ball1.x+ball2.x)/2;ball2.x=ball1.x;}
+                        ball1.v=v1f;ball2.v=v2f;afterData={v1:v1f,v2:v2f};
+                        updateAfter(v1f,v2f);
+                        spawnParticles(toPx((ball1.x+ball2.x)/2),trackY());
+                        flashText.classList.remove('show');void flashText.offsetWidth;flashText.classList.add('show');
+                        setTimeout(()=>flashText.classList.remove('show'),700);
+                    }
+                }
+                if(!collisionDone) updateBeforeDisplay();
+            }
+            for(let i=particles.length-1;i>=0;i--) {
+                const p=particles[i];
+                p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=180*dt;p.life-=dt;
+                if(p.life<=0) particles.splice(i,1);
+            }
+            drawScene();
+            animId=requestAnimationFrame(animate);
+        }
+
+        function startSim() {
+            if(simRunning) return;
+            resetAll();applyParams();
+            simRunning=true;collisionDone=false;merged=false;mergedV=0;mergedOff=0;
+            beforeData=null;afterData=null;particles=[];cooldown=0;lastTime=null;
+            chartDataPoints=[{label:'初始',value:mass1*initVel1+mass2*initVel2}];
+            btnStart.textContent='⏸ 运行中...';btnStart.disabled=true;
+            updateBeforeDisplay();clearAfter();els.badge.style.display='none';
+            flashText.classList.remove('show');
+            drawChart();
+            if(animId) cancelAnimationFrame(animId);
+            animId=requestAnimationFrame(animate);
+        }
+
+        function resetSim() { resetAll();applyParams();drawScene();drawChart(); }
+
+        // 事件
+        btnStart.addEventListener('click',startSim);
+        btnReset.addEventListener('click',resetSim);
+        document.getElementById('typeGroup').addEventListener('click',e=>{
+            const btn=e.target.closest('.type-btn');if(!btn)return;
+            document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+            btn.classList.add('active');collisionType=btn.dataset.type;resetSim();
+        });
+        document.querySelectorAll('.btn-preset').forEach(b=>b.addEventListener('click',()=>{
+            const p=b.dataset.preset;
+            if(p==='equal'){slMass1.value=3;slMass2.value=3;slVel1.value=3;slVel2.value=0;}
+            else if(p==='heavy1'){slMass1.value=8;slMass2.value=2;slVel1.value=3;slVel2.value=0;}
+            else if(p==='heavy2'){slMass1.value=2;slMass2.value=8;slVel1.value=4;slVel2.value=0;}
+            else if(p==='headon'){slMass1.value=3;slMass2.value=3;slVel1.value=3;slVel2.value=-2;}
+            resetSim();
+        }));
+        [slMass1,slMass2,slVel1,slVel2].forEach(s=>s.addEventListener('input',()=>{applyParams();resetAll();drawScene();drawChart();}));
+        window.addEventListener('resize',()=>{resizeCanvas();applyParams();resetAll();drawScene();drawChart();});
+        window.addEventListener('keydown',e=>{if(e.key===' '||e.code==='Space'){e.preventDefault();simRunning?resetSim():startSim();}});
+
+        // 初始化
+        if(!ctx.roundRect){ctx.roundRect=function(x,y,w,h,r){if(typeof r==='number')r={tl:r,tr:r,br:r,bl:r};ctx.beginPath();ctx.moveTo(x+r.tl,y);ctx.lineTo(x+w-r.tr,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r.tr);ctx.lineTo(x+w,y+h-r.br);ctx.quadraticCurveTo(x+w,y+h,x+w-r.br,y+h);ctx.lineTo(x+r.bl,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r.bl);ctx.lineTo(x,y+r.tl);ctx.quadraticCurveTo(x,y,x+r.tl,y);ctx.closePath();};}
+        resizeCanvas();applyParams();resetAll();drawScene();drawChart();
+    })();
+</script>
+</body>
+</html>

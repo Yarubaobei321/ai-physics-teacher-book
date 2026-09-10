@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中地理 · 产业区位因素交互学习平台（融合版）</title>
+    <style>
+        :root {
+            --agri: #2d6a4f;
+            --agri-light: #d8f3dc;
+            --agri-bg: #f0fdf4;
+            --agri-accent: #e8f5e9;
+            --industry: #1e6091;
+            --industry-light: #d0e8f5;
+            --industry-bg: #f0f7fb;
+            --industry-accent: #e3f0f9;
+            --service: #7b2d8b;
+            --service-light: #f0d9f5;
+            --service-bg: #faf5fc;
+            --service-accent: #f3e8f7;
+            --bg: #f5f3ef;
+            --card: #ffffff;
+            --text: #1e1e1e;
+            --text-light: #555;
+            --border: #e0dcd5;
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            --radius: 16px;
+            --transition: 0.25s ease;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(135deg, #1b3a2d 0%, #1a3a4a 60%, #3b2340 100%);
+            color: #fff;
+            padding: 28px 5vw 20px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+        }
+        header h1 {
+            font-size: 1.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        header p {
+            font-size: 0.9rem;
+            opacity: 0.82;
+        }
+        .tab-nav {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 18px 5vw 4px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: var(--card);
+            border: 2px solid var(--border);
+            border-radius: 30px;
+            padding: 10px 26px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+        }
+        .tab-btn.active {
+            color: #fff;
+            border-color: transparent;
+        }
+        .tab-btn.agri.active {
+            background: var(--agri);
+        }
+        .tab-btn.industry.active {
+            background: var(--industry);
+        }
+        .tab-btn.service.active {
+            background: var(--service);
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 8px 5vw 40px;
+        }
+        .tab-panel {
+            display: none;
+            animation: fadeSlide 0.35s ease;
+        }
+        .tab-panel.active {
+            display: block;
+        }
+        @keyframes fadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 检索区 */
+        .search-area {
+            background: linear-gradient(135deg, #fff 0%, #fafaf7 100%);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 16px 22px;
+            margin-bottom: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            border: 2px solid #e8e4dc;
+        }
+        .search-area input {
+            flex: 1;
+            min-width: 180px;
+            padding: 10px 16px;
+            border: 2px solid #d5cfc3;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: var(--transition);
+        }
+        .search-area input:focus {
+            border-color: #8f7e5e;
+            box-shadow: 0 0 0 3px rgba(143, 126, 94, 0.12);
+        }
+        .search-area button {
+            padding: 10px 22px;
+            border-radius: 24px;
+            border: none;
+            background: #5c4d3c;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+        .search-area button:hover {
+            background: #3e3528;
+        }
+        .search-result {
+            width: 100%;
+            background: #fffef9;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-top: 6px;
+            border-left: 4px solid #c9a96e;
+            display: none;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        .search-result.show {
+            display: block;
+            animation: fadeSlide 0.3s ease;
+        }
+        .search-result strong {
+            color: #7b4b1e;
+        }
+
+        /* 卡片 */
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 22px;
+            margin-bottom: 14px;
+            border-left: 5px solid transparent;
+            transition: var(--transition);
+        }
+        .card.agri {
+            border-left-color: var(--agri);
+            background: var(--agri-bg);
+        }
+        .card.industry {
+            border-left-color: var(--industry);
+            background: var(--industry-bg);
+        }
+        .card.service {
+            border-left-color: var(--service);
+            background: var(--service-bg);
+        }
+        .card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card p,
+        .card li {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+        .card ul {
+            padding-left: 20px;
+            margin-top: 4px;
+        }
+        .card li {
+            margin-bottom: 3px;
+        }
+
+        /* 速览表格 */
+        .quick-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 8px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.04);
+        }
+        .quick-table th,
+        .quick-table td {
+            padding: 7px 10px;
+            border: 1px solid #e6e2d9;
+            text-align: left;
+        }
+        .quick-table th {
+            background: #f5f1e9;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .quick-table .cat-cell {
+            font-weight: 700;
+            text-align: center;
+            background: #fafaf5;
+            width: 18%;
+        }
+        .highlight {
+            font-weight: 700;
+            color: #c44a1e;
+        }
+
+        /* 图片展示 */
+        .img-showcase {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .img-card {
+            flex: 1;
+            min-width: 200px;
+            background: #fff;
+            border-radius: 12px;
+            border: 2px solid #e8e4dc;
+            padding: 10px;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .img-card:hover {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+            transform: translateY(-2px);
+        }
+        .img-card svg {
+            width: 100%;
+            max-height: 140px;
+        }
+        .img-card .caption {
+            font-size: 0.78rem;
+            color: #777;
+            margin-top: 4px;
+        }
+
+        /* 综合题 */
+        .comprehensive {
+            background: #fffef7;
+            border: 2px solid #e8e2d2;
+            border-radius: 14px;
+            padding: 18px 22px;
+            margin: 12px 0;
+        }
+        .comprehensive h4 {
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+            color: #6b4f1e;
+        }
+        .comprehensive .material {
+            background: #fcf9f0;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 0.88rem;
+            margin-bottom: 8px;
+            border-left: 3px solid #c9a96e;
+        }
+        .comprehensive textarea {
+            width: 100%;
+            min-height: 85px;
+            border: 2px solid #ddd8cb;
+            border-radius: 10px;
+            padding: 10px;
+            font-size: 0.88rem;
+            font-family: inherit;
+            resize: vertical;
+            outline: none;
+        }
+        .comprehensive textarea:focus {
+            border-color: #c9a96e;
+        }
+        .comprehensive .btn-row {
+            margin-top: 6px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .comprehensive .btn-row button {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #c7bfaa;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: var(--transition);
+        }
+        .comprehensive .btn-row button:hover {
+            background: #f5efe0;
+        }
+        .comprehensive .btn-row button.primary-btn {
+            background: #5c4d3c;
+            color: #fff;
+            border-color: #5c4d3c;
+        }
+        .comprehensive .btn-row button.primary-btn:hover {
+            background: #3e3528;
+        }
+        .answer-reveal {
+            margin-top: 6px;
+            background: #f0f9e8;
+            border-radius: 10px;
+            padding: 10px 14px;
+            display: none;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            border-left: 3px solid #6b8e23;
+        }
+        .answer-reveal.show {
+            display: block;
+            animation: fadeSlide 0.3s ease;
+        }
+        .analysis-box {
+            margin-top: 6px;
+            background: #fff9f0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: none;
+            font-size: 0.88rem;
+            line-height: 1.8;
+            border-left: 4px solid #e6a817;
+        }
+        .analysis-box.show {
+            display: block;
+            animation: fadeSlide 0.3s ease;
+        }
+        .analysis-box .score-badge {
+            display: inline-block;
+            background: #f0c040;
+            color: #4a3500;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 1rem;
+            margin-right: 6px;
+        }
+        .analysis-box .encourage {
+            color: #2d6a4f;
+            font-weight: 700;
+        }
+        .analysis-box .improve {
+            color: #c44a1e;
+            font-weight: 700;
+        }
+
+        /* 测验 */
+        .quiz {
+            background: #fffdf7;
+            border: 1px solid #e8e2d2;
+            border-radius: 14px;
+            padding: 14px 18px;
+            margin: 10px 0;
+        }
+        .quiz .q {
+            font-weight: 700;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        .quiz button {
+            background: #fff;
+            border: 2px solid #c7bfaa;
+            border-radius: 20px;
+            padding: 6px 14px;
+            margin: 3px 5px 3px 0;
+            cursor: pointer;
+            font-size: 0.84rem;
+            transition: var(--transition);
+        }
+        .quiz button:hover {
+            background: #f5efe0;
+        }
+        .quiz button.correct {
+            background: #c8e6c9;
+            border-color: #388e3c;
+            color: #1b5e20;
+            font-weight: 700;
+        }
+        .quiz button.wrong {
+            background: #ffcdd2;
+            border-color: #c62828;
+            color: #b71c1c;
+        }
+        .feedback {
+            margin-top: 5px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        /* 折叠面板 */
+        .accordion-toggle {
+            background: #fff;
+            border: 2px solid #e0dcd5;
+            border-radius: 24px;
+            padding: 10px 20px;
+            width: 100%;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .accordion-toggle:hover {
+            background: #fafaf7;
+        }
+        .accordion-content {
+            display: none;
+            padding: 6px 0 12px 10px;
+            font-size: 0.88rem;
+            color: #555;
+            line-height: 1.7;
+        }
+        .accordion-content.open {
+            display: block;
+            animation: fadeSlide 0.3s ease;
+        }
+
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 8px 0;
+        }
+        @media (max-width: 640px) {
+            .compare-grid {
+                grid-template-columns: 1fr;
+            }
+            header h1 {
+                font-size: 1.3rem;
+            }
+            .tab-btn {
+                padding: 7px 14px;
+                font-size: 0.82rem;
+            }
+            .search-area {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+        footer {
+            text-align: center;
+            padding: 18px;
+            color: #999;
+            font-size: 0.78rem;
+            border-top: 1px solid #e0dcd5;
+            margin-top: 8px;
+        }
+        .section-label {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: #fff;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+        .section-label.quick {
+            background: #c9a96e;
+        }
+        .section-label.detail {
+            background: #7a9a7a;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🌍 产业区位因素 · 交互学习平台</h1>
+        <p>高中地理必修第二册 —— 速览框架 + 深度分析 + 智能批改 | 教材基准 · 高考视野</p>
+    </header>
+
+    <div class="tab-nav">
+        <button class="tab-btn agri active" onclick="switchTab('agri')">🌾 农 业</button>
+        <button class="tab-btn industry" onclick="switchTab('industry')">🏭 工 业</button>
+        <button class="tab-btn service" onclick="switchTab('service')">🏢 服务业</button>
+    </div>
+
+    <div class="container">
+
+        <!-- ==================== 农业面板 ==================== -->
+        <div id="panel-agri" class="tab-panel active">
+
+            <!-- 地区检索 -->
+            <div class="search-area">
+                <span style="font-weight:700;white-space:nowrap;">🔍 检索地区农业区位：</span>
+                <input type="text" id="agri-search-input" placeholder="输入地区名称，如：东北平原、地中海沿岸、潘帕斯草原……">
+                <button onclick="searchAgri()">分 析</button>
+                <div class="search-result" id="agri-search-result"></div>
+            </div>
+
+            <!-- 📋 速览：农业区位因素简洁列表 -->
+            <div class="card agri" style="border-left-width:7px;">
+                <h3>📋 农业区位因素 · 速览框架 <span class="section-label quick">先列出来</span></h3>
+                <table class="quick-table">
+                    <thead>
+                        <tr><th>类别</th><th>因素</th><th>核心影响（一句话）</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td class="cat-cell" rowspan="4">🌿<br>自然因素</td><td><strong>气候</strong></td><td>光照、热量、降水决定作物种类、熟制和品质</td></tr>
+                        <tr><td><strong>地形</strong></td><td>平原宜种植业，山地宜林果业或畜牧业</td></tr>
+                        <tr><td><strong>土壤</strong></td><td>肥力高低直接影响产量与品质</td></tr>
+                        <tr><td><strong>水源</strong></td><td>天然降水不足时需灌溉水源保障</td></tr>
+                        <tr><td class="cat-cell" rowspan="5">🏙️<br>社会经济<br>因素</td><td><strong>市场</strong></td><td>决定农业生产的类型和规模</td></tr>
+                        <tr><td><strong>交通</strong></td><td>便捷交通扩大农产品销售范围</td></tr>
+                        <tr><td><strong>科技</strong></td><td>改良品种、改善灌溉，突破自然限制</td></tr>
+                        <tr><td><strong>政策</strong></td><td>政府扶持或调控影响农业布局</td></tr>
+                        <tr><td><strong>劳动力</strong></td><td>影响农业集约化程度和成本</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 📖 详解：农业区位因素如何影响 -->
+            <div class="card agri">
+                <h3>📖 农业区位因素 · 整合分析 <span class="section-label detail">再深入理解</span></h3>
+                <div class="compare-grid">
+                    <div>
+                        <strong>🌡️ 气候如何影响？</strong>
+                        <p style="font-size:0.84rem;margin-top:2px;">光照强度影响光合作用效率——新疆棉花<strong>光照充足、昼夜温差大</strong>，有机物积累多，品质优良。热量决定作物生长期长短和熟制——东北平原<strong>热量不足</strong>，只能一年一熟。降水决定灌溉需求——地中海气候<strong>夏季干燥</strong>，需水利工程调节。</p>
+                    </div>
+                    <div>
+                        <strong>⛰️ 地形与土壤如何影响？</strong>
+                        <p style="font-size:0.84rem;margin-top:2px;">地形平坦则利于<strong>大规模机械化</strong>（如美国中央大平原的商品谷物农业）；山地丘陵则适合梯田或林果业。土壤肥力是基础——东北<strong>黑土有机质含量高</strong>，是优质水稻产区的核心条件；江南丘陵<strong>酸性红壤</strong>则需改良后才能高产。</p>
+                    </div>
+                    <div>
+                        <strong>🏪 市场如何影响？</strong>
+                        <p style="font-size:0.84rem;margin-top:2px;">市场需求直接决定<strong>农业生产的类型和规模</strong>。大城市周边多发展乳畜业和蔬菜花卉种植（如北京郊区、上海郊区）。地中海沿岸从传统混合农业转向商品化园艺业，正是因为<strong>欧洲市场对水果、蔬菜、鲜花的需求增长</strong>，体现了市场对农业转型的驱动作用。</p>
+                    </div>
+                    <div>
+                        <strong>🚚 交通与科技如何影响？</strong>
+                        <p style="font-size:0.84rem;margin-top:2px;">交通改善扩大了销售范围——<strong>冷链物流</strong>使云南鲜花远销全国，阿根廷牛肉通过<strong>海运</strong>出口欧洲。科技进步可突破自然限制——以色列<strong>滴灌技术</strong>在干旱区实现高效农业；<strong>杂交水稻</strong>大幅提高单产，改变了人口密集区的粮食供给格局。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 地中海案例 -->
+            <div class="card agri">
+                <h3>🌿 案例拓展：地中海型农业</h3>
+                <div class="img-showcase">
+                    <div class="img-card">
+                        <svg viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="260" height="150" fill="#e8f4f8"/>
+                            <ellipse cx="130" cy="80" rx="90" ry="48" fill="#87CEEB" opacity="0.4"/>
+                            <rect x="40" y="25" width="180" height="85" rx="12" fill="#f4e3c1" stroke="#c9a96e" stroke-width="2"/>
+                            <text x="130" y="70" text-anchor="middle" font-size="13" fill="#5c4d2e" font-weight="700">地中海沿岸</text>
+                            <circle cx="65" cy="100" r="5" fill="#6b8e23"/><text x="65" y="118" text-anchor="middle" font-size="7" fill="#555">🍇葡萄</text>
+                            <circle cx="130" cy="105" r="5" fill="#6b8e23"/><text x="130" y="123" text-anchor="middle" font-size="7" fill="#555">🍊柑橘</text>
+                            <circle cx="195" cy="100" r="5" fill="#6b8e23"/><text x="195" y="118" text-anchor="middle" font-size="7" fill="#555">🫒橄榄</text>
+                            <text x="130" y="18" text-anchor="middle" font-size="10" fill="#2d6a4f" font-weight="700">地中海型农业区示意</text>
+                        </svg>
+                        <div class="caption">地中海沿岸农业区及主要作物</div>
+                    </div>
+                    <div style="flex:1.5;min-width:240px;font-size:0.85rem;color:#555;line-height:1.75;">
+                        <strong>分布：</strong>南欧、北非、西亚地中海沿岸，及美国加州、南非开普敦等。<br>
+                        <strong>气候：</strong>夏季炎热干燥，冬季温和多雨（"夏干冬雨"型）。<br>
+                        <strong>作物：</strong>葡萄、柑橘、橄榄等耐旱园艺作物；粮食为冬小麦、大麦。<br>
+                        <strong>区位优势：</strong>光照充足、热量丰富，欧洲市场广阔，交通便利。<br>
+                        <strong>不利因素：</strong>夏季干旱，依赖水利灌溉。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 农业地域类型表格 -->
+            <div class="card agri">
+                <h3>🌏 主要农业地域类型</h3>
+                <table class="quick-table">
+                    <thead><tr><th>类型</th><th>典型分布区</th><th>核心区位条件</th><th>生产特点</th></tr></thead>
+                    <tbody>
+                        <tr><td>季风水田农业</td><td>东亚、南亚、东南亚</td><td>高温多雨、劳动力丰富</td><td>小农经营、商品率低</td></tr>
+                        <tr><td>商品谷物农业</td><td>美国中部、中国东北</td><td>地形平坦、地广人稀、科技发达</td><td>规模大、机械化程度高</td></tr>
+                        <tr><td>大牧场放牧业</td><td>阿根廷潘帕斯、美国西部</td><td>草场广阔、地广人稀</td><td>大规模商品畜牧业</td></tr>
+                        <tr><td>乳畜业</td><td>西欧、北美五大湖、大城市周边</td><td>接近市场、饲料充足、气候温凉</td><td>集约化、面向城市</td></tr>
+                        <tr><td><strong>地中海型农业</strong></td><td>地中海沿岸、美国加州</td><td>光照充足、冬季温和、市场广阔</td><td>园艺业为主，商品率高</td></tr>
+                        <tr><td><strong>混合农业</strong></td><td>澳大利亚墨累-达令盆地</td><td>气候温和、地形平坦</td><td>种植+畜牧，划区轮作</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 选择题×3 -->
+            <div class="quiz"><div class="q">🧪 第1题：地中海沿岸夏季发展农业面临的主要不利自然条件是？</div>
+                <button onclick="checkQuiz(this,true,'fb-agri-1')">A. 高温干燥，降水稀少</button>
+                <button onclick="checkQuiz(this,false,'fb-agri-1')">B. 光照不足</button>
+                <button onclick="checkQuiz(this,false,'fb-agri-1')">C. 土壤贫瘠</button>
+                <button onclick="checkQuiz(this,false,'fb-agri-1')">D. 地形崎岖</button>
+                <div class="feedback" id="fb-agri-1"></div>
+            </div>
+            <div class="quiz"><div class="q">🧪 第2题：促使地中海沿岸农业从传统混合农业转向商品化园艺业的主导因素是？</div>
+                <button onclick="checkQuiz(this,false,'fb-agri-2')">A. 气候变暖</button>
+                <button onclick="checkQuiz(this,true,'fb-agri-2')">B. 市场需求变化与水利设施改善</button>
+                <button onclick="checkQuiz(this,false,'fb-agri-2')">C. 政府补贴增加</button>
+                <button onclick="checkQuiz(this,false,'fb-agri-2')">D. 劳动力大量流入</button>
+                <div class="feedback" id="fb-agri-2"></div>
+            </div>
+            <div class="quiz"><div class="q">🧪 第3题：澳大利亚墨累-达令盆地混合农业的突出优势是？</div>
+                <button onclick="checkQuiz(this,false,'fb-agri-3')">A. 全年高温多雨</button>
+                <button onclick="checkQuiz(this,false,'fb-agri-3')">B. 劳动力丰富廉价</button>
+                <button onclick="checkQuiz(this,true,'fb-agri-3')">C. 良性生态系统，灵活应对市场</button>
+                <button onclick="checkQuiz(this,false,'fb-agri-3')">D. 距离欧洲市场近</button>
+                <div class="feedback" id="fb-agri-3"></div>
+            </div>
+
+            <!-- 综合题+智能批改 -->
+            <div class="comprehensive">
+                <h4>📝 综合题（农业区位分析 + 智能批改）</h4>
+                <div class="material"><strong>材料：</strong>地中海沿岸地区冬季多雨且多暴雨，造成水土流失和沼泽化。后来当地进行大规模水利建设，对水资源进行季节调节。19世纪中叶以后，随着交通改善和欧洲城市化进程加快，葡萄酒、新鲜水果、蔬菜和花卉大量销往欧洲各国。<br><br><strong>设问：</strong>结合材料，分析地中海沿岸地区发展水果、蔬菜、花卉生产的有利区位条件。（从自然和社会经济两个角度回答）</div>
+                <textarea id="agri-compre-answer" placeholder="在此作答……（可从气候、水源、市场、交通等角度分析）"></textarea>
+                <div class="btn-row">
+                    <button class="primary-btn" onclick="submitAnalysis('agri')">✅ 提交并分析我的答案</button>
+                    <button onclick="revealAnswer('agri-compre-answer-reveal')">📋 查看参考答案</button>
+                </div>
+                <div class="analysis-box" id="agri-analysis-box"></div>
+                <div class="answer-reveal" id="agri-compre-answer-reveal">
+                    <strong>🔑 参考答案（答题模板）：</strong><br>
+                    <strong>自然条件：</strong>①气候：地中海气候，夏季光照充足、热量丰富；冬季温和，利于越冬。②水源：水利工程调节水资源，缓解夏季干旱。③地形：沿海平原和河谷地带较平坦。<br>
+                    <strong>社会经济条件：</strong>①市场：欧洲经济发达、城市化水平高，需求大。②交通：铁路和海运发达，冷链物流便利。③科技：灌溉和种植技术先进。<br>
+                    <strong>📌 思维模板：</strong>评价类问题=有利+不利；角度=自然（气候·地形·土壤·水源）+社会经济（市场·交通·科技·政策·劳动力）。
+                </div>
+            </div>
+
+            <button class="accordion-toggle" onclick="toggleAccordion(this)">📌 案例探究：东北平原水稻种植面积为何不断增加？ ▾</button>
+            <div class="accordion-content"><p>东北地区水稻<strong>生长期长</strong>，夏季光照时间长、昼夜温差大，稻米质量优；<strong>市场对优质大米需求增长</strong>；大规模<strong>机械化生产</strong>普及，品种改良和种植技术提高，<strong>交通运输条件改善</strong>，促使水稻面积不断扩大。</p></div>
+        </div>
+
+        <!-- ==================== 工业面板 ==================== -->
+        <div id="panel-industry" class="tab-panel">
+
+            <div class="search-area">
+                <span style="font-weight:700;white-space:nowrap;">🔍 检索地区工业区位：</span>
+                <input type="text" id="industry-search-input" placeholder="输入地区名称，如：沪宁杭、德国鲁尔区、美国硅谷……">
+                <button onclick="searchIndustry()">分 析</button>
+                <div class="search-result" id="industry-search-result"></div>
+            </div>
+
+            <!-- 速览 -->
+            <div class="card industry" style="border-left-width:7px;">
+                <h3>📋 工业区位因素 · 速览框架 <span class="section-label quick">先列出来</span></h3>
+                <table class="quick-table">
+                    <thead><tr><th>主导类型</th><th>核心因素</th><th>典型工业举例</th><th>布局原则</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>原料导向型</strong></td><td>原料</td><td>制糖厂、水产品加工厂</td><td>接近原料产地</td></tr>
+                        <tr><td><strong>市场导向型</strong></td><td>市场</td><td>啤酒厂、家具厂、印刷厂</td><td>接近消费市场</td></tr>
+                        <tr><td><strong>动力导向型</strong></td><td>能源</td><td>炼铝厂、钢铁厂</td><td>接近能源供应地</td></tr>
+                        <tr><td><strong>劳动力导向型</strong></td><td>劳动力</td><td>服装厂、电子装配厂</td><td>接近廉价劳动力</td></tr>
+                        <tr><td><strong>技术导向型</strong></td><td>技术</td><td>集成电路、精密仪表</td><td>接近高校和科研机构</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 详解 -->
+            <div class="card industry">
+                <h3>📖 工业区位因素 · 整合分析 <span class="section-label detail">再深入理解</span></h3>
+                <div class="compare-grid">
+                    <div><strong>🪨 原料因素</strong><p style="font-size:0.84rem;">原料不便长途运输或运输成本高的工业需接近产地。如广西<strong>甘蔗制糖厂</strong>就近布局于甘蔗产区，因为甘蔗收割后糖分迅速下降，必须及时加工。</p></div>
+                    <div><strong>🏪 市场因素</strong><p style="font-size:0.84rem;">产品不便于长途运输的工业需接近消费市场。<strong>啤酒厂</strong>产品重量大、易变质，运输成本高；<strong>家具厂</strong>成品体积大，也多为市场导向。</p></div>
+                    <div><strong>⚡ 能源因素</strong><p style="font-size:0.84rem;">高能耗工业需接近能源地。<strong>炼铝工业</strong>耗电量巨大，常布局在水电站附近（如黄河上游有色金属冶炼区），以降低电力输送成本。</p></div>
+                    <div><strong>🔬 技术因素</strong><p style="font-size:0.84rem;">技术密集型工业依赖高素质人才和创新环境。美国<strong>"硅谷"</strong>依托斯坦福大学，集聚了大量集成电路和软件企业，体现了技术对工业区位的决定性作用。</p></div>
+                </div>
+            </div>
+
+            <!-- 鲁尔区案例 -->
+            <div class="card industry">
+                <h3>🏗️ 经典案例：德国鲁尔工业区</h3>
+                <div class="img-showcase">
+                    <div class="img-card">
+                        <svg viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="260" height="150" fill="#f0f4f0"/>
+                            <rect x="30" y="30" width="200" height="90" rx="8" fill="#d5e3d5" stroke="#7a9a7a" stroke-width="2"/>
+                            <text x="130" y="58" text-anchor="middle" font-size="12" fill="#2e4a2e" font-weight="700">德国鲁尔区</text>
+                            <rect x="45" y="72" width="30" height="18" rx="3" fill="#5c4d3c"/><text x="60" y="85" text-anchor="middle" font-size="7" fill="#fff">煤矿</text>
+                            <rect x="90" y="72" width="30" height="18" rx="3" fill="#5c4d3c"/><text x="105" y="85" text-anchor="middle" font-size="7" fill="#fff">钢铁</text>
+                            <rect x="135" y="72" width="30" height="18" rx="3" fill="#5c4d3c"/><text x="150" y="85" text-anchor="middle" font-size="7" fill="#fff">机械</text>
+                            <text x="130" y="110" text-anchor="middle" font-size="9" fill="#444">莱茵河——水运便利</text>
+                            <text x="130" y="18" text-anchor="middle" font-size="10" fill="#1e6091" font-weight="700">德国鲁尔工业区示意</text>
+                        </svg>
+                        <div class="caption">鲁尔区：煤铁资源+水运+市场</div>
+                    </div>
+                    <div style="flex:1.5;min-width:240px;font-size:0.85rem;color:#555;line-height:1.75;">
+                        <strong>区位优势：</strong>①丰富煤炭资源；②靠近法国洛林铁矿；③莱茵河水运便利；④欧洲市场广阔。<br>
+                        <strong>衰落原因：</strong>煤炭地位下降、产业结构单一、环境污染。<br>
+                        <strong>转型措施：</strong>调整产业结构（发展高新技术和第三产业）、治理环境、完善交通。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 四大工业基地 -->
+            <div class="card industry">
+                <h3>🇨🇳 中国四大工业基地</h3>
+                <table class="quick-table">
+                    <thead><tr><th>工业基地</th><th>核心城市</th><th>发展优势</th><th>主要问题</th></tr></thead>
+                    <tbody>
+                        <tr><td><strong>辽中南</strong></td><td>沈阳、大连</td><td>煤铁丰富、交通便利</td><td>资源枯竭、偏重工业</td></tr>
+                        <tr><td><strong>京津唐</strong></td><td>北京、天津、唐山</td><td>技术雄厚、资源丰富</td><td>水资源短缺</td></tr>
+                        <tr><td><strong>沪宁杭</strong></td><td>上海、南京、杭州</td><td>水陆交通、市场广阔、技术先进</td><td>能源矿产缺乏</td></tr>
+                        <tr><td><strong>珠三角</strong></td><td>广州、深圳、珠海</td><td>侨乡优势、外资充裕</td><td>能源矿产不足</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 选择题×3 -->
+            <div class="quiz"><div class="q">🧪 第1题：下列工厂主导区位因素排列正确的是？</div>
+                <button onclick="checkQuiz(this,true,'fb-industry-1')">A. 制糖厂—原料 / 啤酒厂—市场 / 炼铝厂—动力</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-1')">B. 服装厂—技术 / 家具厂—原料 / 芯片厂—劳动力</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-1')">C. 钢铁厂—市场 / 印刷厂—原料 / 汽车厂—动力</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-1')">D. 水产加工—市场 / 集成电路—劳动力</button>
+                <div class="feedback" id="fb-industry-1"></div>
+            </div>
+            <div class="quiz"><div class="q">🧪 第2题：德国鲁尔区兴起的主要区位因素是？</div>
+                <button onclick="checkQuiz(this,true,'fb-industry-2')">A. 丰富的煤炭资源+便利的水运</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-2')">B. 廉价劳动力充足</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-2')">C. 高科技产业集聚</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-2')">D. 气候温暖湿润</button>
+                <div class="feedback" id="fb-industry-2"></div>
+            </div>
+            <div class="quiz"><div class="q">🧪 第3题：珠三角部分制造业向东南亚转移，主要原因是？</div>
+                <button onclick="checkQuiz(this,false,'fb-industry-3')">A. 东南亚技术更先进</button>
+                <button onclick="checkQuiz(this,true,'fb-industry-3')">B. 珠三角劳动力与土地成本上升</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-3')">C. 东南亚市场更广阔</button>
+                <button onclick="checkQuiz(this,false,'fb-industry-3')">D. 珠三角资源枯竭</button>
+                <div class="feedback" id="fb-industry-3"></div>
+            </div>
+
+            <!-- 综合题 -->
+            <div class="comprehensive">
+                <h4>📝 综合题（工业区位分析 + 智能批改）</h4>
+                <div class="material"><strong>材料：</strong>中国奇瑞汽车与西班牙埃布罗品牌合作，在巴塞罗那原埃布罗工厂旧址共建电动汽车生产基地。西班牙是欧洲重要汽车市场，巴塞罗那港口条件优越。<br><br><strong>设问：</strong>分析奇瑞选择在巴塞罗那建设电动汽车生产基地的主要区位因素。</div>
+                <textarea id="industry-compre-answer" placeholder="在此作答……"></textarea>
+                <div class="btn-row">
+                    <button class="primary-btn" onclick="submitAnalysis('industry')">✅ 提交并分析我的答案</button>
+                    <button onclick="revealAnswer('industry-compre-answer-reveal')">📋 查看参考答案</button>
+                </div>
+                <div class="analysis-box" id="industry-analysis-box"></div>
+                <div class="answer-reveal" id="industry-compre-answer-reveal">
+                    <strong>🔑 参考答案：</strong><br>①靠近欧洲消费市场，降低整车运输成本；②利用原工厂旧址，减少建设投资、缩短投产周期；③巴塞罗那港口交通便利，便于零部件进口和整车出口；④借助埃布罗品牌影响力，快速融入当地市场。
+                </div>
+            </div>
+
+            <button class="accordion-toggle" onclick="toggleAccordion(this)">📌 案例探究：工业集聚与分散 ▾</button>
+            <div class="accordion-content"><p><strong>工业集聚</strong>优点：加强信息交流和技术协作，降低运输费用和能耗，共同利用基础设施，取得规模效益。<br><strong>工业分散</strong>原因：充分利用各地优势条件（廉价劳动力、优惠政策和资源），降低生产成本，扩大市场。</p></div>
+        </div>
+
+        <!-- ==================== 服务业面板 ==================== -->
+        <div id="panel-service" class="tab-panel">
+
+            <div class="search-area">
+                <span style="font-weight:700;white-space:nowrap;">🔍 检索地区服务业区位：</span>
+                <input type="text" id="service-search-input" placeholder="输入地区名称，如：上海陆家嘴、深圳前海、北京中关村……">
+                <button onclick="searchService()">分 析</button>
+                <div class="search-result" id="service-search-result"></div>
+            </div>
+
+            <!-- 速览 -->
+            <div class="card service" style="border-left-width:7px;">
+                <h3>📋 服务业区位因素 · 速览框架 <span class="section-label quick">先列出来</span></h3>
+                <table class="quick-table">
+                    <thead><tr><th>类别</th><th>核心因素</th><th>布局特点</th><th>举例</th></tr></thead>
+                    <tbody>
+                        <tr><td class="cat-cell" rowspan="3">🔧<br>生产性<br>服务业</td><td><strong>高素质人才</strong></td><td>集聚在中心城区或科技园区</td><td>金融、研发、信息服务</td></tr>
+                        <tr><td><strong>信息交流</strong></td><td>依托便捷通讯和交通</td><td>上海陆家嘴金融集聚</td></tr>
+                        <tr><td><strong>政策支持</strong></td><td>自贸区、高新区政策优惠</td><td>深圳前海、北京中关村</td></tr>
+                        <tr><td class="cat-cell" rowspan="3">🛒<br>生活性<br>服务业</td><td><strong>人口规模</strong></td><td>接近消费人群</td><td>便利店分散在居住区</td></tr>
+                        <tr><td><strong>交通便利</strong></td><td>十字路口、地铁站附近</td><td>大型购物中心</td></tr>
+                        <tr><td><strong>消费水平</strong></td><td>根据区域消费力定位</td><td>高端商业区、夜市街区</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 详解 -->
+            <div class="card service">
+                <h3>📖 服务业区位因素 · 整合分析 <span class="section-label detail">再深入理解</span></h3>
+                <div class="compare-grid">
+                    <div><strong>🏦 生产性服务业为何集聚？</strong><p style="font-size:0.84rem;">金融、研发等生产性服务业具有<strong>信息、知识和技术密集型</strong>特点。集聚在中心城区可<strong>及时获取市场信息</strong>、共享高素质人才池、降低面对面交流成本。如上海陆家嘴金融贸易区集聚了大量银行、证券、保险机构。</p></div>
+                    <div><strong>🛍️ 生活性服务业如何布局？</strong><p style="font-size:0.84rem;">零售、餐饮等生活性服务业直接面向消费者，布局核心是<strong>人口规模和交通便利度</strong>。便利店分散在居住区满足日常需求；大型购物中心集中在市中心或交通枢纽，追求<strong>最大客流量</strong>。</p></div>
+                    <div><strong>📡 信息技术如何改变布局？</strong><p style="font-size:0.84rem;">互联网和现代通讯技术使部分服务业<strong>摆脱了空间限制</strong>。爱尔兰都柏林的集中服务中心（呼叫中心等）可分散到周边小城镇，依赖<strong>远程协作系统</strong>实现高效运营，降低了劳动力成本。</p></div>
+                    <div><strong>🚚 交通对服务业的影响？</strong><p style="font-size:0.84rem;">物流公司向<strong>高速公路附近集聚</strong>（如西班牙案例），因为高速公路附近货物集散效率高、运输时间短。交通枢纽也是服务业布局的关键节点。</p></div>
+                </div>
+            </div>
+
+            <!-- 西班牙物流案例 -->
+            <div class="card service">
+                <h3>📍 案例拓展：西班牙物流公司区位分析（高考真题改编）</h3>
+                <div class="img-showcase">
+                    <div class="img-card">
+                        <svg viewBox="0 0 260 150" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="260" height="150" fill="#f8f4f0"/>
+                            <ellipse cx="130" cy="78" rx="100" ry="52" fill="#f0e8d8" stroke="#c9a96e" stroke-width="2"/>
+                            <text x="130" y="18" text-anchor="middle" font-size="10" fill="#7b2d8b" font-weight="700">西班牙本土物流公司分布</text>
+                            <circle cx="78" cy="62" r="11" fill="#7b2d8b" opacity="0.7"/><text x="78" y="66" text-anchor="middle" font-size="7" fill="#fff">马德里</text>
+                            <circle cx="158" cy="58" r="9" fill="#7b2d8b" opacity="0.7"/><text x="158" y="62" text-anchor="middle" font-size="7" fill="#fff">巴塞罗那</text>
+                            <circle cx="100" cy="92" r="5" fill="#9b6dab" opacity="0.6"/>
+                            <circle cx="138" cy="88" r="4" fill="#9b6dab" opacity="0.6"/>
+                            <line x1="58" y1="40" x2="198" y2="115" stroke="#c9a96e" stroke-width="1.5" stroke-dasharray="5,4"/>
+                            <text x="200" y="135" text-anchor="end" font-size="7" fill="#888">━ 高速公路</text>
+                        </svg>
+                        <div class="caption">物流公司向高速公路集聚</div>
+                    </div>
+                    <div style="flex:1.5;min-width:240px;font-size:0.85rem;color:#555;line-height:1.75;">
+                        <strong>研究结论：</strong>西班牙物流公司距高速公路平均距离不断缩短，主要集聚在城市地区和高速公路附近。<br>
+                        <strong>区位分析：</strong>主导因素是<strong>市场规模和交通条件</strong>——城市人口密集区需求大，高速公路附近集散效率高。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 选择题×3 -->
+            <div class="quiz"><div class="q">🧪 第1题：下列哪项属于生产性服务业？</div>
+                <button onclick="checkQuiz(this,false,'fb-service-1')">A. 餐饮业</button>
+                <button onclick="checkQuiz(this,true,'fb-service-1')">B. 金融服务业</button>
+                <button onclick="checkQuiz(this,false,'fb-service-1')">C. 家政服务业</button>
+                <button onclick="checkQuiz(this,false,'fb-service-1')">D. 人像摄影业</button>
+                <div class="feedback" id="fb-service-1"></div>
+            </div>
+            <div class="quiz"><div class="q">🧪 第2题：西班牙物流公司向高速公路附近集聚，主要是因为？</div>
+                <button onclick="checkQuiz(this,false,'fb-service-2')">A. 土地价格更低</button>
+                <button onclick="checkQuiz(this,true,'fb-service-2')">B. 便于货物集散，提高运输效率</button>
+                <button onclick="checkQuiz(this,false,'fb-service-2')">C. 劳动力丰富</button>
+                <button onclick="checkQuiz(this,false,'fb-service-2')">D. 政策强制要求</button>
+                <div class="feedback" id="fb-service-2"></div>
+            </div>
+            <div class="quiz"><div class="q">🧪 第3题：大型购物中心布局在城市中心或十字路口，体现的区位原则是？</div>
+                <button onclick="checkQuiz(this,false,'fb-service-3')">A. 原料导向</button>
+                <button onclick="checkQuiz(this,true,'fb-service-3')">B. 市场和交通最优</button>
+                <button onclick="checkQuiz(this,false,'fb-service-3')">C. 动力导向</button>
+                <button onclick="checkQuiz(this,false,'fb-service-3')">D. 技术导向</button>
+                <div class="feedback" id="fb-service-3"></div>
+            </div>
+
+            <!-- 综合题 -->
+            <div class="comprehensive">
+                <h4>📝 综合题（服务业区位分析 + 智能批改）</h4>
+                <div class="material"><strong>材料：</strong>爱尔兰从欧盟经济落后国家发展成为富裕成员国，很大一部分得益于<strong>金融服务业的发展</strong>。大量金融机构集中在首都<strong>都柏林</strong>，部分集中服务中心（呼叫中心、信用卡中心等）被分散到都柏林地区的小城镇。<br><br><strong>设问：</strong>（1）与伦敦相比，都柏林发展国际金融服务业的优势是什么？（2）集中服务中心向小城镇分散主要依赖什么条件？</div>
+                <textarea id="service-compre-answer" placeholder="在此作答……"></textarea>
+                <div class="btn-row">
+                    <button class="primary-btn" onclick="submitAnalysis('service')">✅ 提交并分析我的答案</button>
+                    <button onclick="revealAnswer('service-compre-answer-reveal')">📋 查看参考答案</button>
+                </div>
+                <div class="analysis-box" id="service-analysis-box"></div>
+                <div class="answer-reveal" id="service-compre-answer-reveal">
+                    <strong>🔑 参考答案：</strong><br><strong>（1）</strong>与伦敦相比，都柏林经济发展水平较低，劳动力成本（行业薪酬）相对更低，具有成本优势。<br><strong>（2）</strong>主要依赖<strong>现代信息和通讯技术</strong>（互联网、远程协作系统），实现跨区域高效业务协作。
+                </div>
+            </div>
+
+            <button class="accordion-toggle" onclick="toggleAccordion(this)">📌 案例探究：夜间经济与服务业的区位 ▾</button>
+            <div class="accordion-content"><p>夜间经济是以服务业为主体的城市经济延伸，集夜间餐饮、购物、住宿、游览、娱乐于一体。布局主要受<strong>人口密度、交通便利程度和消费习惯</strong>影响。</p></div>
+        </div>
+    </div>
+
+    <footer>高中地理 · 产业区位因素交互学习平台（融合版）| 内容参考人教版（2019）高中地理必修第二册及近年高考真题 | 仅供学习使用</footer>
+
+    <script>
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('panel-' + tab).classList.add('active');
+            document.querySelector('.tab-btn.' + tab).classList.add('active');
+        }
+        function toggleAccordion(btn) {
+            const content = btn.nextElementSibling;
+            content.classList.toggle('open');
+            btn.textContent = content.classList.contains('open') ? btn.textContent.replace('▾', '▴') : btn.textContent.replace('▴', '▾');
+        }
+        function checkQuiz(btn, correct, feedbackId) {
+            const parent = btn.parentElement;
+            parent.querySelectorAll('button').forEach(b => { b.classList.remove('correct', 'wrong');
+                b.disabled = true; });
+            const fb = document.getElementById(feedbackId);
+            if (correct) { btn.classList.add('correct');
+                fb.innerHTML = '✅ 正确！分析到位！';
+                fb.style.color = '#2e7d32'; } else { btn.classList.add('wrong');
+                fb.innerHTML = '❌ 再想想～回顾一下相关知识点。';
+                fb.style.color = '#c62828'; }
+        }
+        function revealAnswer(id) { document.getElementById(id).classList.toggle('show'); }
+
+        function submitAnalysis(type) {
+            let textareaId, boxId;
+            if (type === 'agri') { textareaId = 'agri-compre-answer';
+                boxId = 'agri-analysis-box'; } else if (type === 'industry') { textareaId = 'industry-compre-answer';
+                boxId = 'industry-analysis-box'; } else { textareaId = 'service-compre-answer';
+                boxId = 'service-analysis-box'; }
+            const answer = document.getElementById(textareaId).value.trim();
+            const box = document.getElementById(boxId);
+            if (!answer) { box.innerHTML = '<span style="color:#c62828;">⚠️ 请先输入答案再提交～</span>';
+                box.classList.add('show'); return; }
+            let score, maxScore, fbHTML;
+            if (type === 'agri') { const r = scoreAgri(answer);
+                score = r.score;
+                maxScore = r.maxScore;
+                fbHTML = r.feedback; } else if (type === 'industry') { const r = scoreIndustry(answer);
+                score = r.score;
+                maxScore = r.maxScore;
+                fbHTML = r.feedback; } else { const r = scoreService(answer);
+                score = r.score;
+                maxScore = r.maxScore;
+                fbHTML = r.feedback; }
+            const pct = score / maxScore;
+            let encourage = '',
+                improve = '';
+            if (pct >= 0.9) { encourage = '🌟 非常出色！区位分析思路清晰，要点覆盖全面，已具备冲击高分的能力！';
+                improve = '💡 建议：用更精练的地理术语组织答案，限时作答提升节奏。多关注区域对比类题目，拓展思维广度。'; } else if (pct >= 0.7) { encourage = '👍 很好！抓住了大部分关键得分点，基础扎实！';
+                improve = '💡 建议：检查是否遗漏某个分析角度（如自然条件中只写气候而忽略水源）。用"角度清单法"逐一核对，多读高考真题标准答案体会采分点表述。'; } else if (pct >= 0.5) { encourage = '🙂 不错，有基本分析思路，但还有一些重要得分点未覆盖。';
+                improve = '💡 建议：答题前先列"自然因素"和"社会经济因素"两个大类，再结合材料筛选。回归教材重新梳理区位因素分类框架，用思维导图整理每种因素的具体影响。'; } else if (pct >= 0.3) { encourage = '📚 还需加油～写出了一些相关内容，但距离完整分析还有差距。';
+                improve = '💡 建议：不要灰心！先从"模仿"开始——仔细阅读参考答案的表述方式，理解每个得分点如何从材料中提取。重点突破区位因素章节，牢记自然和社会经济两大分类框架。'; } else { encourage = '🌱 万事开头难，勇敢提交就是进步的开始！';
+                improve = '💡 建议：先回到教材第三章，认真阅读"农业/工业/服务业区位因素"部分，把每个因素的含义和影响搞清楚。用A4纸画出三大产业区位因素对比表格帮助记忆，然后再来做题。'; }
+            fbHTML +=
+                `<div style="margin-top:8px;padding-top:6px;border-top:2px dashed #e0dcd5;"><p class="encourage">${encourage}</p><p class="improve" style="margin-top:3px;">${improve}</p></div>`;
+            box.innerHTML = fbHTML;
+            box.classList.add('show');
+        }
+
+        function scoreAgri(answer) {
+            const maxScore = 6;
+            let score = 0;
+            const lower = answer.toLowerCase();
+            const found = [],
+                missed = [];
+            const checks = [
+                { kw: ['光照', '光热', '阳光'], pt: '光照充足', s: 1, cat: 'natural' },
+                { kw: ['热量', '高温', '温暖'], pt: '热量丰富', s: 1, cat: 'natural' },
+                { kw: ['水源', '灌溉', '水利', '水资源'], pt: '水利工程调节水源', s: 1, cat: 'natural' },
+                { kw: ['地形', '平原', '平坦', '河谷'], pt: '地形平坦', s: 0.5, cat: 'natural' },
+                { kw: ['气候', '地中海气候', '夏季干燥', '冬季温和'], pt: '地中海气候特征', s: 1,
+                cat: 'natural' },
+                { kw: ['市场', '需求', '欧洲', '城市化', '消费'], pt: '欧洲市场需求大', s: 1, cat: 'socio' },
+                { kw: ['交通', '运输', '铁路', '海运', '冷链', '物流'], pt: '交通便利', s: 1, cat: 'socio' },
+                { kw: ['科技', '技术', '种植技术', '灌溉技术'], pt: '技术先进', s: 0.5, cat: 'socio' },
+                { kw: ['冬季', '温和', '越冬'], pt: '冬季温和利于越冬', s: 0.5, cat: 'natural' }
+            ];
+            checks.forEach(c => { if (c.kw.some(k => lower.includes(k))) { score += c.s;
+                    found.push(c.pt); } else { missed.push(c.pt); } });
+            if ((lower.includes('自然') || lower.includes('气候') || lower.includes('地形') || lower.includes('水源')) && (
+                    lower.includes('社会') || lower.includes('经济') || lower.includes('市场') || lower.includes('交通')))
+                score += 0.5;
+            score = Math.min(Math.round(score * 2) / 2, maxScore);
+            let fb =
+                `<span class="score-badge">得分：${score} / ${maxScore} 分</span><br><strong>✅ 已命中：</strong>${found.length>0?found.join('、'):'（暂未命中明显采分点）'}<br>`;
+            if (missed.length > 0) fb += `<strong>⚠️ 可补充：</strong>${missed.join('、')}<br>`;
+            fb +=
+                `<strong>📌 答题结构提醒：</strong>综合题应从<strong>自然条件</strong>和<strong>社会经济条件</strong>两个角度分别分析，结构清晰不易遗漏。<br>`;
+            return { score, maxScore, feedback: fb };
+        }
+
+        function scoreIndustry(answer) {
+            const maxScore = 4;
+            let score = 0;
+            const lower = answer.toLowerCase();
+            const found = [],
+                missed = [];
+            const checks = [
+                { kw: ['市场', '欧洲', '消费', '需求'], pt: '靠近欧洲市场', s: 1 },
+                { kw: ['港口', '交通', '运输', '海运', '巴塞罗那港'], pt: '港口交通便利', s: 1 },
+                { kw: ['旧址', '原工厂', '埃布罗', '减少投资', '建设投资', '投产'], pt: '利用原工厂旧址减少投资', s: 1 },
+                { kw: ['品牌', '埃布罗', '影响力', '融入', '合作'], pt: '借助品牌影响力', s: 1 }
+            ];
+            checks.forEach(c => { if (c.kw.some(k => lower.includes(k))) { score += c.s;
+                    found.push(c.pt); } else { missed.push(c.pt); } });
+            score = Math.min(Math.round(score * 2) / 2, maxScore);
+            let fb =
+                `<span class="score-badge">得分：${score} / ${maxScore} 分</span><br><strong>✅ 已命中：</strong>${found.length>0?found.join('、'):'（暂未命中明显采分点）'}<br>`;
+            if (missed.length > 0) fb += `<strong>⚠️ 可补充：</strong>${missed.join('、')}<br>`;
+            fb +=
+            '<strong>📌 工业区位答题提醒：</strong>从<strong>原料、市场、交通、技术、政策、产业基础</strong>等角度入手，注意结合材料中的具体信息。<br>';
+            return { score, maxScore, feedback: fb };
+        }
+
+        function scoreService(answer) {
+            const maxScore = 4;
+            let score = 0;
+            const lower = answer.toLowerCase();
+            const found = [],
+                missed = [];
+            const checks = [
+                { kw: ['成本', '劳动力成本', '薪酬', '工资', '更低', '低'], pt: '劳动力成本较低', s: 1.5 },
+                { kw: ['通讯', '信息技术', '互联网', '远程', '网络', '通信'], pt: '依赖现代通讯技术', s: 1.5 },
+                { kw: ['伦敦', '对比', '相比'], pt: '与伦敦对比分析', s: 0.5 },
+                { kw: ['分散', '小城镇', '地价', '租金'], pt: '分散可降低成本', s: 0.5 }
+            ];
+            checks.forEach(c => { if (c.kw.some(k => lower.includes(k))) { score += c.s;
+                    found.push(c.pt); } else { missed.push(c.pt); } });
+            score = Math.min(Math.round(score * 2) / 2, maxScore);
+            let fb =
+                `<span class="score-badge">得分：${score} / ${maxScore} 分</span><br><strong>✅ 已命中：</strong>${found.length>0?found.join('、'):'（暂未命中明显采分点）'}<br>`;
+            if (missed.length > 0) fb += `<strong>⚠️ 可补充：</strong>${missed.join('、')}<br>`;
+            fb += '<strong>📌 服务业区位答题提醒：</strong>注意<strong>比较优势</strong>（如成本对比）和<strong>技术条件</strong>（如通讯技术对布局的影响）。<br>';
+            return { score, maxScore, feedback: fb };
+        }
+
+        // 地区检索数据库
+        const agriDB = {
+            '东北平原': '📍 <strong>东北平原</strong>：温带季风气候，雨热同期；黑土肥沃；地形平坦适合机械化。地广人稀，商品率高；交通便利；市场对优质大米需求旺盛。不利：热量不足（一年一熟）。',
+            '华北平原': '📍 <strong>华北平原</strong>：温带季风气候，雨热同期；冲积平原土壤较肥沃。人口密集，靠近京津市场。不利：春旱严重、水资源短缺。',
+            '地中海沿岸': '📍 <strong>地中海沿岸</strong>：夏季炎热干燥、冬季温和多雨。园艺业为主（葡萄、柑橘、橄榄）。光照充足，欧洲市场广阔。不利：夏季干旱需水利灌溉。',
+            '新疆棉区': '📍 <strong>新疆棉区</strong>：光照充足、昼夜温差大，利于棉花生长；冲积扇土壤肥沃。机械化程度高，政策支持。不利：水资源短缺。',
+            '潘帕斯草原': '📍 <strong>阿根廷潘帕斯草原</strong>：亚热带湿润气候，草场广阔；地广人稀，土地租金低；靠近港口，海运便利，便于牛肉出口。',
+            '墨累-达令盆地': '📍 <strong>澳大利亚墨累-达令盆地</strong>：混合农业典范，小麦+绵羊，划区轮作，良性生态系统。不利：水源不足。',
+            '西欧': '📍 <strong>西欧（乳畜业）</strong>：温带海洋性气候，适合多汁牧草；经济发达，城市化水平高，乳制品需求大；交通便利，冷链物流发达。'
+        };
+
+        function searchAgri() {
+            const input = document.getElementById('agri-search-input').value.trim();
+            const div = document.getElementById('agri-search-result');
+            if (!input) { div.classList.remove('show'); return; }
+            let found = null;
+            for (const [k, v] of Object.entries(agriDB)) { if (input.includes(k) || k.includes(input)) { found = v;
+                    break; } }
+            div.innerHTML = found ||
+                '⚠️ 未找到。请尝试：东北平原、华北平原、地中海沿岸、新疆棉区、潘帕斯草原、墨累-达令盆地、西欧等。';
+            div.classList.add('show');
+        }
+        const industryDB = {
+            '沪宁杭': '📍 <strong>沪宁杭工业基地</strong>：水陆交通便利，市场广阔，技术雄厚。不足：能源矿产缺乏。',
+            '德国鲁尔区': '📍 <strong>德国鲁尔区</strong>：煤炭丰富+莱茵河水运+欧洲市场。衰落因煤炭地位下降、产业结构单一。转型：发展高新技术和第三产业。',
+            '美国硅谷': '📍 <strong>美国硅谷</strong>：依托斯坦福大学，技术人才集中；环境优美；航空运输便利。',
+            '珠三角': '📍 <strong>珠三角</strong>：侨乡优势、外资充裕、轻工业发达。近年部分产业向东南亚转移。',
+            '辽中南': '📍 <strong>辽中南</strong>：煤铁丰富、交通便利。面临资源枯竭和转型压力。'
+        };
+
+        function searchIndustry() {
+            const input = document.getElementById('industry-search-input').value.trim();
+            const div = document.getElementById('industry-search-result');
+            if (!input) { div.classList.remove('show'); return; }
+            let found = null;
+            for (const [k, v] of Object.entries(industryDB)) { if (input.includes(k) || k.includes(input)) { found =
+                    v;
+                    break; } }
+            div.innerHTML = found || '⚠️ 未找到。请尝试：沪宁杭、德国鲁尔区、美国硅谷、珠三角、辽中南等。';
+            div.classList.add('show');
+        }
+        const serviceDB = {
+            '上海陆家嘴': '📍 <strong>上海陆家嘴</strong>：金融业集聚，交通便利，政策支持，高素质人才集中。',
+            '深圳前海': '📍 <strong>深圳前海</strong>：毗邻香港，自贸区政策，重点发展金融、物流、信息服务。',
+            '北京中关村': '📍 <strong>北京中关村</strong>：毗邻清华北大，高素质人才集中，政策扶持，风险投资活跃。',
+            '爱尔兰都柏林': '📍 <strong>爱尔兰都柏林</strong>：劳动力成本较伦敦低，英语环境，信息通讯技术发达。'
+        };
+
+        function searchService() {
+            const input = document.getElementById('service-search-input').value.trim();
+            const div = document.getElementById('service-search-result');
+            if (!input) { div.classList.remove('show'); return; }
+            let found = null;
+            for (const [k, v] of Object.entries(serviceDB)) { if (input.includes(k) || k.includes(input)) { found =
+                    v;
+                    break; } }
+            div.innerHTML = found || '⚠️ 未找到。请尝试：上海陆家嘴、深圳前海、北京中关村、爱尔兰都柏林等。';
+            div.classList.add('show');
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (document.activeElement === document.getElementById('agri-search-input')) searchAgri();
+                if (document.activeElement === document.getElementById('industry-search-input')) searchIndustry();
+                if (document.activeElement === document.getElementById('service-search-input')) searchService();
+            }
+        });
+    </script>
+</body>
+</html>

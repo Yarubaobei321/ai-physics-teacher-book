@@ -1,0 +1,678 @@
+---
+import BaseLayout from '../../components/BaseLayout.astro';
+import BrowserSupportNotice from '../../components/BrowserSupportNotice.astro';
+import { sampleUniformData, sampleAcceleratedData, collectorProgram } from '../../data/project-learning';
+---
+
+<BaseLayout
+  title="超声波小车网页实验室 | 育才物理创新实验室"
+  description="通过浏览器 Web Serial 连接 ESP32 超声波装置，一键烧录采集程序，实时接收位移数据，自动绘制 x-t、v-t 图并拟合速度与加速度，支持导出 CSV 与截图。"
+>
+  <BrowserSupportNotice feature="serial" />
+
+  <section class="section-band bg-white">
+    <div class="page-shell">
+      <div class="mb-8 max-w-3xl">
+        <p class="eyebrow">ULTRASONIC ONLINE LAB</p>
+        <h1 class="mt-3 text-3xl font-black text-ink sm:text-4xl">超声波小车网页实验室</h1>
+        <p class="mt-4 leading-8 text-slate-700">
+          用数据线把 ESP32 连到电脑，点「连接串口」后即可一键「烧录采集程序」（写入 MicroPython，无需 Arduino）。烧录完成后点「开始记录」，推动或释放小车，网页会实时接收
+          <code class="rounded bg-slate-100 px-1 font-mono text-sm">time_ms,distance_cm</code>
+          数据并绘制 x-t、v-t 图，自动拟合速度或加速度。没有设备也可在下方粘贴 / 载入示例数据先看效果。
+          <a href="/project-learning/" class="font-bold text-yucai-700 underline underline-offset-2">← 返回实验介绍</a>
+        </p>
+      </div>
+
+      <div class="tool-surface overflow-hidden">
+        <div class="grid lg:grid-cols-[1fr_340px]">
+          <!-- 图表 -->
+          <div class="p-5">
+            <p class="mb-2 text-xs font-bold text-slate-600">位移–时间图（x-t）</p>
+            <canvas id="xt-chart" class="h-[300px] w-full rounded-md bg-slate-950" aria-label="位移时间图"></canvas>
+            <p class="mb-2 mt-5 text-xs font-bold text-slate-600">速度–时间图（v-t，中心差分）</p>
+            <canvas id="vt-chart" class="h-[260px] w-full rounded-md bg-slate-950" aria-label="速度时间图"></canvas>
+            <div class="mt-5 rounded-md border border-slate-200 bg-white">
+              <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4">
+                <div>
+                  <p class="text-sm font-black text-ink">可编辑数据表</p>
+                  <p class="mt-1 text-xs leading-5 text-slate-500">修改时间或位移后，x-t / v-t 图和拟合结果会立即按表格数据更新。</p>
+                </div>
+                <button id="add-manual-row" class="focus-ring h-9 rounded-md border border-slate-300 px-3 text-xs font-bold text-slate-700 transition hover:bg-slate-100">
+                  添加一行
+                </button>
+              </div>
+              <div class="max-h-[320px] overflow-auto">
+                <table class="w-full min-w-[560px] text-left text-sm">
+                  <thead class="sticky top-0 bg-slate-100 text-xs font-black text-slate-600">
+                    <tr>
+                      <th class="px-3 py-3">时间 t / s</th>
+                      <th class="px-3 py-3">位移 x / m</th>
+                      <th class="px-3 py-3">速度 v / (m/s)</th>
+                      <th class="px-3 py-3">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sample-table-body" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- 控制 -->
+          <aside class="border-t border-slate-200 p-6 lg:border-l lg:border-t-0">
+            <label for="motion-type" class="block text-sm font-bold text-ink">运动类型</label>
+            <select id="motion-type" class="focus-ring mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm">
+              <option value="uniform">匀速直线（求速度 v）</option>
+              <option value="accelerated" selected>匀变速直线（求加速度 a）</option>
+            </select>
+
+            <div class="mt-5 grid grid-cols-2 gap-2">
+              <div class="rounded-md bg-yucai-50 px-3 py-3">
+                <p class="text-xs font-bold text-slate-500">数据点</p>
+                <p id="readout-count" class="mt-1 font-mono text-lg font-black text-yucai-800">0</p>
+              </div>
+              <div class="rounded-md bg-slate-100 px-3 py-3">
+                <p class="text-xs font-bold text-slate-500">最新距离</p>
+                <p id="readout-latest" class="mt-1 font-mono text-lg font-black text-ink">— cm</p>
+              </div>
+            </div>
+
+            <div class="mt-3 rounded-md border border-yucai-200 bg-white px-3 py-3">
+              <p id="result-label" class="text-xs font-bold text-yucai-700">拟合加速度 a</p>
+              <p id="result-value" class="mt-1 font-mono text-xl font-black text-ink">—</p>
+              <p id="result-detail" class="mt-1 font-mono text-xs text-slate-500">拟合方程将显示在这里</p>
+            </div>
+
+            <div class="mt-6 grid gap-3">
+              <div class="grid grid-cols-2 gap-2">
+                <button id="serial-connect" class="focus-ring h-11 rounded-md bg-yucai-700 px-3 text-sm font-bold text-white transition hover:bg-yucai-800">
+                  连接串口
+                </button>
+                <button id="flash-program" class="focus-ring h-11 rounded-md border border-yucai-600 px-3 text-sm font-bold text-yucai-700 transition hover:bg-yucai-50 disabled:cursor-not-allowed disabled:opacity-50" disabled>
+                  烧录采集程序
+                </button>
+              </div>
+              <button id="record-toggle" class="focus-ring h-11 rounded-md bg-signal px-4 text-sm font-bold text-ink transition hover:bg-[#e49412] disabled:cursor-not-allowed disabled:opacity-50" disabled>
+                开始记录
+              </button>
+              <button id="clear-data" class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+                清空数据
+              </button>
+              <div class="grid grid-cols-2 gap-2">
+                <button id="export-csv" class="focus-ring h-11 rounded-md border border-slate-300 px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+                  导出 CSV
+                </button>
+                <button id="export-png" class="focus-ring h-11 rounded-md border border-slate-300 px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100">
+                  导出结果图片
+                </button>
+              </div>
+            </div>
+
+            <p id="lab-status" class="mt-5 text-sm font-bold text-yucai-800">未连接。点击「连接串口」选择 ESP32，或在下方载入示例数据。</p>
+          </aside>
+        </div>
+
+        <!-- 粘贴 / 示例 -->
+        <details class="border-t border-slate-200 bg-slate-50 p-5">
+          <summary class="focus-ring cursor-pointer list-none text-sm font-bold text-ink">▸ 没有设备？粘贴已采集的 CSV，或载入示例数据</summary>
+          <p class="mt-3 text-sm leading-6 text-slate-600">
+            粘贴串口里复制的数据（每行 <code class="font-mono">time_ms,distance_cm</code>，可含表头），点击「载入数据」即可作图。
+          </p>
+          <textarea id="paste-area" rows="6" class="focus-ring mt-3 w-full rounded-md border border-slate-300 bg-white p-3 font-mono text-xs" placeholder="time_ms,distance_cm&#10;0,10.2&#10;50,15.4&#10;..."></textarea>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button id="load-paste" class="focus-ring h-10 rounded-md bg-yucai-700 px-4 text-sm font-bold text-white transition hover:bg-yucai-800">载入数据</button>
+            <button id="load-sample-uniform" class="focus-ring h-10 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">载入匀速示例</button>
+            <button id="load-sample-accel" class="focus-ring h-10 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100">载入匀变速示例</button>
+          </div>
+        </details>
+      </div>
+    </div>
+
+    <script
+      is:inline
+      type="application/json"
+      id="lab-data"
+      set:html={JSON.stringify({ uniform: sampleUniformData, accelerated: sampleAcceleratedData, program: collectorProgram })}
+    />
+
+    <script>
+      import { Esp32Serial } from '../../lib/esp32-serial';
+
+      type Sample = { t: number; x: number }; // t: 秒(相对起点), x: 米(相对起点)
+
+      const labDataScript = document.querySelector<HTMLScriptElement>('#lab-data');
+      const labData = JSON.parse(labDataScript?.textContent ?? '{}') as {
+        uniform?: string;
+        accelerated?: string;
+        program?: string;
+      };
+
+      const xtCanvas = document.querySelector<HTMLCanvasElement>('#xt-chart');
+      const vtCanvas = document.querySelector<HTMLCanvasElement>('#vt-chart');
+      const motionSelect = document.querySelector<HTMLSelectElement>('#motion-type');
+      const countEl = document.querySelector<HTMLParagraphElement>('#readout-count');
+      const latestEl = document.querySelector<HTMLParagraphElement>('#readout-latest');
+      const resultLabel = document.querySelector<HTMLParagraphElement>('#result-label');
+      const resultValue = document.querySelector<HTMLParagraphElement>('#result-value');
+      const resultDetail = document.querySelector<HTMLParagraphElement>('#result-detail');
+      const connectButton = document.querySelector<HTMLButtonElement>('#serial-connect');
+      const flashButton = document.querySelector<HTMLButtonElement>('#flash-program');
+      const recordButton = document.querySelector<HTMLButtonElement>('#record-toggle');
+      const clearButton = document.querySelector<HTMLButtonElement>('#clear-data');
+      const exportCsvButton = document.querySelector<HTMLButtonElement>('#export-csv');
+      const exportPngButton = document.querySelector<HTMLButtonElement>('#export-png');
+      const statusEl = document.querySelector<HTMLParagraphElement>('#lab-status');
+      const pasteArea = document.querySelector<HTMLTextAreaElement>('#paste-area');
+      const loadPasteButton = document.querySelector<HTMLButtonElement>('#load-paste');
+      const loadUniformButton = document.querySelector<HTMLButtonElement>('#load-sample-uniform');
+      const loadAccelButton = document.querySelector<HTMLButtonElement>('#load-sample-accel');
+      const sampleTableBody = document.querySelector<HTMLTableSectionElement>('#sample-table-body');
+      const addManualRowButton = document.querySelector<HTMLButtonElement>('#add-manual-row');
+
+      const samples: Sample[] = [];
+      let recording = false;
+      let baseTimeMs: number | null = null;
+      let baseDistanceCm: number | null = null;
+      const encoder = new TextEncoder();
+      const delay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+      const triggerDownload = (blob: Blob, filename: string) => {
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = filename;
+        anchor.style.display = 'none';
+        document.body.appendChild(anchor);
+        anchor.click();
+        window.setTimeout(() => {
+          URL.revokeObjectURL(url);
+          anchor.remove();
+        }, 1200);
+      };
+
+      // 复用「在线编程」的 ESP32 串口 / MicroPython 烧录模块；记录中按行解析 CSV。
+      const esp = new Esp32Serial({
+        onLine: (line) => {
+          if (!recording) return;
+          const parsed = parseCsvLine(line);
+          if (parsed) addPoint(parsed.tMs, parsed.dCm);
+        }
+      });
+
+      const setStatus = (text: string) => {
+        if (statusEl) statusEl.textContent = text;
+      };
+
+      // ---------- 数据解析 ----------
+      const parseCsvLine = (line: string): { tMs: number; dCm: number } | null => {
+        const match = line.trim().match(/^(\d+)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+        if (!match) return null;
+        const tMs = Number.parseInt(match[1], 10);
+        const dCm = Number.parseFloat(match[2]);
+        if (!Number.isFinite(tMs) || !Number.isFinite(dCm)) return null;
+        return { tMs, dCm };
+      };
+
+      const addPoint = (tMs: number, dCm: number) => {
+        if (baseTimeMs === null) baseTimeMs = tMs;
+        if (baseDistanceCm === null) baseDistanceCm = dCm;
+        samples.push({ t: (tMs - baseTimeMs) / 1000, x: (dCm - baseDistanceCm) / 100 });
+        refresh();
+      };
+
+      const loadFromText = (text: string) => {
+        samples.length = 0;
+        baseTimeMs = null;
+        baseDistanceCm = null;
+        let loaded = 0;
+        for (const rawLine of text.split(/\r?\n/)) {
+          const parsed = parseCsvLine(rawLine);
+          if (!parsed) continue;
+          if (baseTimeMs === null) baseTimeMs = parsed.tMs;
+          if (baseDistanceCm === null) baseDistanceCm = parsed.dCm;
+          samples.push({ t: (parsed.tMs - baseTimeMs) / 1000, x: (parsed.dCm - baseDistanceCm) / 100 });
+          loaded += 1;
+        }
+        refresh();
+        setStatus(loaded > 0 ? `已载入 ${loaded} 个数据点。` : '没有解析到有效数据，请检查格式：time_ms,distance_cm');
+      };
+
+      // ---------- 拟合 ----------
+      const linearFit = (pts: { x: number; y: number }[]) => {
+        const n = pts.length;
+        if (n < 2) return null;
+        let sx = 0, sy = 0, sxx = 0, sxy = 0;
+        for (const p of pts) {
+          sx += p.x;
+          sy += p.y;
+          sxx += p.x * p.x;
+          sxy += p.x * p.y;
+        }
+        const denom = n * sxx - sx * sx;
+        if (Math.abs(denom) < 1e-12) return null;
+        const slope = (n * sxy - sx * sy) / denom;
+        const intercept = (sy - slope * sx) / n;
+        const meanY = sy / n;
+        let ssTot = 0, ssRes = 0;
+        for (const p of pts) {
+          const fit = slope * p.x + intercept;
+          ssTot += (p.y - meanY) ** 2;
+          ssRes += (p.y - fit) ** 2;
+        }
+        const r2 = ssTot < 1e-12 ? 1 : 1 - ssRes / ssTot;
+        return { slope, intercept, r2 };
+      };
+
+      // 中心差分求速度
+      const velocitySeries = (): { t: number; v: number }[] => {
+        const out: { t: number; v: number }[] = [];
+        for (let i = 1; i < samples.length - 1; i += 1) {
+          const dt = samples[i + 1].t - samples[i - 1].t;
+          if (dt <= 0) continue;
+          out.push({ t: samples[i].t, v: (samples[i + 1].x - samples[i - 1].x) / dt });
+        }
+        return out;
+      };
+
+      const velocityAtIndex = (index: number): number | null => {
+        if (index <= 0 || index >= samples.length - 1) return null;
+        const dt = samples[index + 1].t - samples[index - 1].t;
+        if (dt <= 0) return null;
+        return (samples[index + 1].x - samples[index - 1].x) / dt;
+      };
+
+      const renderSampleTable = () => {
+        if (!sampleTableBody) return;
+        sampleTableBody.innerHTML = samples.map((sample, index) => {
+          const v = velocityAtIndex(index);
+          return `<tr>
+            <td class="px-3 py-2">
+              <input class="focus-ring h-9 w-28 rounded-md border border-slate-300 px-2 font-mono text-sm" type="number" step="0.001" min="0" data-sample-row="${index}" data-sample-key="t" value="${sample.t.toFixed(3)}" />
+            </td>
+            <td class="px-3 py-2">
+              <input class="focus-ring h-9 w-28 rounded-md border border-slate-300 px-2 font-mono text-sm" type="number" step="0.0001" data-sample-row="${index}" data-sample-key="x" value="${sample.x.toFixed(4)}" />
+            </td>
+            <td class="px-3 py-2 font-mono text-sm text-slate-700">${v === null ? '' : v.toFixed(4)}</td>
+            <td class="px-3 py-2">
+              <button type="button" class="focus-ring rounded-md border border-slate-300 px-3 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-100" data-delete-sample="${index}">删除</button>
+            </td>
+          </tr>`;
+        }).join('');
+      };
+
+      const getResultText = (): { label: string; value: string; detail: string } => {
+        const mode = motionSelect?.value ?? 'accelerated';
+        const label = mode === 'uniform' ? '拟合速度 v' : '拟合加速度 a';
+        if (samples.length < 3) return { label, value: '—', detail: '至少需要 3 个数据点' };
+        if (mode === 'uniform') {
+          const fit = linearFit(samples.map((s) => ({ x: s.t, y: s.x })));
+          if (!fit) return { label, value: '—', detail: '数据不足' };
+          return {
+            label,
+            value: `${fit.slope.toFixed(3)} m/s`,
+            detail: `x = ${fit.slope.toFixed(3)}·t ${fit.intercept >= 0 ? '+' : '−'} ${Math.abs(fit.intercept).toFixed(3)}　R²=${fit.r2.toFixed(4)}`
+          };
+        }
+        const fit = linearFit(velocitySeries().map((p) => ({ x: p.t, y: p.v })));
+        if (!fit) return { label, value: '—', detail: '数据不足以拟合 v-t' };
+        return {
+          label,
+          value: `${fit.slope.toFixed(3)} m/s²`,
+          detail: `v = ${fit.slope.toFixed(3)}·t ${fit.intercept >= 0 ? '+' : '−'} ${Math.abs(fit.intercept).toFixed(3)}　R²=${fit.r2.toFixed(4)}`
+        };
+      };
+
+      const updateResults = () => {
+        const r = getResultText();
+        if (resultLabel) resultLabel.textContent = r.label;
+        if (resultValue) resultValue.textContent = r.value;
+        if (resultDetail) resultDetail.textContent = r.detail;
+      };
+
+      // ---------- 绘图 ----------
+      const resizeCanvas = (canvas: HTMLCanvasElement | null) => {
+        if (!canvas) return;
+        const ratio = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+        canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+      };
+
+      const drawScatter = (
+        canvas: HTMLCanvasElement | null,
+        points: { x: number; y: number }[],
+        opts: { xLabel: string; yLabel: string; color: string; fitLine?: boolean; emptyText: string }
+      ) => {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const ratio = window.devicePixelRatio || 1;
+        const width = canvas.width;
+        const height = canvas.height;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, width, height);
+
+        const pad = { top: 22 * ratio, right: 22 * ratio, bottom: 48 * ratio, left: 64 * ratio };
+        const plotLeft = pad.left;
+        const plotTop = pad.top;
+        const plotW = Math.max(1, width - pad.left - pad.right);
+        const plotH = Math.max(1, height - pad.top - pad.bottom);
+        const plotBottom = plotTop + plotH;
+
+        const xs = points.map((p) => p.x);
+        const ys = points.map((p) => p.y);
+        const xMin = xs.length ? Math.min(...xs) : 0;
+        const xMaxRaw = xs.length ? Math.max(...xs) : 1;
+        const xMax = xMaxRaw > xMin ? xMaxRaw : xMin + 1;
+        const yMinRaw = ys.length ? Math.min(...ys) : 0;
+        const yMaxRaw = ys.length ? Math.max(...ys) : 1;
+        const yPad = (yMaxRaw - yMinRaw) * 0.12 || 0.5;
+        const yMin = yMinRaw - yPad;
+        const yMax = yMaxRaw + yPad;
+        const yRange = Math.max(1e-6, yMax - yMin);
+
+        const sx = (x: number) => plotLeft + ((x - xMin) / (xMax - xMin)) * plotW;
+        const sy = (y: number) => plotBottom - ((y - yMin) / yRange) * plotH;
+        const fmt = (v: number) => (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
+
+        ctx.font = `${12 * ratio}px sans-serif`;
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = 'rgba(183, 220, 255, 0.16)';
+        ctx.lineWidth = 1 * ratio;
+        for (let i = 0; i <= 5; i += 1) {
+          const y = plotTop + (plotH / 5) * i;
+          ctx.beginPath();
+          ctx.moveTo(plotLeft, y);
+          ctx.lineTo(plotLeft + plotW, y);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(226, 232, 240, 0.78)';
+          ctx.textAlign = 'right';
+          ctx.fillText(fmt(yMax - (yRange / 5) * i), plotLeft - 10 * ratio, y);
+        }
+        for (let i = 0; i <= 5; i += 1) {
+          const x = plotLeft + (plotW / 5) * i;
+          ctx.fillStyle = 'rgba(226, 232, 240, 0.78)';
+          ctx.textAlign = 'center';
+          ctx.fillText(fmt(xMin + ((xMax - xMin) / 5) * i), x, plotBottom + 16 * ratio);
+        }
+
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.75)';
+        ctx.lineWidth = 1.5 * ratio;
+        ctx.beginPath();
+        ctx.moveTo(plotLeft, plotTop);
+        ctx.lineTo(plotLeft, plotBottom);
+        ctx.lineTo(plotLeft + plotW, plotBottom);
+        ctx.stroke();
+
+        ctx.fillStyle = 'rgba(226, 232, 240, 0.9)';
+        ctx.font = `${13 * ratio}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(opts.xLabel, plotLeft + plotW / 2, height - 14 * ratio);
+        ctx.save();
+        ctx.translate(18 * ratio, plotTop + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(opts.yLabel, 0, 0);
+        ctx.restore();
+
+        if (points.length === 0) {
+          ctx.fillStyle = 'rgba(226, 232, 240, 0.7)';
+          ctx.font = `${14 * ratio}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText(opts.emptyText, plotLeft + plotW / 2, plotTop + plotH / 2);
+          return;
+        }
+
+        if (opts.fitLine && points.length >= 2) {
+          const fit = linearFit(points);
+          if (fit) {
+            ctx.strokeStyle = 'rgba(244, 165, 28, 0.9)';
+            ctx.lineWidth = 2 * ratio;
+            ctx.beginPath();
+            ctx.moveTo(sx(xMin), sy(fit.slope * xMin + fit.intercept));
+            ctx.lineTo(sx(xMax), sy(fit.slope * xMax + fit.intercept));
+            ctx.stroke();
+          }
+        }
+
+        ctx.fillStyle = opts.color;
+        for (const p of points) {
+          ctx.beginPath();
+          ctx.arc(sx(p.x), sy(p.y), 3 * ratio, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      };
+
+      const draw = () => {
+        const mode = motionSelect?.value ?? 'accelerated';
+        drawScatter(
+          xtCanvas,
+          samples.map((s) => ({ x: s.t, y: s.x })),
+          { xLabel: '时间 t / s', yLabel: '位移 x / m', color: '#4ba6ff', fitLine: mode === 'uniform', emptyText: '等待数据…' }
+        );
+        drawScatter(
+          vtCanvas,
+          velocitySeries().map((p) => ({ x: p.t, y: p.v })),
+          { xLabel: '时间 t / s', yLabel: '速度 v / (m/s)', color: '#22c55e', fitLine: mode === 'accelerated', emptyText: '需要至少 3 个数据点' }
+        );
+      };
+
+      const refresh = () => {
+        if (countEl) countEl.textContent = String(samples.length);
+        if (latestEl && baseDistanceCm !== null && samples.length > 0) {
+          latestEl.textContent = `${(samples[samples.length - 1].x * 100 + baseDistanceCm).toFixed(1)} cm`;
+        } else if (latestEl) {
+          latestEl.textContent = '— cm';
+        }
+        updateResults();
+        renderSampleTable();
+        draw();
+      };
+
+      // ---------- 烧录采集程序（复用 Esp32Serial 模块） ----------
+      const flashCollector = async () => {
+        const program = labData.program ?? '';
+        if (!program.trim()) {
+          setStatus('采集程序为空，无法烧录。');
+          return;
+        }
+        if (recording) {
+          recording = false;
+          if (recordButton) recordButton.textContent = '开始记录';
+        }
+        esp.lineStreaming = false; // 烧录期间用 raw REPL，暂停 CSV 行解析
+        if (flashButton) flashButton.disabled = true;
+        try {
+          setStatus('正在进入 MicroPython REPL…');
+          await esp.enterRawRepl();
+          setStatus('正在写入 main.py…');
+          await esp.writeDeviceFile('main.py', encoder.encode(program.replace(/\r\n/g, '\n')));
+          setStatus('烧录完成，正在重启 ESP32…');
+          await esp.softReset();
+          await delay(400);
+          setStatus('采集程序已烧录并运行。点击「开始记录」即可作图。');
+        } catch (error) {
+          setStatus(`烧录失败：${error instanceof Error ? error.message : String(error)}`);
+        } finally {
+          esp.resetBuffer();
+          esp.lineStreaming = true;
+          if (flashButton) flashButton.disabled = false;
+        }
+      };
+
+      // ---------- 导出 ----------
+      const exportCsv = () => {
+        if (samples.length === 0) {
+          setStatus('暂无数据可导出。');
+          return;
+        }
+        const vMap = new Map(velocitySeries().map((p) => [p.t.toFixed(3), p.v]));
+        const r = getResultText();
+        const rows = [
+          `# 超声波小车运动数据`,
+          `# 记录时间: ${new Date().toLocaleString('zh-CN')}`,
+          `# ${r.label}: ${r.value}　${r.detail}`,
+          'time_s,position_m,velocity_m_s'
+        ];
+        for (const s of samples) {
+          const v = vMap.get(s.t.toFixed(3));
+          rows.push(`${s.t.toFixed(3)},${s.x.toFixed(4)},${v !== undefined ? v.toFixed(4) : ''}`);
+        }
+        const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
+        triggerDownload(blob, `超声波运动.csv`);
+      };
+
+      const exportPng = () => {
+        if (!xtCanvas || !vtCanvas) return;
+        if (samples.length === 0) {
+          setStatus('暂无数据可导出截图。');
+          return;
+        }
+        const ratio = window.devicePixelRatio || 1;
+        const r = getResultText();
+        const width = Math.max(xtCanvas.width, vtCanvas.width);
+        const headerH = 96 * ratio;
+        const gap = 14 * ratio;
+        const merged = document.createElement('canvas');
+        merged.width = width;
+        merged.height = headerH + xtCanvas.height + gap + vtCanvas.height + 20 * ratio;
+        const ctx = merged.getContext('2d');
+        if (!ctx) return;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, merged.width, merged.height);
+        ctx.textBaseline = 'alphabetic';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#102033';
+        ctx.font = `${20 * ratio}px system-ui, sans-serif`;
+        ctx.fillText('超声波小车运动数据', 20 * ratio, 34 * ratio);
+        ctx.fillStyle = '#475569';
+        ctx.font = `${13 * ratio}px system-ui, sans-serif`;
+        ctx.fillText(`记录时间：${new Date().toLocaleString('zh-CN')}`, 20 * ratio, 58 * ratio);
+        ctx.fillStyle = '#0b63c7';
+        ctx.font = `${15 * ratio}px system-ui, sans-serif`;
+        ctx.fillText(`${r.label}：${r.value}　${r.detail}`, 20 * ratio, 82 * ratio);
+        ctx.drawImage(xtCanvas, 0, headerH);
+        ctx.drawImage(vtCanvas, 0, headerH + xtCanvas.height + gap);
+        merged.toBlob((blob) => {
+          if (!blob) {
+            setStatus('导出截图失败，请重试。');
+            return;
+          }
+          triggerDownload(blob, `超声波运动.png`);
+        }, 'image/png');
+      };
+
+      // ---------- 事件 ----------
+      connectButton?.addEventListener('click', async () => {
+        if (!Esp32Serial.isSupported()) {
+          setStatus('当前浏览器不支持 Web Serial，请改用电脑端 Chrome / Edge。');
+          return;
+        }
+        try {
+          setStatus('请选择 ESP32 串口…');
+          await esp.connect(115200);
+          esp.lineStreaming = true; // 开启按行解析，记录时才会写入数据点
+          if (connectButton) connectButton.textContent = '已连接';
+          if (flashButton) flashButton.disabled = false;
+          if (recordButton) recordButton.disabled = false;
+          setStatus('串口已连接（115200）。可「烧录采集程序」，或直接「开始记录」。');
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'NotFoundError') {
+            setStatus('未选择串口设备。');
+            return;
+          }
+          setStatus(`串口连接失败：${error instanceof Error ? error.message : String(error)}`);
+        }
+      });
+
+      flashButton?.addEventListener('click', flashCollector);
+
+      recordButton?.addEventListener('click', () => {
+        recording = !recording;
+        if (recording) {
+          samples.length = 0;
+          baseTimeMs = null;
+          baseDistanceCm = null;
+          esp.resetBuffer();
+          refresh();
+          if (recordButton) recordButton.textContent = '停止记录';
+          setStatus('记录中…让小车运动，结束后点击「停止记录」。');
+        } else {
+          if (recordButton) recordButton.textContent = '开始记录';
+          setStatus(`记录结束，共 ${samples.length} 个数据点。`);
+        }
+      });
+
+      clearButton?.addEventListener('click', () => {
+        samples.length = 0;
+        baseTimeMs = null;
+        baseDistanceCm = null;
+        refresh();
+        setStatus('数据已清空。');
+      });
+
+      exportCsvButton?.addEventListener('click', exportCsv);
+      exportPngButton?.addEventListener('click', exportPng);
+      motionSelect?.addEventListener('change', refresh);
+
+      loadPasteButton?.addEventListener('click', () => {
+        if (recording) {
+          setStatus('请先停止记录，再载入粘贴数据。');
+          return;
+        }
+        loadFromText(pasteArea?.value ?? '');
+      });
+      loadUniformButton?.addEventListener('click', () => {
+        if (motionSelect) motionSelect.value = 'uniform';
+        loadFromText(labData.uniform ?? '');
+        setStatus('已载入匀速示例数据。');
+      });
+      loadAccelButton?.addEventListener('click', () => {
+        if (motionSelect) motionSelect.value = 'accelerated';
+        loadFromText(labData.accelerated ?? '');
+        setStatus('已载入匀变速示例数据。');
+      });
+
+      sampleTableBody?.addEventListener('change', (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement)) return;
+        const rowIndex = Number(target.dataset.sampleRow);
+        const key = target.dataset.sampleKey as keyof Sample | undefined;
+        if (!key || !samples[rowIndex]) return;
+        const value = Number.parseFloat(target.value);
+        if (!Number.isFinite(value)) return;
+        samples[rowIndex][key] = value;
+        samples.sort((a, b) => a.t - b.t);
+        refresh();
+        setStatus('已按表格数据更新图表。');
+      });
+
+      sampleTableBody?.addEventListener('click', (event) => {
+        const target = event.target;
+        if (!(target instanceof Element)) return;
+        const button = target.closest<HTMLButtonElement>('[data-delete-sample]');
+        if (!button) return;
+        samples.splice(Number(button.dataset.deleteSample), 1);
+        refresh();
+        setStatus('已删除一行数据。');
+      });
+
+      addManualRowButton?.addEventListener('click', () => {
+        const last = samples[samples.length - 1];
+        samples.push({
+          t: last ? Number((last.t + 0.05).toFixed(3)) : 0,
+          x: last ? Number(last.x.toFixed(4)) : 0
+        });
+        refresh();
+        setStatus('已添加一行，可直接编辑时间和位移。');
+      });
+
+      resizeCanvas(xtCanvas);
+      resizeCanvas(vtCanvas);
+      refresh();
+      window.addEventListener('resize', () => {
+        resizeCanvas(xtCanvas);
+        resizeCanvas(vtCanvas);
+        draw();
+      });
+    </script>
+  </section>
+</BaseLayout>

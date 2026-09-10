@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>高中化学：有机物转化与官能团 · 反应机理演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef5f0 0%, #d9e4dc 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding: 1.5rem;
+            color: #1a2c1e;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255,255,240,0.92);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2);
+            backdrop-filter: blur(0px);
+            overflow: hidden;
+            padding: 1.8rem 2rem 2.5rem;
+            border: 1px solid rgba(120,160,100,0.3);
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #2b6e3c, #1f4f2d);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+            display: inline-block;
+            margin-bottom: 0.3rem;
+        }
+
+        .sub {
+            color: #3c5e2f;
+            border-left: 4px solid #48a86a;
+            padding-left: 1rem;
+            margin: 0.5rem 0 1.8rem 0;
+            font-weight: 500;
+            font-size: 1rem;
+            opacity: 0.85;
+        }
+
+        /* 两列布局 */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        /* 左侧：官能团卡片 + 转化规律 */
+        .left-panel {
+            flex: 1.2;
+            min-width: 260px;
+        }
+
+        /* 右侧：反应机理示意图 + 高亮说明 */
+        .right-panel {
+            flex: 0.9;
+            min-width: 280px;
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: #ffffffdd;
+            backdrop-filter: blur(2px);
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.5rem 1.8rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 6px 14px rgba(0, 20, 0, 0.08);
+            border: 1px solid #cce3d4;
+            transition: all 0.2s;
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f5430;
+            border-left: 5px solid #60b876;
+            padding-left: 12px;
+            margin-bottom: 1.2rem;
+        }
+
+        .func-group-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: flex-start;
+        }
+
+        .func-card {
+            background: #fafef7;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+            width: calc(33% - 0.7rem);
+            min-width: 130px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            transition: 0.1s linear;
+            border: 1px solid #cfe3d2;
+        }
+
+        .func-card strong {
+            font-size: 1.2rem;
+            color: #2a6b3c;
+            display: block;
+            border-bottom: 1px dashed #aacfae;
+            margin-bottom: 6px;
+        }
+
+        .func-card p {
+            font-size: 0.82rem;
+            color: #2a3e2a;
+            line-height: 1.35;
+        }
+
+        .reaction-list {
+            margin-top: 0.5rem;
+        }
+
+        .rx-item {
+            background: #eff7ea;
+            border-radius: 1rem;
+            padding: 0.7rem 1rem;
+            margin-bottom: 0.9rem;
+            transition: 0.1s;
+            cursor: pointer;
+            border-left: 4px solid #8bc34a;
+        }
+
+        .rx-item.selected {
+            background: #e1f0da;
+            border-left: 6px solid #2b7a42;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .rx-title {
+            font-weight: 700;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .rx-arrow {
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: #367a47;
+        }
+
+        .rx-desc {
+            font-size: 0.8rem;
+            color: #2c5436;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        /* 右侧机理展示区 */
+        .mech-canvas {
+            background: #fefdf7;
+            border-radius: 1.6rem;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid #cfe1ca;
+            box-shadow: inset 0 0 0 1px #fffff0, 0 6px 12px rgba(0,0,0,0.05);
+        }
+
+        svg {
+            background: #fffff8;
+            border-radius: 1.2rem;
+            width: 100%;
+            height: auto;
+            font-family: 'Segoe UI', 'SF Mono', monospace;
+        }
+
+        .mech-title {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin: 0.5rem 0 0.2rem;
+            color: #235b30;
+        }
+
+        .bond-highlight {
+            font-size: 0.85rem;
+            background: #fef0cf;
+            padding: 6px 12px;
+            border-radius: 40px;
+            display: inline-block;
+            margin-top: 12px;
+            color: #865d20;
+            font-weight: 500;
+        }
+
+        .note {
+            font-size: 0.75rem;
+            color: #5a6e52;
+            margin-top: 1rem;
+            text-align: center;
+            border-top: 1px solid #cfe0cf;
+            padding-top: 0.8rem;
+        }
+
+        button.clear-btn {
+            background: none;
+            border: none;
+            font-size: 0.75rem;
+            color: #558b2f;
+            cursor: pointer;
+            margin-left: 12px;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 780px) {
+            .container {
+                padding: 1rem;
+            }
+            .func-card {
+                width: calc(50% - 0.5rem);
+            }
+        }
+
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 1.2rem;
+            color: #568041;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🧪 有机化学 · 官能团与转化规律</h1>
+    <div class="sub">🔬 点击下方任一转化路径 → 查看反应机理图（断键/成键位置高亮）</div>
+
+    <div class="dashboard">
+        <!-- 左侧：官能团总览 + 重要转化 -->
+        <div class="left-panel">
+            <!-- 官能团卡片区域 -->
+            <div class="card">
+                <h2>📌 常见官能团</h2>
+                <div class="func-group-grid" id="funcGrid">
+                    <!-- 动态js生成也可，但为直观直接写html内容 保证准确 -->
+                </div>
+            </div>
+
+            <!-- 核心转化规律列表 -->
+            <div class="card">
+                <h2>⚡ 烃的衍生物转化规律</h2>
+                <div class="reaction-list" id="reactionList">
+                    <!-- 转化条目动态生成，保持数据一致性 -->
+                </div>
+                <div class="note" style="margin-top: 12px;">💡 点击任意反应，右侧展示断键/成键位置机理图</div>
+            </div>
+        </div>
+
+        <!-- 右侧：机理示意图动态展示 -->
+        <div class="right-panel">
+            <div class="card mech-canvas" id="mechCard">
+                <div style="font-size: 0.9rem; opacity: 0.7;">✨ 反应机理示意图</div>
+                <div id="mechanismSvgContainer">
+                    <!-- 默认SVG示例：醇催化氧化断键 -->
+                    <svg viewBox="0 0 520 220" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="520" height="220" fill="#FEF9E6" rx="16" ry="16"/>
+                        <text x="260" y="32" text-anchor="middle" font-size="14" fill="#2b6e3c" font-weight="bold">✧ 点击左侧任一反应 ✧</text>
+                        <text x="260" y="60" text-anchor="middle" font-size="13" fill="#4b6e3b">示例：乙醇催化氧化</text>
+                        <!-- 乙醇分子简图 -->
+                        <text x="80" y="110" font-size="13" fill="#2e3b2c">H₃C—CH₂—OH</text>
+                        <!-- 断键处: C-H α-H 和 O-H？ 重点表示脱去的 α-H 与 O-H 形成水，断 C-H 键 -->
+                        <path d="M 170 98 L 200 98" stroke="#d43f1d" stroke-width="3" stroke-dasharray="5 3" />
+                        <text x="178" y="92" fill="#c0392b" font-size="11" font-weight="bold">✂ 断C−H</text>
+                        <path d="M 242 108 L 268 108" stroke="#d43f1d" stroke-width="3" stroke-dasharray="5 3" />
+                        <text x="245" y="124" fill="#c0392b" font-size="11">断O−H</text>
+                        <text x="260" y="160" text-anchor="middle" font-size="12" fill="#236b3c">脱去H₂O → 生成乙醛 CH₃CHO</text>
+                        <text x="260" y="190" text-anchor="middle" font-size="11" fill="#8b6b42">● 虚线表示断裂的化学键 (α-H与羟基)</text>
+                    </svg>
+                </div>
+                <div class="mech-title" id="mechTitle">乙醇催化氧化 (Cu/Ag, O₂)</div>
+                <div class="bond-highlight" id="bondHighlightDesc">🔍 断键位置：α-C上的C-H键 和 羟基O-H键，脱去两个H形成醛基</div>
+                <div class="note">📐 反应机理关键：醇→醛 断裂C−H(α)及O−H； 醛→羧酸 断裂醛基C−H等</div>
+            </div>
+        </div>
+    </div>
+    <footer>⚗️ 依据高中化学(人教版/苏教版) 官能团转化规律 | 点击反应查看断键位置机理示意</footer>
+</div>
+
+<script>
+    // ======================== 1. 官能团数据 =======================
+    const functionalGroups = [
+        { name: "碳碳双键", symbol: "C=C", desc: "烯烃官能团，可发生加成、加聚、氧化。" },
+        { name: "碳碳三键", symbol: "C≡C", desc: "炔烃，可加成两次，更活泼。" },
+        { name: "羟基", symbol: "—OH", desc: "醇/酚，发生取代、氧化(醇)、酯化等。" },
+        { name: "醛基", symbol: "—CHO", desc: "醛类，可氧化为羧酸，可还原为醇。" },
+        { name: "酮羰基", symbol: ">C=O", desc: "酮类，不与银氨溶液反应，可还原。" },
+        { name: "羧基", symbol: "—COOH", desc: "羧酸，酸性，酯化反应。" },
+        { name: "酯基", symbol: "—COOR", desc: "酯类，可水解为酸和醇。" },
+        { name: "醚键", symbol: "C—O—C", desc: "醚类，较稳定。" },
+        { name: "氨基", symbol: "—NH₂", desc: "胺类，碱性，氨基酸官能团。" }
+    ];
+
+    // =============== 2. 转化数据 (用于展示列表 + 机理信息) ================
+    // 每个条目包含: 转化名称, 从->到, 短描述, 机理id (用于绘制不同svg/说明)
+    const transformations = [
+        {
+            id: "alc_oxi_ald",
+            title: "醇 → 醛 (催化氧化)",
+            arrow: "CH₃CH₂OH  →  CH₃CHO",
+            desc: "乙醇在Cu/Ag催化下与O₂反应生成乙醛，断α-C−H与O−H键。",
+            mechType: "alc_to_ald"
+        },
+        {
+            id: "ald_oxi_acid",
+            title: "醛 → 羧酸 (氧化)",
+            arrow: "R−CHO  →  R−COOH",
+            desc: "醛基被银氨溶液或新制Cu(OH)₂氧化为羧基，断醛基C−H键，引入O−H。",
+            mechType: "ald_to_acid"
+        },
+        {
+            id: "acid_ester",
+            title: "羧酸 → 酯 (酯化反应)",
+            arrow: "R−COOH + R'−OH  ⇌  RCOOR' + H₂O",
+            desc: "酸脱羟基，醇脱氢(断羧基C−OH，醇O−H) 生成酯。",
+            mechType: "esterification"
+        },
+        {
+            id: "alkene_h2o",
+            title: "烯烃 → 醇 (水合/加成)",
+            arrow: "C=C + H₂O  →  CH₃−CH₂OH",
+            desc: "烯烃双键断开，加H₂O生成醇 (马氏规则)。",
+            mechType: "alkene_hydration"
+        },
+        {
+            id: "aldehyde_reduce",
+            title: "醛 → 醇 (还原)",
+            arrow: "R−CHO + H₂  →  R−CH₂OH",
+            desc: "催化加氢，断裂醛基C=O中的π键，加H成醇羟基。",
+            mechType: "ald_reduce"
+        }
+    ];
+
+    // ======================= 机理映射 (SVG + 文本说明) =======================
+    // 根据 mechType 返回 { svgMarkup, title, highlightText }
+    function getMechanismData(mechType) {
+        const baseW = 520, baseH = 230;
+        // 公用样式头尾
+        switch(mechType) {
+            case "alc_to_ald":
+                return {
+                    title: "🔁 醇催化氧化 (断键位置：α-C−H 与 O−H)",
+                    highlight: "✂️ 断裂化学键：与羟基相连的碳原子上的C−H键 和 羟基O−H键，脱去两个H原子形成醛基(—CHO)。",
+                    svg: `<svg viewBox="0 0 540 240" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="540" height="240" fill="#FEF9E6" rx="18" ry="18"/>
+                        <text x="270" y="28" text-anchor="middle" font-size="14" fill="#2b6e3c" font-weight="bold">乙醇催化氧化 (Cu/O₂, △)</text>
+                        <!-- 结构式示意: CH₃–CH₂–OH -->
+                        <text x="50" y="80" font-size="16" font-family="monospace" fill="#274e2c">H₃C — CH₂ — OH</text>
+                        <!-- 标注α碳上的C-H -->
+                        <path d="M 130 68 L 162 68" stroke="#d43f1d" stroke-width="3.5" stroke-dasharray="6 4" />
+                        <text x="124" y="62" fill="#c0392b" font-size="12" font-weight="bold">断C−H</text>
+                        <path d="M 202 76 L 232 76" stroke="#d43f1d" stroke-width="3.5" stroke-dasharray="6 4" />
+                        <text x="208" y="94" fill="#c0392b" font-size="12" font-weight="bold">断O−H</text>
+                        <!-- 生成乙醛 -->
+                        <text x="310" y="80" font-size="16" font-family="monospace" fill="#1f5a33">→  CH₃CHO</text>
+                        <text x="310" y="110" font-size="13" fill="#4d6b3a">(乙醛)</text>
+                        <path d="M 270 104 L 298 104" stroke="#2a7a3c" stroke-width="2" marker-end="url(#arrow)"/>
+                        <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2a7a3c"/></marker></defs>
+                        <text x="50" y="160" font-size="12" fill="#ad6200">● 机理：O₂夺取α-H和羟基H，形成H₂O，碳氧双键生成</text>
+                        <text x="50" y="190" font-size="12" fill="#ad6200">● 断键位置(红色虚线)：羟基O−H键 & α-碳上的C−H键</text>
+                    </svg>`
+                };
+            case "ald_to_acid":
+                return {
+                    title: "🔁 醛 → 羧酸 (如银镜反应)",
+                    highlight: "断裂醛基中的C−H键，并在碳上连接羟基 (−OH) 形成羧基 (−COOH)。",
+                    svg: `<svg viewBox="0 0 540 240" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="540" height="240" fill="#FEF9E6" rx="18"/>
+                        <text x="270" y="28" text-anchor="middle" font-size="14" fill="#2b6e3c" font-weight="bold">醛基氧化为羧基  (银氨溶液或新制Cu(OH)₂)</text>
+                        <text x="60" y="90" font-size="17" font-family="monospace" fill="#255e34">R − C(=O) − H</text>
+                        <text x="300" y="90" font-size="17" font-family="monospace" fill="#255e34">→ R − C(=O) − OH</text>
+                        <path d="M 224 78 L 256 78" stroke="#d43f1d" stroke-width="3.5" stroke-dasharray="6 4" />
+                        <text x="228" y="70" fill="#c0392b" font-size="12">断C−H</text>
+                        <text x="320" y="125" font-size="12" fill="#7b5f2a">● 断裂醛基的C−H键，同时氧插入形成新的O−H</text>
+                        <text x="60" y="155" font-size="12" fill="#2b6b40">❕ 实验现象：生成银镜或砖红色沉淀，说明醛基被氧化</text>
+                        <text x="60" y="190" font-size="12" fill="#ad6200">断键关键：醛基C−H键断裂，羟基接入生成羧酸</text>
+                    </svg>`
+                };
+            case "esterification":
+                return {
+                    title: "🔁 酯化反应 (酸脱羟基，醇脱氢)",
+                    highlight: "羧酸断C−OH键，醇断O−H键，脱水生成酯基 (−COO−)。",
+                    svg: `<svg viewBox="0 0 540 240" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="540" height="240" fill="#FEF9E6" rx="18"/>
+                        <text x="270" y="28" text-anchor="middle" font-size="14" fill="#2b6e3c">羧酸 + 醇 → 酯 + 水</text>
+                        <text x="40" y="85" font-size="14" font-family="monospace">R−C(=O)−OH  +  H−O−R'</text>
+                        <path d="M 206 72 L 236 72" stroke="#d43f1d" stroke-width="3" stroke-dasharray="5 3" />
+                        <text x="200" y="65" fill="#c0392b" font-size="11">断C−OH</text>
+                        <path d="M 248 97 L 274 97" stroke="#d43f1d" stroke-width="3" stroke-dasharray="5 3" />
+                        <text x="250" y="112" fill="#c0392b" font-size="11">断O−H</text>
+                        <text x="320" y="85" font-size="14" font-family="monospace">→ R−COO−R' + H₂O</text>
+                        <text x="40" y="145" font-size="12" fill="#2f6b47">反应机理：酸脱羟基 (−OH) ，醇脱氢 (−H) 结合成水</text>
+                        <text x="40" y="175" font-size="12" fill="#ad6200">断键位置：羧基的C−OH键 和 醇羟基O−H键</text>
+                    </svg>`
+                };
+            case "alkene_hydration":
+                return {
+                    title: "🔁 烯烃水合 (加成反应)",
+                    highlight: "碳碳双键打开，断裂一个π键，分别加上H和OH，生成醇。",
+                    svg: `<svg viewBox="0 0 540 240" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="540" height="240" fill="#FEF9E6" rx="18"/>
+                        <text x="270" y="28" text-anchor="middle" font-size="14" fill="#2b6e3c">烯烃 + 水 (酸催化) → 醇</text>
+                        <text x="60" y="90" font-size="17" font-family="monospace">C=C  +  H−OH</text>
+                        <path d="M 152 78 L 190 78" stroke="#d43f1d" stroke-width="4" stroke-dasharray="7 5" />
+                        <text x="160" y="68" fill="#c0392b" font-size="12">断π键</text>
+                        <text x="260" y="90" font-size="17" font-family="monospace">→  −C−C−  </text>
+                        <text x="380" y="110" font-size="13" fill="#2a673a">OH  H</text>
+                        <text x="60" y="150" font-size="12" fill="#ad5f2a">● 双键中一个σ键保留，π键断裂，分别加上H和OH</text>
+                        <text x="60" y="185" font-size="12" fill="#2c6b47">符合马氏规则 (氢加到含氢较多的碳上)</text>
+                    </svg>`
+                };
+            case "ald_reduce":
+                return {
+                    title: "🔁 醛催化加氢还原为醇",
+                    highlight: "断裂醛基C=O双键中的π键，加上H₂生成羟基(-OH)。",
+                    svg: `<svg viewBox="0 0 540 240" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="540" height="240" fill="#FEF9E6" rx="18"/>
+                        <text x="270" y="28" text-anchor="middle" font-size="14" fill="#2b6e3c">醛 → 醇  (加氢还原，Ni/△)</text>
+                        <text x="60" y="90" font-size="17" font-family="monospace">R−C(=O)−H  +  H₂</text>
+                        <path d="M 230 78 L 270 78" stroke="#d43f1d" stroke-width="3.5" stroke-dasharray="5 3" />
+                        <text x="232" y="68" fill="#c0392b" font-size="12">断π键(C=O)</text>
+                        <text x="320" y="90" font-size="17" font-family="monospace">→ R−CH₂−OH</text>
+                        <text x="60" y="145" font-size="12" fill="#4a6e33">碳氧双键打开，加氢生成醇羟基</text>
+                        <text x="60" y="178" font-size="12" fill="#ad6200">关键断键位置：C=O中的一个π键断裂，H−H键断裂后加成</text>
+                    </svg>`
+                };
+            default:
+                return {
+                    title: "乙醇催化氧化机理",
+                    highlight: "断α-C-H和O-H键",
+                    svg: `<svg viewBox="0 0 520 200"><rect width="520" height="200" fill="#FEF9E6"/><text x="260" y="100" text-anchor="middle">默认机理: 醇催化氧化断C−H/O−H</text></svg>`
+                };
+        }
+    }
+
+    // ========== 渲染官能团 ==========
+    const funcGrid = document.getElementById("funcGrid");
+    function renderFunctionalGroups() {
+        funcGrid.innerHTML = "";
+        functionalGroups.forEach(g => {
+            const div = document.createElement("div");
+            div.className = "func-card";
+            div.innerHTML = `<strong>${g.symbol}</strong><p>${g.name}<br><span style="font-size:0.75rem;">${g.desc}</span></p>`;
+            funcGrid.appendChild(div);
+        });
+    }
+
+    // 渲染转化列表，绑定点击事件
+    const reactionContainer = document.getElementById("reactionList");
+    let activeTransformId = "alc_oxi_ald"; // 默认激活乙醇氧化
+
+    function renderTransformations() {
+        reactionContainer.innerHTML = "";
+        transformations.forEach(trans => {
+            const item = document.createElement("div");
+            item.className = `rx-item ${activeTransformId === trans.id ? 'selected' : ''}`;
+            item.dataset.id = trans.id;
+            item.dataset.mech = trans.mechType;
+            item.innerHTML = `
+                <div class="rx-title">
+                    <span>🧪 ${trans.title}</span>
+                    <span class="rx-arrow">${trans.arrow}</span>
+                </div>
+                <div class="rx-desc">${trans.desc}</div>
+            `;
+            item.addEventListener("click", () => {
+                // 更新高亮
+                document.querySelectorAll(".rx-item").forEach(el => el.classList.remove("selected"));
+                item.classList.add("selected");
+                activeTransformId = trans.id;
+                // 更新右侧机理图
+                updateMechanism(trans.mechType, trans.title);
+            });
+            reactionContainer.appendChild(item);
+        });
+    }
+
+    function updateMechanism(mechType, reactionTitle) {
+        const mechData = getMechanismData(mechType);
+        const svgContainer = document.getElementById("mechanismSvgContainer");
+        if (svgContainer) {
+            svgContainer.innerHTML = mechData.svg;
+        }
+        const titleEl = document.getElementById("mechTitle");
+        if (titleEl) titleEl.innerText = mechData.title || reactionTitle;
+        const descEl = document.getElementById("bondHighlightDesc");
+        if (descEl) descEl.innerHTML = `🔍 ${mechData.highlight}`;
+    }
+
+    // 页面初始化时展示默认机理(醇催化氧化)
+    function setDefaultMechanism() {
+        const defaultTrans = transformations.find(t => t.id === "alc_oxi_ald");
+        if (defaultTrans) {
+            updateMechanism(defaultTrans.mechType, defaultTrans.title);
+        } else {
+            // fallback
+            updateMechanism("alc_to_ald", "醇→醛");
+        }
+        // 默认选中样式已经在渲染时激活 activeTransformId
+        const defaultItem = document.querySelector(`.rx-item[data-id="alc_oxi_ald"]`);
+        if(defaultItem) defaultItem.classList.add("selected");
+    }
+
+    // 执行渲染
+    renderFunctionalGroups();
+    renderTransformations();
+    setDefaultMechanism();
+</script>
+</body>
+</html>

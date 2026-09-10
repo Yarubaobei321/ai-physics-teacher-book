@@ -1,0 +1,842 @@
+---
+import ExperimentReview from './ExperimentReview.astro';
+import LabDraftNotice from './LabDraftNotice.astro';
+import LabSectionNav from './LabSectionNav.astro';
+import { fallingBodyReview } from '../data/lab-reviews/falling-body';
+
+const pointIndexes = Array.from({ length: 10 }, (_, index) => index);
+const apparatus = ['铁架台', '电火花计时器', '220V 交流电源', '重锤', '纸带'];
+const steps = ['安装装置', '重锤连纸带，纸带穿过电火花计时器', '先接通 220V 电源再释放纸带', '选纸带并测量'];
+---
+
+<section class="bg-lab">
+  <div class="page-shell py-12 sm:py-16">
+    <div class="grid gap-8 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
+      <div>
+        <a href="/online-lab/" class="focus-ring inline-flex rounded-md text-sm font-bold text-yucai-700 hover:text-yucai-900">
+          返回在线实验室
+        </a>
+        <p class="eyebrow mt-8">MECHANICAL ENERGY</p>
+        <h1 class="mt-3 text-3xl font-black leading-tight text-ink sm:text-5xl">落体法验证机械能守恒定律</h1>
+        <LabSectionNav slug="falling-body" />
+        <p class="mt-5 leading-8 text-slate-700">
+          读取纸带上连续计数点的位置，计算各点速度，并比较从 1 号点到后续计数点过程中重力势能减小量
+          <span class="font-mono font-bold text-yucai-800">mg(xₙ-x₁)</span>
+          与动能增加量
+          <span class="font-mono font-bold text-yucai-800">1/2m(vₙ²-v₁²)</span>
+          是否接近。
+        </p>
+
+        <div class="mt-8 grid gap-5 sm:grid-cols-2">
+          <div class="rounded-md border border-slate-200 bg-white p-5">
+            <h2 class="text-base font-black text-ink">实验器材</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+              {apparatus.map((item) => <span class="rounded-md bg-yucai-50 px-3 py-2 text-sm font-bold text-yucai-800">{item}</span>)}
+            </div>
+          </div>
+
+          <div class="rounded-md border border-slate-200 bg-white p-5">
+            <h2 class="text-base font-black text-ink">实验步骤</h2>
+            <ol class="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-slate-700">
+              {steps.map((step) => <li class="pl-1 marker:font-black marker:text-yucai-700">{step}</li>)}
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <figure class="mx-auto w-full max-w-[520px] overflow-hidden rounded-md border border-slate-200 bg-white shadow-soft lg:justify-self-end">
+        <img
+          src="/images/falling-body-weight.webp"
+          alt="落体法实验使用的重物照片"
+          class="max-h-[460px] w-full object-contain"
+        />
+      </figure>
+    </div>
+
+    <div id="lab-workbench" class="tool-surface mt-10 overflow-hidden scroll-mt-24">
+      <LabDraftNotice />
+      <div class="border-b border-slate-200 bg-white px-5 py-5 sm:px-6">
+        <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,auto)] xl:items-end">
+          <div>
+            <p class="text-xs font-black uppercase tracking-[0.18em] text-yucai-700">DATA WORKBENCH</p>
+            <h2 class="mt-2 text-2xl font-black text-ink">纸带数据表格与能量图像</h2>
+            <p class="mt-3 leading-7 text-slate-700">
+              填写纸带各计数点的位置，页面会自动计算速度与能量变化。请保留实际测量数据。
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <label class="block">
+              <span class="text-xs font-bold text-slate-600">实验小组名称</span>
+              <input
+                id="group-name"
+                class="focus-ring mt-2 h-11 w-full rounded-md border border-slate-300 bg-white px-3 text-sm font-bold text-ink"
+                type="text"
+                value="第 1 小组"
+                autocomplete="off"
+              />
+            </label>
+            <div class="flex flex-wrap gap-3">
+              <button
+                id="manual-mode"
+                class="focus-ring h-11 rounded-md border border-yucai-600 px-4 text-sm font-bold text-yucai-700 transition hover:bg-yucai-50"
+                type="button"
+              >
+                手动录入
+              </button>
+              <button
+                id="ai-simulate"
+                class="focus-ring hidden h-11 rounded-md bg-yucai-700 px-4 text-sm font-bold text-white transition hover:bg-yucai-800"
+                type="button"
+              >
+                AI模拟
+              </button>
+              <button
+                id="clear-data"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                一键数据清除
+              </button>
+              <button
+                id="export-csv"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                导出CSV
+              </button>
+              <button
+                id="export-screenshot"
+                class="focus-ring h-11 rounded-md border border-slate-300 px-4 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                type="button"
+              >
+                导出截图
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="lab-report-panel" class="bg-white">
+        <div class="p-5 sm:p-6">
+          <div class="grid gap-4 sm:grid-cols-3">
+            <label class="block rounded-md bg-yucai-50 p-4">
+              <span class="text-xs font-bold text-slate-600">重锤质量 m / kg</span>
+              <input
+                id="mass-input"
+                class="focus-ring mt-2 h-10 w-full rounded-md border border-yucai-200 bg-white px-3 font-mono text-sm"
+                type="number"
+                value="0.1000"
+                step="0.0001"
+                min="0.0001"
+                inputmode="decimal"
+              />
+            </label>
+            <label class="block rounded-md bg-yucai-50 p-4">
+              <span class="text-xs font-bold text-slate-600">重力加速度 g / (m/s²)</span>
+              <input
+                id="gravity-input"
+                class="focus-ring mt-2 h-10 w-full rounded-md border border-yucai-200 bg-white px-3 font-mono text-sm"
+                type="number"
+                value="9.7880"
+                step="0.0001"
+                min="0.0001"
+                inputmode="decimal"
+              />
+            </label>
+            <label class="block rounded-md bg-yucai-50 p-4">
+              <span class="text-xs font-bold text-slate-600">相邻计数点时间 T / s</span>
+              <input
+                id="interval-input"
+                class="focus-ring mt-2 h-10 w-full rounded-md border border-yucai-200 bg-white px-3 font-mono text-sm"
+                type="number"
+                value="0.0200"
+                step="0.0001"
+                min="0.0001"
+                inputmode="decimal"
+              />
+            </label>
+          </div>
+
+          <div class="mt-4 rounded-md bg-slate-100 px-4 py-3 text-sm leading-7 text-slate-700">
+            <p>
+              电火花计时器使用 220V 交流电源（非学生电源低压交流）。位置 x 的单位为 cm，下落距离 h 会自动换算为 m。0
+              号点<strong>不是</strong>纸带上打下的第一个点，应选取点迹清晰的一段作为测量段，并把该段起点记为 0 号点；本表仍把 0
+              号点仅作位移读数零点，能量分析以 1 号点作为起始点。
+            </p>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div class="rounded-md bg-white px-4 py-3">
+                <p class="text-xs font-bold text-slate-500">下落距离</p>
+                <p class="mt-2 text-lg font-black text-ink" data-latex="h_n = x_n - x_1">
+                  h<sub>n</sub> = x<sub>n</sub> - x<sub>1</sub>
+                </p>
+              </div>
+              <div class="rounded-md bg-white px-4 py-3">
+                <p class="text-xs font-bold text-slate-500">瞬时速度</p>
+                <p class="mt-2 text-lg font-black text-ink" data-latex="v_n = (x_{n+1} - x_{n-1}) / 2T">
+                  v<sub>n</sub> =
+                  <span class="inline-flex flex-col align-middle text-center leading-tight">
+                    <span class="border-b border-ink px-2">
+                      x<sub>n+1</sub> - x<sub>n-1</sub>
+                    </span>
+                    <span>2T</span>
+                  </span>
+                </p>
+              </div>
+              <div class="rounded-md bg-white px-4 py-3">
+                <p class="text-xs font-bold text-slate-500">1 号点初动能</p>
+                <p id="initial-kinetic" class="mt-2 font-mono text-lg font-black text-ink">--</p>
+              </div>
+            </div>
+          </div>
+
+          <figure class="mx-auto mt-5 w-1/2 min-w-[280px] max-w-[560px] overflow-hidden rounded-md border border-slate-200 bg-white">
+            <img
+              src="/images/falling-body-paper-tape.webp"
+              alt="方案一实验纸带照片"
+              class="w-full object-contain"
+              loading="lazy"
+            />
+          </figure>
+
+          <div class="mt-5 max-h-[520px] overflow-auto rounded-md border border-slate-200">
+            <table class="min-w-[980px] w-full text-left text-base">
+              <thead class="sticky top-0 z-10 bg-slate-100 text-sm font-black text-slate-600 shadow-sm">
+                <tr>
+                  <th class="bg-slate-100 px-4 py-4">计数点 n</th>
+                  <th class="bg-slate-100 px-4 py-4">位置 x<sub>n</sub> / cm</th>
+                  <th class="bg-slate-100 px-4 py-4">下落距离 h / m</th>
+                  <th class="bg-slate-100 px-4 py-4">瞬时速度 v / (m/s)</th>
+                  <th class="bg-amber-50 px-4 py-4 text-amber-800">势能减小 ΔEp / J</th>
+                  <th class="bg-sky-50 px-4 py-4 text-sky-800">动能增加 ΔEk / J</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                {
+                  pointIndexes.map((index) => (
+                    <tr>
+                      <td class="px-4 py-4 font-mono font-bold text-ink">{index}</td>
+                      <td class="px-4 py-4">
+                        <input
+                          class="focus-ring h-12 w-32 rounded-md border border-slate-300 bg-white px-3 font-mono text-base"
+                          data-position-input
+                          data-index={index}
+                          type="number"
+                          value={index === 0 ? '0.00' : undefined}
+                          readonly={index === 0}
+                          step="0.0001"
+                          inputmode="decimal"
+                          aria-label={`第 ${index} 个计数点的位置`}
+                        />
+                      </td>
+                      <td class="px-4 py-4 font-mono tabular-nums text-slate-700" data-field="height" data-index={index}></td>
+                      <td class="px-4 py-4 font-mono tabular-nums text-slate-700" data-field="velocity" data-index={index}></td>
+                      <td class="bg-amber-50/70 px-4 py-4 font-mono tabular-nums font-bold text-amber-900" data-field="potential" data-index={index}></td>
+                      <td class="bg-sky-50/70 px-4 py-4 font-mono tabular-nums font-bold text-sky-900" data-field="kinetic" data-index={index}></td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="border-t border-slate-200 bg-white p-5 sm:p-6">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-md bg-yucai-50 p-4">
+              <p class="text-xs font-bold text-slate-500">可绘图点</p>
+              <p id="chart-point-count" class="mt-1 font-mono text-2xl font-black text-yucai-800">0</p>
+            </div>
+            <div class="rounded-md bg-slate-100 p-4">
+              <p class="text-xs font-bold text-slate-500">当前模式</p>
+              <p id="mode-label" class="mt-1 text-base font-black text-ink">手动录入</p>
+            </div>
+          </div>
+
+          <div id="lab-analysis" class="relative mt-5 scroll-mt-24 rounded-md bg-slate-950 p-4">
+            <canvas id="energy-bar-chart" class="h-[420px] w-full" aria-label="各计数点势能减小和动能增加柱状图"></canvas>
+            <div
+              id="energy-tooltip"
+              class="pointer-events-none absolute hidden w-56 rounded-md border border-blue-100/30 bg-slate-900/95 px-3 py-2 text-xs leading-5 text-blue-50 shadow-xl"
+              aria-live="polite"
+            >
+            </div>
+            <p id="bar-chart-empty" class="pointer-events-none absolute inset-x-6 top-1/2 -translate-y-1/2 text-center text-sm font-bold text-blue-100">
+              请至少填写可计算的实验点
+            </p>
+          </div>
+
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { bindLabDraft } from '../lib/lab-draft';
+    type EnergyRow = {
+      index: number;
+      positionCm: number | null;
+      heightM: number | null;
+      velocity: number | null;
+      potentialDecrease: number | null;
+      kineticIncrease: number | null;
+      relativeError: number | null;
+      chartReady: boolean;
+    };
+
+    type ChartPoint = {
+      index: number;
+      potentialDecrease: number;
+      kineticIncrease: number;
+      relativeError: number | null;
+    };
+
+    type ChartBarKind = 'potential' | 'kinetic';
+
+    type ChartHitArea = {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      kind: ChartBarKind;
+      point: ChartPoint;
+      label: string;
+      value: number;
+    };
+
+    const pointCount = 10;
+    const maxVelocityIndex = pointCount - 2;
+    const positionInputs = Array.from(document.querySelectorAll<HTMLInputElement>('[data-position-input]'));
+    const groupNameInput = document.querySelector<HTMLInputElement>('#group-name');
+    const massInput = document.querySelector<HTMLInputElement>('#mass-input');
+    const gravityInput = document.querySelector<HTMLInputElement>('#gravity-input');
+    const intervalInput = document.querySelector<HTMLInputElement>('#interval-input');
+    const manualButton = document.querySelector<HTMLButtonElement>('#manual-mode');
+    const simulateButton = document.querySelector<HTMLButtonElement>('#ai-simulate');
+    const clearButton = document.querySelector<HTMLButtonElement>('#clear-data');
+    const exportCsvButton = document.querySelector<HTMLButtonElement>('#export-csv');
+    const exportScreenshotButton = document.querySelector<HTMLButtonElement>('#export-screenshot');
+    const barChart = document.querySelector<HTMLCanvasElement>('#energy-bar-chart');
+    const energyTooltip = document.querySelector<HTMLDivElement>('#energy-tooltip');
+    const barChartEmpty = document.querySelector<HTMLParagraphElement>('#bar-chart-empty');
+    const pointCountLabel = document.querySelector<HTMLParagraphElement>('#chart-point-count');
+    const modeLabel = document.querySelector<HTMLParagraphElement>('#mode-label');
+    const initialKineticLabel = document.querySelector<HTMLParagraphElement>('#initial-kinetic');
+    let chartHitAreas: ChartHitArea[] = [];
+    let activeChartSelection: { index: number; kind: ChartBarKind } | null = null;
+
+    const getNumericValue = (input: HTMLInputElement | null, fallback: number) => {
+      const value = Number(input?.value);
+      return Number.isFinite(value) && value > 0 ? value : fallback;
+    };
+
+    const formatNumber = (value: number | null, digits = 4) => {
+      if (value === null || !Number.isFinite(value)) return '';
+      return value.toFixed(digits);
+    };
+
+    const formatEnergyValue = (value: number) => `${value.toFixed(4)} J`;
+
+    const readGroupName = () => {
+      const value = groupNameInput?.value.trim();
+      return value || '未命名小组';
+    };
+
+    const readPositions = () => {
+      const positions = Array.from({ length: pointCount }, () => null as number | null);
+      for (const input of positionInputs) {
+        const index = Number(input.dataset.index);
+        const value = input.value.trim() === '' ? null : Number(input.value);
+        positions[index] = Number.isFinite(value) ? value : null;
+      }
+      positions[0] = 0;
+      return positions;
+    };
+
+    const setCell = (index: number, field: string, value: string) => {
+      const cell = document.querySelector<HTMLElement>(`[data-field="${field}"][data-index="${index}"]`);
+      if (cell) cell.textContent = value;
+    };
+
+    const calculateRows = (positions: Array<number | null>) => {
+      const mass = getNumericValue(massInput, 0.1);
+      const gravity = getNumericValue(gravityInput, 9.788);
+      const interval = getNumericValue(intervalInput, 0.02);
+      const referencePosition = positions[1];
+
+      const rows: EnergyRow[] = positions.map((positionCm, index) => {
+        const row: EnergyRow = {
+          index,
+          positionCm,
+          heightM: null,
+          velocity: null,
+          potentialDecrease: null,
+          kineticIncrease: null,
+          relativeError: null,
+          chartReady: false
+        };
+
+        const previous = positions[index - 1];
+        const next = positions[index + 1];
+        if (previous !== undefined && next !== undefined && previous !== null && next !== null && index >= 1 && index <= maxVelocityIndex) {
+          row.velocity = ((next - previous) / 100) / (2 * interval);
+        }
+
+        return row;
+      });
+
+      const referenceVelocity = rows[1]?.velocity;
+      for (const row of rows) {
+        if (row.positionCm !== null && referencePosition !== null && row.index >= 1 && row.index <= maxVelocityIndex) {
+          row.heightM = (row.positionCm - referencePosition) / 100;
+        }
+
+        if (row.heightM !== null && row.index >= 1 && row.index <= maxVelocityIndex) {
+          row.potentialDecrease = mass * gravity * row.heightM;
+        }
+
+        if (row.velocity !== null && referenceVelocity !== undefined && referenceVelocity !== null && row.index >= 1 && row.index <= maxVelocityIndex) {
+          row.kineticIncrease = 0.5 * mass * (row.velocity ** 2 - referenceVelocity ** 2);
+        }
+
+        if (row.index >= 2 && row.kineticIncrease !== null && row.potentialDecrease !== null && row.kineticIncrease !== 0) {
+          row.relativeError = Math.abs(1 - row.potentialDecrease / row.kineticIncrease);
+        }
+
+        row.chartReady = row.index >= 2 && row.index <= maxVelocityIndex && row.kineticIncrease !== null && row.potentialDecrease !== null;
+      }
+
+      return rows;
+    };
+
+    const getChartPoints = (rows: EnergyRow[]) =>
+      rows
+        .filter((row): row is EnergyRow & { potentialDecrease: number; kineticIncrease: number } => row.chartReady)
+        .map((row) => ({
+          index: row.index,
+          potentialDecrease: row.potentialDecrease,
+          kineticIncrease: row.kineticIncrease,
+          relativeError: row.relativeError
+        }));
+
+    const drawEnergyBarChart = (points: ChartPoint[]) => {
+      if (!barChart) return;
+      chartHitAreas = [];
+      const ratio = window.devicePixelRatio || 1;
+      const rect = barChart.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width * ratio));
+      const height = Math.max(1, Math.floor(rect.height * ratio));
+      barChart.width = width;
+      barChart.height = height;
+
+      const ctx = barChart.getContext('2d');
+      if (!ctx) return;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, width, height);
+
+      const marginLeft = 72 * ratio;
+      const marginRight = 34 * ratio;
+      const marginTop = 62 * ratio;
+      const marginBottom = 68 * ratio;
+      const plotWidth = width - marginLeft - marginRight;
+      const plotHeight = height - marginTop - marginBottom;
+      const originX = marginLeft;
+      const originY = height - marginBottom;
+      const maxValue = Math.max(0.01, ...points.flatMap((point) => [point.potentialDecrease, point.kineticIncrease])) * 1.32;
+
+      ctx.strokeStyle = 'rgba(219, 234, 254, 0.16)';
+      ctx.lineWidth = 1 * ratio;
+      ctx.fillStyle = '#dbeafe';
+      ctx.font = `${11 * ratio}px system-ui, sans-serif`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      for (let i = 0; i <= 5; i += 1) {
+        const value = (maxValue * i) / 5;
+        const y = originY - (plotHeight * i) / 5;
+        ctx.beginPath();
+        ctx.moveTo(originX, y);
+        ctx.lineTo(originX + plotWidth, y);
+        ctx.stroke();
+        ctx.fillText(value.toFixed(3), originX - 10 * ratio, y);
+      }
+
+      ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+      ctx.lineWidth = 1.6 * ratio;
+      ctx.beginPath();
+      ctx.moveTo(originX, marginTop);
+      ctx.lineTo(originX, originY);
+      ctx.lineTo(originX + plotWidth, originY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#dbeafe';
+      ctx.font = `${13 * ratio}px system-ui, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('能量变化 / J', originX, marginTop - 28 * ratio);
+      ctx.textAlign = 'center';
+      ctx.fillText('计数点 n', originX + plotWidth / 2, height - 18 * ratio);
+
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#fbbf24';
+      ctx.fillRect(originX + plotWidth - 212 * ratio, marginTop - 36 * ratio, 12 * ratio, 12 * ratio);
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillText('势能减小 ΔEp', originX + plotWidth - 194 * ratio, marginTop - 25 * ratio);
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(originX + plotWidth - 96 * ratio, marginTop - 36 * ratio, 12 * ratio, 12 * ratio);
+      ctx.fillStyle = '#dbeafe';
+      ctx.fillText('动能增加 ΔEk', originX + plotWidth - 78 * ratio, marginTop - 25 * ratio);
+
+      if (!points.length) return;
+
+      const groupWidth = plotWidth / points.length;
+      const barWidth = Math.min(34 * ratio, groupWidth * 0.24);
+      const hitPadding = 8 * ratio;
+      ctx.textBaseline = 'alphabetic';
+
+      points.forEach((point, order) => {
+        const groupCenter = originX + groupWidth * (order + 0.5);
+        const potentialHeight = (point.potentialDecrease / maxValue) * plotHeight;
+        const kineticHeight = (point.kineticIncrease / maxValue) * plotHeight;
+        const potentialX = groupCenter - barWidth - 4 * ratio;
+        const kineticX = groupCenter + 4 * ratio;
+
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillRect(potentialX, originY - potentialHeight, barWidth, potentialHeight);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(kineticX, originY - kineticHeight, barWidth, kineticHeight);
+
+        const potentialArea: ChartHitArea = {
+          x: (potentialX - hitPadding) / ratio,
+          y: marginTop / ratio,
+          width: (barWidth + hitPadding * 2) / ratio,
+          height: (originY - marginTop) / ratio,
+          kind: 'potential',
+          point,
+          label: '势能减小 ΔEp',
+          value: point.potentialDecrease
+        };
+        const kineticArea: ChartHitArea = {
+          x: (kineticX - hitPadding) / ratio,
+          y: marginTop / ratio,
+          width: (barWidth + hitPadding * 2) / ratio,
+          height: (originY - marginTop) / ratio,
+          kind: 'kinetic',
+          point,
+          label: '动能增加 ΔEk',
+          value: point.kineticIncrease
+        };
+        chartHitAreas.push(potentialArea, kineticArea);
+
+        const selectedKind = activeChartSelection?.index === point.index ? activeChartSelection.kind : null;
+        if (selectedKind) {
+          const selectedArea = selectedKind === 'potential'
+            ? { x: potentialX, height: potentialHeight, color: '#fde68a' }
+            : { x: kineticX, height: kineticHeight, color: '#bae6fd' };
+          ctx.strokeStyle = selectedArea.color;
+          ctx.lineWidth = 2 * ratio;
+          ctx.strokeRect(selectedArea.x - 2 * ratio, originY - selectedArea.height - 2 * ratio, barWidth + 4 * ratio, selectedArea.height + 4 * ratio);
+        }
+
+        ctx.fillStyle = '#dbeafe';
+        ctx.font = `${12 * ratio}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(`n=${point.index}`, groupCenter, originY + 24 * ratio);
+
+      });
+    };
+
+    const getCurrentChartPoints = () => getChartPoints(calculateRows(readPositions()));
+
+    const findChartHitArea = (event: MouseEvent) => {
+      if (!barChart) return null;
+      const rect = barChart.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      return chartHitAreas.find((area) =>
+        x >= area.x &&
+        x <= area.x + area.width &&
+        y >= area.y &&
+        y <= area.y + area.height
+      ) || null;
+    };
+
+    const hideEnergyTooltip = () => {
+      if (!energyTooltip) return;
+      energyTooltip.classList.add('hidden');
+      energyTooltip.textContent = '';
+    };
+
+    const showEnergyTooltip = (area: ChartHitArea, event: MouseEvent) => {
+      if (!energyTooltip || !barChart?.parentElement) return;
+      const containerRect = barChart.parentElement.getBoundingClientRect();
+      const tooltipWidth = 224;
+      const left = Math.min(Math.max(event.clientX - containerRect.left + 14, 12), containerRect.width - tooltipWidth - 12);
+      const top = Math.min(Math.max(event.clientY - containerRect.top - 18, 12), containerRect.height - 116);
+      energyTooltip.style.left = `${left}px`;
+      energyTooltip.style.top = `${top}px`;
+      energyTooltip.innerHTML = `
+        <p class="font-bold text-white">n=${area.point.index} ${area.label}</p>
+        <p><span class="text-blue-200">当前柱：</span><span class="font-mono font-bold">${formatEnergyValue(area.value)}</span></p>
+        <p><span class="text-amber-200">势能减小：</span><span class="font-mono">${formatEnergyValue(area.point.potentialDecrease)}</span></p>
+        <p><span class="text-sky-200">动能增加：</span><span class="font-mono">${formatEnergyValue(area.point.kineticIncrease)}</span></p>
+      `;
+      energyTooltip.classList.remove('hidden');
+    };
+
+    const handleChartPointer = (event: MouseEvent) => {
+      const area = findChartHitArea(event);
+      if (!area) {
+        activeChartSelection = null;
+        hideEnergyTooltip();
+        drawEnergyBarChart(getCurrentChartPoints());
+        return;
+      }
+
+      activeChartSelection = { index: area.point.index, kind: area.kind };
+      drawEnergyBarChart(getCurrentChartPoints());
+      showEnergyTooltip(area, event);
+    };
+
+    const updateSummary = (points: ChartPoint[]) => {
+      if (pointCountLabel) pointCountLabel.textContent = String(points.length);
+    };
+
+    const render = () => {
+      const rows = calculateRows(readPositions());
+      const mass = getNumericValue(massInput, 0.1);
+      const initialVelocity = rows[1]?.velocity;
+      const initialKinetic = initialVelocity !== undefined && initialVelocity !== null
+        ? 0.5 * mass * initialVelocity ** 2
+        : null;
+      if (initialKineticLabel) initialKineticLabel.textContent = initialKinetic === null ? '--' : formatEnergyValue(initialKinetic);
+      for (const row of rows) {
+        setCell(row.index, 'height', formatNumber(row.heightM));
+        setCell(row.index, 'velocity', formatNumber(row.velocity));
+        setCell(row.index, 'potential', formatNumber(row.potentialDecrease));
+        setCell(row.index, 'kinetic', formatNumber(row.kineticIncrease));
+      }
+
+      const points = getChartPoints(rows);
+      if (activeChartSelection && !points.some((point) => point.index === activeChartSelection?.index)) {
+        activeChartSelection = null;
+        hideEnergyTooltip();
+      }
+      if (barChartEmpty) {
+        barChartEmpty.textContent = points.length ? '' : '请至少填写可计算的实验点';
+      }
+      drawEnergyBarChart(points);
+      updateSummary(points);
+      return { rows, points };
+    };
+
+    const setMode = (text: string) => {
+      if (modeLabel) modeLabel.textContent = text;
+    };
+
+    const generateSimulatedData = () => {
+      const gravity = getNumericValue(gravityInput, 9.788);
+      const interval = getNumericValue(intervalInput, 0.02);
+      let previous = 0;
+
+      for (const input of positionInputs) {
+        const index = Number(input.dataset.index);
+        const time = index * interval;
+        const idealPositionCm = 0.5 * gravity * time ** 2 * 100;
+        const noise = index === 0 ? 0 : (Math.random() - 0.5) * 0.08;
+        const measured = Math.max(index === 0 ? 0 : previous + 0.02, idealPositionCm + noise);
+        previous = measured;
+        input.value = measured.toFixed(2);
+      }
+
+      setMode('AI模拟');
+      render();
+    };
+
+    const clearData = () => {
+      for (const input of positionInputs) {
+        const index = Number(input.dataset.index);
+        input.value = index === 0 ? '0.00' : '';
+      }
+      activeChartSelection = null;
+      hideEnergyTooltip();
+      setMode('手动录入');
+      render();
+    };
+
+    const csvEscape = (value: string | number | null) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+
+    const buildCsv = (rows: EnergyRow[]) => {
+      const mass = getNumericValue(massInput, 0.1);
+      const gravity = getNumericValue(gravityInput, 9.788);
+      const interval = getNumericValue(intervalInput, 0.02);
+      const initialVelocity = rows[1]?.velocity;
+      const initialKinetic = initialVelocity !== undefined && initialVelocity !== null
+        ? 0.5 * mass * initialVelocity ** 2
+        : null;
+      const lines: Array<Array<string | number | null>> = [
+        ['实验小组名称', readGroupName()],
+        ['实验名称', '落体法验证机械能守恒定律'],
+        ['小球质量 m / kg', mass.toFixed(4)],
+        ['重力加速度 g / (m/s²)', gravity.toFixed(4)],
+        ['相邻计数点时间 T / s', interval.toFixed(4)],
+        ['1 号点初动能 Ek1 / J', initialKinetic === null ? '' : initialKinetic.toFixed(4)],
+        [],
+        ['计数点 n', '位置 x_n / cm', '下落距离 h=x_n-x_1 / m', '瞬时速度 v / (m/s)', '势能减小 ΔEp / J', '动能增加 ΔEk / J']
+      ];
+
+      for (const row of rows) {
+        lines.push([
+          row.index,
+          formatNumber(row.positionCm),
+          formatNumber(row.heightM),
+          formatNumber(row.velocity),
+          formatNumber(row.potentialDecrease),
+          formatNumber(row.kineticIncrease)
+        ]);
+      }
+
+      return `\uFEFF${lines.map((line) => line.map(csvEscape).join(',')).join('\n')}`;
+    };
+
+    const sanitizeFileName = (value: string) => value.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, '-').slice(0, 40) || '未命名小组';
+
+    const downloadBlob = (blob: Blob, filename: string) => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+
+    const timestamp = () => new Date().toISOString().replace(/[:.]/g, '-');
+
+    const exportCsv = () => {
+      const { rows } = render();
+      const csv = buildCsv(rows);
+      const filename = `机械能守恒-${sanitizeFileName(readGroupName())}-数据-${timestamp()}.csv`;
+      downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
+    };
+
+    const exportScreenshot = () => {
+      const { rows, points } = render();
+      const ratio = window.devicePixelRatio || 1;
+      const width = 1200;
+      const rowHeight = 34;
+      const height = 720 + rows.length * rowHeight;
+      const reportCanvas = document.createElement('canvas');
+      reportCanvas.width = width * ratio;
+      reportCanvas.height = height * ratio;
+      const ctx = reportCanvas.getContext('2d');
+      if (!ctx) return;
+      ctx.scale(ratio, ratio);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '700 30px system-ui, sans-serif';
+      ctx.fillText('落体法验证机械能守恒定律', 48, 58);
+      ctx.font = '600 17px system-ui, sans-serif';
+      ctx.fillStyle = '#0f5ca8';
+      ctx.fillText(`实验小组名称：${readGroupName()}`, 48, 92);
+      ctx.fillStyle = '#475569';
+      ctx.fillText(
+        `m=${getNumericValue(massInput, 0.1).toFixed(4)} kg    g=${getNumericValue(gravityInput, 9.788).toFixed(4)} m/s²    T=${getNumericValue(intervalInput, 0.02).toFixed(4)} s`,
+        48,
+        122
+      );
+      ctx.fillText(`1 号点初动能 Ek1：${initialKineticLabel?.textContent || '--'}`, 48, 148);
+
+      if (barChart) {
+        ctx.drawImage(barChart, 48, 172, 1104, 338);
+      }
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '700 18px system-ui, sans-serif';
+      ctx.fillText(`可绘图点：${points.length}`, 48, 540);
+
+      const headers = ['n', 'x_n / cm', 'h / m', 'v / (m/s)', 'ΔEp / J', 'ΔEk / J'];
+      const widths = [56, 150, 130, 150, 160, 170];
+      let x = 48;
+      let y = 576;
+      ctx.fillStyle = '#eaf5ff';
+      ctx.fillRect(48, y - 24, 1104, 34);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = '700 14px system-ui, sans-serif';
+      headers.forEach((header, index) => {
+        ctx.fillText(header, x + 8, y);
+        x += widths[index];
+      });
+
+      ctx.font = '500 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
+      rows.forEach((row, rowIndex) => {
+        x = 48;
+        y = 610 + rowIndex * rowHeight;
+        ctx.fillStyle = rowIndex % 2 === 0 ? '#ffffff' : '#f8fafc';
+        ctx.fillRect(48, y - 24, 1104, rowHeight);
+        ctx.fillStyle = '#0f172a';
+        const values = [
+          row.index,
+          formatNumber(row.positionCm),
+          formatNumber(row.heightM),
+          formatNumber(row.velocity),
+          formatNumber(row.potentialDecrease),
+          formatNumber(row.kineticIncrease)
+        ];
+        values.forEach((value, index) => {
+          ctx.fillText(String(value), x + 8, y);
+          x += widths[index];
+        });
+      });
+
+      ctx.font = '500 14px system-ui, sans-serif';
+      ctx.fillStyle = '#475569';
+
+      const filename = `机械能守恒-${sanitizeFileName(readGroupName())}-截图-${timestamp()}.png`;
+      reportCanvas.toBlob((blob) => {
+        if (blob) downloadBlob(blob, filename);
+      }, 'image/png');
+      reportCanvas.toDataURL('image/png');
+    };
+
+    for (const input of [...positionInputs, massInput, gravityInput, intervalInput]) {
+      input?.addEventListener('input', () => {
+        setMode('手动录入');
+        render();
+      });
+    }
+
+    manualButton?.addEventListener('click', () => {
+      setMode('手动录入');
+      render();
+    });
+    simulateButton?.addEventListener('click', generateSimulatedData);
+    clearButton?.addEventListener('click', clearData);
+    exportCsvButton?.addEventListener('click', exportCsv);
+    exportScreenshotButton?.addEventListener('click', exportScreenshot);
+    if (barChart) {
+      barChart.addEventListener('mousemove', handleChartPointer);
+      barChart.addEventListener('click', handleChartPointer);
+      barChart.addEventListener('mouseleave', () => {
+        activeChartSelection = null;
+        hideEnergyTooltip();
+        drawEnergyBarChart(getCurrentChartPoints());
+      });
+    }
+    window.addEventListener('resize', render);
+    render();
+    bindLabDraft({
+      experiment: 'falling-body',
+      fields: {
+        group: groupNameInput, mass: massInput, gravity: gravityInput, interval: intervalInput,
+        ...Object.fromEntries(positionInputs.filter(input => !input.readOnly).map(input => [`position-${input.dataset.index}`, input]))
+      },
+      onRestore: () => { render(); }
+    });
+  </script>
+</section>
+
+<ExperimentReview data={fallingBodyReview} slug="falling-body" />

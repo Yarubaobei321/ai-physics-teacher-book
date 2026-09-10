@@ -1,0 +1,424 @@
+---
+import BaseLayout from '../../../components/BaseLayout.astro';
+import '../../../styles/project-doc.css';
+
+const quick = [
+  { k: '主控', v: '双 ESP32' },
+  { k: '底盘', v: '六轮编码电机' },
+  { k: '通信', v: 'Web Bluetooth' },
+  { k: '能源', v: '太阳能 + 追光除尘' }
+];
+
+const boardA = [
+  '控制 6 个 TT 编码器电机、3 块 TB6612FNG 驱动',
+  '读取左右代表轮编码器，做轮速检测与直线修正',
+  '读取五路循迹、前方避障、坑洞检测、MPU6050 姿态',
+  '接收 2.4G 八通道遥控，执行手动 / 自动 / 急停',
+  '所有运动与安全的最终裁决都在 A 板'
+];
+
+const boardB = [
+  '读取 PMS5003T 粉尘温湿度、BMP280 气压、BH1750 光照',
+  '读取 INA219 太阳能电压电流功率、电池电压',
+  '读取 TCRT5000 积尘传感器、4 路光敏电阻',
+  '控制 2 个舵机二维追光、5V 风扇除尘、TFT 显示',
+  '建立 BLE 网页地面站，通过 UART 与 A 板通信'
+];
+
+// 能力实现状态（忠实于开发文档 v0.1.0，对外只宣称已实现项）
+const status = [
+  ['双 ESP32 心跳 + A/B UART 双向通信', 'ok', '已实现'],
+  ['BLE 网关：广播 / 遥测通知 / 命令转发', 'ok', '已实现'],
+  ['网页地面站：遥测 / 控制 / CSV / 演示 / 日志', 'ok', '已实现'],
+  ['命令急停 / SAFE 默认态 / 超时与失联停车', 'ok', '已实现'],
+  ['风扇 + 追光器状态回传', 'ok', '已实现（仅状态）'],
+  ['电机驱动（六电机差速）', 'wip', '骨架占位：当前为虚拟 PWM 日志，不驱动真电机'],
+  ['电池 / 太阳能 / PM2.5 等能源环境数据', 'wip', '固件现报 0，演示数据由网页提供'],
+  ['避障 / 坑洞 / 姿态安全字段', 'wip', '协议字段在，尚未接入安全裁决'],
+  ['风扇除尘 / 追光执行', 'wip', '命令只改状态位，未驱动风扇与舵机'],
+  ['物理急停 / 低电量保护 / 编码器测速', 'plan', '规划中'],
+  ['2.4G 接管 / 自动循迹 / 防侧翻', 'plan', '规划中'],
+  ['太阳能追光执行 / TFT 显示 / Wi-Fi 服务', 'plan', '规划中']
+];
+
+const energySteps = [
+  { b: '电池稳定供电', s: '7.4V 2S 主电池负责车辆随时能动。' },
+  { b: '太阳能持续补能', s: '12V 太阳能板经 CN3791 MPPT 给主电池补电。' },
+  { b: '追光提高效率', s: '4 路光敏判断方向，2 个舵机让板面对准光源。' },
+  { b: '除尘恢复效率', s: '积尘使功率下降，风扇除尘后功率回升，形成闭环。' }
+];
+
+const hwMotion = [
+  ['六轮越野底盘', '1', '火星车底盘'],
+  ['TT 霍尔编码减速电机', '6', '推荐 1:90 减速比'],
+  ['TB6612FNG 驱动模块', '3', '每块控制一对左右电机'],
+  ['五路数字循迹模块', '1', '模拟预设巡检路线导航'],
+  ['2.4G 八通道串口遥控', '1', '手动遥控、急停、模式切换']
+];
+
+const hwSafety = [
+  ['MPU6050', '1', '坡度、侧倾、防侧翻'],
+  ['VL53L0X', '2', '前方避障 + 前下方坑洞检测'],
+  ['蜂鸣器 / 报警 LED', '1', '急停、倾斜、低电量报警']
+];
+
+const hwEnergy = [
+  ['PMS5003T', '1', 'PM1.0/2.5/10、温湿度'],
+  ['BMP280 / BH1750', '各 1', '气压 / 光照强度'],
+  ['INA219', '1', '太阳能电压、电流、功率'],
+  ['TCRT5000 / 光敏 LDR', '1-2 / 4', '积尘检测 / 二维追光方向'],
+  ['12V3W 太阳能板 + CN3791', '1 + 1', '发电与 2S MPPT 补能'],
+  ['SG90/MG90S 舵机 + 5015 风扇', '2 + 1', '追光 / 除尘']
+];
+
+const pitchRows = [
+  ['正常', 'Roll < 15°'],
+  ['警告', 'Roll 15°–25°'],
+  ['危险', 'Roll 25°–35°'],
+  ['急停', 'Roll > 35°']
+];
+
+const stages = [
+  { b: '阶段 1 主电源', s: '主开关上电、两路 5V 稳定、不异常发热。' },
+  { b: '阶段 2 双心跳通信', s: 'A/B 串口心跳、UART 互通、BLE 广播、网页收遥测。' },
+  { b: '阶段 3 电机裸测', s: '架空测方向、左右三轮同向、再测差速转向。' },
+  { b: '阶段 4 编码器', s: '读左右代表轮速度，让直行更稳。' },
+  { b: '阶段 5 遥控急停', s: '手动响应正常，急停最高优先级，失联停车。' },
+  { b: '阶段 6 自动循迹', s: '沿线巡检，丢线停车，手动可随时接管。' },
+  { b: '阶段 7 地形安全', s: '避障、坑洞、防侧翻，安全逻辑优先于循迹。' },
+  { b: '阶段 8-9 能源闭环', s: 'B 板传感器数据 + 追光除尘，形成功率闭环。' }
+];
+
+const demo = [
+  '火星车开机，网页地面站连接 ESP32-rover。',
+  '网页显示自检信息、电池电压、当前模式。',
+  '进入自动巡检模式，小车沿预设路线前进。',
+  '遇到障碍物，小车减速或停止。',
+  '前下方传感器检测到坑洞，小车停止并报警。',
+  'MPU6050 检测坡度，倾角过大触发防侧翻保护。',
+  '模拟沙尘使 PM2.5 / 积尘升高，太阳能功率下降。',
+  '启动风扇除尘，功率恢复；启动追光，功率进一步提升。',
+  '评委在网页端看到完整状态，并可演示急停与人工接管。'
+];
+
+const questions = [
+  {
+    q: '为什么尘光一号要用双 ESP32，而不是一块板全部完成？',
+    a: '运动控制需要稳定、实时、安全；网页蓝牙、能源环境传感器和展示逻辑比较复杂。拆成 A 板和 B 板后，A 板专心处理电机、循迹、避障、姿态和急停，B 板负责 BLE 地面站、能源环境数据和展示，复杂展示逻辑不会拖慢运动安全裁决。'
+  },
+  {
+    q: '网页地面站为什么不能直接控制电机？',
+    a: '网页运行在浏览器里，连接状态和指令时序都可能不稳定。更安全的链路是“网页 → B 板 → A 板 → 电机驱动”，最后由 A 板根据急停、超时、姿态、避障等条件决定是否执行。这样即使网页误触或蓝牙短暂异常，车辆仍有本地安全边界。'
+  },
+  {
+    q: '为什么说它不是“纯太阳能开车”，而是能源闭环？',
+    a: '课堂演示中主电池负责稳定供电，太阳能板用于补能和能源管理演示。真正的亮点是测量光照、太阳能电压电流功率、积尘影响，再通过追光和除尘让功率变化可观察，形成“检测 → 判断 → 执行 → 功率恢复”的闭环。'
+  },
+  {
+    q: '为什么安全逻辑的最终裁决必须放在 A 板？',
+    a: 'A 板离电机和安全传感器最近，能在本地快速停车。BLE、网页和 B 板都属于上层链路，可能延迟或断开；如果急停、防侧翻、避障裁决依赖上层链路，车辆就可能在通信异常时继续运动。'
+  },
+  {
+    q: '为什么六轮底盘还需要编码器反馈？',
+    a: '相同 PWM 不代表相同轮速。电机个体差异、地面摩擦和负载都会让左右轮速度不同，车辆可能跑偏。编码器能读出实际轮速，程序再根据目标速度和实际速度差修正 PWM，让直行和转向更可控。'
+  },
+  {
+    q: '答辩时为什么要如实区分“已实现、骨架占位、规划中”？',
+    a: '工程展示不是只看想象图，而是看哪些能力已经能跑、哪些只有接口和日志、哪些还在路线图里。把状态讲清楚，评委才能相信项目进度，也能看出后续升级路径。'
+  }
+];
+---
+
+<BaseLayout
+  title="尘光一号火星车 · 作品介绍 | 科创天地"
+  description="尘光一号火星车作品介绍：基于双 ESP32 的火星基地新能源智能巡检车，讲清运动安全 A 板与能源环境 B 板的分工、Web Bluetooth 网页地面站协议、电池+太阳能追光除尘能源闭环、搭建阶段路线图与比赛演示流程。"
+  ogImage="/maker/smart-hardware/images/mars-rover-01.webp"
+>
+  <article class="pd-doc">
+    <header class="pd-hero pd-hero--mars">
+      <div class="page-shell pd-hero-inner">
+        <a class="pd-back" href="/maker/#works">← 返回科创天地</a>
+        <p class="pd-hero-eyebrow">创新实验作品 · MARS ROVER · 双 ESP32 · Web Bluetooth</p>
+        <h1>尘光一号火星车</h1>
+        <p class="pd-hero-lead">
+          一台模拟未来火星基地的新能源智能巡检车。它把网页、蓝牙通信、双控制板、电机驱动、姿态安全和太阳能能源管理放进同一条任务链——最适合用来讲“系统集成”是怎么回事。
+        </p>
+        <div class="pd-tags">
+          <span class="pd-tag">文档 v0.1.0</span>
+          <span class="pd-tag">双 ESP32 架构</span>
+          <span class="pd-tag">六轮编码底盘</span>
+          <span class="pd-tag">网页蓝牙地面站</span>
+        </div>
+        <div class="pd-hero-actions">
+          <a class="pd-btn pd-btn--primary" href="/projects/mars-rover/">打开网页地面站 →</a>
+          <a class="pd-btn pd-btn--ghost" href="#arch">先看系统架构</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-shell">
+      <div class="pd-quick">
+        {quick.map((item) => (
+          <div class="pd-quick-item">
+            <div class="k">{item.k}</div>
+            <div class="v">{item.v}</div>
+          </div>
+        ))}
+      </div>
+
+      <figure class="pd-showcase">
+        <img
+          src="/maker/smart-hardware/images/mars-rover-01.webp"
+          alt="数智育才尘光一号 AI 智能火星探索车整车与部件示意"
+          loading="lazy"
+          decoding="async"
+        />
+        <figcaption>尘光一号 · AI 智能火星探索车（概念渲染图，仅供参考）</figcaption>
+      </figure>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">01 · 项目定位</p>
+        <h2>不是“纯太阳能开车”，而是一套能源闭环</h2>
+        <p class="pd-lead-block">尘光一号定位为“基于 ESP32 的火星基地新能源智能巡检车”。它不承诺完全靠太阳能驱动车辆，更合理的工程表达是下面这个闭环——这也是答辩时最重要的能源管理亮点。</p>
+        <div class="pd-steps">
+          {energySteps.map((item, i) => (
+            <div class="pd-step is-mars" data-n={i + 1}><b>{item.b}</b><span>{item.s}</span></div>
+          ))}
+        </div>
+      </section>
+
+      <section class="pd-section" id="arch">
+        <p class="pd-section-eyebrow">02 · 总体架构</p>
+        <h2>双 ESP32：一个管“跑得稳”，一个管“看得清”</h2>
+        <p class="pd-lead-block">车辆运动控制必须稳定、实时、安全；而显示、网页、传感器和能源数据比较复杂。把它们拆到两块 ESP32，能避免复杂的展示逻辑影响 A 板的运动安全。</p>
+        <div class="pd-grid2">
+          <div class="pd-card pd-card--mars">
+            <span class="pd-chip">ESP32-A · 运动与安全主控</span>
+            <h3 style="margin-top:10px">让车跑得稳、停得住</h3>
+            <ul style="margin:8px 0 0;padding-left:18px;color:var(--pd-ink-2);line-height:1.85">
+              {boardA.map((line) => <li>{line}</li>)}
+            </ul>
+          </div>
+          <div class="pd-card pd-card--accent">
+            <span class="pd-chip">ESP32-B · 能源环境与展示主控</span>
+            <h3 style="margin-top:10px">把状态看清、讲清</h3>
+            <ul style="margin:8px 0 0;padding-left:18px;color:var(--pd-ink-2);line-height:1.85">
+              {boardB.map((line) => <li>{line}</li>)}
+            </ul>
+          </div>
+        </div>
+
+        <div class="pd-diagram" aria-label="火星车系统架构与命令链路示意图" style="margin-top:22px">
+          <svg viewBox="0 0 1080 360" xmlns="http://www.w3.org/2000/svg" role="img">
+            <defs>
+              <marker id="mr-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#c2410c" />
+              </marker>
+              <marker id="mr-arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#0b63c7" />
+              </marker>
+            </defs>
+
+            <rect x="40" y="132" width="180" height="96" rx="12" fill="#102033" stroke="#0b63c7" stroke-width="3" />
+            <text x="130" y="172" text-anchor="middle" font-size="17" font-weight="900" fill="#fff">网页地面站</text>
+            <text x="130" y="196" text-anchor="middle" font-size="12" font-weight="700" fill="#b7dcff">遥测 / 控制 / 日志</text>
+
+            <rect x="312" y="132" width="180" height="96" rx="12" fill="#fff" stroke="#0b63c7" stroke-width="2" />
+            <text x="402" y="166" text-anchor="middle" font-size="17" font-weight="900" fill="#102033">ESP32-B</text>
+            <text x="402" y="188" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">BLE 网关 · 能源环境</text>
+            <text x="402" y="208" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">舵机 / 风扇 / TFT</text>
+
+            <rect x="584" y="132" width="180" height="96" rx="12" fill="#fff" stroke="#c2410c" stroke-width="2" />
+            <text x="674" y="166" text-anchor="middle" font-size="17" font-weight="900" fill="#102033">ESP32-A</text>
+            <text x="674" y="188" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">运动 · 安全裁决</text>
+            <text x="674" y="208" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">循迹 / 避障 / 姿态</text>
+
+            <rect x="856" y="96" width="184" height="64" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="948" y="124" text-anchor="middle" font-size="15" font-weight="900" fill="#102033">3× TB6612</text>
+            <text x="948" y="144" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">六轮差速电机</text>
+
+            <rect x="856" y="200" width="184" height="64" rx="12" fill="#fbfdff" stroke="#9eb9d8" stroke-width="2" />
+            <text x="948" y="228" text-anchor="middle" font-size="15" font-weight="900" fill="#102033">安全传感器</text>
+            <text x="948" y="248" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">VL53L0X / MPU6050</text>
+
+            <path d="M220 168 L312 168" stroke="#0b63c7" stroke-width="3" fill="none" marker-end="url(#mr-arrow2)" />
+            <path d="M312 192 L220 192" stroke="#0b63c7" stroke-width="3" fill="none" marker-end="url(#mr-arrow2)" />
+            <text x="266" y="150" text-anchor="middle" font-size="12" font-weight="900" fill="#0b63c7">BLE</text>
+
+            <path d="M492 168 L584 168" stroke="#c2410c" stroke-width="3" fill="none" marker-end="url(#mr-arrow)" />
+            <path d="M584 192 L492 192" stroke="#c2410c" stroke-width="3" fill="none" marker-end="url(#mr-arrow)" />
+            <text x="538" y="150" text-anchor="middle" font-size="12" font-weight="900" fill="#c2410c">UART</text>
+
+            <path d="M764 158 L856 132" stroke="#c2410c" stroke-width="3" fill="none" marker-end="url(#mr-arrow)" />
+            <path d="M764 208 L856 226" stroke="#c2410c" stroke-width="3" fill="none" marker-end="url(#mr-arrow)" />
+
+            <text x="540" y="320" text-anchor="middle" font-size="13" font-weight="800" fill="#475569">网页命令不直接控制电机：网页 → B 板 → A 板，最后由 A 板按安全规则决定是否执行</text>
+          </svg>
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">03 · 实现状态</p>
+        <h2>哪些已经做好，哪些还在路上</h2>
+        <p class="pd-lead-block">截至文档 v0.1.0 的真实进度。对外展示与答辩时，只宣称“已实现”的能力，骨架占位与规划中的功能不当作已具备——这是工程诚信，也是这台车后续升级的路线图。</p>
+        <div class="pd-table-wrap">
+          <table class="pd-table">
+            <thead><tr><th>能力</th><th>状态</th><th>说明</th></tr></thead>
+            <tbody>
+              {status.map((row) => (
+                <tr>
+                  <td><strong>{row[0]}</strong></td>
+                  <td>
+                    {row[1] === 'ok' && <span class="pd-state pd-state--ok">● 已实现</span>}
+                    {row[1] === 'wip' && <span class="pd-state pd-state--wip">◐ 骨架占位</span>}
+                    {row[1] === 'plan' && <span class="pd-state pd-state--plan">○ 规划中</span>}
+                  </td>
+                  <td>{row[2]}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">04 · 硬件清单</p>
+        <h2>车上都装了些什么</h2>
+        <div class="pd-grid3">
+          <div>
+            <h3>底盘运动系统</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr><th>模块</th><th>数量</th><th>说明</th></tr></thead>
+                <tbody>{hwMotion.map((r) => <tr><td><strong>{r[0]}</strong></td><td>{r[1]}</td><td>{r[2]}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3>安全与地形识别</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr><th>模块</th><th>数量</th><th>说明</th></tr></thead>
+                <tbody>{hwSafety.map((r) => <tr><td><strong>{r[0]}</strong></td><td>{r[1]}</td><td>{r[2]}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3>环境与能源系统</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr><th>模块</th><th>数量</th><th>说明</th></tr></thead>
+                <tbody>{hwEnergy.map((r) => <tr><td><strong>{r[0]}</strong></td><td>{r[1]}</td><td>{r[2]}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="pd-callout pd-callout--danger">
+          <strong>电源安全：</strong>采用一组 7.4V 2S 主电池 + 两路 5V 降压。电机、舵机、风扇不要从 ESP32 板子直接取电；所有 GND 必须共地；总开关用机械大电流开关；不要同时用平衡充电器和 CN3791 给同一电池充电。
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">05 · 安全保护</p>
+        <h2>循迹、避障与防侧翻</h2>
+        <div class="pd-grid2">
+          <div class="pd-card">
+            <h3>地形风险识别</h3>
+            <p>五路数字循迹模拟预设巡检路线，可识别左偏、居中、右偏、丢线和特殊标记。两个 VL53L0X 分别朝正前方和前下方，识别岩石与坑洞落差。</p>
+          </div>
+          <div>
+            <h3>姿态阈值（防侧翻）</h3>
+            <div class="pd-table-wrap">
+              <table class="pd-table">
+                <thead><tr><th>状态</th><th>判断（MPU6050 Roll）</th></tr></thead>
+                <tbody>{pitchRows.map((r) => <tr><td><strong>{r[0]}</strong></td><td>{r[1]}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="pd-callout pd-callout--warn">
+          安全逻辑的<strong>最终裁决必须放在 A 板</strong>，而且优先级高于循迹逻辑：连接异常、急停、超时或姿态风险出现时，运动命令会被限制或清零。
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">06 · 网页地面站</p>
+        <h2>蓝牙怎么把状态送到网页</h2>
+        <p class="pd-lead-block">网页端连接 BLE 名称前缀 <span class="pd-pin">ESP32-rover</span> 的 B 板，显示模式、急停、左右轮 PWM、障碍/坑洞、姿态、电池、太阳能功率、PM2.5、风扇状态，并支持手动控制、模式切换、急停、风扇与追光开关、运行日志和 CSV 导出。</p>
+        <div class="pd-grid2">
+          <div>
+            <h3>遥测包（B 板 → 网页）</h3>
+            <div class="pd-code">
+              <pre>ROVER,&lt;seq&gt;,&lt;ms&gt;,&lt;mode&gt;,&lt;estop&gt;,
+&lt;left_pwm&gt;,&lt;right_pwm&gt;,&lt;battery_v&gt;,
+&lt;solar_w&gt;,&lt;pm25&gt;,&lt;pitch&gt;,&lt;roll&gt;,
+&lt;obstacle&gt;,&lt;pit&gt;,&lt;fan&gt;,&lt;tracker&gt;</pre>
+            </div>
+          </div>
+          <div>
+            <h3>控制命令（网页 → B 板）</h3>
+            <div class="pd-code">
+              <pre>CMD,&lt;seq&gt;,MODE,&lt;MANUAL|AUTO|SAFE&gt;
+CMD,&lt;seq&gt;,DRIVE,&lt;forward&gt;,&lt;turn&gt;
+CMD,&lt;seq&gt;,ESTOP,1
+CMD,&lt;seq&gt;,CLEAR_ESTOP,1
+CMD,&lt;seq&gt;,FAN,&lt;0|1&gt;
+CMD,&lt;seq&gt;,TRACKER,&lt;0|1&gt;</pre>
+            </div>
+          </div>
+        </div>
+        <div class="pd-callout pd-callout--safe">
+          <strong>命令链路：</strong>网页命令不是直接控制电机。它先到 B 板，再由 B 板通过 UART 发给 A 板，最后由 A 板根据安全规则决定是否执行。这样即使网页误操作，运动安全仍由 A 板把关。
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">07 · 搭建路线</p>
+        <h2>推荐的分阶段搭建顺序</h2>
+        <p class="pd-lead-block">开发优先级是“先让车能安全跑，再让车能自动跑，最后做能源环境与展示系统”。每个阶段都有明确的通过标准，过了再进下一阶段。</p>
+        <div class="pd-steps">
+          {stages.map((item) => (
+            <div class="pd-step is-mars" data-n={item.b.match(/\d+(-\d+)?/)?.[0]}><b>{item.b.replace(/^阶段 [\d-]+ /, '')}</b><span>{item.s}</span></div>
+          ))}
+        </div>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">08 · 演示流程</p>
+        <h2>火星基地新能源巡检任务</h2>
+        <ol class="pd-ol is-mars">
+          {demo.map((line) => <li>{line}</li>)}
+        </ol>
+      </section>
+
+      <section class="pd-section">
+        <p class="pd-section-eyebrow">09 · 自检</p>
+        <h2>学完后你应该能回答</h2>
+        <div class="pd-qa-list">
+          {questions.map((item, index) => (
+            <details class="pd-qa is-mars">
+              <summary>
+                <span class="pd-qa-index">{index + 1}</span>
+                <span>{item.q}</span>
+              </summary>
+              <p>{item.a}</p>
+            </details>
+          ))}
+        </div>
+        <div class="pd-callout pd-callout--safe" style="margin-top:18px">
+          <strong>一句话总结：</strong>尘光一号的核心不是“网页能遥控”，而是一条完整的系统集成链——<strong>网页地面站 → B 板通信与能源环境 → A 板运动安全 → 电机与传感器执行</strong>。只要把通信边界和安全裁决讲清楚，就能看懂这台火星车的工程价值。
+        </div>
+      </section>
+
+      <section class="pd-cta is-mars">
+        <h2>打开网页地面站，连上真实的火星车</h2>
+        <p>网页地面站通过 Web Bluetooth 直连 ESP32-rover，提供任务驾驶舱、操控台与部件原理三视图，支持演示模式与遥测 CSV 导出。真实上车前请先完成供电、共地、急停与串口日志检查。</p>
+        <div class="pd-hero-actions">
+          <a class="pd-btn pd-btn--primary" href="/projects/mars-rover/">打开尘光一号网页地面站 →</a>
+          <a class="pd-btn pd-btn--ghost" href="/maker/#maker-projects">看看其他科创作品</a>
+        </div>
+        <p class="pd-foot-note">育才物理创新实验室 · 尘光一号火星车开发文档 v0.1.0 · 本页如实标注能力实现状态，对外展示仅宣称“已实现”项。</p>
+      </section>
+    </div>
+  </article>
+</BaseLayout>

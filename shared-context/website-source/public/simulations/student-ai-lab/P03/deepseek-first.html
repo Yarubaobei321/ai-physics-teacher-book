@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=2.0">
+  <title>万有引力定律 · 交互演示 | 高中物理</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      background: linear-gradient(145deg, #0b1a2f 0%, #1a2f40 100%);
+      font-family: 'Segoe UI', 'Noto Sans', 'Roboto', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 48px;
+      padding: 28px 30px;
+      box-shadow: 0 30px 50px rgba(0,0,0,0.6), inset 0 1px 1px rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #eef5ff;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    h1 {
+      font-weight: 500;
+      font-size: 2.4rem;
+      letter-spacing: 4px;
+      text-align: center;
+      color: #ffd9a5;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    h1 span {
+      background: rgba(255,215,150,0.18);
+      padding: 4px 18px;
+      border-radius: 40px;
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: #ffdead;
+      letter-spacing: 2px;
+    }
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+    }
+    .canvas-panel {
+      flex: 2;
+      min-width: 500px;
+      background: rgba(10, 20, 35, 0.6);
+      border-radius: 36px;
+      padding: 16px;
+      backdrop-filter: blur(8px);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 450px;
+      border-radius: 24px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.7);
+      background: radial-gradient(circle at 20% 30%, #1b3147, #0a121f);
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .slider-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+      justify-content: center;
+      width: 100%;
+    }
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.08);
+      border-radius: 28px;
+      padding: 10px 18px;
+      min-width: 130px;
+      backdrop-filter: blur(4px);
+    }
+    .slider-item label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #bcd5ff;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .slider-item input[type=range] {
+      width: 110px;
+      cursor: pointer;
+      accent-color: #f7b05e;
+    }
+    .value-display {
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #ffd58c;
+      background: #0f1e2c;
+      padding: 2px 12px;
+      border-radius: 20px;
+      margin-top: 4px;
+    }
+    .info-panel {
+      flex: 1.2;
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .card {
+      background: rgba(20, 30, 44, 0.7);
+      backdrop-filter: blur(16px);
+      border-radius: 28px;
+      padding: 20px;
+      box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .force-value {
+      font-size: 2.1rem;
+      font-weight: 700;
+      color: #ffbc5b;
+      text-shadow: 0 0 15px #ff8c2e;
+      letter-spacing: 1px;
+    }
+    .unit {
+      font-size: 1rem;
+      color: #b0c8e0;
+      margin-left: 4px;
+    }
+    .derivation {
+      font-size: 0.9rem;
+      line-height: 1.6;
+      color: #cfdefa;
+    }
+    .math {
+      font-family: 'Courier New', 'Times New Roman', serif;
+      background: rgba(0,0,0,0.35);
+      padding: 2px 8px;
+      border-radius: 12px;
+      display: inline-block;
+      font-weight: 600;
+    }
+    hr {
+      border-color: rgba(255,255,255,0.2);
+      margin: 12px 0;
+    }
+    .gravity-diff {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .badge {
+      background: #2e4b6e;
+      color: white;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    button {
+      background: #f7b05e;
+      border: none;
+      color: #0a121f;
+      font-weight: bold;
+      padding: 10px 18px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+      box-shadow: 0 6px 14px rgba(255,180,60,0.3);
+      letter-spacing: 0.5px;
+      border: 1px solid rgba(255,255,200,0.5);
+    }
+    button:hover {
+      background: #ffc77a;
+      box-shadow: 0 8px 18px #f90;
+      transform: scale(1.02);
+    }
+    @media (max-width: 800px) {
+      .main-layout {
+        flex-direction: column;
+      }
+      .canvas-panel {
+        min-width: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    🌌 万有引力定律
+    <span>F = G·M·m / r²</span>
+  </h1>
+  
+  <div class="main-layout">
+    <!-- 左侧画布交互区 -->
+    <div class="canvas-panel">
+      <canvas id="gravityCanvas" width="600" height="360"></canvas>
+      <div class="slider-group">
+        <div class="slider-item">
+          <label>🌞 太阳质量 <span style="color:#ffae42;">M</span></label>
+          <input type="range" id="massMSlider" min="1.0" max="3.0" value="1.0" step="0.1">
+          <span class="value-display" id="massMValue">1.0 M☉</span>
+        </div>
+        <div class="slider-item">
+          <label>🪐 行星质量 <span style="color:#6cb4ff;">m</span></label>
+          <input type="range" id="massMSlider2" min="0.3" max="2.5" value="0.8" step="0.1">
+          <span class="value-display" id="massMValue2">0.8 m⊕</span>
+        </div>
+        <div class="slider-item">
+          <label>📏 距离 r</label>
+          <input type="range" id="distanceSlider" min="80" max="240" value="140" step="1">
+          <span class="value-display" id="distanceValue">140 px</span>
+        </div>
+      </div>
+      <div style="margin-top: 10px; color:#b0c8e0; font-size:0.9rem; display: flex; gap: 15px; align-items: center;">
+        <span>✨ 拖动行星调整距离</span>
+        <button id="resetBtn">⟳ 重置位置</button>
+      </div>
+    </div>
+
+    <!-- 右侧信息面板 -->
+    <div class="info-panel">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 500;">🔵 当前引力大小</span>
+          <span class="badge">矢量方向←</span>
+        </div>
+        <div style="margin-top: 8px;">
+          <span class="force-value" id="forceDisplay">2.47</span>
+          <span class="unit">×10⁻¹⁰ N (示意)</span>
+        </div>
+        <div style="font-size:0.85rem; color:#aac8ff; margin-top:6px;" id="forceDetail">
+          F ∝ (M·m)/r²
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: 600; font-size: 1.1rem; color:#ffd58c;">📐 推导过程</div>
+        <div class="derivation" style="margin-top: 8px;">
+          <p><span class="math">F ∝ M·m / r²</span> （牛顿推断）</p>
+          <p>引入引力常量 <span class="math">G</span>：</p>
+          <p><span class="math">F = G·M·m / r²</span></p>
+          <p style="font-size:0.85rem; margin-top:6px;">• 平方反比规律：距离加倍 → 力变1/4<br>• 与两质量乘积成正比</p>
+          <p style="margin-top:8px;"><span class="math">G ≈ 6.67×10⁻¹¹ N·m²/kg²</span></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-weight: 600; font-size: 1.1rem; color:#ffb347;">⚖️ 引力 vs 重力</div>
+        <div class="gravity-diff" style="margin-top: 10px;">
+          <div><span style="color:#ffae42;">🌍 万有引力</span>：任意两物体间的吸引力。<br> <span style="font-size:0.8rem;">F = G·M·m/r² (普遍适用)</span></div>
+          <div><span style="color:#6cb4ff;">🧭 重力</span>：行星表面附近物体受到的引力分量。<br> <span style="font-size:0.8rem;">G = m·g ，其中 g ≈ GM/R² (地表)</span></div>
+          <div style="background:#1e3144; border-radius:16px; padding:8px; margin-top:6px;">
+            <span style="font-weight:bold;">🔹 区别：</span>重力通常指地球吸引产生的力，包含微小离心分量；万有引力是普遍规律。在地表，重力≈引力。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function() {
+    // ----- 固定参数 (比例缩放，用于直观演示) -----
+    const G_SIM = 0.8;            // 模拟引力常数，使力数值适合显示
+    const SUN_FIXED_X = 180;     // 太阳画布坐标 (固定)
+    const SUN_FIXED_Y = 180;
+    
+    // 质量基准 (相对值，用于计算力)
+    let massM = 1.0;    // 太阳质量系数
+    let massm = 0.8;    // 行星质量系数
+    
+    // 行星位置 (可拖动)
+    let planetX = 380;
+    let planetY = 180;
+    
+    // 拖动状态
+    let isDragging = false;
+    
+    // DOM 元素
+    const canvas = document.getElementById('gravityCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    const massMSlider = document.getElementById('massMSlider');
+    const massMSlider2 = document.getElementById('massMSlider2');
+    const distanceSlider = document.getElementById('distanceSlider');
+    const massMValue = document.getElementById('massMValue');
+    const massMValue2 = document.getElementById('massMValue2');
+    const distanceValue = document.getElementById('distanceValue');
+    const forceDisplay = document.getElementById('forceDisplay');
+    const forceDetail = document.getElementById('forceDetail');
+    const resetBtn = document.getElementById('resetBtn');
+    
+    // ----- 辅助函数：计算距离与引力 -----
+    function computeDistanceAndForce() {
+      const dx = planetX - SUN_FIXED_X;
+      const dy = planetY - SUN_FIXED_Y;
+      const distancePx = Math.sqrt(dx * dx + dy * dy);
+      // 将像素距离映射到物理距离 (便于显示r值，实际计算使用像素单位但保持平方反比)
+      // 使用像素作为相对距离单位，保证视觉比例。
+      const r = distancePx;
+      // 防止距离过小导致力爆炸
+      const safeR = Math.max(r, 25);
+      const forceMagnitude = G_SIM * massM * massm / (safeR * safeR);
+      return {
+        dx, dy,
+        distancePx: r,
+        force: forceMagnitude,
+        safeR: safeR
+      };
+    }
+    
+    // 更新所有UI数值
+    function updateUI() {
+      const { distancePx, force } = computeDistanceAndForce();
+      
+      // 更新滑块显示
+      massMValue.textContent = massM.toFixed(1) + ' M☉';
+      massMValue2.textContent = massm.toFixed(1) + ' m⊕';
+      distanceValue.textContent = Math.round(distancePx) + ' px';
+      
+      // 同步距离滑块 (避免拖动冲突)
+      distanceSlider.value = Math.round(distancePx);
+      
+      // 显示引力数值 (缩放至合理显示范围)
+      let displayForce = force * 3.2; // 放大系数使数字有意义
+      forceDisplay.textContent = displayForce.toFixed(2);
+      
+      // 细节文字
+      const r = distancePx;
+      forceDetail.innerHTML = `F ∝ (${massM.toFixed(1)} × ${massm.toFixed(1)}) / ${Math.round(r)}² ≈ ${force.toFixed(3)} (模拟值)`;
+      
+      // 绘制画布
+      drawCanvas();
+    }
+    
+    // 根据距离滑块更新行星位置 (保持角度不变或默认水平移动)
+    function setPlanetByDistance(distancePx) {
+      const currentAngle = Math.atan2(planetY - SUN_FIXED_Y, planetX - SUN_FIXED_X);
+      // 如果行星恰好在太阳位置，使用默认角度0
+      const angle = (Math.abs(planetX - SUN_FIXED_X) < 0.1 && Math.abs(planetY - SUN_FIXED_Y) < 0.1) ? 0 : currentAngle;
+      const clampedDist = Math.min(260, Math.max(40, distancePx));
+      planetX = SUN_FIXED_X + Math.cos(angle) * clampedDist;
+      planetY = SUN_FIXED_Y + Math.sin(angle) * clampedDist;
+      updateUI();
+    }
+    
+    // ----- 绘制画布 (生动展示引力场感觉) -----
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const { dx, dy, distancePx, force } = computeDistanceAndForce();
+      
+      // 绘制背景星芒效果
+      for (let i = 0; i < 30; i++) {
+        ctx.fillStyle = `rgba(255,255,200,${0.5+Math.sin(Date.now()*0.002+i)*0.15})`;
+        ctx.beginPath();
+        ctx.arc((i*23 + 15)%canvas.width, (i*17)%canvas.height, 1.2, 0, Math.PI*2);
+        ctx.fill();
+      }
+      
+      // 绘制引力场暗示 (围绕太阳的同心圆虚线)
+      for (let r = 45; r <= 210; r += 35) {
+        ctx.beginPath();
+        ctx.arc(SUN_FIXED_X, SUN_FIXED_Y, r, 0, 2 * Math.PI);
+        ctx.strokeStyle = `rgba(255,200,100,${0.18 + 0.06*Math.sin(r)})`;
+        ctx.lineWidth = 0.8;
+        ctx.setLineDash([5, 8]);
+        ctx.stroke();
+        ctx.setLineDash([]); // 重置
+      }
+      
+      // 绘制连线 (引力方向线)
+      ctx.beginPath();
+      ctx.moveTo(SUN_FIXED_X, SUN_FIXED_Y);
+      ctx.lineTo(planetX, planetY);
+      ctx.strokeStyle = '#ffbb4d';
+      ctx.lineWidth = 2.2;
+      ctx.setLineDash([7, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // 在行星位置绘制引力箭头 (指向太阳)
+      if (distancePx > 5) {
+        const angle = Math.atan2(dy, dx); // 从太阳指向行星方向
+        const arrowDirX = Math.cos(angle);
+        const arrowDirY = Math.sin(angle);
+        const arrowLength = Math.min(38, force * 22 + 12);
+        const startX = planetX;
+        const startY = planetY;
+        const endX = planetX - arrowDirX * arrowLength;
+        const endY = planetY - arrowDirY * arrowLength;
+        
+        // 箭头主线
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.strokeStyle = '#ff8c42';
+        ctx.lineWidth = 2.8;
+        ctx.stroke();
+        
+        // 箭头三角形
+        const headLen = 8;
+        const angleLeft = angle + Math.PI + 0.7;
+        const angleRight = angle + Math.PI - 0.7;
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX + Math.cos(angleLeft)*headLen, endY + Math.sin(angleLeft)*headLen);
+        ctx.lineTo(endX + Math.cos(angleRight)*headLen, endY + Math.sin(angleRight)*headLen);
+        ctx.closePath();
+        ctx.fillStyle = '#ff8c42';
+        ctx.fill();
+      }
+      
+      // 绘制太阳
+      ctx.shadowColor = '#ffaa33';
+      ctx.shadowBlur = 22;
+      ctx.beginPath();
+      ctx.arc(SUN_FIXED_X, SUN_FIXED_Y, 22 + massM * 5, 0, 2*Math.PI);
+      ctx.fillStyle = '#ffb347';
+      ctx.fill();
+      ctx.shadowBlur = 28;
+      ctx.fillStyle = '#ff8c1a';
+      ctx.arc(SUN_FIXED_X, SUN_FIXED_Y, 16 + massM*3, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      ctx.fillStyle = '#fff3b0';
+      ctx.beginPath();
+      ctx.arc(SUN_FIXED_X-3, SUN_FIXED_Y-4, 5, 0, 2*Math.PI);
+      ctx.fill();
+      
+      // 绘制行星
+      ctx.shadowColor = '#6cb4ff';
+      ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.arc(planetX, planetY, 12 + massm * 4, 0, 2*Math.PI);
+      ctx.fillStyle = '#4d9eff';
+      ctx.fill();
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = '#a0d0ff';
+      ctx.arc(planetX-2, planetY-3, 4, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      
+      // 文字标签
+      ctx.font = 'bold 15px "Segoe UI", "Noto Sans"';
+      ctx.fillStyle = '#ffeec2';
+      ctx.shadowColor = '#000';
+      ctx.shadowBlur = 6;
+      ctx.fillText('☀️ 太阳', SUN_FIXED_X-35, SUN_FIXED_Y-28);
+      ctx.fillText('🪐 行星', planetX-35, planetY-26);
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
+      
+      // 显示距离数值在连线附近
+      ctx.font = '12px "Segoe UI"';
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText(`${Math.round(distancePx)} px`, (SUN_FIXED_X+planetX)/2-15, (SUN_FIXED_Y+planetY)/2-8);
+    }
+    
+    // ----- 事件处理：鼠标/触摸拖动行星 -----
+    function handleMouseDown(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;   // canvas 物理像素比例
+      const scaleY = canvas.height / rect.height;
+      
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      const mouseY = (e.clientY - rect.top) * scaleY;
+      
+      const distToPlanet = Math.hypot(mouseX - planetX, mouseY - planetY);
+      if (distToPlanet < 35) {
+        isDragging = true;
+        canvas.style.cursor = 'grabbing';
+      }
+    }
+    
+    function handleMouseMove(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const mouseX = (e.clientX - rect.left) * scaleX;
+      const mouseY = (e.clientY - rect.top) * scaleY;
+      
+      if (isDragging) {
+        // 限制在画布内
+        planetX = Math.min(580, Math.max(20, mouseX));
+        planetY = Math.min(340, Math.max(20, mouseY));
+        updateUI();
+      } else {
+        // 鼠标悬停样式
+        const distToPlanet = Math.hypot(mouseX - planetX, mouseY - planetY);
+        canvas.style.cursor = distToPlanet < 35 ? 'grab' : 'default';
+      }
+    }
+    
+    function handleMouseUp() {
+      if (isDragging) {
+        isDragging = false;
+        canvas.style.cursor = 'default';
+        updateUI();
+      }
+    }
+    
+    function handleTouchStart(e) {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const touchX = (touch.clientX - rect.left) * scaleX;
+      const touchY = (touch.clientY - rect.top) * scaleY;
+      
+      const distToPlanet = Math.hypot(touchX - planetX, touchY - planetY);
+      if (distToPlanet < 40) {
+        isDragging = true;
+      }
+    }
+    
+    function handleTouchMove(e) {
+      e.preventDefault();
+      if (!isDragging) return;
+      const rect = canvas.getBoundingClientRect();
+      const touch = e.touches[0];
+      if (!touch) return;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      let touchX = (touch.clientX - rect.left) * scaleX;
+      let touchY = (touch.clientY - rect.top) * scaleY;
+      planetX = Math.min(580, Math.max(20, touchX));
+      planetY = Math.min(340, Math.max(20, touchY));
+      updateUI();
+    }
+    
+    function handleTouchEnd(e) {
+      isDragging = false;
+      updateUI();
+    }
+    
+    // ----- 滑块监听 -----
+    massMSlider.addEventListener('input', (e) => {
+      massM = parseFloat(e.target.value);
+      updateUI();
+    });
+    massMSlider2.addEventListener('input', (e) => {
+      massm = parseFloat(e.target.value);
+      updateUI();
+    });
+    distanceSlider.addEventListener('input', (e) => {
+      const dist = parseInt(e.target.value, 10);
+      setPlanetByDistance(dist);
+    });
+    
+    resetBtn.addEventListener('click', () => {
+      massM = 1.0;
+      massm = 0.8;
+      planetX = 380;
+      planetY = 180;
+      massMSlider.value = 1.0;
+      massMSlider2.value = 0.8;
+      updateUI();
+    });
+    
+    // 绑定事件
+    canvas.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('touchstart', handleTouchStart, {passive: false});
+    canvas.addEventListener('touchmove', handleTouchMove, {passive: false});
+    canvas.addEventListener('touchend', handleTouchEnd);
+    canvas.addEventListener('touchcancel', handleTouchEnd);
+    
+    // 初始绘制
+    updateUI();
+    
+    // 添加窗口失去焦点时安全重置拖动状态
+    window.addEventListener('mouseleave', () => {
+      if (isDragging) {
+        isDragging = false;
+        canvas.style.cursor = 'default';
+      }
+    });
+  })();
+</script>
+</body>
+</html>

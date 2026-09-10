@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中物理：弹性碰撞模拟演示 | 动量守恒 & 能量守恒</title>
+    <style>
+        * {
+            user-select: none; /* 避免拖动时意外选中文字，提升操作感 */
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+            font-family: 'Segoe UI', Roboto, 'Microsoft YaHei', 'PingFang SC', 'Noto Sans', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* 主卡片容器 */
+        .sim-container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        /* 头部讲解区：独特视角卡片 */
+        .insight-card {
+            background: #1e2b3c;
+            color: #f0f3f8;
+            border-radius: 1.8rem;
+            padding: 1rem 1.8rem;
+            margin-bottom: 1.8rem;
+            box-shadow: 0 8px 14px rgba(0,0,0,0.1);
+            border-left: 6px solid #ffb347;
+        }
+
+        .insight-card h2 {
+            margin: 0 0 0.5rem 0;
+            font-weight: 600;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+
+        .insight-card h2 span {
+            background: #ffb347;
+            font-size: 0.9rem;
+            padding: 0.2rem 0.7rem;
+            border-radius: 40px;
+            color: #1e2b3c;
+            font-weight: bold;
+        }
+
+        .insight-text {
+            font-size: 1rem;
+            line-height: 1.45;
+            opacity: 0.92;
+        }
+
+        .insight-text strong {
+            color: #ffb347;
+        }
+
+        /* 两列布局: 左侧画布+控制区, 右侧数据与定理 */
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+        }
+
+        .canvas-panel {
+            flex: 2;
+            min-width: 280px;
+        }
+
+        .info-panel {
+            flex: 1.2;
+            min-width: 240px;
+            background: #ffffffdd;
+            backdrop-filter: blur(4px);
+            border-radius: 1.8rem;
+            padding: 1.2rem;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.05);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+
+        /* canvas 区域 */
+        .canvas-wrapper {
+            background: #fefef7;
+            border-radius: 1.8rem;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 12px 24px -12px rgba(0,0,0,0.2);
+            padding: 10px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 1.2rem;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* 控制条 */
+        .control-bar {
+            margin-top: 1.2rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #ffffff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button.primary {
+            background: #1e2b3c;
+            color: white;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+        }
+        button.primary:hover {
+            background: #2c4055;
+            transform: translateY(-2px);
+        }
+        button:hover {
+            transform: translateY(-1px);
+            background: #f0f2f5;
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .slider-container {
+            background: #eef2f7;
+            padding: 0.4rem 1rem;
+            border-radius: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+
+        input[type="range"] {
+            width: 140px;
+            cursor: pointer;
+        }
+
+        .stats {
+            background: #f8fafd;
+            border-radius: 1.4rem;
+            padding: 0.8rem 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px dashed #cbd5e1;
+        }
+        .stat-label {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: #1e466e;
+        }
+
+        .theorem-box {
+            background: #eef3fa;
+            border-radius: 1.4rem;
+            padding: 0.8rem 1.2rem;
+            margin-top: 1rem;
+        }
+
+        .theorem-box h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            color: #1e2b3c;
+        }
+        .theorem-box p {
+            font-size: 0.85rem;
+            line-height: 1.4;
+            margin: 0.4rem 0;
+        }
+        .formula {
+            background: #1e2b3c10;
+            font-family: monospace;
+            font-weight: bold;
+            padding: 0.1rem 0.4rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            font-size: 0.7rem;
+            background: #cfdfed;
+            border-radius: 20px;
+            padding: 0.2rem 0.6rem;
+        }
+        footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.7rem;
+            color: #4b6a8b;
+        }
+        @media (max-width: 780px) {
+            .sim-container { padding: 1rem; }
+            .insight-card { padding: 0.8rem 1rem; }
+            .stat-item { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="sim-container">
+    <!-- 独特的讲解视角：从“动量视角 + 相对速度”切入 -->
+    <div class="insight-card">
+        <h2>
+            🎯 弹性碰撞 · 直观解密 
+            <span>动量守恒｜动能守恒</span>
+        </h2>
+        <div class="insight-text">
+            💡 <strong>独特视角：</strong> 弹性碰撞中，两球之间的“<strong>相对速度</strong>”大小不变、方向反转。 
+            你可以<strong>拖拽小球</strong>改变初始位置，<strong>点击“随机速度”</strong>或<strong>滑动质量比</strong>，观察碰撞后动量和动能如何完美转移。
+            左侧画布实时展示运动轨迹与碰撞瞬间，右侧面板动态验证<strong>动量守恒</strong>与<strong>动能守恒</strong> —— 
+            就像拥有一个物理实验室！
+        </div>
+    </div>
+
+    <div class="two-columns">
+        <!-- 左侧交互区域 -->
+        <div class="canvas-panel">
+            <div class="canvas-wrapper">
+                <canvas id="collisionCanvas" width="800" height="450" style="width:100%; height:auto; max-width:800px; aspect-ratio:800/450"></canvas>
+            </div>
+            <div class="control-bar">
+                <div class="btn-group">
+                    <button id="resetBtn" class="primary">⟳ 重置位置</button>
+                    <button id="randomSpeedBtn">🎲 随机初速度</button>
+                    <button id="pauseBtn">⏸️ 暂停</button>
+                    <button id="playBtn">▶️ 运行</button>
+                </div>
+                <div class="slider-container">
+                    <span>⚖️ 质量比 m₂/m₁ :</span>
+                    <input type="range" id="massRatioSlider" min="0.2" max="5" step="0.02" value="1.0">
+                    <span id="massRatioVal" style="min-width: 45px;">1.00</span>
+                </div>
+            </div>
+            <div class="control-bar" style="margin-top: 0.5rem; justify-content: flex-start;">
+                <div class="badge">✨ 提示：可直接<strong>拖拽任意小球</strong>重新放置 & 获得新速度 → 实时碰撞模拟</div>
+            </div>
+        </div>
+
+        <!-- 右侧数据看板与定理讲解 -->
+        <div class="info-panel">
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">🔴 球1 质量 m₁ :</span>
+                    <span class="stat-value" id="mass1Display">1.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">🔵 球2 质量 m₂ :</span>
+                    <span class="stat-value" id="mass2Display">1.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">📊 系统总动量 P :</span>
+                    <span class="stat-value" id="momentumDisplay">0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">⚡ 系统总动能 Ek :</span>
+                    <span class="stat-value" id="kineticDisplay">0.00</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">🔄 相对速度(分离前/后) :</span>
+                    <span class="stat-value" id="relVeloDisplay">—</span>
+                </div>
+            </div>
+            <div class="theorem-box">
+                <h3>📐 弹性碰撞核心规律</h3>
+                <p>✔ <strong>动量守恒</strong>：<span class="formula">m₁v₁ + m₂v₂ = 常数</span></p>
+                <p>✔ <strong>动能守恒</strong>：<span class="formula">½m₁v₁²+½m₂v₂² = 常数</span></p>
+                <p>✔ <strong>恢复系数 e = 1</strong> → 相对速度大小不变，方向相反：<br>
+                <span class="formula">v₂' - v₁' = -(v₂ - v₁)</span></p>
+                <p>🎯 <strong>互动视角</strong>：拖拽小球或调节质量比，右侧数值严格守恒（因数值精度微小误差可忽略）。</p>
+            </div>
+        </div>
+    </div>
+    <footer>⚛️ 完全弹性碰撞 | 无外力，一维对心碰撞 | 实时交互演示 | 支持拖拽改变初位置/初速度</footer>
+</div>
+
+<script>
+    (function(){
+        // ----- 物理世界参数 -----
+        const canvas = document.getElementById('collisionCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 固定尺寸逻辑：设定逻辑分辨率 800x450 (便于碰撞边界)
+        const WIDTH = 800;
+        const HEIGHT = 450;
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        
+        // 小球半径相同，视觉统一，物理质量可调
+        const RADIUS = 20;
+        
+        // 小球对象
+        let ball1 = {
+            x: 200, y: HEIGHT/2,
+            vx: 80, vy: 0,
+            mass: 1.0,
+            color: '#E34234',  // 红陶色
+            label: '1'
+        };
+        let ball2 = {
+            x: 600, y: HEIGHT/2,
+            vx: -40, vy: 0,
+            mass: 1.0,
+            color: '#3A7CA5',
+            label: '2'
+        };
+        
+        // 质量比因子 (m2 / m1) 滑动条控制 m2 相对 m1 的比例, m1 固定为 1
+        let massRatio = 1.0;     // m2/m1
+        // 更新质量函数
+        function updateMasses() {
+            ball1.mass = 1.0;
+            ball2.mass = massRatio;
+            document.getElementById('mass1Display').innerText = ball1.mass.toFixed(2);
+            document.getElementById('mass2Display').innerText = ball2.mass.toFixed(2);
+        }
+        
+        // 动画控制
+        let animationId = null;
+        let isRunning = true;
+        
+        // 辅助: 边界弹性 (完全弹性边界，碰撞墙壁时速度x反向，并且确保不超出)
+        function handleBoundary(ball) {
+            // 左右边界 (考虑半径)
+            if(ball.x - RADIUS < 0) {
+                ball.x = RADIUS;
+                ball.vx = -ball.vx;
+            }
+            if(ball.x + RADIUS > WIDTH) {
+                ball.x = WIDTH - RADIUS;
+                ball.vx = -ball.vx;
+            }
+            // 上下边界弹性 (vy反向) 且防止逃逸y方向
+            if(ball.y - RADIUS < 0) {
+                ball.y = RADIUS;
+                ball.vy = -ball.vy;
+            }
+            if(ball.y + RADIUS > HEIGHT) {
+                ball.y = HEIGHT - RADIUS;
+                ball.vy = -ball.vy;
+            }
+        }
+        
+        // 核心：两个小球弹性碰撞处理（一维对心碰撞，基于动量+能量守恒精确公式，速度只更新x方向，y独立弹性碰撞）
+        // 但是我们简化物理: 两个球碰撞时，考虑相对速度方向，精确处理x,y方向速度变化（斜碰一般复杂，为了高中理解且不易出错，强制对心碰撞：只处理连线方向？）
+        // 为了提高直觉和避免非对心造成混乱，我们演示时让两个球的y坐标强制相同（水平轨道），但为了交互自由拖拽后会产生y坐标差，此时使用向量分解更严谨。
+        // 为了让高中演示更易懂且正确，实现完全弹性碰撞的向量解法（基于动量守恒&动能守恒）。采用标准碰撞处理：基于相对法向速度恢复系数e=1。
+        // 这样即使拖拽产生非完全水平碰撞，物理也是完美弹性，更有趣且不失科学。
+        function resolveCollision(b1, b2) {
+            // 计算圆心距离向量
+            const dx = b2.x - b1.x;
+            const dy = b2.y - b1.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = RADIUS * 2;
+            if(dist >= minDist) return false;
+            
+            // 重叠修正: 防止粘连, 根据质量位移微调
+            const overlap = minDist - dist;
+            const angle = Math.atan2(dy, dx);
+            const correctionX = Math.cos(angle) * overlap * 0.5;
+            const correctionY = Math.sin(angle) * overlap * 0.5;
+            // 总质量倒数权重修正位置
+            const totalMass = b1.mass + b2.mass;
+            const shift1 = { x: -correctionX * (b2.mass/totalMass), y: -correctionY * (b2.mass/totalMass) };
+            const shift2 = { x: correctionX * (b1.mass/totalMass), y: correctionY * (b1.mass/totalMass) };
+            b1.x += shift1.x; b1.y += shift1.y;
+            b2.x += shift2.x; b2.y += shift2.y;
+            
+            // 法向单位向量 (从ball1指向ball2)
+            const nx = dx / dist;
+            const ny = dy / dist;
+            // 切向单位向量 (垂直)
+            const tx = -ny;
+            const ty = nx;
+            
+            // 速度在法向上的投影
+            const v1n = b1.vx * nx + b1.vy * ny;
+            const v1t = b1.vx * tx + b1.vy * ty;
+            const v2n = b2.vx * nx + b2.vy * ny;
+            const v2t = b2.vx * tx + b2.vy * ty;
+            
+            // 弹性碰撞恢复系数 e=1: 法向相对速度反向
+            const m1 = b1.mass, m2 = b2.mass;
+            const v1n_after = ((m1 - m2) * v1n + 2 * m2 * v2n) / (m1 + m2);
+            const v2n_after = ((m2 - m1) * v2n + 2 * m1 * v1n) / (m1 + m2);
+            
+            // 切向速度不变
+            const v1t_after = v1t;
+            const v2t_after = v2t;
+            
+            // 转换回原坐标系
+            b1.vx = v1n_after * nx + v1t_after * tx;
+            b1.vy = v1n_after * ny + v1t_after * ty;
+            b2.vx = v2n_after * nx + v2t_after * tx;
+            b2.vy = v2n_after * ny + v2t_after * ty;
+            
+            return true;
+        }
+        
+        // 更新物理每一帧
+        function updatePhysics(dt) {
+            if(!isRunning) return;
+            // 限定dt上限，保证稳定
+            const delta = Math.min(dt, 0.025);
+            // 欧拉积分
+            ball1.x += ball1.vx * delta;
+            ball1.y += ball1.vy * delta;
+            ball2.x += ball2.vx * delta;
+            ball2.y += ball2.vy * delta;
+            
+            // 边界碰撞 (完全弹性)
+            handleBoundary(ball1);
+            handleBoundary(ball2);
+            
+            // 双球碰撞解析 (多次解析避免高速穿透, 但为了保证稳定, 执行两次迭代)
+            for(let i=0;i<2;i++){
+                resolveCollision(ball1, ball2);
+            }
+            
+            // 修正可能的位置重叠再次轻微分离 (resolve已经处理位置修正)
+        }
+        
+        // 实时计算总动量和动能（标量显示相对速度）
+        function updateStats() {
+            // 动量: 矢量合 p = m1*v1 + m2*v2, 显示总动量大小 |P|
+            const px_total = ball1.mass * ball1.vx + ball2.mass * ball2.vx;
+            const py_total = ball1.mass * ball1.vy + ball2.mass * ball2.vy;
+            const totalMomentum = Math.hypot(px_total, py_total);
+            // 动能
+            const kinetic = 0.5 * ball1.mass * (ball1.vx*ball1.vx + ball1.vy*ball1.vy) +
+                            0.5 * ball2.mass * (ball2.vx*ball2.vx + ball2.vy*ball2.vy);
+            document.getElementById('momentumDisplay').innerHTML = totalMomentum.toFixed(3);
+            document.getElementById('kineticDisplay').innerHTML = kinetic.toFixed(3);
+            
+            // 相对速度 (大小) 显示碰撞前后的反差: 展示当前相对速度值
+            const relvx = ball2.vx - ball1.vx;
+            const relvy = ball2.vy - ball1.vy;
+            const relSpeed = Math.hypot(relvx, relvy).toFixed(2);
+            document.getElementById('relVeloDisplay').innerHTML = `${relSpeed} m/s`;
+        }
+        
+        // ---- 绘图函数 ----
+        function draw() {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            // 绘制网格背景 (浅参考线)
+            ctx.save();
+            ctx.strokeStyle = "#cfdfed";
+            ctx.lineWidth = 0.5;
+            for(let i = 0; i < WIDTH; i+=40){
+                ctx.beginPath();
+                ctx.moveTo(i,0);
+                ctx.lineTo(i,HEIGHT);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0,i%HEIGHT);
+                ctx.lineTo(WIDTH,i%HEIGHT);
+                ctx.stroke();
+            }
+            // 绘制中心引导虚线 (水平轴线)
+            ctx.beginPath();
+            ctx.setLineDash([8, 8]);
+            ctx.moveTo(0, HEIGHT/2);
+            ctx.lineTo(WIDTH, HEIGHT/2);
+            ctx.strokeStyle = "#8aaec0";
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 绘制阴影效果
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = "rgba(0,0,0,0.2)";
+            // 球1
+            ctx.beginPath();
+            ctx.arc(ball1.x, ball1.y, RADIUS, 0, Math.PI*2);
+            ctx.fillStyle = ball1.color;
+            ctx.fill();
+            ctx.strokeStyle = "#b13b2a";
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = "white";
+            ctx.font = "bold 18px 'Segoe UI'";
+            ctx.shadowBlur = 2;
+            ctx.fillText("1", ball1.x-7, ball1.y+7);
+            // 速度矢量指示
+            drawVelocityVector(ball1, 0.35);
+            
+            // 球2
+            ctx.beginPath();
+            ctx.arc(ball2.x, ball2.y, RADIUS, 0, Math.PI*2);
+            ctx.fillStyle = ball2.color;
+            ctx.fill();
+            ctx.strokeStyle = "#2c5a7a";
+            ctx.stroke();
+            ctx.fillStyle = "white";
+            ctx.fillText("2", ball2.x-7, ball2.y+7);
+            drawVelocityVector(ball2, 0.35);
+            
+            ctx.shadowBlur = 0;
+            // 额外绘制质量标签
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#2c3e50";
+            ctx.fillText(`m₁=${ball1.mass.toFixed(2)}`, ball1.x-15, ball1.y-12);
+            ctx.fillText(`m₂=${ball2.mass.toFixed(2)}`, ball2.x-15, ball2.y-12);
+            // 绘制碰撞提示箭头（如果是接近状态会有些点缀）
+            const dist = Math.hypot(ball2.x-ball1.x, ball2.y-ball1.y);
+            if(dist < RADIUS*2 + 8){
+                ctx.beginPath();
+                ctx.setLineDash([4,4]);
+                ctx.moveTo(ball1.x, ball1.y);
+                ctx.lineTo(ball2.x, ball2.y);
+                ctx.strokeStyle = "#f4a261";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        
+        function drawVelocityVector(ball, scale=0.5){
+            const vMag = Math.hypot(ball.vx, ball.vy);
+            if(vMag < 0.5) return;
+            const angle = Math.atan2(ball.vy, ball.vx);
+            const len = Math.min(vMag * scale, 45);
+            const endX = ball.x + Math.cos(angle)*len;
+            const endY = ball.y + Math.sin(angle)*len;
+            ctx.beginPath();
+            ctx.moveTo(ball.x, ball.y);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = "#2d6a4f";
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.fillStyle = "#1f543f";
+            ctx.beginPath();
+            const arrowAngle = Math.PI/6;
+            const arrLen = 8;
+            const a1X = endX - Math.cos(angle-arrowAngle)*arrLen;
+            const a1Y = endY - Math.sin(angle-arrowAngle)*arrLen;
+            const a2X = endX - Math.cos(angle+arrowAngle)*arrLen;
+            const a2Y = endY - Math.sin(angle+arrowAngle)*arrLen;
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(a1X, a1Y);
+            ctx.lineTo(a2X, a2Y);
+            ctx.fill();
+        }
+        
+        // 动画循环
+        let lastTimestamp = 0;
+        function animate(nowMs) {
+            if(!lastTimestamp) lastTimestamp = nowMs;
+            let dt = Math.min(0.033, (nowMs - lastTimestamp) / 1000);
+            if(dt > 0.005){
+                updatePhysics(dt);
+                updateStats();
+                draw();
+            }
+            lastTimestamp = nowMs;
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        // 重置初始位置与合理速度 (演示碰撞典型场景)
+        function resetSimulation() {
+            ball1.x = 180;
+            ball1.y = HEIGHT/2;
+            ball2.x = 620;
+            ball2.y = HEIGHT/2;
+            ball1.vx = 90;
+            ball1.vy = 0;
+            ball2.vx = -50;
+            ball2.vy = 0;
+            // 根据质量比微调初始速度展示典型动量转移
+            // 但保留上述经典值
+            ball1.mass = 1.0;
+            ball2.mass = massRatio;
+            updateMasses();
+            // 确保不穿透
+            if(Math.abs(ball1.x - ball2.x) < RADIUS*2) ball2.x = ball1.x + RADIUS*2 + 5;
+        }
+        
+        // 随机速度但维持动量守恒感观 + 范围
+        function randomSpeeds() {
+            ball1.vx = (Math.random() * 150 - 50);
+            ball1.vy = (Math.random() * 100 - 50);
+            ball2.vx = (Math.random() * 150 - 50);
+            ball2.vy = (Math.random() * 100 - 50);
+            // 避免速度过小过于静止
+            if(Math.abs(ball1.vx)<10 && Math.abs(ball2.vx)<10){
+                ball1.vx += 40;
+                ball2.vx -= 30;
+            }
+            updateMasses(); // 确保质量同步
+        }
+        
+        // 质量滑动交互
+        const slider = document.getElementById('massRatioSlider');
+        const ratioVal = document.getElementById('massRatioVal');
+        function syncMassRatio() {
+            massRatio = parseFloat(slider.value);
+            ratioVal.innerText = massRatio.toFixed(2);
+            ball2.mass = massRatio;
+            ball1.mass = 1.0;
+            updateMasses();
+            // 可选，更新stats显示
+            updateStats();
+        }
+        slider.addEventListener('input', ()=>{
+            syncMassRatio();
+        });
+        
+        // ----- 鼠标拖拽小球交互（直观改变位置&可赋予微小速度偏移）-----
+        let draggingBall = null;
+        let dragOffsetX = 0, dragOffsetY = 0;
+        function getMouseCoord(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            let clientX, clientY;
+            if(e.touches){
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            let canvasX = (clientX - rect.left) * scaleX;
+            let canvasY = (clientY - rect.top) * scaleY;
+            canvasX = Math.min(Math.max(canvasX, RADIUS), WIDTH-RADIUS);
+            canvasY = Math.min(Math.max(canvasY, RADIUS), HEIGHT-RADIUS);
+            return {x: canvasX, y: canvasY};
+        }
+        function onMouseDown(e){
+            e.preventDefault();
+            const {x, y} = getMouseCoord(e);
+            const dist1 = Math.hypot(x-ball1.x, y-ball1.y);
+            const dist2 = Math.hypot(x-ball2.x, y-ball2.y);
+            if(dist1 <= RADIUS+5){
+                draggingBall = ball1;
+                dragOffsetX = ball1.x - x;
+                dragOffsetY = ball1.y - y;
+            } else if(dist2 <= RADIUS+5){
+                draggingBall = ball2;
+                dragOffsetX = ball2.x - x;
+                dragOffsetY = ball2.y - y;
+            }
+        }
+        function onMouseMove(e){
+            if(!draggingBall) return;
+            e.preventDefault();
+            const {x, y} = getMouseCoord(e);
+            draggingBall.x = Math.min(Math.max(x + dragOffsetX, RADIUS), WIDTH-RADIUS);
+            draggingBall.y = Math.min(Math.max(y + dragOffsetY, RADIUS), HEIGHT-RADIUS);
+            // 拖拽同时小幅度降速使实验可玩性强 (可选)
+            draggingBall.vx *= 0.98;
+            draggingBall.vy *= 0.98;
+            // 避免重叠后修正
+            if(draggingBall === ball1){
+                const dist = Math.hypot(ball2.x-ball1.x, ball2.y-ball1.y);
+                if(dist < RADIUS*2){
+                    const angle = Math.atan2(ball2.y-ball1.y, ball2.x-ball1.x);
+                    ball2.x = ball1.x + Math.cos(angle)*(RADIUS*2);
+                    ball2.y = ball1.y + Math.sin(angle)*(RADIUS*2);
+                }
+            } else {
+                const dist = Math.hypot(ball2.x-ball1.x, ball2.y-ball1.y);
+                if(dist < RADIUS*2){
+                    const angle = Math.atan2(ball2.y-ball1.y, ball2.x-ball1.x);
+                    ball1.x = ball2.x - Math.cos(angle)*(RADIUS*2);
+                    ball1.y = ball2.y - Math.sin(angle)*(RADIUS*2);
+                }
+            }
+            updateStats();
+            draw();
+        }
+        function onMouseUp(e){
+            draggingBall = null;
+        }
+        canvas.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+        canvas.addEventListener('touchstart', onMouseDown);
+        window.addEventListener('touchmove', onMouseMove);
+        window.addEventListener('touchend', onMouseUp);
+        
+        // 绑定UI按钮
+        document.getElementById('resetBtn').addEventListener('click', ()=>{
+            resetSimulation();
+            updateStats();
+        });
+        document.getElementById('randomSpeedBtn').addEventListener('click', ()=>{
+            randomSpeeds();
+            updateStats();
+        });
+        document.getElementById('pauseBtn').addEventListener('click', ()=>{ isRunning = false; });
+        document.getElementById('playBtn').addEventListener('click', ()=>{ isRunning = true; });
+        
+        // 初始化
+        resetSimulation();
+        syncMassRatio();
+        updateStats();
+        draw();
+        // 启动动画
+        animationId = requestAnimationFrame(animate);
+    })();
+</script>
+</body>
+</html>

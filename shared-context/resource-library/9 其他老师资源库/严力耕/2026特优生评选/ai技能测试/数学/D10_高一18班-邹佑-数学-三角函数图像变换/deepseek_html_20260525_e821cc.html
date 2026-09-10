@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>数学可视化：三角函数图像变换 | 正弦·余弦·正切 | 完整周期绘制</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f1f5f9;
+            font-family: 'Inter', 'Segoe UI', 'Roboto', system-ui, -apple-system, 'Noto Sans', sans-serif;
+            padding: 24px 20px;
+            color: #0f172a;
+        }
+
+        .app-container {
+            max-width: 1440px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .hero-section {
+            padding: 1.5rem 2rem 0.8rem 2rem;
+            border-bottom: 1px solid #e9edf2;
+            background: #ffffff;
+        }
+
+        .title-badge {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1e3b4a, #2c6285);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .formula-panel {
+            background: #f8fafc;
+            border-radius: 2rem;
+            padding: 0.6rem 1.4rem;
+            text-align: center;
+            border: 1px solid #e2edf7;
+        }
+
+        .formula-live {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1e5a7d;
+            background: #ffffff;
+            display: inline-block;
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+        }
+
+        .param-detail {
+            font-size: 0.75rem;
+            color: #54708f;
+            margin-top: 4px;
+        }
+
+        .sub {
+            color: #3c5a7a;
+            border-left: 3px solid #3b82f6;
+            padding-left: 1rem;
+            font-size: 0.85rem;
+            margin: 0.5rem 0 1rem 0;
+            font-weight: 450;
+        }
+
+        .action-bar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 0.5rem 2rem 1rem 2rem;
+            background: #ffffff;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .func-switch {
+            display: flex;
+            gap: 10px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 60px;
+        }
+
+        .func-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 24px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #2c4b6e;
+            font-family: inherit;
+        }
+
+        .func-btn.active {
+            background: #1e5a7d;
+            color: white;
+            box-shadow: 0 4px 10px rgba(30,90,125,0.2);
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toggle-pill {
+            background: #f1f5f9;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #1e3b4a;
+        }
+
+        .toggle-pill.active {
+            background: #2c6e9e;
+            color: white;
+        }
+
+        .preset-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            background: #eef2f9;
+            border: none;
+            padding: 5px 14px;
+            border-radius: 32px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        .preset-btn:hover {
+            background: #e0e8f2;
+            transform: translateY(-1px);
+        }
+
+        .canvas-dual {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 24px 2rem;
+            background: #fafcff;
+        }
+
+        .main-graph {
+            flex: 3;
+            min-width: 280px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 12px;
+            border: 1px solid #eef2f8;
+        }
+
+        .unit-circle-box {
+            flex: 1;
+            min-width: 240px;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+            padding: 16px 12px;
+            text-align: center;
+            border: 1px solid #eef2f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 1rem;
+        }
+
+        #mainCanvas {
+            aspect-ratio: 900 / 500;
+            cursor: grab;
+        }
+        #mainCanvas:active { cursor: grabbing; }
+
+        #unitCanvas {
+            aspect-ratio: 1 / 1;
+            max-width: 220px;
+            margin: 0 auto;
+        }
+
+        .circle-caption {
+            font-size: 0.7rem;
+            margin-top: 8px;
+            color: #3c6e9c;
+            font-weight: 500;
+        }
+
+        .param-controls {
+            padding: 6px 2rem 1.8rem 2rem;
+            background: #ffffff;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .params-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .param-card {
+            flex: 1;
+            min-width: 160px;
+            background: #f9fbfe;
+            border-radius: 1.5rem;
+            padding: 12px 18px;
+        }
+
+        .param-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            color: #1e445e;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .param-name {
+            background: #e4edf6;
+            padding: 2px 10px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-top: 6px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #cfdfed;
+            border-radius: 8px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #2c6e9e;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+
+        .num-input {
+            width: 70px;
+            border-radius: 2rem;
+            border: 1px solid #cad5e2;
+            padding: 6px 8px;
+            text-align: center;
+            font-family: monospace;
+            font-weight: 500;
+            background: white;
+        }
+
+        .legend-footer {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            padding: 1rem 2rem 1.5rem;
+            font-size: 0.7rem;
+            background: #fefefe;
+            border-top: 1px solid #ecf3f9;
+            flex-wrap: wrap;
+        }
+
+        .legend-dot {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border-radius: 20px;
+            margin-right: 6px;
+        }
+
+        .coord-status {
+            background: #f0f4fa;
+            border-radius: 32px;
+            padding: 8px 16px;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 12px;
+            font-family: monospace;
+            font-weight: 500;
+        }
+
+        @media (max-width: 720px) {
+            body { padding: 12px; }
+            .hero-section, .action-bar, .canvas-dual, .param-controls { padding-left: 1rem; padding-right: 1rem; }
+            .param-card { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="hero-section">
+        <div class="title-badge">
+            <h1>📐 三角函数 · 图像变换实验室</h1>
+            <div class="formula-panel">
+                <div class="formula-live" id="liveFormula">y = sin(x)</div>
+                <div class="param-detail" id="paramDetail">A=1.00 | B=1.00 | C=0.00 | D=0.00 | 周期 6.28</div>
+            </div>
+        </div>
+        <div class="sub">⚡ 滑动滑块改变系数 | 扩大视图便于观察 | 正切图像每个周期完整绘制 | 严格经过原点(0,0)</div>
+    </div>
+
+    <div class="action-bar">
+        <div class="func-switch" id="funcSwitchGroup">
+            <button class="func-btn active" data-func="sin">📈 正弦 sin</button>
+            <button class="func-btn" data-func="cos">📉 余弦 cos</button>
+            <button class="func-btn" data-func="tan">⚡ 正切 tan (完整周期)</button>
+        </div>
+        <div class="tool-group">
+            <div class="preset-group">
+                <button class="preset-btn" data-preset="standard">标准</button>
+                <button class="preset-btn" data-preset="amp2">振幅×2</button>
+                <button class="preset-btn" data-preset="periodHalf">周期减半</button>
+                <button class="preset-btn" data-preset="phaseRight">相位右移 π/2</button>
+                <button class="preset-btn" data-preset="up1">上移+1</button>
+                <button class="preset-btn" data-preset="tanDemo">正切示例</button>
+            </div>
+            <button id="toggleRefBtn" class="toggle-pill active">📉 参考曲线</button>
+            <button id="resetViewBtn" class="toggle-pill">🔄 重置视图</button>
+        </div>
+    </div>
+
+    <div class="canvas-dual">
+        <div class="main-graph">
+            <canvas id="mainCanvas" width="900" height="500"></canvas>
+            <div class="coord-status" id="coordStatus">🖱️ 鼠标悬停显示坐标 | 按住拖动可平移视图 | 正切每个周期独立绘制</div>
+        </div>
+        <div class="unit-circle-box">
+            <canvas id="unitCanvas" width="300" height="300"></canvas>
+            <div class="circle-caption">
+                🔄 单位圆联动 &nbsp;|&nbsp; 
+                <label style="cursor:pointer"><input type="checkbox" id="enableCircleSync" checked> 同步指针</label>
+            </div>
+            <div id="dynamicAngle" style="font-size:12px; margin-top:6px;">θ = 0.00 rad</div>
+        </div>
+    </div>
+
+    <div class="param-controls">
+        <div class="params-grid">
+            <div class="param-card"><div class="param-header"><span>✨ 振幅 A</span><span id="A_val">1.00</span></div><div class="input-row"><input type="range" id="A_slider" min="0" max="2.5" step="0.01" value="1.0"><input type="number" id="A_num" class="num-input" step="0.05" value="1.0"></div><div style="font-size:11px; color:#54708f;">纵向拉伸/压缩</div></div>
+            <div class="param-card"><div class="param-header"><span>🌀 频率 B</span><span id="B_val">1.00</span></div><div class="input-row"><input type="range" id="B_slider" min="0.3" max="3" step="0.01" value="1.0"><input type="number" id="B_num" class="num-input" step="0.05" value="1.0"></div><div style="font-size:11px;">周期 T = 2π/|B| (正切 π/|B|)</div></div>
+            <div class="param-card"><div class="param-header"><span>↔️ 相位 C</span><span id="C_val">0.00</span></div><div class="input-row"><input type="range" id="C_slider" min="-3.1416" max="3.1416" step="0.02" value="0.0"><input type="number" id="C_num" class="num-input" step="0.1" value="0.0"></div><div style="font-size:11px;">水平平移 (rad)</div></div>
+            <div class="param-card"><div class="param-header"><span>📐 垂直平移 D</span><span id="D_val">0.00</span></div><div class="input-row"><input type="range" id="D_slider" min="-2" max="2" step="0.05" value="0.0"><input type="number" id="D_num" class="num-input" step="0.1" value="0.0"></div><div style="font-size:11px;">上下平移</div></div>
+        </div>
+    </div>
+    <div class="legend-footer">
+        <span><span class="legend-dot" style="background:#d9483b;"></span> 变换后曲线</span>
+        <span><span class="legend-dot" style="background:#8ba3bc; border:1px dashed #8ba3bc;"></span> 参考曲线(母函数)</span>
+        <span><span class="legend-dot" style="background:#2c6e9e;"></span> 单位圆联动点</span>
+        <span><span class="legend-dot" style="background:#b0c4de; border:1px dashed;"></span> 正切渐近线</span>
+        <span>🎚️ 数值输入框 + 滑块联动</span>
+        <span>🔍 扩大视图: X:[-4π,4π]  Y:[-3.5,3.5]</span>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // DOM 元素
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        const unitCanvas = document.getElementById('unitCanvas');
+        const uCtx = unitCanvas.getContext('2d');
+        
+        const A_slider = document.getElementById('A_slider'), A_num = document.getElementById('A_num'), A_span = document.getElementById('A_val');
+        const B_slider = document.getElementById('B_slider'), B_num = document.getElementById('B_num'), B_span = document.getElementById('B_val');
+        const C_slider = document.getElementById('C_slider'), C_num = document.getElementById('C_num'), C_span = document.getElementById('C_val');
+        const D_slider = document.getElementById('D_slider'), D_num = document.getElementById('D_num'), D_span = document.getElementById('D_val');
+        const toggleRefBtn = document.getElementById('toggleRefBtn');
+        const resetViewBtn = document.getElementById('resetViewBtn');
+        const enableCircleSync = document.getElementById('enableCircleSync');
+        const coordStatus = document.getElementById('coordStatus');
+        const dynamicAngleSpan = document.getElementById('dynamicAngle');
+        const liveFormulaSpan = document.getElementById('liveFormula');
+        const paramDetailSpan = document.getElementById('paramDetail');
+
+        // 参数
+        let A = 1.0, B = 1.0, C = 0.0, D = 0.0;
+        let currentFunc = 'sin';
+        let showRefCurve = true;
+        let viewOffsetX = 0;
+        
+        // 定义域范围: 扩大到 -4π 到 4π，便于观察多个周期
+        const BASE_X_MIN = -4 * Math.PI;
+        const BASE_X_MAX = 4 * Math.PI;
+        let xMin = BASE_X_MIN, xMax = BASE_X_MAX;
+        
+        // Y轴范围
+        let yMin = -3.5, yMax = 3.5;
+        
+        // 交互状态
+        let isDragging = false, dragStartX = 0, startOffsetX = 0;
+        let mainWidth = 900, mainHeight = 500;
+        let currentAngle = 0;
+
+        // 核心函数求值
+        function evaluate(x, func, a, b, c, d) {
+            let inner = b * x + c;
+            let base = 0;
+            if(func === 'sin') base = Math.sin(inner);
+            else if(func === 'cos') base = Math.cos(inner);
+            else base = Math.tan(inner);
+            return a * base + d;
+        }
+        
+        // 母函数（参考曲线）
+        function evaluateMother(x, func) {
+            let inner = x;
+            if(func === 'sin') return Math.sin(inner);
+            if(func === 'cos') return Math.cos(inner);
+            return Math.tan(inner);
+        }
+        
+        // 动态计算Y轴范围 - 正切函数关于 D 完美居中
+        function updateYRange() {
+            if(currentFunc !== 'tan') {
+                let maxVal = Math.abs(A) + Math.abs(D);
+                let margin = 0.8;
+                let range = Math.max(3.2, maxVal + margin);
+                yMin = -range;
+                yMax = range;
+                if(yMin > -3.2) yMin = -3.2;
+                if(yMax < 3.2) yMax = 3.2;
+            } else {
+                let amplitude = Math.abs(A);
+                let halfHeight = Math.min(4.5, Math.max(2.2, amplitude * 1.5 + 0.8));
+                yMin = D - halfHeight;
+                yMax = D + halfHeight;
+                let minSpan = 2.8;
+                if(yMax - yMin < minSpan) {
+                    let center = D;
+                    yMin = center - minSpan/2;
+                    yMax = center + minSpan/2;
+                }
+                let padding = 0.25;
+                yMin -= padding;
+                yMax += padding;
+                if(0 < yMin) yMin = 0 - 0.3;
+                if(0 > yMax) yMax = 0 + 0.3;
+            }
+        }
+        
+        // 同步UI
+        function syncUIFromParams() {
+            A_slider.value = A; A_num.value = A.toFixed(3); A_span.innerText = A.toFixed(2);
+            B_slider.value = B; B_num.value = B.toFixed(3); B_span.innerText = B.toFixed(2);
+            C_slider.value = C; C_num.value = C.toFixed(3); C_span.innerText = C.toFixed(2);
+            D_slider.value = D; D_num.value = D.toFixed(3); D_span.innerText = D.toFixed(2);
+            
+            let funcSym = currentFunc;
+            let innerPart = `${B.toFixed(2)}·x ${C >= 0 ? '+' : '-'} ${Math.abs(C).toFixed(2)}`;
+            let formula = `y = ${A.toFixed(2)}·${funcSym}(${innerPart}) ${D >= 0 ? '+' : '-'} ${Math.abs(D).toFixed(2)}`;
+            liveFormulaSpan.innerHTML = formula;
+            
+            let period = (currentFunc === 'tan') ? (Math.PI / Math.abs(B)).toFixed(2) : (2 * Math.PI / Math.abs(B)).toFixed(2);
+            paramDetailSpan.innerHTML = `A=${A.toFixed(2)}  B=${B.toFixed(2)}  C=${C.toFixed(2)}  D=${D.toFixed(2)}  |  周期 T = ${period} rad`;
+        }
+        
+        // 绘图辅助函数 - 网格刻度
+        function drawGridAxis(ctx, w, h, mapX, mapY) {
+            ctx.save(); 
+            ctx.strokeStyle="#dce5ef"; 
+            ctx.lineWidth=0.7; 
+            ctx.font="10px 'Segoe UI'"; 
+            ctx.fillStyle="#6d8aac";
+            
+            const xTicks = [-4*Math.PI, -3.5*Math.PI, -3*Math.PI, -2.5*Math.PI, -2*Math.PI, -1.5*Math.PI, -Math.PI, -Math.PI/2, 0, Math.PI/2, Math.PI, 1.5*Math.PI, 2*Math.PI, 2.5*Math.PI, 3*Math.PI, 3.5*Math.PI, 4*Math.PI];
+            for(let v of xTicks) {
+                if(v >= xMin && v <= xMax) {
+                    let sx = mapX(v); 
+                    ctx.beginPath(); 
+                    ctx.moveTo(sx,0); 
+                    ctx.lineTo(sx,h); 
+                    ctx.stroke();
+                    let label=""; 
+                    if(Math.abs(v-Math.PI)<0.05) label="π"; 
+                    else if(Math.abs(v+Math.PI)<0.05) label="-π"; 
+                    else if(Math.abs(v-2*Math.PI)<0.05) label="2π"; 
+                    else if(Math.abs(v+2*Math.PI)<0.05) label="-2π"; 
+                    else if(Math.abs(v-3*Math.PI)<0.05) label="3π"; 
+                    else if(Math.abs(v+3*Math.PI)<0.05) label="-3π"; 
+                    else if(Math.abs(v-4*Math.PI)<0.05) label="4π"; 
+                    else if(Math.abs(v+4*Math.PI)<0.05) label="-4π"; 
+                    else if(Math.abs(v-Math.PI/2)<0.05) label="π/2"; 
+                    else if(Math.abs(v+Math.PI/2)<0.05) label="-π/2"; 
+                    else if(Math.abs(v-1.5*Math.PI)<0.08) label="3π/2"; 
+                    else if(Math.abs(v+1.5*Math.PI)<0.08) label="-3π/2"; 
+                    else if(Math.abs(v-2.5*Math.PI)<0.08) label="5π/2"; 
+                    else if(Math.abs(v+2.5*Math.PI)<0.08) label="-5π/2"; 
+                    else if(Math.abs(v)<0.05) label="0";
+                    if(label) ctx.fillText(label, sx-12, mapY(0)+(v>0?-8:18));
+                }
+            }
+            
+            let step = 0.5;
+            let startY = Math.ceil(yMin / step) * step;
+            for(let v = startY; v <= yMax; v += step) {
+                if(v >= yMin && v <= yMax) { 
+                    let sy = mapY(v); 
+                    ctx.beginPath(); 
+                    ctx.moveTo(0,sy); 
+                    ctx.lineTo(w,sy); 
+                    ctx.stroke(); 
+                    ctx.fillText(v.toFixed(1), 6, sy-3);
+                }
+            }
+            
+            ctx.beginPath(); 
+            let y0 = mapY(0); 
+            ctx.moveTo(0, y0); 
+            ctx.lineTo(w, y0); 
+            let x0 = mapX(0); 
+            ctx.moveTo(x0, 0); 
+            ctx.lineTo(x0, h); 
+            ctx.strokeStyle="#9eb3ca"; 
+            ctx.lineWidth=1.8; 
+            ctx.stroke();
+            
+            ctx.fillStyle="#d9483b";
+            ctx.beginPath();
+            ctx.arc(mapX(0), mapY(0), 5, 0, 2*Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle="#7e95ab"; 
+            let arrowX = mapX(xMax)-10; 
+            ctx.beginPath(); 
+            ctx.moveTo(arrowX, y0-4); 
+            ctx.lineTo(arrowX+8, y0); 
+            ctx.lineTo(arrowX, y0+4); 
+            ctx.fill();
+            let arrowY = mapY(yMax)-10; 
+            ctx.beginPath(); 
+            ctx.moveTo(x0-4, arrowY); 
+            ctx.lineTo(x0, arrowY-8); 
+            ctx.lineTo(x0+4, arrowY); 
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // 绘制正切渐近线
+        function drawAsymptotes(ctx, w, h, mapX, mapY) {
+            if(currentFunc !== 'tan') return;
+            ctx.save(); 
+            ctx.setLineDash([6,8]); 
+            ctx.strokeStyle = "#b0c4de"; 
+            ctx.lineWidth = 1.5;
+            for(let k = -8; k <= 8; k++) {
+                let x_asym = (Math.PI/2 + k * Math.PI - C) / B;
+                if(x_asym >= xMin && x_asym <= xMax) { 
+                    let sx = mapX(x_asym); 
+                    ctx.beginPath(); 
+                    ctx.moveTo(sx, 0); 
+                    ctx.lineTo(sx, h); 
+                    ctx.stroke(); 
+                }
+            }
+            ctx.setLineDash([]); 
+            ctx.restore();
+        }
+        
+        // 分段绘制函数 - 关键：让正切在每个周期内独立绘制，避免跨越渐近线错误连接
+        function drawFunctionSegmented(func, a, b, c, d, mapX, mapY, ctx, color, lineWidth, isReference) {
+            if(currentFunc !== 'tan') {
+                // 正弦和余弦可以直接连续绘制
+                ctx.save();
+                ctx.beginPath();
+                ctx.lineWidth = lineWidth;
+                ctx.strokeStyle = color;
+                if(isReference) ctx.setLineDash([6, 8]);
+                else ctx.setLineDash([]);
+                
+                let first = true;
+                for(let i = 0; i <= 3000; i++) {
+                    let x = xMin + i * (xMax - xMin) / 3000;
+                    let y = func(x);
+                    if(!isFinite(y)) { first = true; continue; }
+                    if(y < yMin - 1.5 || y > yMax + 1.5) { first = true; continue; }
+                    let sx = mapX(x), sy = mapY(Math.min(yMax, Math.max(yMin, y)));
+                    if(first) { ctx.beginPath(); ctx.moveTo(sx, sy); first = false; }
+                    else ctx.lineTo(sx, sy);
+                }
+                ctx.stroke();
+                ctx.restore();
+                return;
+            }
+            
+            // 正切函数：分段绘制，每个周期独立，避免跨越渐近线
+            ctx.save();
+            ctx.beginPath();
+            ctx.lineWidth = lineWidth;
+            ctx.strokeStyle = color;
+            if(isReference) ctx.setLineDash([6, 8]);
+            else ctx.setLineDash([]);
+            
+            // 计算所有渐近线位置（用于分割区间）
+            let asymptotes = [];
+            for(let k = -10; k <= 10; k++) {
+                let x_asym = (Math.PI/2 + k * Math.PI - c) / b;
+                if(x_asym >= xMin - 0.5 && x_asym <= xMax + 0.5) {
+                    asymptotes.push(x_asym);
+                }
+            }
+            asymptotes.sort((a, b) => a - b);
+            
+            // 添加边界
+            let segments = [xMin, ...asymptotes, xMax];
+            
+            // 在每个区间内独立绘制曲线
+            for(let s = 0; s < segments.length - 1; s++) {
+                let segStart = segments[s];
+                let segEnd = segments[s + 1];
+                if(segEnd - segStart < 0.01) continue;
+                
+                let first = true;
+                let steps = 200;
+                for(let i = 0; i <= steps; i++) {
+                    let x = segStart + i * (segEnd - segStart) / steps;
+                    // 避开渐近线附近太近的点
+                    let tooClose = false;
+                    for(let asym of asymptotes) {
+                        if(Math.abs(x - asym) < 0.03) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    if(tooClose) {
+                        first = true;
+                        continue;
+                    }
+                    
+                    let y = func(x);
+                    if(!isFinite(y)) { first = true; continue; }
+                    if(y < yMin - 1.5 || y > yMax + 1.5) { first = true; continue; }
+                    
+                    let sx = mapX(x), sy = mapY(Math.min(yMax, Math.max(yMin, y)));
+                    if(first) { ctx.beginPath(); ctx.moveTo(sx, sy); first = false; }
+                    else ctx.lineTo(sx, sy);
+                }
+                if(!first) ctx.stroke();
+            }
+            ctx.restore();
+        }
+        
+        // 主绘图函数
+        function drawMain() {
+            if(!ctx) return;
+            const w = mainWidth, h = mainHeight;
+            const mapX = (x) => ((x - xMin) / (xMax - xMin)) * w;
+            const mapY = (y) => h - ((y - yMin) / (yMax - yMin)) * h;
+            
+            ctx.clearRect(0,0,w,h);
+            ctx.fillStyle="#FFFFFF"; 
+            ctx.fillRect(0,0,w,h);
+            drawGridAxis(ctx, w, h, mapX, mapY);
+            drawAsymptotes(ctx, w, h, mapX, mapY);
+            
+            // 参考曲线（母函数）- 分段绘制
+            if(showRefCurve) {
+                drawFunctionSegmented(
+                    (x) => evaluateMother(x, currentFunc),
+                    currentFunc === 'tan' ? 1 : 1, 1, 0, 0,
+                    mapX, mapY, ctx, "#8ba3bc", 1.8, true
+                );
+            }
+            
+            // 当前变换曲线 - 分段绘制
+            drawFunctionSegmented(
+                (x) => evaluate(x, currentFunc, A, B, C, D),
+                A, B, C, D,
+                mapX, mapY, ctx, "#d9483b", 3.2, false
+            );
+            
+            // 标注原点
+            ctx.font = "bold 12px 'Segoe UI'";
+            ctx.fillStyle = "#d9483b";
+            ctx.fillText("O(0,0)", mapX(0) + 6, mapY(0) - 6);
+        }
+        
+        // 单位圆绘制
+        function drawUnitCircle(angle) {
+            if(!uCtx) return;
+            let sz = unitCanvas.width;
+            uCtx.clearRect(0,0,sz,sz);
+            uCtx.save(); 
+            uCtx.translate(sz/2, sz/2);
+            uCtx.beginPath(); 
+            uCtx.arc(0,0,sz*0.4,0,2*Math.PI); 
+            uCtx.strokeStyle="#bbb"; 
+            uCtx.stroke();
+            uCtx.beginPath(); 
+            uCtx.moveTo(-sz*0.45,0); 
+            uCtx.lineTo(sz*0.45,0); 
+            uCtx.moveTo(0,-sz*0.45); 
+            uCtx.lineTo(0,sz*0.45); 
+            uCtx.stroke();
+            let xc = Math.cos(angle) * sz*0.4, yc = Math.sin(angle) * sz*0.4;
+            uCtx.fillStyle="#2c6e9e"; 
+            uCtx.beginPath(); 
+            uCtx.arc(xc, yc, 6, 0, 2*Math.PI); 
+            uCtx.fill();
+            uCtx.beginPath(); 
+            uCtx.moveTo(0,0); 
+            uCtx.lineTo(xc, yc); 
+            uCtx.strokeStyle="#2c6e9e"; 
+            uCtx.stroke();
+            uCtx.fillStyle="#1f4a6e"; 
+            uCtx.font="11px monospace"; 
+            uCtx.fillText(`θ = ${angle.toFixed(2)}`, -35, -sz*0.35);
+            uCtx.restore();
+            dynamicAngleSpan.innerText = `θ = ${angle.toFixed(3)} rad`;
+        }
+        
+        // 刷新所有
+        function refreshAll() {
+            updateYRange();
+            drawMain();
+            if(enableCircleSync.checked) drawUnitCircle(currentAngle);
+            else drawUnitCircle(0);
+            syncUIFromParams();
+        }
+        
+        function applyViewOffset() { 
+            xMin = BASE_X_MIN + viewOffsetX; 
+            xMax = BASE_X_MAX + viewOffsetX; 
+        }
+        
+        function resetView() { 
+            viewOffsetX = 0; 
+            xMin = BASE_X_MIN; 
+            xMax = BASE_X_MAX; 
+            refreshAll(); 
+        }
+        
+        // 预设
+        function setPreset(type) {
+            switch(type){
+                case 'standard': A = 1; B = 1; C = 0; D = 0; break;
+                case 'amp2': A = 2; B = 1; C = 0; D = 0; break;
+                case 'periodHalf': A = 1; B = 2; C = 0; D = 0; break;
+                case 'phaseRight': A = 1; B = 1; C = -Math.PI/2; D = 0; break;
+                case 'up1': A = 1; B = 1; C = 0; D = 1; break;
+                case 'tanDemo': 
+                    A = 1.2; B = 1.5; C = 0; D = 0;
+                    currentFunc = 'tan';
+                    document.querySelectorAll('.func-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if(btn.dataset.func === 'tan') btn.classList.add('active');
+                    });
+                    break;
+                default: break;
+            }
+            A_slider.value = A; A_num.value = A;
+            B_slider.value = B; B_num.value = B;
+            C_slider.value = C; C_num.value = C;
+            D_slider.value = D; D_num.value = D;
+            refreshAll();
+        }
+        
+        // 事件绑定
+        function bindEvents() {
+            A_slider.oninput = () => { A=parseFloat(A_slider.value); A_num.value=A; refreshAll(); };
+            A_num.onchange = () => { A=parseFloat(A_num.value); A_slider.value=A; refreshAll(); };
+            B_slider.oninput = () => { B=parseFloat(B_slider.value); B_num.value=B; refreshAll(); };
+            B_num.onchange = () => { B=parseFloat(B_num.value); B_slider.value=B; refreshAll(); };
+            C_slider.oninput = () => { C=parseFloat(C_slider.value); C_num.value=C; refreshAll(); };
+            C_num.onchange = () => { C=parseFloat(C_num.value); C_slider.value=C; refreshAll(); };
+            D_slider.oninput = () => { D=parseFloat(D_slider.value); D_num.value=D; refreshAll(); };
+            D_num.onchange = () => { D=parseFloat(D_num.value); D_slider.value=D; refreshAll(); };
+            
+            document.querySelectorAll('.func-btn').forEach(btn => {
+                btn.onclick = () => { 
+                    currentFunc = btn.dataset.func; 
+                    document.querySelectorAll('.func-btn').forEach(b=>b.classList.remove('active')); 
+                    btn.classList.add('active'); 
+                    refreshAll(); 
+                };
+            });
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => btn.onclick = () => setPreset(btn.dataset.preset));
+            toggleRefBtn.onclick = () => { showRefCurve = !showRefCurve; toggleRefBtn.classList.toggle('active', showRefCurve); refreshAll(); };
+            resetViewBtn.onclick = resetView;
+            enableCircleSync.onchange = () => { if(enableCircleSync.checked) drawUnitCircle(currentAngle); else drawUnitCircle(0); refreshAll(); };
+            
+            canvas.addEventListener('mousedown', (e) => { isDragging=true; dragStartX=e.clientX; startOffsetX=viewOffsetX; canvas.style.cursor='grabbing'; });
+            window.addEventListener('mousemove', (e) => { 
+                if(isDragging){ 
+                    let dx = e.clientX-dragStartX; 
+                    let delta = (dx/mainWidth)*(xMax-xMin); 
+                    viewOffsetX = startOffsetX - delta; 
+                    applyViewOffset(); 
+                    refreshAll(); 
+                } 
+            });
+            window.addEventListener('mouseup', () => { isDragging=false; canvas.style.cursor='grab'; });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect(); 
+                const scaleX = mainWidth / rect.width;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                let x = xMin + (mouseX / mainWidth) * (xMax - xMin);
+                if(isFinite(x)) { 
+                    let yv = evaluate(x, currentFunc, A, B, C, D); 
+                    coordStatus.innerHTML = `📌 x = ${x.toFixed(3)} rad , y = ${yv.toFixed(3)}`; 
+                    if(enableCircleSync.checked){ 
+                        let ang = (B * x + C) % (2 * Math.PI); 
+                        if(ang < 0) ang += 2 * Math.PI; 
+                        currentAngle = ang; 
+                        drawUnitCircle(ang); 
+                    } 
+                }
+            });
+        }
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement; 
+            let w = container.clientWidth - 20; 
+            mainWidth = Math.min(w, 1100); 
+            mainHeight = mainWidth * (500/900);
+            canvas.width = mainWidth; 
+            canvas.height = mainHeight; 
+            canvas.style.width = `${mainWidth}px`;
+            const unitCont = unitCanvas.parentElement; 
+            let sz = Math.min(unitCont.clientWidth - 20, 260);
+            unitCanvas.width = sz; 
+            unitCanvas.height = sz; 
+            unitCanvas.style.width = `${sz}px`;
+            refreshAll();
+        }
+        
+        window.addEventListener('resize', () => resizeCanvas());
+        resizeCanvas();
+        bindEvents();
+        refreshAll();
+    })();
+</script>
+</body>
+</html>

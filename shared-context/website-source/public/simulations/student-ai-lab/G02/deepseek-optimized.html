@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>水循环流程演示 · 互动网页</title>
+<style>
+:root{
+  --bg1:#e0f2fe; --bg2:#dbeafe; --card:#fff; --ink:#1f2937; --muted:#64748b;
+  --border:#bae6fd; --accent:#0284c7; --green:#16a34a; --shadow:0 4px 12px rgba(2,132,199,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink); background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  font-size:0.95rem; line-height:1.6;
+}
+header{background:linear-gradient(135deg,#0c4a6e,#0284c7); color:#fff; padding:1rem 1.5rem; box-shadow:var(--shadow)}
+header h1{margin:0; font-size:1.25rem; font-weight:600}
+header p{margin:.2rem 0 0; font-size:.85rem; opacity:.92}
+.wrap{max-width:1420px; margin:1rem auto; padding:0 1.5rem 2rem}
+.card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:1rem; box-shadow:var(--shadow)}
+.card h2{margin:.2rem 0 .6rem; color:var(--accent); font-size:1.12rem; border-left:4px solid var(--accent); padding-left:.6rem}
+.card h3{font-size:1rem; margin:.6rem 0 .35rem}
+.main-grid{display:grid; grid-template-columns:1.45fr 1fr; gap:1rem}
+.diagram{position:relative; background:linear-gradient(180deg,#bae6fd,#e0f2fe); border:1px solid var(--border); border-radius:10px; overflow:hidden}
+.diagram svg{display:block; width:100%; height:auto; cursor:pointer}
+.diagram .hint{position:absolute; left:.6rem; bottom:.4rem; font-size:.76rem; color:#0c4a6e; background:rgba(255,255,255,.75); padding:.1rem .5rem; border-radius:6px}
+.detail-side{display:flex; flex-direction:column; gap:.6rem}
+.detail-card{background:#f0fdfa; border:1px solid var(--border); border-radius:8px; padding:.65rem .85rem; cursor:pointer; transition:all .15s; border-left:4px solid transparent}
+.detail-card.active{background:#cffafe; border-color:var(--accent); border-left-color:var(--accent); box-shadow:0 2px 8px rgba(2,132,199,.2)}
+.detail-card h4{margin:.1rem 0 .3rem; color:var(--accent); font-size:.95rem}
+.detail-card .cause{font-size:.82rem}
+.stage-tag{display:inline-block; padding:.05rem .5rem; background:var(--accent); color:#fff; border-radius:8px; font-size:.72rem; margin-right:.4rem}
+table{border-collapse:collapse; width:100%; font-size:.85rem; margin-top:.3rem}
+th,td{border:1px solid var(--border); padding:.38rem .5rem; text-align:center}
+th{background:#e0f2fe; color:var(--accent)}
+.stats-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:.5rem}
+.stat-canvas{background:#fff; border:1px solid var(--border); border-radius:8px; padding:.6rem; text-align:center}
+.stat-canvas h4{margin:.1rem 0 .4rem; font-size:.85rem; color:var(--accent)}
+.stat-canvas canvas{display:block; width:100%; height:auto; background:#fff; margin:0 auto}
+.fill-qa{display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:.5rem}
+.fill-blank{background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:.8rem 1rem}
+.fill-blank input{width:86px; padding:.25rem .4rem; border:1px solid var(--accent); border-radius:4px; font-family:inherit; font-size:.9rem}
+.fill-blank button{font-family:inherit; font-size:.85rem; padding:.3rem .75rem; border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:4px; cursor:pointer}
+.fill-blank button:hover{background:#cffafe}
+.fill-result{margin-top:.5rem; font-size:.88rem}
+.fill-result.ok{color:#166534}
+.fill-result.no{color:#991b1b}
+.qa{background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:.7rem 1rem}
+.qa h4{margin:.1rem 0 .3rem; color:var(--green)}
+.qa-item{padding:.4rem 0; border-bottom:1px dashed var(--border)}
+.qa-item:last-child{border-bottom:none}
+.qa-q{font-weight:500}
+.qa-a{font-size:.85rem; color:var(--muted); margin-top:.15rem}
+.note{font-size:.8rem; color:var(--muted)}
+@media(max-width:900px){
+  .main-grid{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr}
+  .fill-qa{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>水循环流程演示</h1>
+  <p>高中地理｜海陆间循环 · 蒸发 → 水汽输送 → 降水 → 径流</p>
+</header>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>① 海陆间循环示意图（点击海洋 / 云层 / 降雨区 / 河流查看对应环节）</h2>
+    <div class="main-grid">
+      <div class="diagram">
+        <svg id="cycleSvg" viewBox="0 0 640 460" xmlns="http://www.w3.org/2000/svg" role="img"
+             aria-label="水循环海陆间循环示意图：海洋左下、陆地右下、太阳右上、云层在上、河流由陆地汇入海洋。当前高亮环节：无。">
+          <defs>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#e0f2fe"/>
+            </linearGradient>
+            <linearGradient id="seaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#0284c7"/><stop offset="100%" stop-color="#075985"/>
+            </linearGradient>
+            <linearGradient id="landGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#ca8a04"/><stop offset="100%" stop-color="#854d0e"/>
+            </linearGradient>
+            <marker id="arrEvap" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+            </marker>
+            <marker id="arrTrans" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+            </marker>
+            <marker id="arrRain" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#1e40af"/>
+            </marker>
+            <marker id="arrRiv" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#0ea5e9"/>
+            </marker>
+          </defs>
+
+          <!-- 天空 -->
+          <rect x="0" y="0" width="640" height="460" fill="url(#skyGrad)"/>
+
+          <!-- 太阳（右上） -->
+          <g>
+            <circle cx="555" cy="62" r="28" fill="#facc15"/>
+            <g stroke="#facc15" stroke-width="3" stroke-linecap="round">
+              <line x1="555" y1="20" x2="555" y2="33"/>
+              <line x1="555" y1="91" x2="555" y2="104"/>
+              <line x1="513" y1="62" x2="526" y2="62"/>
+              <line x1="584" y1="62" x2="597" y2="62"/>
+              <line x1="525" y1="32" x2="534" y2="41"/>
+              <line x1="576" y1="83" x2="585" y2="92"/>
+              <line x1="585" y1="32" x2="576" y2="41"/>
+              <line x1="534" y1="83" x2="525" y2="92"/>
+            </g>
+            <text x="555" y="116" text-anchor="middle" font-size="11" fill="#92400e">太阳</text>
+            <text x="555" y="60" text-anchor="middle" font-size="9" fill="#92400e" opacity="0.9">☀ 短波辐射</text>
+          </g>
+
+          <!-- 海洋（左下） -->
+          <g id="seaG">
+            <rect x="0" y="300" width="320" height="160" fill="url(#seaGrad)"/>
+            <path d="M0,310 Q40,305 80,310 T160,310 T240,310 T320,310" stroke="#7dd3fc" fill="none" stroke-width="2" opacity="0.6"/>
+            <path d="M0,330 Q40,325 80,330 T160,330 T240,330 T320,330" stroke="#7dd3fc" fill="none" stroke-width="2" opacity="0.4"/>
+            <text x="160" y="392" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">海 洋</text>
+            <text x="160" y="416" text-anchor="middle" font-size="9" fill="#e0f2fe">蒸发来源</text>
+          </g>
+
+          <!-- 陆地（右下） -->
+          <g>
+            <path d="M320,300 L320,460 L640,460 L640,268 Q600,258 560,272 Q520,284 480,268 Q440,250 400,270 Q360,284 320,300 Z" fill="url(#landGrad)"/>
+            <text x="505" y="400" text-anchor="middle" font-size="14" fill="#fff" font-weight="bold">陆 地</text>
+          </g>
+
+          <!-- 河流（陆→海） -->
+          <g id="runoffG">
+            <path d="M570,268 Q548,306 518,348 Q488,392 450,416 Q412,440 372,444 L334,444" stroke="#0ea5e9" stroke-width="7" fill="none" stroke-linecap="round"/>
+            <path d="M570,268 Q548,306 518,348 Q488,392 450,416 Q412,440 372,444 L334,444" stroke="#7dd3fc" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.75"/>
+            <text x="450" y="330" text-anchor="middle" font-size="11" fill="#075985" font-weight="bold">径流（陆 → 海）</text>
+            <line x1="452" y1="348" x2="446" y2="360" stroke="#0ea5e9" stroke-width="2" marker-end="url(#arrRiv)"/>
+          </g>
+
+          <!-- 云层（上） -->
+          <g id="cloudG">
+            <ellipse cx="205" cy="92" rx="52" ry="22" fill="#fff"/>
+            <ellipse cx="248" cy="97" rx="42" ry="20" fill="#fff"/>
+            <ellipse cx="163" cy="97" rx="36" ry="18" fill="#fff"/>
+            <ellipse cx="452" cy="112" rx="52" ry="22" fill="#fff"/>
+            <ellipse cx="495" cy="117" rx="42" ry="20" fill="#fff"/>
+            <ellipse cx="410" cy="117" rx="36" ry="18" fill="#fff"/>
+            <text x="205" y="76" text-anchor="middle" font-size="11" fill="#475569">海洋上空</text>
+            <text x="452" y="95" text-anchor="middle" font-size="11" fill="#475569">陆地上空</text>
+          </g>
+
+          <!-- 蒸发（海洋↑ 陆面↑） -->
+          <g id="evapG" stroke="#64748b" stroke-width="3" stroke-linecap="round">
+            <line x1="90"  y1="292" x2="90"  y2="205" marker-end="url(#arrEvap)"/>
+            <line x1="150" y1="292" x2="150" y2="210" marker-end="url(#arrEvap)"/>
+            <line x1="210" y1="292" x2="210" y2="205" marker-end="url(#arrEvap)"/>
+            <text x="150" y="188" text-anchor="middle" font-size="11" fill="#475569">蒸发 ↑</text>
+            <!-- 陆地水面/土壤蒸发 -->
+            <line x1="360" y1="262" x2="360" y2="205" marker-end="url(#arrEvap)" opacity="0.85"/>
+            <line x1="400" y1="252" x2="400" y2="200" marker-end="url(#arrEvap)" opacity="0.85"/>
+          </g>
+
+          <!-- 水汽输送（海 → 陆） -->
+          <g id="transG" stroke="#64748b" stroke-width="3" stroke-linecap="round">
+            <path d="M300,140 Q380,88 460,142" fill="none" marker-end="url(#arrTrans)"/>
+            <path d="M300,150 Q380,102 460,152" fill="none" marker-end="url(#arrTrans)" opacity="0.7"/>
+            <text x="380" y="78" text-anchor="middle" font-size="11" fill="#475569">水汽输送 →（海 → 陆）</text>
+          </g>
+
+          <!-- 降水（云层 ↓ 地面） -->
+          <g id="rainG" stroke="#1e40af" stroke-width="3" stroke-linecap="round">
+            <line x1="425" y1="150" x2="420" y2="238" marker-end="url(#arrRain)"/>
+            <line x1="455" y1="150" x2="450" y2="238" marker-end="url(#arrRain)"/>
+            <line x1="485" y1="150" x2="480" y2="238" marker-end="url(#arrRain)"/>
+            <text x="453" y="182" text-anchor="middle" font-size="11" fill="#1e40af">降水 ↓</text>
+          </g>
+
+          <text x="320" y="24" text-anchor="middle" font-size="14" fill="#0c4a6e" font-weight="bold">海陆间水循环 · 示意图</text>
+        </svg>
+        <div class="hint">💡 提示：点击海洋=蒸发、云层=水汽输送、降雨区=降水、河流=径流</div>
+      </div>
+
+      <div class="detail-side">
+        <div class="detail-card" data-stage="evap" role="button" tabindex="0">
+          <h4><span class="stage-tag">①</span>蒸发</h4>
+          <div class="cause"><b>方向：</b>海洋/陆地 → 云层（向上）<br><b>成因：</b>太阳短波辐射加热水体，水分子获得能量逸出水面成为水汽（含植物蒸腾）。</div>
+        </div>
+        <div class="detail-card" data-stage="trans" role="button" tabindex="0">
+          <h4><span class="stage-tag">②</span>水汽输送</h4>
+          <div class="cause"><b>方向：</b>海 → 陆（横向）<br><b>成因：</b>大气环流（信风、盛行西风、季风等）将海洋上空的水汽输送到陆地上空。</div>
+        </div>
+        <div class="detail-card" data-stage="rain" role="button" tabindex="0">
+          <h4><span class="stage-tag">③</span>降水</h4>
+          <div class="cause"><b>方向：</b>云层 → 地面（向下）<br><b>成因：</b>水汽绝热冷却达饱和 + 凝结核成云滴，云滴碰并增长，重力下落形成雨雪。</div>
+        </div>
+        <div class="detail-card" data-stage="runoff" role="button" tabindex="0">
+          <h4><span class="stage-tag">④</span>径流</h4>
+          <div class="cause"><b>方向：</b>陆 → 海（含地表径流与地下径流 / 下渗）<br><b>成因：</b>降水超过下渗能力时沿地表汇流成河，入海；部分下渗形成地下径流。</div>
+        </div>
+        <p class="note">四环节首尾衔接：蒸发 → 水汽输送 → 降水 → 径流 → 蒸发，循环闭合。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>② 三类水循环区分</h2>
+    <table>
+      <thead><tr><th>类型</th><th>过程</th><th>环节</th><th>特点</th></tr></thead>
+      <tbody>
+        <tr><td><b>海陆间循环</b></td><td>海洋 → 陆地 → 海洋</td><td>蒸发、水汽输送、降水、径流（<b>最全</b>）</td><td>陆地淡水资源更新的主要来源，最重要</td></tr>
+        <tr><td>陆地内循环</td><td>陆地 → 陆地</td><td>陆地蒸发/蒸腾、降水、下渗</td><td>水量小，只在内陆局部</td></tr>
+        <tr><td>海上内循环</td><td>海洋 → 海洋</td><td>海洋蒸发、海上降水</td><td>参与水量最大、环节最少</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <h2>③ 水量统计（全页统一口径：全球年总量约 <b>505 千 km³</b>）</h2>
+    <div class="stats-grid">
+      <div class="stat-canvas">
+        <h4>海洋 / 陆地蒸发占比（饼图）</h4>
+        <canvas id="pieChart" width="280" height="210" aria-label="海洋与陆地蒸发占比饼图，海洋约86%，陆地约14%"></canvas>
+      </div>
+      <div class="stat-canvas">
+        <h4>年蒸发 / 降水 / 径流量（条形图，单位千 km³）</h4>
+        <canvas id="barChart" width="280" height="210" aria-label="年蒸发505、降水505、径流48千立方千米条形图"></canvas>
+      </div>
+      <div class="stat-canvas">
+        <h4>各类水体水分停留时间（折线图，对数刻度）</h4>
+        <canvas id="lineChart" width="280" height="210" aria-label="大气水8天、河流16天、土壤约1年、地下水1400年、海洋2500年、冰川9700年水分停留时间折线图"></canvas>
+      </div>
+    </div>
+    <p class="note">全球年蒸发量 ≈ 年降水量 ≈ <b>505 千 km³</b>（海洋蒸发约 434、陆地蒸发约 71，海洋蒸发占全球约 86%）；海洋降水约 386、陆地降水约 119 千 km³；陆地多余降水经径流（约 48 千 km³）返回海洋。</p>
+  </section>
+
+  <section class="card">
+    <h2>④ 观察与填空 + 日常问答举例</h2>
+    <div class="fill-qa">
+      <div class="fill-blank">
+        <h3 style="margin-top:0">观察与填空</h3>
+        <div>水循环的四个主要环节依次为：<br>
+          <input id="fb1" type="text" placeholder="①" aria-label="第1环节"> →
+          <input id="fb2" type="text" placeholder="②" aria-label="第2环节"> →
+          <input id="fb3" type="text" placeholder="③" aria-label="第3环节"> →
+          <input id="fb4" type="text" placeholder="④" aria-label="第4环节">
+        </div>
+        <div style="margin-top:.5rem">
+          <button type="button" id="checkBtn">提交核对</button>
+          <button type="button" id="revealBtn">显示答案</button>
+        </div>
+        <div class="fill-result" id="fillResult">提示：可回看①示意图中的四组箭头与文字。</div>
+      </div>
+      <div class="qa">
+        <h4>日常问答举例</h4>
+        <div class="qa-item">
+          <div class="qa-q">Q1：为什么"陆风吹海风"的地区温差小？</div>
+          <div class="qa-a">水的比热容大，蒸发吸热与凝结放热共同调节，使海洋性气候温差小；缺水的沙漠无此缓冲。</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q">Q2：人类活动主要影响水循环的哪个环节？</div>
+          <div class="qa-a">主要影响<b>地表径流</b>：修水库、跨流域调水、植树造林增大下渗等，对蒸发与输送影响相对较小。</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q">Q3：为何海陆间循环对人类最重要？</div>
+          <div class="qa-a">环节最全，持续更新陆地淡水，是陆地生态系统与人类用水最根本的来源。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ============ 命中区（四个矩形互不重叠，先判小矩形） ============
+  var hitRects = {
+    rain:  {x1:400, y1:165, x2:500, y2:250},   // 降雨区（云下陆地）
+    river: {x1:330, y1:255, x2:580, y2:445},   // 河流（陆地斜向，x 自 330 起，与海洋留 11px 间隙）
+    cloud: {x1:150, y1:70,  x2:520, y2:150},   // 云层带（上）
+    sea:   {x1:0,   y1:300, x2:319, y2:460}    // 海洋（左下，x 止于 319）
+  };
+  // 两两判定：rain 在 cloud 下方(165>150)；rain 与 river 间隙 5px(250<255)；
+  // river 与 sea 间隙 11px(330>319)；cloud 在 river 上方(150<255)；sea 与 rain 无交(319<400)。
+  function inRect(x, y, r){ return x >= r.x1 && x <= r.x2 && y >= r.y1 && y <= r.y2; }
+  function hitTest(x, y){
+    if(inRect(x, y, hitRects.rain))  return 'rain';
+    if(inRect(x, y, hitRects.river)) return 'runoff';
+    if(inRect(x, y, hitRects.cloud)) return 'cloud';
+    if(inRect(x, y, hitRects.sea))   return 'evap';
+    return null;
+  }
+
+  var svg = document.getElementById('cycleSvg');
+  function svgCoord(e){
+    var r = svg.getBoundingClientRect();
+    return {x: (e.clientX - r.left) / r.width * 640, y: (e.clientY - r.top) / r.height * 460};
+  }
+  svg.addEventListener('click', function(e){
+    var p = svgCoord(e);
+    var stage = hitTest(p.x, p.y);
+    if(stage) highlightStage(stage);
+  });
+
+  var detailCards = Array.prototype.slice.call(document.querySelectorAll('.detail-card'));
+  detailCards.forEach(function(c){
+    c.addEventListener('click', function(){ highlightStage(c.getAttribute('data-stage')); });
+    c.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); c.click(); }
+    });
+  });
+
+  var stageNames = {evap:'蒸发', trans:'水汽输送', rain:'降水', runoff:'径流'};
+  var stageGroups = {evap:'evapG', trans:'transG', rain:'rainG', runoff:'runoffG'};
+
+  function highlightStage(stage){
+    detailCards.forEach(function(c){
+      if(c.getAttribute('data-stage') === stage) c.classList.add('active');
+      else c.classList.remove('active');
+    });
+    Object.keys(stageGroups).forEach(function(k){
+      var el = document.getElementById(stageGroups[k]);
+      if(el) el.style.opacity = (k === stage) ? '1' : '0.35';
+    });
+    svg.setAttribute('aria-label',
+      '水循环海陆间循环示意图。当前高亮环节：' + (stage ? stageNames[stage] : '无') + '。');
+  }
+
+  // ============ 统计图 ============
+  function drawPie(){
+    var cv = document.getElementById('pieChart');
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    var cx = W / 2, cy = H / 2 - 10, R = Math.min(W, H) / 2 - 30;
+    var data = [
+      {v: 86, col: '#0284c7', label: '海洋蒸发 86%（434 千 km³）'},
+      {v: 14, col: '#a16207', label: '陆地蒸发 14%（71 千 km³）'}
+    ];
+    var start = -Math.PI / 2;
+    data.forEach(function(d){
+      var ang = d.v / 100 * 2 * Math.PI;
+      ctx.fillStyle = d.col;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, R, start, start + ang); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+      var mid = start + ang / 2;
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(d.v + '%', cx + Math.cos(mid) * R * 0.6, cy + Math.sin(mid) * R * 0.6);
+      start += ang;
+    });
+    ctx.textBaseline = 'alphabetic';
+    ctx.font = '11px sans-serif';
+    ctx.fillStyle = '#0284c7'; ctx.fillRect(12, H - 42, 12, 12);
+    ctx.fillStyle = '#1f2937'; ctx.fillText(data[0].label, 28, H - 32);
+    ctx.fillStyle = '#a16207'; ctx.fillRect(12, H - 24, 12, 12);
+    ctx.fillStyle = '#1f2937'; ctx.fillText(data[1].label, 28, H - 14);
+    ctx.fillStyle = '#6b7280'; ctx.font = '10px sans-serif';
+    ctx.fillText('海洋蒸发约占全球蒸发 86%', 12, H - 4);
+  }
+
+  function drawBar(){
+    var cv = document.getElementById('barChart');
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    var data = [
+      {name:'蒸发', v:505, col:'#0284c7'},
+      {name:'降水', v:505, col:'#16a34a'},
+      {name:'径流', v:48,  col:'#a16207'}
+    ];
+    var max = 560, padL = 44, padB = 34, padT = 22, padR = 12;
+    var plotH = H - padB - padT, plotW = W - padL - padR;
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1;
+    ctx.font = '10px sans-serif'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
+    for(var v = 0; v <= max; v += 100){
+      var y = padT + plotH - (v / max) * plotH;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.fillText(v, padL - 4, y + 3);
+    }
+    var bw = plotW / data.length * 0.48;
+    var gap = (plotW / data.length - bw) / 2;
+    data.forEach(function(d, i){
+      var x = padL + i * (plotW / data.length) + gap;
+      var h = (d.v / max) * plotH;
+      ctx.fillStyle = d.col;
+      ctx.fillRect(x, padT + plotH - h, bw, h);
+      ctx.strokeStyle = '#1f2937'; ctx.lineWidth = 1;
+      ctx.strokeRect(x, padT + plotH - h, bw, h);
+      ctx.fillStyle = '#1f2937'; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText(d.v, x + bw / 2, padT + plotH - h - 4);
+      ctx.font = '11px sans-serif';
+      ctx.fillText(d.name, x + bw / 2, H - 10);
+    });
+    ctx.textAlign = 'left'; ctx.fillStyle = '#6b7280'; ctx.font = '10px sans-serif';
+    ctx.fillText('单位：千 km³', padL, 12);
+  }
+
+  function drawLine(){
+    var cv = document.getElementById('lineChart');
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+    var data = [
+      {name:'大气水', t: 8,      label:'8天'},
+      {name:'河水',   t: 16,     label:'16天'},
+      {name:'土壤水', t: 365,    label:'约1年'},
+      {name:'地下水', t: 1400*365, label:'1400年'},
+      {name:'海洋水', t: 2500*365, label:'2500年'},
+      {name:'冰川',   t: 9700*365, label:'9700年'}
+    ];
+    var padL = 44, padB = 42, padT = 22, padR = 12;
+    var plotH = H - padB - padT, plotW = W - padL - padR;
+    var logMin = Math.log10(1), logMax = Math.log10(365 * 10000);
+    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1;
+    ctx.font = '9px sans-serif'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
+    [1, 365, 365*100, 365*10000].forEach(function(v){
+      var y = padT + plotH - (Math.log10(v) - logMin) / (logMax - logMin) * plotH;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+      ctx.fillText(v < 30 ? v + '天' : (Math.round(v / 365) + '年'), padL - 4, y + 3);
+    });
+    ctx.beginPath();
+    data.forEach(function(d, i){
+      var x = padL + (i / (data.length - 1)) * plotW;
+      var y = padT + plotH - (Math.log10(d.t) - logMin) / (logMax - logMin) * plotH;
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = '#dc2626'; ctx.lineWidth = 2; ctx.stroke();
+    data.forEach(function(d, i){
+      var x = padL + (i / (data.length - 1)) * plotW;
+      var y = padT + plotH - (Math.log10(d.t) - logMin) / (logMax - logMin) * plotH;
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.save();
+      ctx.translate(x, H - padB + 10); ctx.rotate(-Math.PI / 4);
+      ctx.fillStyle = '#1f2937'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+      ctx.fillText(d.label, 0, 0);
+      ctx.restore();
+    });
+    ctx.textAlign = 'left'; ctx.fillStyle = '#6b7280'; ctx.font = '10px sans-serif';
+    ctx.fillText('停留时间（对数刻度）', padL, 12);
+  }
+
+  drawPie(); drawBar(); drawLine();
+
+  // ============ 填空核对 ============
+  var answers = ['蒸发', '水汽输送', '降水', '径流'];
+  function norm(s){ return String(s || '').trim().replace(/[\s（）()]/g, ''); }
+  function checkFill(){
+    var inputs = ['fb1','fb2','fb3','fb4'].map(function(id){ return document.getElementById(id); });
+    var result = document.getElementById('fillResult');
+    var allOk = true, detail = [];
+    for(var i = 0; i < 4; i++){
+      var v = norm(inputs[i].value);
+      var ok = v.length > 0 && (v.indexOf(answers[i]) >= 0 || answers[i].indexOf(v) >= 0);
+      detail.push((i + 1) + '. ' + (ok ? '✔' : '✘') + '（应为" ' + answers[i] + ' "）');
+      if(!ok) allOk = false;
+    }
+    result.className = 'fill-result ' + (allOk ? 'ok' : 'no');
+    result.innerHTML = allOk
+      ? '全部正确！水循环四环节：蒸发 → 水汽输送 → 降水 → 径流，首尾衔接成环。'
+      : '有误，请对照示意图重新观察：<br>' + detail.join('<br>');
+  }
+  document.getElementById('checkBtn').addEventListener('click', checkFill);
+  document.getElementById('revealBtn').addEventListener('click', function(){
+    document.getElementById('fb1').value = answers[0];
+    document.getElementById('fb2').value = answers[1];
+    document.getElementById('fb3').value = answers[2];
+    document.getElementById('fb4').value = answers[3];
+    var result = document.getElementById('fillResult');
+    result.className = 'fill-result ok';
+    result.innerHTML = '答案：' + answers.join(' → ');
+  });
+})();
+</script>
+</body>
+</html>

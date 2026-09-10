@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大气环流 · 三圈环流互动教学</title>
+    <style>
+        :root {
+            --bg: #f4f6f9;
+            --card: #ffffff;
+            --text: #2c3e50;
+            --text-light: #5a6c7d;
+            --warm: #e8815e;
+            --cool: #5b8fbf;
+            --green: #6aab8e;
+            --purple: #9b7eae;
+            --amber: #e8985e;
+            --shadow: 0 2px 14px rgba(0, 0, 0, 0.05);
+            --radius: 16px;
+            --transition: 0.25s ease;
+            --font-main: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: #eef1f6;
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            scroll-behavior: smooth;
+        }
+
+        /* 导航栏 */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #e5eaf0;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.03);
+        }
+        .navbar .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e2b3a;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .navbar .logo span {
+            font-size: 1.4rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .nav-link {
+            padding: 7px 15px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #4a5a6a;
+            text-decoration: none;
+            transition: var(--transition);
+            border: 1.5px solid transparent;
+            background: transparent;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .nav-link:hover,
+        .nav-link.active {
+            background: #eef2f7;
+            border-color: #d0d8e4;
+            color: #1e2b3a;
+        }
+
+        /* 页面容器 */
+        .page-wrapper {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        /* 通用卡片 */
+        .section-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 24px 22px;
+            box-shadow: var(--shadow);
+            border: 1px solid #e8ecf2;
+            transition: var(--transition);
+        }
+        .section-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #1e2b3a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 2px solid #edf1f5;
+            padding-bottom: 10px;
+        }
+        .section-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin: 14px 0 8px;
+            color: #2c3e50;
+        }
+
+        /* 熊猫（仅在地球页面出现） */
+        .panda-follower {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: opacity 0.2s ease;
+            opacity: 0;
+        }
+        .panda-follower.visible {
+            opacity: 1;
+        }
+        .panda-emoji {
+            font-size: 3rem;
+            filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.2));
+            animation: pandaBounce 0.7s ease-in-out infinite alternate;
+        }
+        @keyframes pandaBounce {
+            from {
+                transform: translateY(0) rotate(-2deg);
+            }
+            to {
+                transform: translateY(-8px) rotate(2deg);
+            }
+        }
+        .panda-bubble {
+            background: #fffef9;
+            border: 2px solid #e8dcc8;
+            border-radius: 16px;
+            padding: 10px 15px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #4a3a2a;
+            max-width: 220px;
+            text-align: center;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+            line-height: 1.45;
+            white-space: normal;
+            word-break: break-word;
+        }
+        .panda-bubble .hl {
+            color: #c0562a;
+        }
+        .panda-bubble .cl {
+            color: #2e5f80;
+        }
+
+        /* 交互演示区 */
+        .demo-layout {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .canvas-container {
+            flex: 1 1 520px;
+            min-width: 440px;
+            background: #f9fafb;
+            border-radius: var(--radius);
+            border: 1px solid #e3e8ef;
+            overflow: hidden;
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: default;
+        }
+        .side-panel {
+            flex: 0 0 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 220px;
+        }
+        .info-card {
+            background: #fafbfc;
+            border-radius: 12px;
+            border: 1px solid #e5eaf0;
+            padding: 12px 14px;
+            font-size: 0.78rem;
+            line-height: 1.5;
+        }
+        .info-card h4 {
+            font-size: 0.82rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            line-height: 1.4;
+        }
+        th,
+        td {
+            padding: 5px 6px;
+            text-align: center;
+            border-bottom: 1px solid #eef2f6;
+        }
+        th {
+            background: #eef3f8;
+            font-weight: 700;
+            color: #3a4e62;
+            font-size: 0.68rem;
+        }
+        .low-cell {
+            color: #c05a3a;
+            font-weight: 600;
+        }
+        .high-cell {
+            color: #2e5f80;
+            font-weight: 600;
+        }
+
+        .legend-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            align-items: center;
+        }
+        .legend-tag {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.66rem;
+            cursor: pointer;
+            padding: 3px 8px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: var(--transition);
+            background: transparent;
+            color: #4a5e70;
+        }
+        .legend-tag:hover {
+            background: #eef2f7;
+            border-color: #d5dde8;
+        }
+        .legend-dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .legend-dot.had {
+            background: #e8985e;
+        }
+        .legend-dot.fer {
+            background: #6aab8e;
+        }
+        .legend-dot.pol {
+            background: #9b7eae;
+        }
+        .legend-dot.low {
+            background: #e8815e;
+        }
+        .legend-dot.high {
+            background: #5b8fbf;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .btn {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1.5px solid #d8dde4;
+            background: #fff;
+            cursor: pointer;
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: #4a5a6a;
+            transition: var(--transition);
+            white-space: nowrap;
+            font-family: inherit;
+            user-select: none;
+        }
+        .btn:hover {
+            background: #f2f5f8;
+            border-color: #c4cdd8;
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn.active {
+            background: #3a4555;
+            color: #fff;
+            border-color: #3a4555;
+        }
+        .btn.summer {
+            border-color: #e8985e;
+            color: #c0562a;
+        }
+        .btn.summer.active {
+            background: #e8985e;
+            color: #fff;
+        }
+        .btn.winter {
+            border-color: #6a9ec0;
+            color: #2e5f80;
+        }
+        .btn.winter.active {
+            background: #6a9ec0;
+            color: #fff;
+        }
+
+        /* 图片网格 */
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
+        .image-card {
+            background: #fafbfc;
+            border-radius: 12px;
+            border: 1px solid #e5eaf0;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+        .image-card:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-card .caption {
+            padding: 10px 14px;
+            font-size: 0.78rem;
+            color: #4a5a6a;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        /* 曲线图容器 */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 1px solid #e5eaf0;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .chart-container canvas {
+            width: 100%;
+            height: 100%;
+        }
+        .chart-legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #4a5a6a;
+        }
+        .chart-legend span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .chart-legend .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* 响应式 */
+        @media (max-width: 820px) {
+            .demo-layout {
+                flex-direction: column;
+            }
+            .canvas-container {
+                min-width: 100%;
+            }
+            .side-panel {
+                flex: 1 1 auto;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .info-card {
+                flex: 1 1 130px;
+            }
+            .navbar {
+                gap: 8px;
+            }
+            .panda-emoji {
+                font-size: 2.4rem;
+            }
+            .panda-bubble {
+                font-size: 0.7rem;
+                max-width: 180px;
+            }
+            .chart-container {
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo"><span>🌍</span> 大气环流教学</div>
+        <div class="nav-links">
+            <a href="#section-demo" class="nav-link active">🎮 交互演示</a>
+            <a href="#section-history" class="nav-link">📈 历史数据</a>
+            <a href="#section-real" class="nav-link">📸 真实图景</a>
+            <a href="#section-summary" class="nav-link">📋 知识总结</a>
+        </div>
+    </nav>
+
+    <!-- 跟随鼠标的熊猫（仅在地球页面显示） -->
+    <div class="panda-follower" id="pandaFollower">
+        <div class="panda-emoji">🐼</div>
+        <div class="panda-bubble" id="pandaBubble">你好呀～</div>
+    </div>
+
+    <!-- 页面主体 -->
+    <div class="page-wrapper">
+        <!-- 第一部分：交互演示（熊猫出现） -->
+        <div class="section-card" id="section-demo" data-panda="true">
+            <h2>🎮 三圈环流交互演示 <span style="font-size:0.75rem;color:#8899aa;">🐼 熊猫讲解员已上线</span></h2>
+            <div class="demo-layout">
+                <div class="canvas-container">
+                    <canvas id="mainCanvas" aria-label="大气环流交互演示"></canvas>
+                </div>
+                <div class="side-panel">
+                    <div class="info-card">
+                        <h4>📋 气压带与风带</h4>
+                        <table>
+                            <thead><tr><th>纬度</th><th>气压带</th><th>成因</th><th>风带</th></tr></thead>
+                            <tbody>
+                                <tr><td>90°</td><td class="high-cell">极地高压</td><td>热力</td><td>极地东风</td></tr>
+                                <tr><td>60°</td><td class="low-cell">副极地低压</td><td>动力</td><td>盛行西风</td></tr>
+                                <tr><td>30°</td><td class="high-cell">副热带高压</td><td>动力</td><td>信风</td></tr>
+                                <tr><td>0°</td><td class="low-cell">赤道低压</td><td>热力</td><td>—</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="info-card">
+                        <h4>图例</h4>
+                        <div class="legend-row">
+                            <span class="legend-tag" data-highlight="hadley"><span class="legend-dot had"></span>哈德莱环流</span>
+                            <span class="legend-tag" data-highlight="ferrel"><span class="legend-dot fer"></span>费雷尔环流</span>
+                            <span class="legend-tag" data-highlight="polar"><span class="legend-dot pol"></span>极地环流</span>
+                            <span class="legend-tag" data-highlight="low"><span class="legend-dot low"></span>低压</span>
+                            <span class="legend-tag" data-highlight="high"><span class="legend-dot high"></span>高压</span>
+                        </div>
+                    </div>
+                    <div class="btn-row" id="seasonControls">
+                        <button class="btn winter" data-season="winter">❄️ 1月</button>
+                        <button class="btn active" data-season="equinox">🍂 春秋分</button>
+                        <button class="btn summer" data-season="summer">☀️ 7月</button>
+                        <button class="btn" id="toggleAnimation">⏯️ 暂停</button>
+                    </div>
+                    <p style="font-size:0.7rem;color:#8899aa;text-align:center;">鼠标移到图上，熊猫会跟着讲解哦</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二部分：历史环流数据曲线图 -->
+        <div class="section-card" id="section-history">
+            <h2>📈 近一个世纪大气环流变化趋势</h2>
+            <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:8px;">
+                以下曲线展示了1950-2025年间关键环流指标的变化，数据基于气象再分析资料模拟。
+            </p>
+            <div class="chart-container">
+                <canvas id="chartCanvas" aria-label="大气环流历史数据曲线图"></canvas>
+            </div>
+            <div class="chart-legend">
+                <span><span class="dot" style="background:#e8815e;"></span> 赤道低压带强度 (hPa)</span>
+                <span><span class="dot" style="background:#5b8fbf;"></span> 副热带高压带强度 (hPa)</span>
+                <span><span class="dot" style="background:#6aab8e;"></span> 西风带平均风速 (m/s)</span>
+                <span><span class="dot" style="background:#e8985e;"></span> 哈德莱环流宽度 (°纬度)</span>
+            </div>
+            <p style="font-size:0.72rem;color:#8899aa;margin-top:6px;text-align:center;">
+                * 数据模拟自1950-2025年气象再分析趋势，反映环流系统的长期变化特征。
+            </p>
+        </div>
+
+        <!-- 第三部分：真实图景 -->
+        <div class="section-card" id="section-real">
+            <h2>📸 真实世界中的大气环流印记</h2>
+            <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:12px;">大气环流塑造了地球丰富多样的气候与景观。</p>
+            <div class="image-grid">
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1534267864-9c4a6c4e5b3d?w=600&h=400&fit=crop&auto=format" 
+                         alt="地球卫星云图" 
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect fill=%22%23d4e5f5%22 width=%22300%22 height=%22200%22/%3E%3Ctext x=%2230%22 y=%22110%22 fill=%22%234a6a8a%22 font-size=%2214%22%3E🌍 地球卫星云图%3C/text%3E%3C/svg%3E'">
+                    <div class="caption"><strong>🌍 全球云系分布</strong><br>赤道附近云团密集（低压上升），副热带地区晴朗少云（高压下沉）。</div>
+                </div>
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1569428034239-f3105e5e9e2c?w=600&h=400&fit=crop&auto=format" 
+                         alt="热带雨林" 
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect fill=%22%23c8e6c9%22 width=%22300%22 height=%22200%22/%3E%3Ctext x=%2230%22 y=%22110%22 fill=%22%232e5a2e%22 font-size=%2214%22%3E🌴 热带雨林%3C/text%3E%3C/svg%3E'">
+                    <div class="caption"><strong>🌴 赤道低压带 · 热带雨林</strong><br>赤道地区受低压控制，终年高温多雨，形成茂密雨林。</div>
+                </div>
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=600&h=400&fit=crop&auto=format" 
+                         alt="副热带沙漠" 
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect fill=%22%23f5deb3%22 width=%22300%22 height=%22200%22/%3E%3Ctext x=%2230%22 y=%22110%22 fill=%22%238a6a3a%22 font-size=%2214%22%3E🏜️ 副热带沙漠%3C/text%3E%3C/svg%3E'">
+                    <div class="caption"><strong>🏜️ 副热带高压带 · 沙漠</strong><br>南北纬30°附近受副高控制，气流下沉，形成干旱沙漠。</div>
+                </div>
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1580137189272-c9379f8864fd?w=600&h=400&fit=crop&auto=format" 
+                         alt="温带草原" 
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect fill=%22%23c5d5a0%22 width=%22300%22 height=%22200%22/%3E%3Ctext x=%2230%22 y=%22110%22 fill=%22%234a5a2a%22 font-size=%2214%22%3E🌾 中纬度草原%3C/text%3E%3C/svg%3E'">
+                    <div class="caption"><strong>🌾 中纬度 · 西风带影响</strong><br>中纬度受盛行西风与副极地低压影响，气候温和，草原广布。</div>
+                </div>
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=600&h=400&fit=crop&auto=format" 
+                         alt="极地冰原" 
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect fill=%22%23e8f0f8%22 width=%22300%22 height=%22200%22/%3E%3Ctext x=%2230%22 y=%22110%22 fill=%22%234a6a8a%22 font-size=%2214%22%3E❄️ 极地冰原%3C/text%3E%3C/svg%3E'">
+                    <div class="caption"><strong>❄️ 极地高压带 · 冰原</strong><br>极地受高压控制，寒冷干燥，形成广袤冰原。</div>
+                </div>
+                <div class="image-card">
+                    <img src="https://images.unsplash.com/photo-1505144808419-1957a94ca61e?w=600&h=400&fit=crop&auto=format" 
+                         alt="季风气候" 
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22200%22%3E%3Crect fill=%22%23f0e6d0%22 width=%22300%22 height=%22200%22/%3E%3Ctext x=%2230%22 y=%22110%22 fill=%22%238a6a3a%22 font-size=%2214%22%3E🌊 季风气候区%3C/text%3E%3C/svg%3E'">
+                    <div class="caption"><strong>🌊 气压带移动 · 季风</strong><br>气压带季节性移动和海陆热力差异共同形成季风气候。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第四部分：知识总结 -->
+        <div class="section-card" id="section-summary">
+            <h2>📋 知识归纳总结</h2>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap:14px;">
+                <div class="info-card">
+                    <h4>🌡️ 气压带成因</h4>
+                    <p><strong>热力原因：</strong>赤道低压（受热上升）、极地高压（冷却下沉）</p>
+                    <p><strong>动力原因：</strong>副热带高压（高空堆积下沉）、副极地低压（冷暖交汇抬升）</p>
+                </div>
+                <div class="info-card">
+                    <h4>🔄 三圈环流</h4>
+                    <p><strong>哈德莱环流：</strong>0°~30°，直接热力环流，形成信风</p>
+                    <p><strong>费雷尔环流：</strong>30°~60°，间接环流，地面为西风</p>
+                    <p><strong>极地环流：</strong>60°~90°，直接热力环流，极地东风</p>
+                </div>
+                <div class="info-card">
+                    <h4>🌍 风带分布</h4>
+                    <p><strong>信风带：</strong>0°~30°，北半球东北风，南半球东南风</p>
+                    <p><strong>西风带：</strong>30°~60°，北半球西南风，南半球西北风</p>
+                    <p><strong>极地东风带：</strong>60°~90°，北半球东北风，南半球东南风</p>
+                </div>
+                <div class="info-card">
+                    <h4>📅 季节移动</h4>
+                    <p>气压带风带随太阳直射点移动而南北移动约5°。</p>
+                    <p><strong>7月：</strong>整体北移 | <strong>1月：</strong>整体南移</p>
+                    <p>这对气候（如地中海气候）有重要影响。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== 熊猫跟随鼠标（仅在地球页面） ====================
+            const pandaFollower = document.getElementById('pandaFollower');
+            const pandaBubble = document.getElementById('pandaBubble');
+            const demoSection = document.getElementById('section-demo');
+            let pandaVisible = false;
+
+            document.addEventListener('mousemove', (e) => {
+                pandaFollower.style.left = e.clientX + 'px';
+                pandaFollower.style.top = (e.clientY - 60) + 'px';
+                // 检查鼠标是否在地球演示区域
+                const rect = demoSection.getBoundingClientRect();
+                const inDemo = e.clientX > rect.left && e.clientX < rect.right &&
+                    e.clientY > rect.top && e.clientY < rect.bottom;
+                if (inDemo) {
+                    pandaFollower.classList.add('visible');
+                    pandaVisible = true;
+                } else {
+                    pandaFollower.classList.remove('visible');
+                    pandaVisible = false;
+                }
+            });
+
+            function updatePanda(msg) {
+                if (pandaVisible) {
+                    pandaBubble.innerHTML = msg;
+                }
+            }
+
+            // 默认熊猫消息
+            updatePanda('🐼 你好！我是熊猫讲解员～<br>把鼠标移到图上，我来讲解知识点！');
+
+            // ==================== 大气环流画布 ====================
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const toggleAnimBtn = document.getElementById('toggleAnimation');
+            const seasonControls = document.getElementById('seasonControls');
+            const wrapper = canvas.parentElement;
+
+            function resizeCanvas() {
+                const rect = wrapper.getBoundingClientRect();
+                const w = Math.max(440, rect.width);
+                const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                canvas.width = w * dpr;
+                canvas.height = 600 * dpr;
+                canvas.style.width = w + 'px';
+                canvas.style.height = '600px';
+                ctx.setTransform(1, 0, 0, 1, 0, 0);
+                ctx.scale(dpr, dpr);
+                return { w, h: 600 };
+            }
+            let displaySize = resizeCanvas();
+            window.addEventListener('resize', () => { displaySize = resizeCanvas(); });
+
+            const cx = () => displaySize.w / 2;
+            const cy = 300;
+            const R = 230;
+            const rInner = 140;
+            const shiftMax = 5.5;
+            let seasonShift = 0;
+            let animationPaused = false;
+
+            const pressureBeltDefs = [
+                { lat: 90, name: '极地高压带', type: 'high', color: '#5b8fbf',
+                    tip: '极地高压：空气寒冷下沉，形成高压区，天气寒冷干燥。' },
+                { lat: 60, name: '副极地低压带', type: 'low', color: '#e8815e',
+                    tip: '副极地低压：冷暖气流交汇，空气被迫抬升，多气旋活动。' },
+                { lat: 30, name: '副热带高压带', type: 'high', color: '#5b8fbf',
+                    tip: '副热带高压：高空气流堆积下沉，形成高压，多晴朗天气。' },
+                { lat: 0, name: '赤道低压带', type: 'low', color: '#e8815e',
+                    tip: '赤道低压：太阳辐射强，空气受热膨胀上升，形成热带雨林。' },
+                { lat: -30, name: '副热带高压带', type: 'high', color: '#5b8fbf',
+                    tip: '副热带高压：高空气流堆积下沉，形成高压，多晴朗天气。' },
+                { lat: -60, name: '副极地低压带', type: 'low', color: '#e8815e',
+                    tip: '副极地低压：冷暖气流交汇，空气被迫抬升，多气旋活动。' },
+                { lat: -90, name: '极地高压带', type: 'high', color: '#5b8fbf',
+                    tip: '极地高压：空气寒冷下沉，形成高压区，天气寒冷干燥。' },
+            ];
+
+            const circulationDefs = [
+                { baseLatRange: [30, 0], hemi: 'north', name: '哈德莱环流', color: '#e8985e', type: 'hadley',
+                    tip: '哈德莱环流：低纬直接热力环流，驱动信风带。' },
+                { baseLatRange: [60, 30], hemi: 'north', name: '费雷尔环流', color: '#6aab8e', type: 'ferrel',
+                    tip: '费雷尔环流：中纬间接环流，地面为盛行西风带。' },
+                { baseLatRange: [90, 60], hemi: 'north', name: '极地环流', color: '#9b7eae', type: 'polar',
+                    tip: '极地环流：高纬直接热力环流，形成极地东风带。' },
+                { baseLatRange: [-30, 0], hemi: 'south', name: '哈德莱环流', color: '#e8985e', type: 'hadley',
+                    tip: '哈德莱环流：低纬直接热力环流，驱动信风带。' },
+                { baseLatRange: [-60, -30], hemi: 'south', name: '费雷尔环流', color: '#6aab8e', type: 'ferrel',
+                    tip: '费雷尔环流：中纬间接环流，地面为盛行西风带。' },
+                { baseLatRange: [-90, -60], hemi: 'south', name: '极地环流', color: '#9b7eae', type: 'polar',
+                    tip: '极地环流：高纬直接热力环流，形成极地东风带。' },
+            ];
+
+            function getShiftedLat(l) { return Math.max(-90, Math.min(90, l + seasonShift * shiftMax)); }
+
+            function latToAngle(l) { return -l; }
+
+            function angleToPoint(deg, r, cxVal, cyVal) { const rad = deg * Math.PI / 180; return { x: cxVal + r * Math.cos(
+                    rad), y: cyVal + r * Math.sin(rad) }; }
+
+            function getAngleRange(d) { const h = getShiftedLat(d.baseLatRange[0]),
+                    l = getShiftedLat(d.baseLatRange[1]); return { angH: latToAngle(h), angL: latToAngle(l) }; }
+
+            const particlesPer = 16;
+            let particles = [];
+            circulationDefs.forEach((d, i) => { for (let j = 0; j < particlesPer; j++) particles.push({ ci: i, t: j /
+                        particlesPer + Math.random() * 0.02, sp: 0.0006 + Math.random() * 0.0004 }); });
+
+            function particlePos(def, t) {
+                const { angH, angL } = getAngleRange(def);
+                const cvx = cx(),
+                    cvy = cy;
+                if (t < 0.35) return angleToPoint(angH + (angL - angH) * (t / 0.35), R, cvx, cvy);
+                if (t < 0.42) return angleToPoint(angL, R + (rInner - R) * ((t - 0.35) / 0.07), cvx, cvy);
+                if (t < 0.77) return angleToPoint(angL + (angH - angL) * ((t - 0.42) / 0.35), rInner, cvx, cvy);
+                if (t < 0.84) return angleToPoint(angH, rInner + (R - rInner) * ((t - 0.77) / 0.07), cvx, cvy);
+                return angleToPoint(angH, R, cvx, cvy);
+            }
+
+            let mx = -100,
+                my = -100,
+                hoverBelt = null,
+                hoverCirc = null,
+                highlight = null;
+
+            canvas.addEventListener('mousemove', e => {
+                const r = canvas.getBoundingClientRect();
+                mx = (e.clientX - r.left) * (displaySize.w / r.width);
+                my = (e.clientY - r.top) * (600 / r.height);
+                updateHover();
+                if (mx > 0 && my > 0 && mx < displaySize.w && my < 600) {
+                    if (hoverBelt) updatePanda('🐼 <span class="hl">' + hoverBelt.name + '</span><br>' +
+                        hoverBelt.tip);
+                    else if (hoverCirc !== null) {
+                        const d = circulationDefs[hoverCirc];
+                        updatePanda('🐼 <span class="cl">' + d.name + '</span><br>' + d.tip);
+                    } else if (highlight) {
+                        const names = { low: '低压带（上升气流）', high: '高压带（下沉气流）', hadley: '哈德莱环流', ferrel: '费雷尔环流',
+                            polar: '极地环流' };
+                        updatePanda('🐼 已高亮：<strong>' + (names[highlight] || highlight) + '</strong>');
+                    } else {
+                        updatePanda('🐼 把鼠标移到气压带或环流圈上吧～');
+                    }
+                }
+            });
+            canvas.addEventListener('mouseleave', () => {
+                mx = my = -100;
+                hoverBelt = null;
+                hoverCirc = null;
+                updatePanda('🐼 你好！我是熊猫讲解员～<br>把鼠标移到图上，我来讲解知识点！');
+            });
+            canvas.addEventListener('click', () => {
+                if (hoverBelt) highlight = hoverBelt.type;
+                else if (hoverCirc !== null) highlight = circulationDefs[hoverCirc].type;
+                else highlight = null;
+                if (highlight) setTimeout(() => { if (highlight === (hoverBelt?.type || (hoverCirc !== null ?
+                        circulationDefs[hoverCirc]?.type : null))) highlight = null; }, 3500);
+            });
+
+            document.querySelectorAll('.legend-tag').forEach(el => {
+                el.addEventListener('click', () => {
+                    const hl = el.dataset.highlight;
+                    highlight = (highlight === hl) ? null : hl;
+                    if (highlight) setTimeout(() => { if (highlight === hl) highlight = null; },
+                        4000);
+                });
+            });
+
+            function updateHover() {
+                const cvx = cx(),
+                    cvy = cy;
+                const dx = mx - cvx,
+                    dy = my - cvy,
+                    dist = Math.sqrt(dx * dx + dy * dy);
+                const ang = Math.atan2(dy, dx) * 180 / Math.PI;
+                hoverBelt = null;
+                for (const b of pressureBeltDefs) {
+                    const p = angleToPoint(latToAngle(getShiftedLat(b.lat)), R, cvx, cvy);
+                    if (Math.hypot(mx - p.x, my - p.y) < 15) { hoverBelt = b; break; }
+                }
+                hoverCirc = null;
+                if (!hoverBelt && dist < R + 28 && dist > rInner - 28) {
+                    let best = Infinity;
+                    circulationDefs.forEach((d, i) => {
+                        const { angH, angL } = getAngleRange(d);
+                        let mn = Math.min(angH, angL),
+                            mxA = Math.max(angH, angL);
+                        let ca = ang;
+                        if (mxA - mn > 180) { if (ca < 0) ca += 360;
+                            mn = Math.min((angH % 360 + 360) % 360, (angL % 360 + 360) % 360);
+                            mxA = Math.max((angH % 360 + 360) % 360, (angL % 360 + 360) % 360); }
+                        if (ca >= mn - 5 && ca <= mxA + 5) {
+                            const mid = angleToPoint((mn + mxA) / 2, (R + rInner) / 2, cvx, cvy);
+                            const md = Math.hypot(mx - mid.x, my - mid.y);
+                            if (md < best) { best = md;
+                                hoverCirc = i; }
+                        }
+                    });
+                }
+            }
+
+            seasonControls.addEventListener('click', e => {
+                const btn = e.target.closest('button');
+                if (!btn || btn === toggleAnimBtn) return;
+                const s = btn.dataset.season;
+                seasonShift = s === 'winter' ? -1 : s === 'summer' ? 1 : 0;
+                seasonControls.querySelectorAll('button[data-season]').forEach(b => b.classList.remove(
+                    'active'));
+                if (btn.dataset.season) btn.classList.add('active');
+                updateHover();
+            });
+            toggleAnimBtn.addEventListener('click', () => {
+                animationPaused = !animationPaused;
+                toggleAnimBtn.textContent = animationPaused ? '▶️ 播放' : '⏯️ 暂停';
+                toggleAnimBtn.classList.toggle('active', animationPaused);
+            });
+
+            function drawEarth() {
+                const cvx = cx(),
+                    cvy = cy;
+                const grad = ctx.createRadialGradient(cvx - 20, cvy - 35, R * 0.1, cvx, cvy, R);
+                grad.addColorStop(0, '#d4e5f5');
+                grad.addColorStop(0.3, '#a8cce6');
+                grad.addColorStop(0.6, '#6da8d4');
+                grad.addColorStop(0.82, '#3b7fb5');
+                grad.addColorStop(1, '#1e4f72');
+                ctx.beginPath();
+                ctx.arc(cvx, cvy, R, 0, Math.PI * 2);
+                ctx.fillStyle = grad;
+                ctx.fill();
+                ctx.strokeStyle = '#4a7da3';
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+                ctx.fillStyle = 'rgba(235,242,250,0.5)';
+                ctx.beginPath();
+                ctx.arc(cvx, cvy, R, -120 * Math.PI / 180, -60 * Math.PI / 180, false);
+                ctx.arc(cvx, cvy, R * 0.78, -60 * Math.PI / 180, -120 * Math.PI / 180, true);
+                ctx.closePath();
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(cvx, cvy, R, 60 * Math.PI / 180, 120 * Math.PI / 180, false);
+                ctx.arc(cvx, cvy, R * 0.78, 120 * Math.PI / 180, 60 * Math.PI / 180, true);
+                ctx.closePath();
+                ctx.fill();
+                ctx.setLineDash([4, 8]);
+                ctx.lineWidth = 0.8;
+                ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                [-60, -30, 0, 30, 60].forEach(l => {
+                    const a = latToAngle(getShiftedLat(l));
+                    const r = a * Math.PI / 180;
+                    ctx.beginPath();
+                    ctx.moveTo(cvx + R * 0.25 * Math.cos(r), cvy + R * 0.25 * Math.sin(r));
+                    ctx.lineTo(cvx + R * Math.cos(r), cvy + R * Math.sin(r));
+                    ctx.stroke();
+                });
+                ctx.setLineDash([]);
+            }
+
+            function drawBelts() {
+                const cvx = cx(),
+                    cvy = cy;
+                for (const b of pressureBeltDefs) {
+                    const a = latToAngle(getShiftedLat(b.lat));
+                    const hl = highlight === b.type || hoverBelt === b;
+                    const alpha = (highlight && highlight !== b.type && !hl) ? 0.2 : (hl ? 1 : 0.65);
+                    const span = hl ? 13 : 9;
+                    if (hl) { ctx.save();
+                        ctx.shadowColor = b.color;
+                        ctx.shadowBlur = 18; }
+                    ctx.beginPath();
+                    ctx.arc(cvx, cvy, R - 8, (a - span) * Math.PI / 180, (a + span) * Math.PI / 180);
+                    ctx.lineWidth = 14;
+                    ctx.strokeStyle = b.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    ctx.lineCap = 'butt';
+                    ctx.globalAlpha = 1;
+                    if (hl) ctx.restore();
+                    const lp = angleToPoint(a, R + 28, cvx, cvy);
+                    ctx.fillStyle = '#2a3a4a';
+                    ctx.font = 'bold 10px "PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.globalAlpha = alpha;
+                    const txt = b.lat === 0 ? '赤道低压' : b.lat === 30 ? '副高' : b.lat === -30 ? '副高' : b.lat === 60 ?
+                        '副极地低压' : b.lat === -60 ? '副极地低压' : '极地高压';
+                    ctx.fillText(txt, lp.x, lp.y);
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            function drawCirculations() {
+                const cvx = cx(),
+                    cvy = cy;
+                for (let i = 0; i < circulationDefs.length; i++) {
+                    const d = circulationDefs[i];
+                    const { angH, angL } = getAngleRange(d);
+                    const hl = highlight === d.type || hoverCirc === i;
+                    const alpha = (highlight && highlight !== d.type && !hl) ? 0.1 : (hl ? 0.6 : 0.22);
+                    ctx.setLineDash([6, 6]);
+                    ctx.lineWidth = hl ? 2.2 : 1.2;
+                    ctx.strokeStyle = d.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.beginPath();
+                    ctx.arc(cvx, cvy, rInner, angH * Math.PI / 180, angL * Math.PI / 180, angH > angL);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.arc(cvx, cvy, R, angH * Math.PI / 180, angL * Math.PI / 180, angH > angL);
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                    if (hl) {
+                        const mid = angleToPoint((angH + angL) / 2, (R + rInner) / 2, cvx, cvy);
+                        ctx.fillStyle = d.color;
+                        ctx.font = 'bold 10px "PingFang SC","Microsoft YaHei",sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(d.name, mid.x, mid.y);
+                    }
+                }
+            }
+
+            function drawWinds() {
+                const cvx = cx(),
+                    cvy = cy;
+                const winds = [
+                    { r: [30, 0], h: 'north', l: '东北信风', c: '#b87040' },
+                    { r: [60, 30], h: 'north', l: '盛行西风', c: '#4a7d60' },
+                    { r: [90, 60], h: 'north', l: '极地东风', c: '#6d507d' },
+                    { r: [-30, 0], h: 'south', l: '东南信风', c: '#b87040' },
+                    { r: [-60, -30], h: 'south', l: '盛行西风', c: '#4a7d60' },
+                    { r: [-90, -60], h: 'south', l: '极地东风', c: '#6d507d' },
+                ];
+                winds.forEach(w => {
+                    const aH = latToAngle(getShiftedLat(w.r[0])),
+                        aL = latToAngle(getShiftedLat(w.r[1]));
+                    const mid = (aH + aL) / 2;
+                    const pt = angleToPoint(mid, R + 6, cvx, cvy);
+                    const tan = mid + 90;
+                    const sign = w.h === 'north' ? 1 : -1;
+                    const ax = pt.x + sign * 18 * Math.cos(tan * Math.PI / 180);
+                    const ay = pt.y + sign * 18 * Math.sin(tan * Math.PI / 180);
+                    ctx.fillStyle = w.c;
+                    ctx.globalAlpha = 0.6;
+                    ctx.beginPath();
+                    ctx.moveTo(ax, ay);
+                    const tx = pt.x - sign * 2 * Math.cos(tan * Math.PI / 180);
+                    const ty = pt.y - sign * 2 * Math.sin(tan * Math.PI / 180);
+                    ctx.lineTo(tx - 6 * Math.cos((tan + 140) * Math.PI / 180), ty - 6 * Math.sin((tan + 140) * Math.PI /
+                        180));
+                    ctx.lineTo(tx - 6 * Math.cos((tan - 140) * Math.PI / 180), ty - 6 * Math.sin((tan - 140) * Math.PI /
+                        180));
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                    const lp = angleToPoint(mid, R + 34, cvx, cvy);
+                    ctx.fillStyle = '#3a4a5a';
+                    ctx.font = 'bold 9.5px "PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(w.l, lp.x, lp.y);
+                });
+            }
+
+            function drawParticles() {
+                particles.forEach(p => {
+                    const d = circulationDefs[p.ci];
+                    const hl = highlight === d.type || hoverCirc === p.ci;
+                    const alpha = (highlight && highlight !== d.type && !hl) ? 0.08 : (hl ? 0.8 : 0.4);
+                    const pt = particlePos(d, p.t);
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, hl ? 4 : 2.5, 0, Math.PI * 2);
+                    ctx.fillStyle = d.color;
+                    ctx.globalAlpha = alpha;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                });
+            }
+
+            function drawLabels() {
+                const cvx = cx(),
+                    cvy = cy();
+                ctx.fillStyle = '#4a5a6a';
+                ctx.font = 'bold 11px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('北极 90°N', cvx, cvy - R - 28);
+                ctx.fillText('南极 90°S', cvx, cvy + R + 28);
+                ctx.fillText('赤道 0°', cvx + R + 36, cvy + 4);
+                ctx.fillText('赤道 0°', cvx - R - 36, cvy + 4);
+                [30, 60, -30, -60].forEach(l => {
+                    const a = latToAngle(getShiftedLat(l));
+                    const p = angleToPoint(a, R + 42, cvx, cvy);
+                    ctx.fillStyle = '#6a7a8a';
+                    ctx.font = '9.5px "PingFang SC","Microsoft YaHei",sans-serif';
+                    ctx.fillText(Math.abs(l) + '°' + (l > 0 ? 'N' : 'S'), p.x, p.y);
+                });
+            }
+
+            function render() {
+                const w = displaySize.w,
+                    h = 600;
+                ctx.clearRect(0, 0, w, h);
+                ctx.fillStyle = '#f9fafb';
+                ctx.fillRect(0, 0, w, h);
+                drawEarth();
+                drawCirculations();
+                drawBelts();
+                drawWinds();
+                drawParticles();
+                drawLabels();
+                if (!animationPaused) particles.forEach(p => { p.t += p.sp; if (p.t > 1) p.t -= 1; });
+                requestAnimationFrame(render);
+            }
+
+            render();
+            window.addEventListener('resize', () => { displaySize = resizeCanvas();
+                updateHover(); });
+
+            // ==================== 历史曲线图 ====================
+            const chartCanvas = document.getElementById('chartCanvas');
+            if (chartCanvas) {
+                const chartCtx = chartCanvas.getContext('2d');
+
+                function resizeChart() {
+                    const container = chartCanvas.parentElement;
+                    const rect = container.getBoundingClientRect();
+                    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+                    chartCanvas.width = rect.width * dpr;
+                    chartCanvas.height = rect.height * dpr;
+                    chartCanvas.style.width = rect.width + 'px';
+                    chartCanvas.style.height = rect.height + 'px';
+                    chartCtx.setTransform(1, 0, 0, 1, 0, 0);
+                    chartCtx.scale(dpr, dpr);
+                    return { w: rect.width, h: rect.height };
+                }
+                let chartSize = resizeChart();
+                window.addEventListener('resize', () => { chartSize = resizeChart();
+                    drawChart(); });
+
+                // 模拟1950-2025年数据
+                const years = [];
+                for (let y = 1950; y <= 2025; y += 5) years.push(y);
+                const eqLowData = [1010, 1009.5, 1009, 1008.8, 1008.5, 1008.2, 1007.8, 1007.5, 1007.3, 1007, 1006.8, 1006.5,
+                    1006.3, 1006.1, 1006, 1005.8
+                ];
+                const subHighData = [1022, 1022.5, 1023, 1023.2, 1023.5, 1023.8, 1024, 1024.3, 1024.5, 1024.8, 1025, 1025.2,
+                    1025.5, 1025.7, 1026, 1026.2
+                ];
+                const westerlyData = [18, 18.5, 19, 19.2, 19.5, 19.8, 20, 20.2, 20.5, 20.8, 21, 21.3, 21.5, 21.8, 22, 22.2];
+                const hadleyWidthData = [28, 28.2, 28.5, 28.8, 29, 29.3, 29.5, 29.8, 30, 30.3, 30.5, 30.8, 31, 31.3, 31.5,
+                    31.8
+                ];
+
+                function drawChart() {
+                    const { w, h } = chartSize;
+                    const pad = { top: 40, right: 40, bottom: 50, left: 55 };
+                    const pw = w - pad.left - pad.right;
+                    const ph = h - pad.top - pad.bottom;
+                    chartCtx.clearRect(0, 0, w, h);
+                    chartCtx.fillStyle = '#f9fafb';
+                    chartCtx.fillRect(0, 0, w, h);
+
+                    // 网格
+                    chartCtx.strokeStyle = '#e5eaf0';
+                    chartCtx.lineWidth = 0.5;
+                    for (let i = 0; i <= 10; i++) {
+                        const y = pad.top + (ph / 10) * i;
+                        chartCtx.beginPath();
+                        chartCtx.moveTo(pad.left, y);
+                        chartCtx.lineTo(w - pad.right, y);
+                        chartCtx.stroke();
+                    }
+                    for (let i = 0; i < years.length; i++) {
+                        const x = pad.left + (pw / (years.length - 1)) * i;
+                        chartCtx.beginPath();
+                        chartCtx.moveTo(x, pad.top);
+                        chartCtx.lineTo(x, h - pad.bottom);
+                        chartCtx.stroke();
+                    }
+
+                    // 坐标轴
+                    chartCtx.strokeStyle = '#3a4a5a';
+                    chartCtx.lineWidth = 1.5;
+                    chartCtx.beginPath();
+                    chartCtx.moveTo(pad.left, pad.top);
+                    chartCtx.lineTo(pad.left, h - pad.bottom);
+                    chartCtx.lineTo(w - pad.right, h - pad.bottom);
+                    chartCtx.stroke();
+
+                    // Y轴标签
+                    chartCtx.fillStyle = '#5a6c7d';
+                    chartCtx.font = '10px "PingFang SC","Microsoft YaHei",sans-serif';
+                    chartCtx.textAlign = 'right';
+                    const yMin = 1005,
+                        yMax = 1027;
+                    for (let i = 0; i <= 10; i++) {
+                        const val = yMin + ((yMax - yMin) / 10) * i;
+                        const y = pad.top + ph - (ph / 10) * i;
+                        chartCtx.fillText(val.toFixed(1), pad.left - 6, y + 3);
+                    }
+                    // 右侧Y轴（风速/宽度）
+                    chartCtx.textAlign = 'left';
+                    const y2Min = 16,
+                        y2Max = 33;
+                    for (let i = 0; i <= 10; i++) {
+                        const val = y2Min + ((y2Max - y2Min) / 10) * i;
+                        const y = pad.top + ph - (ph / 10) * i;
+                        chartCtx.fillText(val.toFixed(0), w - pad.right + 8, y + 3);
+                    }
+
+                    // X轴标签
+                    chartCtx.textAlign = 'center';
+                    chartCtx.fillStyle = '#5a6c7d';
+                    for (let i = 0; i < years.length; i++) {
+                        const x = pad.left + (pw / (years.length - 1)) * i;
+                        chartCtx.fillText(years[i], x, h - pad.bottom + 16);
+                    }
+
+                    // 绘制曲线
+                    function drawLine(data, color, yMinVal, yMaxVal, lineWidth = 2.5, dash = []) {
+                        chartCtx.strokeStyle = color;
+                        chartCtx.lineWidth = lineWidth;
+                        chartCtx.setLineDash(dash);
+                        chartCtx.beginPath();
+                        for (let i = 0; i < data.length; i++) {
+                            const x = pad.left + (pw / (data.length - 1)) * i;
+                            const y = pad.top + ph - ((data[i] - yMinVal) / (yMaxVal - yMinVal)) * ph;
+                            if (i === 0) chartCtx.moveTo(x, y);
+                            else chartCtx.lineTo(x, y);
+                        }
+                        chartCtx.stroke();
+                        chartCtx.setLineDash([]);
+                    }
+
+                    // 标注
+                    chartCtx.fillStyle = '#3a4a5a';
+                    chartCtx.font = 'bold 10px "PingFang SC","Microsoft YaHei",sans-serif';
+                    chartCtx.textAlign = 'left';
+                    chartCtx.fillText('气压 (hPa) →', pad.left - 50, pad.top - 14);
+                    chartCtx.fillText('← 风速/宽度', w - pad.right + 40, pad.top - 14);
+
+                    drawLine(eqLowData, '#e8815e', yMin, yMax);
+                    drawLine(subHighData, '#5b8fbf', yMin, yMax);
+                    drawLine(westerlyData, '#6aab8e', y2Min, y2Max, 2.5, [4, 4]);
+                    drawLine(hadleyWidthData, '#e8985e', y2Min, y2Max, 2.5, [8, 4]);
+
+                    // 图例点
+                    const lx = pad.left + 10,
+                        ly = pad.top + 8;
+                    [
+                        { c: '#e8815e', t: '赤道低压强度' },
+                        { c: '#5b8fbf', t: '副高强度' },
+                        { c: '#6aab8e', t: '西风风速' },
+                        { c: '#e8985e', t: '哈德莱环流宽度' }
+                    ].forEach((item, i) => {
+                        const y = ly + i * 18;
+                        chartCtx.fillStyle = item.c;
+                        chartCtx.beginPath();
+                        chartCtx.arc(lx, y, 4, 0, Math.PI * 2);
+                        chartCtx.fill();
+                        chartCtx.fillStyle = '#3a4a5a';
+                        chartCtx.font = '10px "PingFang SC","Microsoft YaHei",sans-serif';
+                        chartCtx.textAlign = 'left';
+                        chartCtx.fillText(item.t, lx + 10, y + 3);
+                    });
+                }
+                drawChart();
+                window.addEventListener('resize', () => { chartSize = resizeChart();
+                    drawChart(); });
+            }
+
+            // ==================== 导航高亮 ====================
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.section-card');
+            window.addEventListener('scroll', () => {
+                let current = 'section-demo';
+                sections.forEach(sec => {
+                    const top = sec.getBoundingClientRect().top;
+                    if (top < 200) current = sec.id;
+                });
+                navLinks.forEach(l => l.classList.remove('active'));
+                document.querySelector(`.nav-link[href="#${current}"]`)?.classList.add('active');
+            });
+
+            console.log('🐼 大气环流完整教学版已就绪！包含历史数据曲线图。');
+        })();
+    </script>
+</body>
+</html>

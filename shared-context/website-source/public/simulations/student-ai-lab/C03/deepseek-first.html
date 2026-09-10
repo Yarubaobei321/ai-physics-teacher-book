@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>化学氧还原反应 | 交互式教学演示</title>
+    <!-- 引用 Google Fonts 提升现代感，但无碍功能 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(145deg, #f6f9fc 0%, #eef2f5 100%);
+            color: #1a2c3e;
+            line-height: 1.5;
+            padding: 2rem 1.5rem;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        /* 头部 */
+        .hero {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1b4d3d, #2c7a5e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero .sub {
+            font-size: 1.2rem;
+            color: #2c5a4a;
+            background: rgba(44, 90, 74, 0.1);
+            display: inline-block;
+            padding: 0.3rem 1.2rem;
+            border-radius: 40px;
+            backdrop-filter: blur(2px);
+        }
+
+        /* 卡片通用样式 */
+        .card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.02);
+            padding: 1.6rem 2rem;
+            transition: transform 0.2s ease, box-shadow 0.2s;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        /* 网格布局 */
+        .grid-2col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.8rem;
+            margin-bottom: 2rem;
+        }
+
+        .full-width {
+            grid-column: span 2;
+        }
+
+        /* 概念区微调 */
+        .concept-box {
+            background: #e9f3ef;
+            border-left: 8px solid #2c7a5e;
+        }
+
+        .principle-box {
+            background: #fef7e0;
+            border-left: 8px solid #e67e22;
+        }
+
+        .title-icon {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 0.5rem;
+        }
+
+        .title-icon span {
+            font-size: 1.9rem;
+        }
+
+        /* 反应演示交互区 */
+        .interactive-demo {
+            background: #1e2e2a;
+            color: #f0f3f2;
+            border-radius: 1.8rem;
+            padding: 1.6rem;
+            margin-bottom: 2rem;
+        }
+
+        .demo-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .reaction-equation {
+            background: #0f1e1b;
+            padding: 1rem 1.5rem;
+            border-radius: 2rem;
+            font-family: 'Courier New', 'SF Mono', monospace;
+            font-size: 1.2rem;
+            text-align: center;
+            letter-spacing: 0.5px;
+            margin-bottom: 1.5rem;
+            word-break: break-word;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.8rem;
+        }
+
+        .electron-control {
+            flex: 2;
+            min-width: 180px;
+        }
+
+        .electron-control label {
+            font-weight: 500;
+            font-size: 0.9rem;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #5c7c6e;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]:focus {
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #f0c674;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .visual-state {
+            flex: 1;
+            background: #2b3f3a;
+            border-radius: 1.5rem;
+            padding: 0.8rem 1rem;
+            text-align: center;
+        }
+
+        .visual-state p {
+            margin: 0.2rem 0;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #e67e22;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .application-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .app-item {
+            background: white;
+            color: #1a2c3e;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+            flex: 1;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+            font-weight: 500;
+            border: 1px solid #d9e2dc;
+        }
+
+        .app-item:hover {
+            background: #eef3f0;
+            transform: scale(0.98);
+        }
+
+        /* 半反应卡片 */
+        .half-cell {
+            background: #ffffffcc;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .redox-highlight {
+            font-weight: 700;
+            color: #c0392b;
+        }
+
+        .ox-highlight {
+            color: #2c7a5e;
+            font-weight: 700;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 0.85rem;
+            color: #5f7c6e;
+        }
+
+        @media (max-width: 780px) {
+            body {
+                padding: 1rem;
+            }
+            .grid-2col {
+                grid-template-columns: 1fr;
+                gap: 1.2rem;
+            }
+            .full-width {
+                grid-column: span 1;
+            }
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .reaction-equation {
+                font-size: 0.9rem;
+            }
+            .slider-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        button {
+            background: #2c7a5e;
+            border: none;
+            color: white;
+            padding: 0.3rem 0.9rem;
+            border-radius: 2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+        }
+
+        button:hover {
+            background: #1e5e48;
+        }
+
+        .electron-value {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            background: #00000033;
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="hero">
+        <h1>⚡ 氧化还原反应 · Redox</h1>
+        <div class="sub">电子转移 · 化合价升降 · 生活与工业核心</div>
+    </div>
+
+    <!-- 概念 + 基本原理 两栏 -->
+    <div class="grid-2col">
+        <!-- 概念卡片 -->
+        <div class="card concept-box">
+            <div class="title-icon">
+                <span>📖</span> 核心概念
+            </div>
+            <p style="margin-bottom: 0.8rem; font-weight: 500;">✨ <strong>氧化还原反应</strong> 是化学反应中 <strong class="redox-highlight">电子发生转移</strong> 的反应，表现为元素化合价的改变。</p>
+            <ul style="margin-left: 1.3rem; list-style-type: circle; display: flex; flex-direction: column; gap: 0.4rem;">
+                <li><strong class="ox-highlight">氧化</strong>：失去电子 → 化合价升高 → 被氧化（还原剂）</li>
+                <li><strong class="redox-highlight">还原</strong>：得到电子 → 化合价降低 → 被还原（氧化剂）</li>
+                <li>💡 <strong>口诀</strong>：“升失氧，降得还；剂性相反”。</li>
+                <li>🧪 氧化剂本身被还原，还原剂本身被氧化。</li>
+            </ul>
+            <div class="half-cell" style="margin-top: 1rem; background: #e2eee8;">
+                <div style="font-weight: 600;">🌰 经典例子：铜与硝酸银</div>
+                <div style="font-family: monospace;">Cu + 2Ag⁺ → Cu²⁺ + 2Ag</div>
+                <div>Cu 失电子 (<span class="ox-highlight">氧化</span>)，Ag⁺ 得电子 (<span class="redox-highlight">还原</span>)</div>
+            </div>
+        </div>
+
+        <!-- 基本原理卡片 -->
+        <div class="card principle-box">
+            <div class="title-icon">
+                <span>⚙️</span> 基本原理
+            </div>
+            <p><strong>电子守恒 & 化合价升降守恒</strong> —— 反应中得失电子总数相等，化合价升降总数相等。</p>
+            <div style="background: #f9ebd0; border-radius: 1.2rem; padding: 0.8rem; margin: 1rem 0;">
+                <div style="font-weight: 700;">🔁 半反应法 (离子-电子法):</div>
+                <div style="font-family: monospace; font-size: 0.9rem;">氧化半反应: Red → Ox + n e⁻</div>
+                <div style="font-family: monospace; font-size: 0.9rem;">还原半反应: Ox' + n e⁻ → Red'</div>
+                <div style="margin-top: 0.3rem;">合并时电子数相等，体现 <strong>电子转移的微观本质</strong>。</div>
+            </div>
+            <div><span class="badge">原电池</span> <span class="badge" style="background:#2c7a5e;">电解池</span> <span class="badge" style="background:#c0392b;">氧化剂/还原剂</span></div>
+            <p style="margin-top: 0.8rem; font-size: 0.9rem;">✅ 氧化还原反应是 <strong>能量转化</strong> 的基础（电池、金属冶炼、光合作用呼吸等）。</p>
+        </div>
+    </div>
+
+    <!-- 交互式演示区: 模拟锌与铜离子反应的电子转移可视化 -->
+    <div class="interactive-demo">
+        <div class="demo-title">
+            <span>🧪</span> 交互模拟：锌与硫酸铜反应 · 电子转移演示
+        </div>
+        <div class="reaction-equation">
+            Zn(s) + Cu²⁺(aq) → Zn²⁺(aq) + Cu(s) &nbsp;&nbsp;&nbsp; <span style="background:#2c7a5e70; padding:0 6px; border-radius:20px;">电子转移 e⁻</span>
+        </div>
+
+        <!-- 滑块控制虚拟“电子转移进度” -->
+        <div class="slider-container">
+            <div class="electron-control">
+                <label>🔁 模拟电子转移强度 (相对电子数): <span id="electronCountDisplay" class="electron-value">0.00</span> mol e⁻</label>
+                <input type="range" id="electronSlider" min="0" max="2.0" step="0.01" value="0.88">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; opacity:0.8;">
+                    <span>反应前 (Zn, Cu²⁺)</span><span>电子转移中</span><span>完全反应后</span>
+                </div>
+            </div>
+            <div class="visual-state" id="stateVisual">
+                <p>🧪 <strong id="redoxState">反应初始</strong></p>
+                <p id="descMsg">⚡ Zn 尚未失去电子，Cu²⁺ 未得电子</p>
+            </div>
+        </div>
+
+        <!-- 实时显示半反应状态 -->
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.5rem;">
+            <div style="flex:1; background: #2f4b42; border-radius: 1rem; padding: 0.8rem;">
+                <div style="font-weight:600;">🔴 氧化半反应 (Zn → Zn²⁺)</div>
+                <div id="oxHalf" style="font-family: monospace;">Zn → Zn²⁺ + 2e⁻</div>
+                <div id="oxStatus" class="ox-highlight" style="color:#f0c674;">电子释放: 0%</div>
+            </div>
+            <div style="flex:1; background: #2f4b42; border-radius: 1rem; padding: 0.8rem;">
+                <div style="font-weight:600;">🟢 还原半反应 (Cu²⁺ → Cu)</div>
+                <div id="redHalf" style="font-family: monospace;">Cu²⁺ + 2e⁻ → Cu</div>
+                <div id="redStatus" style="color:#f0a06b;">电子获得: 0%</div>
+            </div>
+        </div>
+        <div style="margin-top: 1rem; text-align: right; font-size:0.8rem;">💡 滑动滑块模拟电子从Zn转移到Cu²⁺，化合价变化直观体现</div>
+    </div>
+
+    <!-- 应用 + 额外知识区域 (2列布局) -->
+    <div class="grid-2col">
+        <!-- 实际应用卡片 -->
+        <div class="card">
+            <div class="title-icon">
+                <span>🏭</span> 重要应用领域
+            </div>
+            <div class="application-list">
+                <div class="app-item">🔋 化学电源<br><small>(干电池/锂离子电池)</small></div>
+                <div class="app-item">⚙️ 金属冶炼<br><small>(高炉炼铁、铝热反应)</small></div>
+                <div class="app-item">🧼 漂白消毒<br><small>(氯气、过氧化氢)</small></div>
+                <div class="app-item">🌿 生物呼吸<br><small>(细胞呼吸氧化葡萄糖)</small></div>
+            </div>
+            <div style="margin-top: 1.2rem; background:#eef3f0; padding: 0.8rem; border-radius: 1rem;">
+                <strong>📌 电化学核心：</strong> 原电池将化学能转化为电能；电解池将电能转化为化学能，两者均基于氧化还原。
+            </div>
+        </div>
+
+        <!-- 常见氧化剂/还原剂及生活实例 -->
+        <div class="card">
+            <div class="title-icon">
+                <span>🧬</span> 常见物质与生活
+            </div>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <div style="flex:1; background:#f9f3e1; border-radius: 1rem; padding: 0.6rem;">
+                    <div style="font-weight:700; color:#c0392b;">🔥 氧化剂 (常见)</div>
+                    <ul style="margin-top: 0.3rem; font-size:0.9rem; padding-left:1rem;">
+                        <li>O₂, Cl₂, KMnO₄, H₂O₂</li>
+                        <li>浓HNO₃, Fe³⁺</li>
+                    </ul>
+                </div>
+                <div style="flex:1; background:#e0f0ea; border-radius: 1rem; padding: 0.6rem;">
+                    <div style="font-weight:700; color:#2c7a5e;">⚡ 还原剂 (常见)</div>
+                    <ul style="margin-top: 0.3rem; font-size:0.9rem; padding-left:1rem;">
+                        <li>活泼金属 (Zn, Na, Al)</li>
+                        <li>C, CO, H₂, I⁻, SO₂</li>
+                    </ul>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; font-size: 0.9rem; border-top: 1px solid #cbdcd3; padding-top: 0.8rem;">
+                💡 <strong>生活中的氧化还原</strong>：苹果切开变色（酚类被氧化）、铁生锈（Fe被O₂氧化）、使用漂白剂褪色（氧化有色物质）。
+            </div>
+        </div>
+    </div>
+
+    <!-- 额外拓展：原电池概念简易示意 -->
+    <div class="card full-width" style="background: #fff6ea;">
+        <div class="title-icon">
+            <span>🔋</span> 拓展：原电池原理与氧化还原
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+            <div style="flex:2; min-width: 180px;">
+                <p>原电池中，<strong class="ox-highlight">负极</strong>发生氧化反应（失去电子），<strong class="redox-highlight">正极</strong>发生还原反应（得到电子），电子通过外电路定向流动产生电流。</p>
+                <p style="margin-top: 0.5rem;">✅ 锌铜原电池：Zn极溶解，Cu极析出铜，盐桥维持电荷平衡。</p>
+            </div>
+            <div style="flex:1; text-align:center; background:#e1dccd; border-radius: 2rem; padding: 0.5rem;">
+                <div style="font-weight:600;">🌊 电子流向</div>
+                <div style="font-family:monospace;">负极(Zn) → 导线 → 正极(Cu)</div>
+                <div>→ 电流方向相反</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        🧪 氧化还原反应是化学世界的动力心脏 | 滑动滑块观察电子转移与半反应进程 | 基于化合价升降理解本质
+    </footer>
+</div>
+
+<script>
+    // 获取DOM元素
+    const slider = document.getElementById('electronSlider');
+    const electronDisplay = document.getElementById('electronCountDisplay');
+    const redoxStateSpan = document.getElementById('redoxState');
+    const descMsgSpan = document.getElementById('descMsg');
+    const oxStatusSpan = document.getElementById('oxStatus');
+    const redStatusSpan = document.getElementById('redStatus');
+    const oxHalfDiv = document.getElementById('oxHalf');
+    const redHalfDiv = document.getElementById('redHalf');
+    
+    // 理论依据：完全反应需要转移 2 mol 电子 (Zn -> Zn2+ 失去2e-，一个Cu2+得2e-)
+    // 我们设定滑块范围0 ~ 2.0 对应电子转移0 ~ 2 mol e⁻
+    // 当转移电子达到2 mol时完全反应，但也可以超过演示完全反应后状态 (过饱和提示)
+    // 为了安全，当电子 > 1.98 几乎完全，展示完全反应；展示0~2之间的动态半反应进度。
+    
+    function updateReaction() {
+        let electronTransferred = parseFloat(slider.value);
+        electronDisplay.innerText = electronTransferred.toFixed(2);
+        
+        // 最大电子转移限制为2.0 mol (Zn 完全失去2 mol e- 对应1 mol Zn)
+        let totalNeeded = 2.0;
+        let progress = Math.min(electronTransferred / totalNeeded, 1.0);
+        let percent = (progress * 100).toFixed(0);
+        
+        // 氧化半反应 与 还原半反应的显示更新
+        // 计算锌离子生成比例和铜生成比例
+        let zincOxidizedRatio = progress;      // 0->1 Zn被氧化程度
+        let copperReducedRatio = progress;     // Cu2+还原程度
+        
+        // 动态修改半反应的描述
+        if (electronTransferred >= 2.0 - 0.01) {
+            // 完全反应
+            redoxStateSpan.innerText = "✅ 完全反应";
+            descMsgSpan.innerText = "Zn 全部氧化为 Zn²⁺，Cu²⁺ 全部还原为 Cu，电子转移完成。";
+            oxStatusSpan.innerHTML = `电子释放: 100% (Zn → Zn²⁺ 完全)`;
+            redStatusSpan.innerHTML = `电子获得: 100% (Cu²⁺ → Cu 完全)`;
+            // 半反应方程展示最终态
+            oxHalfDiv.innerHTML = "Zn (全部溶解) → Zn²⁺ + 2e⁻ (已反应)";
+            redHalfDiv.innerHTML = "Cu²⁺ + 2e⁻ → Cu (铜析出完全)";
+        } else if (electronTransferred <= 0.01) {
+            redoxStateSpan.innerText = "⚪ 反应未开始";
+            descMsgSpan.innerText = "锌金属尚未失去电子，铜离子未被还原。";
+            oxStatusSpan.innerHTML = `电子释放: 0% (Zn 金属态)`;
+            redStatusSpan.innerHTML = `电子获得: 0% (Cu²⁺ 游离)`;
+            oxHalfDiv.innerHTML = "Zn → Zn²⁺ + 2e⁻ (等待电子转移)";
+            redHalfDiv.innerHTML = "Cu²⁺ + 2e⁻ → Cu (等待电子)";
+        } else {
+            redoxStateSpan.innerText = "⚡ 反应进行中";
+            let oxIntensity = (electronTransferred / totalNeeded * 100).toFixed(0);
+            let redIntensity = (electronTransferred / totalNeeded * 100).toFixed(0);
+            descMsgSpan.innerText = `电子转移 ${electronTransferred.toFixed(2)} mol e⁻，Zn 逐渐氧化，Cu²⁺ 逐渐被还原。`;
+            oxStatusSpan.innerHTML = `电子释放: ${oxIntensity}%  Zn → Zn²⁺ + ${(electronTransferred).toFixed(2)}e⁻ (部分氧化)`;
+            redStatusSpan.innerHTML = `电子获得: ${redIntensity}%  Cu²⁺ + ${(electronTransferred).toFixed(2)}e⁻ → Cu (部分还原)`;
+            // 动态半反应文本体现比例
+            let oxPercentText = progress > 0 ? `(已转移 ${electronTransferred.toFixed(2)} mol e⁻)` : '';
+            oxHalfDiv.innerHTML = `Zn → Zn²⁺ + 2e⁻ &nbsp; ${oxPercentText}`;
+            redHalfDiv.innerHTML = `Cu²⁺ + 2e⁻ → Cu &nbsp; 获得 ${electronTransferred.toFixed(2)} mol e⁻`;
+        }
+        
+        // 额外丰富可视化: 模拟“化合价”升降提示，使用装饰性文字
+        const visualDiv = document.getElementById('stateVisual');
+        // 我们可以额外插入一个微小的条形 "化合价变化示意"
+        // 避免过繁，仅更新原有元素的额外样式描述，同时动态展示化合价改变
+        let zincChargeInfo = "";
+        let copperChargeInfo = "";
+        if (progress >= 0.99) {
+            zincChargeInfo = "Zn 化合价 0 → +2 (完全氧化)";
+            copperChargeInfo = "Cu²⁺ 化合价 +2 → 0 (完全还原)";
+        } else if (progress <= 0.01) {
+            zincChargeInfo = "Zn 化合价 0 (金属锌)";
+            copperChargeInfo = "Cu²⁺ 化合价 +2 (未反应)";
+        } else {
+            let znValence = (progress * 2).toFixed(1);
+            let cuValence = (2 - progress * 2).toFixed(1);
+            zincChargeInfo = `Zn 部分氧化: 平均化合价 +${znValence}`;
+            copperChargeInfo = `Cu²⁺ 部分还原: 平均化合价 +${cuValence}`;
+        }
+        
+        // 在descMsg下方添加化合价变化小提示而不破坏结构，但可以直接修改descMsg或者增加额外显示
+        // 优化: 在原descMsgSpan同行或增加p? 最好美观 更新额外区域显示化合价信息
+        let extraHtml = `<div style="font-size:0.8rem; margin-top:0.4rem; background:#00000033; padding:0.2rem 0.6rem; border-radius:1rem;">📊 ${zincChargeInfo} &nbsp;|&nbsp; ${copperChargeInfo}</div>`;
+        // 避免重复添加innerHTML 导致事件重置？不影响，直接追加展示，但每次更新替换内容
+        // 但注意原visualDiv 里除了第一个p和descMsg外，应该保留
+        // 最佳做法是选择在visual-state内部再维护一个小区域
+        let existingExtra = document.getElementById('chargeDisplayHint');
+        if (!existingExtra) {
+            let newDiv = document.createElement('div');
+            newDiv.id = 'chargeDisplayHint';
+            newDiv.style.fontSize = '0.75rem';
+            newDiv.style.marginTop = '0.5rem';
+            newDiv.style.background = 'rgba(0,0,0,0.2)';
+            newDiv.style.padding = '0.2rem 0.5rem';
+            newDiv.style.borderRadius = '1rem';
+            visualDiv.appendChild(newDiv);
+            existingExtra = newDiv;
+        }
+        existingExtra.innerHTML = `🧬 化合价动态: ${zincChargeInfo} &nbsp;&nbsp; ${copperChargeInfo}`;
+        
+        // 另外为让反应描述生动，根据电子转移数值更新方程式的显示样式或背景
+        const eqDiv = document.querySelector('.reaction-equation');
+        if (electronTransferred >= 1.98) {
+            eqDiv.style.background = "#185e45";
+        } else if (electronTransferred > 0.05) {
+            eqDiv.style.background = "#2b6b56";
+        } else {
+            eqDiv.style.background = "#0f1e1b";
+        }
+    }
+    
+    // 监听滑块事件
+    slider.addEventListener('input', updateReaction);
+    // 初始化调用
+    updateReaction();
+    
+    // 增加小提示: 点击复位按钮? 可选加一个小复位按钮简易
+    // 创建一个小的复位按钮放在demo区域更方便, 加优雅但不复杂
+    const demoContainer = document.querySelector('.interactive-demo .slider-container');
+    const resetBtn = document.createElement('button');
+    resetBtn.innerText = '⟳ 重置反应';
+    resetBtn.style.marginLeft = '10px';
+    resetBtn.style.padding = '0.2rem 1rem';
+    resetBtn.style.alignSelf = 'center';
+    resetBtn.addEventListener('click', () => {
+        slider.value = '0';
+        updateReaction();
+    });
+    // 包裹slider-container的flex最后一个位置添加
+    const parentDiv = demoContainer;
+    // 在electron-control同层加入，但是不要破坏原布局，添加一个div包含?
+    const btnWrapper = document.createElement('div');
+    btnWrapper.style.display = 'flex';
+    btnWrapper.style.justifyContent = 'flex-end';
+    btnWrapper.style.marginTop = '0.2rem';
+    btnWrapper.appendChild(resetBtn);
+    parentDiv.appendChild(btnWrapper);
+    
+    // 也可以额外添加一个小卡片展示完整氧化还原反应概念更多细节已内置。
+    // 保证所有要点无遗漏，且自适应良好。
+</script>
+</body>
+</html>

@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>验证机械能守恒定律 — 单摆模拟实验</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --panel-bg: #1e293b;
+            --text: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --accent: #38bdf8;
+            --accent2: #f472b6;
+            --accent3: #4ade80;
+            --accent4: #fbbf24;
+            --border: #334155;
+            --slider-track: #475569;
+            --btn-bg: #334155;
+            --btn-hover: #475569;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .main-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            padding: 20px;
+            max-width: 1100px;
+            width: 100%;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .canvas-wrapper {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 20px;
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .panel h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-align: center;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .panel h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--accent2);
+            margin-bottom: -6px;
+            text-align: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group label span.val {
+            color: var(--accent);
+            font-weight: 700;
+            font-size: 0.9rem;
+            min-width: 48px;
+            text-align: right;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--slider-track);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 3px solid var(--panel-bg);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:active {
+            transform: scale(1.15);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: var(--btn-bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            background: var(--btn-hover);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        button:active {
+            transform: scale(0.96);
+        }
+        button.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #0f172a;
+        }
+        button.primary:hover {
+            background: #7dd3fc;
+            border-color: #7dd3fc;
+        }
+
+        .data-display {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .data-row .label {
+            color: var(--text-secondary);
+        }
+        .data-row .value {
+            font-weight: 700;
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+        }
+        .data-row .value.ke {
+            color: var(--accent4);
+        }
+        .data-row .value.pe {
+            color: var(--accent3);
+        }
+        .data-row .value.te {
+            color: var(--accent);
+        }
+
+        .bar-container {
+            display: flex;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #0f172a;
+        }
+        .bar-ke {
+            background: var(--accent4);
+            transition: flex 0.08s linear;
+        }
+        .bar-pe {
+            background: var(--accent3);
+            transition: flex 0.08s linear;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+        .legend span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+            font-style: italic;
+            margin-top: -6px;
+        }
+
+        @media (max-width: 860px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .panel {
+                width: 100%;
+                max-width: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- 画布区域 -->
+        <div class="canvas-wrapper">
+            <canvas id="canvas" width="600" height="500"></canvas>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="panel" id="panel">
+            <h2>⚡ 机械能守恒 · 单摆模拟</h2>
+
+            <div class="control-group">
+                <label>初始角度 <span class="val" id="valAngle">45°</span></label>
+                <input type="range" id="sliderAngle" min="5" max="75" value="45" step="1">
+            </div>
+
+            <div class="control-group">
+                <label>摆长 L <span class="val" id="valLength">1.50 m</span></label>
+                <input type="range" id="sliderLength" min="0.5" max="2.5" value="1.5" step="0.01">
+            </div>
+
+            <div class="control-group">
+                <label>小球质量 m <span class="val" id="valMass">1.00 kg</span></label>
+                <input type="range" id="sliderMass" min="0.1" max="3" value="1" step="0.01">
+            </div>
+
+            <div class="control-group">
+                <label>空气阻力系数 <span class="val" id="valDamping">0.000</span></label>
+                <input type="range" id="sliderDamping" min="0" max="0.02" value="0" step="0.0005">
+            </div>
+
+            <div class="btn-row">
+                <button id="btnStart" class="primary">▶ 释放</button>
+                <button id="btnPause">⏸ 暂停</button>
+                <button id="btnReset">↺ 重置</button>
+            </div>
+
+            <div class="data-display">
+                <h3 style="margin-bottom:-2px;">📊 实时数据</h3>
+                <div class="data-row">
+                    <span class="label">⚡ 动能 Eₖ</span>
+                    <span class="value ke" id="valKE">0.000 J</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">🌍 重力势能 Eₚ</span>
+                    <span class="value pe" id="valPE">0.000 J</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">📐 总机械能 E</span>
+                    <span class="value te" id="valTE">0.000 J</span>
+                </div>
+                <div class="bar-container">
+                    <div class="bar-ke" id="barKE" style="flex:0;"></div>
+                    <div class="bar-pe" id="barPE" style="flex:0;"></div>
+                </div>
+                <div class="legend">
+                    <span><span class="dot" style="background:var(--accent4);"></span> 动能</span>
+                    <span><span class="dot" style="background:var(--accent3);"></span> 势能</span>
+                </div>
+                <div class="hint">💡 调节阻力系数观察能量变化</div>
+                <div class="hint" id="conclusion" style="color:var(--accent3); font-style:normal; font-weight:600; min-height:20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ============ DOM 元素 ============
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+
+            const sliderAngle = document.getElementById('sliderAngle');
+            const sliderLength = document.getElementById('sliderLength');
+            const sliderMass = document.getElementById('sliderMass');
+            const sliderDamping = document.getElementById('sliderDamping');
+            const btnStart = document.getElementById('btnStart');
+            const btnPause = document.getElementById('btnPause');
+            const btnReset = document.getElementById('btnReset');
+
+            const valAngle = document.getElementById('valAngle');
+            const valLength = document.getElementById('valLength');
+            const valMass = document.getElementById('valMass');
+            const valDamping = document.getElementById('valDamping');
+            const valKE = document.getElementById('valKE');
+            const valPE = document.getElementById('valPE');
+            const valTE = document.getElementById('valTE');
+            const barKE = document.getElementById('barKE');
+            const barPE = document.getElementById('barPE');
+            const conclusion = document.getElementById('conclusion');
+
+            // ============ 物理参数 ============
+            const g = 9.8; // 重力加速度 m/s²
+            const pivotX = W / 2;
+            const pivotY = 70;
+
+            let angle0; // 初始角度（弧度）
+            let L; // 摆长（m）
+            let m; // 质量（kg）
+            let damping; // 阻力系数
+
+            // 画布缩放：1m → pixelsPerMeter 像素
+            let pixelsPerMeter;
+
+            // 模拟状态
+            let theta; // 当前角度（弧度，从竖直方向算起）
+            let omega; // 角速度（rad/s）
+            let isRunning = false;
+            let isPaused = false;
+            let animId = null;
+            let lastTime = null;
+            let initialPE = 0; // 初始势能（以最低点为参考）
+
+            // 轨迹记录
+            let trailPoints = [];
+            const MAX_TRAIL = 200;
+
+            // ============ 初始化 ============
+            function readParams() {
+                angle0 = parseFloat(sliderAngle.value) * Math.PI / 180;
+                L = parseFloat(sliderLength.value);
+                m = parseFloat(sliderMass.value);
+                damping = parseFloat(sliderDamping.value);
+                pixelsPerMeter = 180;
+            }
+
+            function applyParamsToSim() {
+                theta = angle0;
+                omega = 0;
+                initialPE = m * g * L * (1 - Math.cos(angle0));
+                trailPoints = [];
+            }
+
+            function resetAll() {
+                readParams();
+                applyParamsToSim();
+                isRunning = false;
+                isPaused = false;
+                if (animId) cancelAnimationFrame(animId);
+                animId = null;
+                lastTime = null;
+                updateUI();
+                draw();
+            }
+
+            // ============ 物理更新 ============
+            function updatePhysics(dt) {
+                if (!isRunning || isPaused) return;
+                if (dt <= 0) return;
+                // 限制最大步长防止数值不稳定
+                const maxDt = 0.016;
+                let remaining = dt;
+                while (remaining > 0) {
+                    const step = Math.min(remaining, maxDt);
+                    // 单摆动力学：角加速度 = - (g/L) * sin(theta) - damping * omega
+                    const alpha = -(g / L) * Math.sin(theta) - damping * omega;
+                    omega += alpha * step;
+                    theta += omega * step;
+                    remaining -= step;
+                }
+                // 记录轨迹
+                const bx = pivotX + L * pixelsPerMeter * Math.sin(theta);
+                const by = pivotY + L * pixelsPerMeter * Math.cos(theta);
+                trailPoints.push({ x: bx, y: by });
+                if (trailPoints.length > MAX_TRAIL) trailPoints.shift();
+            }
+
+            // ============ 计算能量 ============
+            function getEnergies() {
+                // 以最低点（theta=0）为重力势能零点
+                const h = L * (1 - Math.cos(theta)); // 当前高度相对于最低点
+                const PE = m * g * h;
+                const v = L * Math.abs(omega);
+                const KE = 0.5 * m * v * v;
+                const TE = KE + PE;
+                return { KE, PE, TE };
+            }
+
+            // ============ 绘制 ============
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+
+                // 背景网格
+                ctx.strokeStyle = 'rgba(148,163,184,0.08)';
+                ctx.lineWidth = 0.5;
+                const gridSize = 40;
+                for (let x = gridSize; x < W; x += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, H);
+                    ctx.stroke();
+                }
+                for (let y = gridSize; y < H; y += gridSize) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(W, y);
+                    ctx.stroke();
+                }
+
+                // 悬挂点
+                ctx.fillStyle = '#64748b';
+                ctx.beginPath();
+                ctx.arc(pivotX, pivotY, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#94a3b8';
+                ctx.beginPath();
+                ctx.arc(pivotX, pivotY, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 摆线（虚线参考竖直方向）
+                const bx = pivotX + L * pixelsPerMeter * Math.sin(theta);
+                const by = pivotY + L * pixelsPerMeter * Math.cos(theta);
+
+                // 竖直参考线
+                ctx.setLineDash([6, 8]);
+                ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(pivotX, pivotY);
+                ctx.lineTo(pivotX, pivotY + L * pixelsPerMeter);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // 摆线
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(pivotX, pivotY);
+                ctx.lineTo(bx, by);
+                ctx.stroke();
+
+                // 轨迹
+                if (trailPoints.length > 1) {
+                    ctx.strokeStyle = 'rgba(56,189,248,0.25)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(trailPoints[0].x, trailPoints[0].y);
+                    for (let i = 1; i < trailPoints.length; i++) {
+                        ctx.lineTo(trailPoints[i].x, trailPoints[i].y);
+                    }
+                    ctx.stroke();
+                }
+
+                // 小球（带高光渐变）
+                const ballRadius = Math.max(14, m * 14);
+                const grad = ctx.createRadialGradient(bx - ballRadius * 0.3, by - ballRadius * 0.3, ballRadius * 0.1,
+                    bx, by, ballRadius);
+                grad.addColorStop(0, '#fbbf24');
+                grad.addColorStop(0.6, '#f59e0b');
+                grad.addColorStop(1, '#b45309');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(bx, by, ballRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#92400e';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // 小球高光
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.beginPath();
+                ctx.arc(bx - ballRadius * 0.28, by - ballRadius * 0.28, ballRadius * 0.28, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 能量柱状图（画布右侧）
+                const energies = getEnergies();
+                const barX = W - 55;
+                const barW = 30;
+                const barMaxH = 200;
+                const barY = pivotY + 50;
+                const maxE = initialPE > 0 ? initialPE : 1;
+
+                // 背景柱
+                ctx.fillStyle = 'rgba(148,163,184,0.1)';
+                ctx.fillRect(barX - 2, barY, barW + 4, barMaxH);
+                ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(barX - 2, barY, barW + 4, barMaxH);
+
+                const keH = (energies.KE / maxE) * barMaxH;
+                const peH = (energies.PE / maxE) * barMaxH;
+
+                // 动能（黄）
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillRect(barX, barY + barMaxH - keH, barW, keH);
+                // 势能（绿）
+                ctx.fillStyle = '#4ade80';
+                ctx.fillRect(barX, barY + barMaxH - keH - peH, barW, peH);
+
+                // 标签
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '11px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Eₖ', barX + barW / 2, barY + barMaxH + 18);
+                ctx.fillText('Eₚ', barX + barW / 2, barY - 10);
+                ctx.fillText('能量(J)', barX + barW / 2, barY + barMaxH + 36);
+
+                // 标题区域
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = 'bold 16px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('单摆 · 机械能守恒演示', 20, 40);
+
+                // 初始总机械能参考线
+                const refY = barY + barMaxH - barMaxH; // 顶部对应maxE
+                ctx.setLineDash([3, 5]);
+                ctx.strokeStyle = 'rgba(56,189,248,0.5)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(barX - 10, refY);
+                ctx.lineTo(barX + barW + 10, refY);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(56,189,248,0.8)';
+                ctx.font = '10px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.fillText('初始E', barX - 42, refY + 4);
+            }
+
+            // ============ UI 更新 ============
+            function updateUI() {
+                valAngle.textContent = parseFloat(sliderAngle.value) + '°';
+                valLength.textContent = parseFloat(sliderLength.value).toFixed(2) + ' m';
+                valMass.textContent = parseFloat(sliderMass.value).toFixed(2) + ' kg';
+                valDamping.textContent = parseFloat(sliderDamping.value).toFixed(3);
+
+                const energies = getEnergies();
+                valKE.textContent = energies.KE.toFixed(3) + ' J';
+                valPE.textContent = energies.PE.toFixed(3) + ' J';
+                valTE.textContent = energies.TE.toFixed(3) + ' J';
+
+                // 比例条
+                const total = energies.KE + energies.PE;
+                if (total > 0) {
+                    const kePct = (energies.KE / total) * 100;
+                    const pePct = (energies.PE / total) * 100;
+                    barKE.style.flex = kePct;
+                    barPE.style.flex = pePct;
+                } else {
+                    barKE.style.flex = 0;
+                    barPE.style.flex = 100;
+                }
+
+                // 结论提示
+                if (isRunning && damping === 0) {
+                    const drift = Math.abs(energies.TE - initialPE) / Math.max(initialPE, 0.001);
+                    if (drift < 0.02) {
+                        conclusion.textContent = '✅ 总机械能几乎不变 — 守恒！';
+                        conclusion.style.color = '#4ade80';
+                    } else {
+                        conclusion.textContent = '⚠️ 能量有漂移（数值精度）';
+                        conclusion.style.color = '#fbbf24';
+                    }
+                } else if (damping > 0 && isRunning) {
+                    conclusion.textContent = '🔍 有阻力时机械能逐渐减小';
+                    conclusion.style.color = '#f472b6';
+                } else if (!isRunning) {
+                    conclusion.textContent = '点击"释放"开始实验';
+                    conclusion.style.color = '#94a3b8';
+                }
+            }
+
+            // ============ 动画循环 ============
+            function animate(timestamp) {
+                if (!isRunning) {
+                    animId = null;
+                    return;
+                }
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.016; // 防止大跳帧
+                lastTime = timestamp;
+
+                updatePhysics(dt);
+                updateUI();
+                draw();
+
+                animId = requestAnimationFrame(animate);
+            }
+
+            function startSimulation() {
+                readParams();
+                if (!isRunning) {
+                    applyParamsToSim();
+                }
+                isRunning = true;
+                isPaused = false;
+                lastTime = null;
+                if (animId) cancelAnimationFrame(animId);
+                animId = requestAnimationFrame(animate);
+                btnStart.textContent = '⟳ 重启';
+            }
+
+            function pauseSimulation() {
+                isPaused = !isPaused;
+                if (!isPaused) {
+                    lastTime = null;
+                    if (!animId && isRunning) {
+                        animId = requestAnimationFrame(animate);
+                    }
+                }
+                btnPause.textContent = isPaused ? '▶ 继续' : '⏸ 暂停';
+                updateUI();
+            }
+
+            function resetSimulation() {
+                if (animId) cancelAnimationFrame(animId);
+                animId = null;
+                isRunning = false;
+                isPaused = false;
+                lastTime = null;
+                readParams();
+                applyParamsToSim();
+                btnStart.textContent = '▶ 释放';
+                btnPause.textContent = '⏸ 暂停';
+                updateUI();
+                draw();
+            }
+
+            // ============ 事件监听 ============
+            btnStart.addEventListener('click', startSimulation);
+            btnPause.addEventListener('click', pauseSimulation);
+            btnReset.addEventListener('click', resetSimulation);
+
+            sliderAngle.addEventListener('input', () => {
+                if (!isRunning) {
+                    readParams();
+                    applyParamsToSim();
+                    updateUI();
+                    draw();
+                } else {
+                    valAngle.textContent = parseFloat(sliderAngle.value) + '°';
+                }
+            });
+            sliderLength.addEventListener('input', () => {
+                if (!isRunning) {
+                    readParams();
+                    applyParamsToSim();
+                    updateUI();
+                    draw();
+                } else {
+                    valLength.textContent = parseFloat(sliderLength.value).toFixed(2) + ' m';
+                }
+            });
+            sliderMass.addEventListener('input', () => {
+                if (!isRunning) {
+                    readParams();
+                    applyParamsToSim();
+                    updateUI();
+                    draw();
+                } else {
+                    valMass.textContent = parseFloat(sliderMass.value).toFixed(2) + ' kg';
+                }
+            });
+            sliderDamping.addEventListener('input', () => {
+                damping = parseFloat(sliderDamping.value);
+                valDamping.textContent = damping.toFixed(3);
+            });
+
+            // ============ 初始渲染 ============
+            readParams();
+            applyParamsToSim();
+            updateUI();
+            draw();
+
+            console.log('✅ 机械能守恒定律 · 单摆模拟实验已就绪');
+            console.log('   📐 调节初始角度、摆长、质量，观察能量变化');
+            console.log('   🌬️ 增大阻力系数，观察机械能如何逐渐减小');
+            console.log('   📊 右侧柱状图直观展示动能与势能的转化');
+        })();
+    </script>
+</body>
+</html>

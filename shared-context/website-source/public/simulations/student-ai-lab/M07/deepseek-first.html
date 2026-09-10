@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>立体几何：球与正多面体交线 | 交互式3D演示</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Microsoft YaHei', 'Segoe UI', 'PingFang SC', 'Roboto', 'Noto Sans', sans-serif;
+        }
+        
+        /* 信息面板 - 整洁美观 */
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 12px 20px;
+            color: white;
+            pointer-events: none;
+            z-index: 10;
+            border-left: 4px solid #ff9800;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            font-size: 14px;
+            max-width: 260px;
+        }
+        .info-panel h1 {
+            margin: 0 0 6px;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+        .info-panel p {
+            margin: 0;
+            font-size: 0.85rem;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        .info-panel .highlight {
+            color: #ffaa44;
+            font-weight: bold;
+        }
+        
+        /* 控制卡片 - 交互区域 */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 12px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            z-index: 20;
+            pointer-events: auto;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-family: inherit;
+        }
+        button {
+            background: rgba(20, 20, 30, 0.9);
+            border: none;
+            color: #eee;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+            font-weight: 500;
+            letter-spacing: 1px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        button:hover {
+            background: #ff9800;
+            color: #1e1e2a;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.6);
+        }
+        button.active {
+            background: #ff9800;
+            color: #1e1e2a;
+            box-shadow: 0 0 8px rgba(255,152,0,0.5);
+        }
+        .status {
+            background: rgba(0,0,0,0.6);
+            padding: 5px 12px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-family: monospace;
+            letter-spacing: 0.5px;
+            color: #ffaa66;
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+        }
+        @media (max-width: 700px) {
+            .controls button { padding: 6px 12px; font-size: 0.8rem; }
+            .info-panel { top: 12px; left: 12px; padding: 8px 14px; max-width: 220px; }
+            .info-panel h1 { font-size: 1rem; }
+        }
+        .note {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.4);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #ccc;
+            pointer-events: none;
+            z-index: 10;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <h1>📐 球与正多面体 · 截面交线</h1>
+        <p>球体与正多面体相交，形成空间曲线（交线）。<br>✨ 鼠标拖拽<span class="highlight">旋转视角</span>，右键拖拽平移，滚轮缩放。<br>📏 交线用<span style="color:#ffaa66;">金色高亮</span>显示，长度标注显示关键棱长/交线弦长（示意）。</p>
+    </div>
+    <div class="controls">
+        <button id="btnCube" class="active">📦 立方体 (内接球交线)</button>
+        <button id="BtnIcosa">🔮 正二十面体 (中位球交线)</button>
+        <button id="BtnDode">✨ 正十二面体 (外接球半径交线)</button>
+        <div class="status" id="lengthStatus">📏 当前线段长: 1.00</div>
+    </div>
+    <div class="note">🖱️ 可交互旋转/缩放 | 交线为空间闭合曲线 | 长度显示参考交点距离</div>
+
+    <!-- 引入Three.js核心库及扩展 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- 初始化场景、相机、渲染器 ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x050b1a);
+        scene.fog = new THREE.FogExp2(0x050b1a, 0.008); // 轻微雾效增强景深
+        
+        // 透视相机 (视角,宽高比,近平面,远平面)
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(3, 2, 5);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = false; // 本例不需要阴影提升性能
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+        
+        // CSS2渲染文字标注
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+        
+        // --- 控制器 (支持自由翻转) ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;      // 惯性效果
+        controls.dampingFactor = 0.05;
+        controls.rotateSpeed = 1.2;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.target.set(0, 0, 0);
+        
+        // --- 辅助元素：温和的网格地面和轴线 (不影响观感，半透明)---
+        const gridHelper = new THREE.GridHelper(8, 20, 0x88aaff, 0x335588);
+        gridHelper.position.y = -1.4;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.25;
+        scene.add(gridHelper);
+        
+        // 简易轴线 (淡色)
+        const axesHelper = new THREE.AxesHelper(2.5);
+        axesHelper.material.transparent = true;
+        axesHelper.material.opacity = 0.12;
+        scene.add(axesHelper);
+        
+        // 环境光 + 点光源，增强立体感
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(1, 2, 1);
+        scene.add(mainLight);
+        const fillLight = new THREE.PointLight(0x4466cc, 0.3);
+        fillLight.position.set(-1, 1, 2);
+        scene.add(fillLight);
+        const backLight = new THREE.PointLight(0xffaa66, 0.2);
+        backLight.position.set(0, 0, -2);
+        scene.add(backLight);
+        
+        // --- 全局变量 ---
+        let currentGroup = null;        // 当前模型组
+        let currentSphere = null;
+        let currentWireframe = null;
+        let currentIntersectionLines = []; // 存储交线对象
+        
+        // 辅助: 创建CSS2D文本标注 (简洁)
+        function makeLabel(text, color, position, fontSize = '0.9rem') {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.style.color = color;
+            div.style.fontSize = fontSize;
+            div.style.fontWeight = 'bold';
+            div.style.textShadow = '1px 1px 0px black';
+            div.style.backgroundColor = 'rgba(0,0,0,0.5)';
+            div.style.padding = '2px 6px';
+            div.style.borderRadius = '20px';
+            div.style.borderLeft = `3px solid ${color}`;
+            div.style.fontFamily = 'monospace';
+            div.style.backdropFilter = 'blur(4px)';
+            div.style.pointerEvents = 'none';
+            const label = new CSS2DObject(div);
+            label.position.copy(position);
+            return label;
+        }
+        
+        // --- 通用：清除场景中旧模型 (保留灯光/辅助)---
+        function clearScene() {
+            if (currentGroup) {
+                scene.remove(currentGroup);
+                if (currentGroup.geometry) currentGroup.geometry.dispose();
+                if (currentGroup.material) currentGroup.material.dispose();
+                currentGroup = null;
+            }
+            if (currentSphere) {
+                scene.remove(currentSphere);
+                if (currentSphere.material) currentSphere.material.dispose();
+                currentSphere = null;
+            }
+            if (currentWireframe) {
+                scene.remove(currentWireframe);
+                if (currentWireframe.material) currentWireframe.material.dispose();
+                currentWireframe = null;
+            }
+            // 清除交线
+            currentIntersectionLines.forEach(line => {
+                scene.remove(line);
+                if (line.geometry) line.geometry.dispose();
+                if (line.material) line.material.dispose();
+            });
+            currentIntersectionLines = [];
+            // 移除额外的CSS2D标签(长度相关我们后面单独添加，避免残留)
+            // 简单标记: 遍历移除特定标签集合 (谨慎保留场景原有辅助)
+            scene.children.forEach(child => {
+                if (child.isCSS2DObject && child.userData.isDynamicLabel) {
+                    scene.remove(child);
+                }
+            });
+        }
+        
+        // 更新长度显示状态栏
+        function updateLengthDisplay(text) {
+            const statusDiv = document.getElementById('lengthStatus');
+            if (statusDiv) statusDiv.innerHTML = `📏 ${text}`;
+        }
+        
+        // ========== 例子1: 立方体 + 内切球交线 (正方形的截面圆) ==========
+        // 立方体边长 = 1.4, 内切球半径 = 0.7, 交线为六个面的内切圆线框，实际呈现为每个面上圆形交线（立体感）
+        // 为了简洁，用圆环组合展示交线: 在六个面的位置生成圆形线框环 (实际交线为平面与球交线，这里展示精确的圆环)
+        function createCubeIntersection() {
+            const group = new THREE.Group();
+            const size = 1.4;          // 边长
+            const radius = size / 2;    // 内切球半径 0.7
+            
+            // 立方体材质 (半透明,展示内部)
+            const cubeMat = new THREE.MeshPhongMaterial({ color: 0x3a86ff, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+            const cubeGeo = new THREE.BoxGeometry(size, size, size);
+            const cube = new THREE.Mesh(cubeGeo, cubeMat);
+            cube.castShadow = false;
+            cube.receiveShadow = false;
+            group.add(cube);
+            
+            // 边缘线框 (加强几何感)
+            const edgesGeo = new THREE.EdgesGeometry(cubeGeo);
+            const edgesMat = new THREE.LineBasicMaterial({ color: 0x88bbff, linewidth: 1 });
+            const wireframe = new THREE.LineSegments(edgesGeo, edgesMat);
+            group.add(wireframe);
+            
+            // 球体: 半透明显示内切球
+            const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffaa55, transparent: true, opacity: 0.2, emissive: 0x221100 });
+            const sphereGeo = new THREE.SphereGeometry(radius, 64, 32);
+            const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+            group.add(sphere);
+            
+            // 交线: 六个面的圆形环 (半径为radius, 位于各个表面中心)
+            const circlePoints = 64;
+            const circleGeo = (r, yOffset, axisType, fixedVal) => {
+                // axisType: 'x', 'y', 'z' 确定圆环所在平面和位置
+                const vertices = [];
+                for (let i = 0; i <= circlePoints; i++) {
+                    const angle = (i / circlePoints) * Math.PI * 2;
+                    const x = r * Math.cos(angle);
+                    const z = r * Math.sin(angle);
+                    if (axisType === 'y') {
+                        vertices.push(x, fixedVal, z);
+                    } else if (axisType === 'x') {
+                        vertices.push(fixedVal, x, z);
+                    } else {
+                        vertices.push(x, z, fixedVal);
+                    }
+                }
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
+                return geometry;
+            };
+            
+            const lineMat = new THREE.LineBasicMaterial({ color: 0xffaa44, linewidth: 2 }); // linewidth not supported everywhere, but color stands out
+            const s2 = size/2; // ±0.7
+            // 六个面
+            const positions = [
+                { type: 'y', val:  s2, r: radius }, // 上
+                { type: 'y', val: -s2, r: radius }, // 下
+                { type: 'x', val:  s2, r: radius }, // 右
+                { type: 'x', val: -s2, r: radius }, // 左
+                { type: 'z', val:  s2, r: radius }, // 前
+                { type: 'z', val: -s2, r: radius }  // 后
+            ];
+            positions.forEach(pos => {
+                let geo;
+                if (pos.type === 'y') geo = circleGeo(pos.r, pos.val, 'y', pos.val);
+                else if (pos.type === 'x') geo = circleGeo(pos.r, pos.val, 'x', pos.val);
+                else geo = circleGeo(pos.r, pos.val, 'z', pos.val);
+                const circleLine = new THREE.Line(geo, lineMat);
+                group.add(circleLine);
+                currentIntersectionLines.push(circleLine);
+            });
+            
+            // 添加文字标注: 显示棱长 / 交线直径
+            const labelPos1 = new THREE.Vector3(0.8, 0.8, 0.8);
+            const label1 = makeLabel(`边长 = ${size.toFixed(2)}`, "#ffaa88", labelPos1, "0.75rem");
+            label1.userData.isDynamicLabel = true;
+            const label2 = makeLabel(`交线半径 = ${radius.toFixed(2)}`, "#ffaa88", new THREE.Vector3(0.7, -0.7, 0.7), "0.75rem");
+            label2.userData.isDynamicLabel = true;
+            group.add(label1);
+            group.add(label2);
+            
+            // 更新长度显示
+            updateLengthDisplay(`棱长 ${size.toFixed(2)} | 交线圆周长 ≈ ${(2 * Math.PI * radius).toFixed(2)}`);
+            
+            return { group, sphere: sphere };
+        }
+        
+        // ========== 例子2: 正二十面体 + 中位球交线 (顶点到中心距离R, 棱中点到球心距离产生的优美交线) ==========
+        // 为了更直观，这里创建一个二十面体，并计算与半径为 0.9 的球相交的曲线，近似显示几个关键交线环(展示交线在面上的分段)
+        // 为了让交线美观，我们采用解析法提取二十面体每个棱与球的交点生成线框环，用LineSegments方式构建交线轮廓
+        function createIcosahedronIntersection() {
+            const group = new THREE.Group();
+            // 构建二十面体 (半径约 1.0 的顶点)
+            const icoGeo = new THREE.IcosahedronGeometry(1.0, 0);
+            const meshMat = new THREE.MeshPhongMaterial({ color: 0x5e60ce, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(icoGeo, meshMat);
+            group.add(mesh);
+            
+            // 线框加强
+            const edgesGeo = new THREE.EdgesGeometry(icoGeo);
+            const wireMat = new THREE.LineBasicMaterial({ color: 0xaaccff });
+            const wireframe = new THREE.LineSegments(edgesGeo, wireMat);
+            group.add(wireframe);
+            
+            // 球体半径 R=0.85 (与二十面体相交产生丰富交线)
+            const sphereR = 0.85;
+            const sphereMat = new THREE.MeshPhongMaterial({ color: 0x66ccff, transparent: true, opacity: 0.2 });
+            const sphereGeo = new THREE.SphereGeometry(sphereR, 64, 32);
+            const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+            group.add(sphere);
+            
+            // 计算二十面体的所有顶点 (归一化到半径1)
+            const vertices = [];
+            icoGeo.attributes.position.array.forEach((val, idx) => {
+                if (idx % 3 === 0) vertices.push(new THREE.Vector3(val, icoGeo.attributes.position.array[idx+1], icoGeo.attributes.position.array[idx+2]));
+            });
+            // 去重 (基于容差)
+            const uniqueVerts = [];
+            const eps = 1e-5;
+            vertices.forEach(v => {
+                let duplicate = false;
+                for (let u of uniqueVerts) {
+                    if (u.distanceTo(v) < eps) { duplicate = true; break; }
+                }
+                if (!duplicate) uniqueVerts.push(v.clone());
+            });
+            // 获取索引三角形面 (原始几何有20个三角面)
+            const indices = icoGeo.index.array;
+            const edgesSet = new Set();
+            const edgeList = [];
+            for (let i = 0; i < indices.length; i += 3) {
+                const a = indices[i], b = indices[i+1], c = indices[i+2];
+                const addEdge = (i1,i2) => {
+                    const key = `${Math.min(i1,i2)}-${Math.max(i1,i2)}`;
+                    if (!edgesSet.has(key)) {
+                        edgesSet.add(key);
+                        edgeList.push([i1,i2]);
+                    }
+                };
+                addEdge(a,b); addEdge(b,c); addEdge(c,a);
+            }
+            
+            // 计算每条棱与半径为 sphereR 的球的交点，生成交线点集 (连接成环)
+            const intersectionPoints = [];
+            edgeList.forEach(edge => {
+                const p1 = uniqueVerts[edge[0]];
+                const p2 = uniqueVerts[edge[1]];
+                const dir = new THREE.Vector3().subVectors(p2, p1);
+                const len = dir.length();
+                dir.normalize();
+                // 解方程 |p1 + t*dir|^2 = sphereR^2
+                const a = 1;
+                const b = 2 * (p1.x*dir.x + p1.y*dir.y + p1.z*dir.z);
+                const c = p1.lengthSq() - sphereR*sphereR;
+                const delta = b*b - 4*a*c;
+                if (delta >= 0 && delta < 1e-4) delta = 0;
+                if (delta > 0) {
+                    const t1 = (-b - Math.sqrt(delta)) / (2*a);
+                    const t2 = (-b + Math.sqrt(delta)) / (2*a);
+                    if (t1 >= 0 && t1 <= len) intersectionPoints.push(p1.clone().add(dir.clone().multiplyScalar(t1)));
+                    if (t2 >= 0 && t2 <= len && Math.abs(t2-t1) > 1e-4) intersectionPoints.push(p1.clone().add(dir.clone().multiplyScalar(t2)));
+                }
+            });
+            
+            // 对交点进行聚类及排序，构建线条 (简单的线条集合)
+            if (intersectionPoints.length > 0) {
+                // 将点按最近邻连接成线 (为了美观，生成连续的LineSegments / 多条环线)
+                const linesGeom = new THREE.BufferGeometry();
+                const pointsArray = [];
+                // 去重
+                const uniquePoints = [];
+                intersectionPoints.forEach(p => {
+                    let exists = false;
+                    for(let up of uniquePoints) {
+                        if(up.distanceTo(p) < 0.05) { exists = true; break; }
+                    }
+                    if(!exists) uniquePoints.push(p.clone());
+                });
+                // 简单连接相邻距离小于阈值的点 (构建完整环路)
+                const connected = [];
+                const used = new Array(uniquePoints.length).fill(false);
+                for (let i = 0; i < uniquePoints.length && !used.every(v=>v); i++) {
+                    if (used[i]) continue;
+                    const cluster = [uniquePoints[i]];
+                    used[i] = true;
+                    let changed = true;
+                    while(changed) {
+                        changed = false;
+                        for(let j=0; j<uniquePoints.length; j++) {
+                            if(used[j]) continue;
+                            let minDist = 1.0;
+                            let minIdx = -1;
+                            for(let cp of cluster) {
+                                const d = cp.distanceTo(uniquePoints[j]);
+                                if(d < minDist) { minDist = d; minIdx = j; }
+                            }
+                            if(minIdx !== -1 && minDist < 0.25) {
+                                cluster.push(uniquePoints[minIdx]);
+                                used[minIdx] = true;
+                                changed = true;
+                            }
+                        }
+                    }
+                    if(cluster.length >= 3) {
+                        // 排序：找中心点按角度排序
+                        const center = new THREE.Vector3();
+                        cluster.forEach(p=>center.add(p));
+                        center.divideScalar(cluster.length);
+                        cluster.sort((a,b) => {
+                            const angleA = Math.atan2(a.y - center.y, a.x - center.x);
+                            const angleB = Math.atan2(b.y - center.y, b.x - center.x);
+                            return angleA - angleB;
+                        });
+                        for(let k=0; k<cluster.length; k++) {
+                            pointsArray.push(cluster[k]);
+                            pointsArray.push(cluster[(k+1)%cluster.length]);
+                        }
+                    }
+                }
+                const lineVertices = [];
+                pointsArray.forEach(p => { lineVertices.push(p.x, p.y, p.z); });
+                const lineGeom = new THREE.BufferGeometry();
+                lineGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVertices), 3));
+                const lineMat = new THREE.LineBasicMaterial({ color: 0xffaa66, linewidth: 2 });
+                const intersectionObj = new THREE.LineSegments(lineGeom, lineMat);
+                group.add(intersectionObj);
+                currentIntersectionLines.push(intersectionObj);
+            }
+            
+            // 添加标注
+            const labelLen = makeLabel(`二十面体棱长 ≈ 1.05`, "#ffaa88", new THREE.Vector3(1.1, 0.9, 0.6), "0.7rem");
+            labelLen.userData.isDynamicLabel = true;
+            const labelRad = makeLabel(`球半径 = ${sphereR}`, "#ffaa88", new THREE.Vector3(0.9, -0.8, 0.8), "0.7rem");
+            labelRad.userData.isDynamicLabel = true;
+            group.add(labelLen, labelRad);
+            updateLengthDisplay(`棱长≈1.05 | 交线为空间多边形环`);
+            return { group, sphere };
+        }
+        
+        // ========== 例子3: 正十二面体 + 外接球半半径交线 (展示大球与多面体棱的交线) ==========
+        function createDodecahedronIntersection() {
+            const group = new THREE.Group();
+            const dodeGeo = new THREE.DodecahedronGeometry(0.95, 0);
+            const meshMat = new THREE.MeshPhongMaterial({ color: 0x6a4e9b, transparent: true, opacity: 0.3 });
+            const mesh = new THREE.Mesh(dodeGeo, meshMat);
+            group.add(mesh);
+            const edges = new THREE.EdgesGeometry(dodeGeo);
+            const wire = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xbb99ff }));
+            group.add(wire);
+            
+            const sphereR = 1.05; // 球略大于多面体，展示截交
+            const sphereMat = new THREE.MeshPhongMaterial({ color: 0xff8866, transparent: true, opacity: 0.18 });
+            const sphereGeo = new THREE.SphereGeometry(sphereR, 72, 48);
+            const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+            group.add(sphere);
+            
+            // 生成交点 (提取顶点与棱)
+            const positionsAttr = dodeGeo.attributes.position;
+            const indexAttr = dodeGeo.index;
+            const verticesMap = [];
+            for(let i=0; i<positionsAttr.count; i++) {
+                verticesMap.push(new THREE.Vector3(positionsAttr.getX(i), positionsAttr.getY(i), positionsAttr.getZ(i)));
+            }
+            const edgeSet = new Set();
+            const edgePairs = [];
+            for(let i=0; i<indexAttr.count; i+=3) {
+                const a = indexAttr.getX(i), b=indexAttr.getX(i+1), c=indexAttr.getX(i+2);
+                const addE = (x,y) => {
+                    const key = `${Math.min(x,y)}-${Math.max(x,y)}`;
+                    if(!edgeSet.has(key)) { edgeSet.add(key); edgePairs.push([x,y]); }
+                };
+                addE(a,b); addE(b,c); addE(c,a);
+            }
+            const interPoints = [];
+            edgePairs.forEach(edge => {
+                const p1 = verticesMap[edge[0]];
+                const p2 = verticesMap[edge[1]];
+                const dir = new THREE.Vector3().subVectors(p2,p1);
+                const len = dir.length();
+                dir.normalize();
+                const bVal = 2*(p1.x*dir.x + p1.y*dir.y + p1.z*dir.z);
+                const cVal = p1.lengthSq() - sphereR*sphereR;
+                const delta = bVal*bVal - 4*cVal;
+                if(delta >= 0) {
+                    const t1 = (-bVal - Math.sqrt(delta))/2;
+                    const t2 = (-bVal + Math.sqrt(delta))/2;
+                    if(t1>=0 && t1<=len) interPoints.push(p1.clone().add(dir.clone().multiplyScalar(t1)));
+                    if(t2>=0 && t2<=len && Math.abs(t2-t1)>1e-4) interPoints.push(p1.clone().add(dir.clone().multiplyScalar(t2)));
+                }
+            });
+            // 构建线条类似
+            if(interPoints.length) {
+                const unique = [];
+                interPoints.forEach(p => { if(!unique.some(u=>u.distanceTo(p)<0.05)) unique.push(p); });
+                const lineVertices = [];
+                for(let i=0; i<unique.length; i++) {
+                    for(let j=i+1; j<unique.length; j++) {
+                        if(unique[i].distanceTo(unique[j]) < 0.35) {
+                            lineVertices.push(unique[i].x, unique[i].y, unique[i].z, unique[j].x, unique[j].y, unique[j].z);
+                        }
+                    }
+                }
+                const geom = new THREE.BufferGeometry();
+                geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lineVertices), 3));
+                const lineObj = new THREE.LineSegments(geom, new THREE.LineBasicMaterial({ color: 0xffaa66 }));
+                group.add(lineObj);
+                currentIntersectionLines.push(lineObj);
+            }
+            const labelInfo = makeLabel(`十二面体棱长≈0.71`, "#ffaa88", new THREE.Vector3(1.0, 0.5, 1.1), "0.7rem");
+            labelInfo.userData.isDynamicLabel = true;
+            const labelR = makeLabel(`球半径 = ${sphereR}`, "#ffaa88", new THREE.Vector3(0.5, -1.0, 0.9), "0.7rem");
+            labelR.userData.isDynamicLabel = true;
+            group.add(labelInfo, labelR);
+            updateLengthDisplay(`棱长≈0.71 | 交线周长示意`);
+            return { group, sphere };
+        }
+        
+        // --- 切换例子 ---
+        let currentExample = 'cube';
+        function switchTo(example) {
+            clearScene();
+            let result;
+            if (example === 'cube') {
+                result = createCubeIntersection();
+                currentExample = 'cube';
+            } else if (example === 'icosa') {
+                result = createIcosahedronIntersection();
+                currentExample = 'icosa';
+            } else {
+                result = createDodecahedronIntersection();
+                currentExample = 'dode';
+            }
+            currentGroup = result.group;
+            currentSphere = result.sphere;
+            scene.add(currentGroup);
+            
+            // 按钮active样式
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            if(example === 'cube') document.getElementById('btnCube').classList.add('active');
+            if(example === 'icosa') document.getElementById('BtnIcosa').classList.add('active');
+            if(example === 'dode') document.getElementById('BtnDode').classList.add('active');
+        }
+        
+        // 绑定按钮
+        document.getElementById('btnCube').addEventListener('click', () => switchTo('cube'));
+        document.getElementById('BtnIcosa').addEventListener('click', () => switchTo('icosa'));
+        document.getElementById('BtnDode').addEventListener('click', () => switchTo('dode'));
+        
+        // 启动默认立方体例子
+        switchTo('cube');
+        
+        // 添加星空微粒子背景简单点缀（美观不影响）
+        const starGeometry = new THREE.BufferGeometry();
+        const starCount = 800;
+        const starPositions = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount; i++) {
+            starPositions[i*3] = (Math.random() - 0.5) * 200;
+            starPositions[i*3+1] = (Math.random() - 0.5) * 100;
+            starPositions[i*3+2] = (Math.random() - 0.5) * 80 - 40;
+        }
+        starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xaaccff, size: 0.08, transparent: true, opacity: 0.5 });
+        const stars = new THREE.Points(starGeometry, starMat);
+        scene.add(stars);
+        
+        // 简单浮动动画让星星缓慢旋转
+        function animateStars() {
+            stars.rotation.y += 0.0005;
+            stars.rotation.x += 0.0003;
+            requestAnimationFrame(animateStars);
+        }
+        animateStars();
+        
+        // 渲染循环
+        function animate() {
+            controls.update(); // 更新轨道
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        // 窗口适配
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // 小提示console输出优雅
+        console.log('3D场景已启动 | 球与正多面体交线演示');
+    </script>
+</body>
+</html>

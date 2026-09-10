@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA转录为mRNA · 完全修正版 | 高中生物必修二</title>
+    <style>
+        :root {
+            --bg: #f5f0e8;
+            --card-bg: #fffef9;
+            --text: #2c2416;
+            --text-secondary: #5c4f3a;
+            --border: #d5cbb8;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --btn-bg: #faf6ef;
+            --btn-hover: #ede4d3;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(160deg, #f7f3ea 0%, #ede4d3 30%, #f2ede3 60%, #f9f6f0 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 16px;
+            color: var(--text);
+            line-height: 1.7;
+        }
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 22px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #3a2f1f 0%, #5a3e2b 40%, #3a2f1f 100%);
+            color: #f5e6d3;
+            padding: 20px 28px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.8em;
+            font-weight: 700;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .header .subtitle {
+            font-size: 0.95em;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+        .canvas-wrapper {
+            background: #fdfcf8;
+            border-bottom: 1px solid var(--border);
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+        }
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            background: #fefefc;
+        }
+        .legend-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+            padding: 10px 20px 14px;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            background: #fdfbf6;
+            border-bottom: 1px solid var(--border);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .legend-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 20px;
+            background: #fdfbf6;
+            border-bottom: 1px solid var(--border);
+        }
+        .controls button {
+            font-family: inherit;
+            font-size: 0.9em;
+            padding: 9px 18px;
+            border-radius: 25px;
+            border: 1.5px solid #c9bda8;
+            background: var(--btn-bg);
+            color: #3a2f1f;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: 500;
+        }
+        .controls button:hover {
+            background: var(--btn-hover);
+            border-color: #b0a080;
+        }
+        .controls button.primary {
+            background: #c0392b;
+            color: #fff;
+            border-color: #a93226;
+        }
+        .speed-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        .speed-group input[type="range"] {
+            width: 90px;
+            accent-color: #c0392b;
+        }
+        .knowledge-pagination {
+            padding: 20px 28px 24px;
+            background: #fdfbf7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        .card-viewport {
+            width: 100%;
+            max-width: 850px;
+            min-height: 200px;
+            background: #fffef9;
+            border: 1px solid #e0d7c6;
+            border-radius: 16px;
+            padding: 22px 26px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        }
+        .card-content h3 {
+            font-size: 1.2em;
+            color: #5a3e2b;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #e8dcc8;
+            padding-bottom: 6px;
+        }
+        .card-content p,
+        .card-content li {
+            font-size: 0.92em;
+            color: #5c4f3a;
+        }
+        .card-content ul {
+            padding-left: 20px;
+        }
+        .pagination-controls {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+        .pagination-controls button {
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid #c9bda8;
+            background: #faf6ef;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .page-indicator {
+            font-weight: 600;
+            color: #3a2f1f;
+            min-width: 60px;
+            text-align: center;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.75em;
+            color: #aaa;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧬 DNA 转录为 mRNA</h1>
+            <div class="subtitle">高中生物 · 必修二 · 基因的表达</div>
+        </div>
+
+        <div class="canvas-wrapper">
+            <canvas id="mainCanvas" width="920" height="520" aria-label="转录动画"></canvas>
+        </div>
+
+        <!-- 图例栏 -->
+        <div class="legend-bar">
+            <span class="legend-item"><span class="legend-dot" style="background:#e74c3c;"></span> A (腺嘌呤)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#3498db;"></span> T (胸腺嘧啶)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#2ecc71;"></span> C (胞嘧啶)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#f39c12;"></span> G (鸟嘌呤)</span>
+            <span class="legend-item"><span class="legend-dot" style="background:#9b59b6;"></span> U (尿嘧啶)</span>
+            <span class="legend-item"><span style="color:#d35400;font-weight:bold;">⏤</span> 磷酸二酯键</span>
+            <span class="legend-item"><span style="border-bottom:2px dashed #c0392b;">┈┈</span> 氢键(虚线)</span>
+        </div>
+
+        <div class="controls">
+            <button id="btnPlay" class="primary">▶ 播放</button>
+            <button id="btnRestart">↺ 重新开始</button>
+            <button id="btnStep">⏭ 单步</button>
+            <div class="speed-group">
+                <span>🐢 速度:</span>
+                <input type="range" id="speedSlider" min="0.3" max="3" step="0.1" value="1">
+                <span id="speedLabel">1.0×</span>
+            </div>
+            <span id="progressText" style="font-weight:500;"></span>
+        </div>
+
+        <div class="knowledge-pagination">
+            <div class="card-viewport" id="cardViewport">
+                <div class="card-content" id="cardContent"></div>
+            </div>
+            <div class="pagination-controls">
+                <button id="prevCardBtn">◀ 上一页</button>
+                <span class="page-indicator" id="pageIndicator">1 / 4</span>
+                <button id="nextCardBtn">下一页 ▶</button>
+            </div>
+        </div>
+        <footer>📚 A-T之间2个氢键 | G-C之间3个氢键 | 模板链标签已对齐</footer>
+    </div>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+
+            const btnPlay = document.getElementById('btnPlay');
+            const btnRestart = document.getElementById('btnRestart');
+            const btnStep = document.getElementById('btnStep');
+            const speedSlider = document.getElementById('speedSlider');
+            const speedLabel = document.getElementById('speedLabel');
+            const progressText = document.getElementById('progressText');
+
+            // 序列定义
+            const templateStrand = ['T', 'A', 'C', 'G', 'G', 'A', 'T', 'C', 'C', 'T', 'A']; // 3'→5'
+            const codingStrand = ['A', 'T', 'G', 'C', 'C', 'T', 'A', 'G', 'G', 'A', 'T']; // 5'→3'
+            const mrnaSequence = ['A', 'U', 'G', 'C', 'C', 'U', 'A', 'G', 'G', 'A', 'U']; // 5'→3'
+            const NUM_BP = templateStrand.length;
+
+            const BP_SIZE = 33;
+            const bpStartX = 110,
+                bpEndX = 780;
+            const bpSpacing = (bpEndX - bpStartX) / (NUM_BP - 1);
+            const codingY = 145,
+                templateY = 265,
+                mrnaBaseY = 350;
+            const bpX = Array.from({ length: NUM_BP }, (_, i) => bpStartX + i * bpSpacing);
+
+            const ENZYME_WIDTH = 80,
+                ENZYME_HEIGHT = 60,
+                ENZYME_INFLUENCE = 58;
+            let enzymeX = bpStartX - bpSpacing * 0.9;
+            const enzymeStartX = enzymeX;
+            const enzymeEndX = bpEndX + bpSpacing * 0.7;
+            let transcribedCount = 0,
+                mrnaReleased = false,
+                releaseAlpha = 1,
+                releaseOffsetY = 0;
+            let isPlaying = true,
+                speedMultiplier = 1.0;
+            let cyclePhase = 'transcribing',
+                pauseTimer = 0,
+                releaseTimer = 0,
+                resetTimer = 0;
+            let stepTriggered = false;
+
+            function resetAll() {
+                enzymeX = enzymeStartX;
+                transcribedCount = 0;
+                mrnaReleased = false;
+                releaseAlpha = 1;
+                releaseOffsetY = 0;
+                cyclePhase = 'transcribing';
+                pauseTimer = releaseTimer = resetTimer = 0;
+            }
+
+            function getBaseColor(b, isRNA = false) {
+                const map = { A: '#e74c3c', T: '#3498db', C: '#2ecc71', G: '#f39c12', U: '#9b59b6' };
+                return map[b] || '#888';
+            }
+
+            function drawBaseBlock(x, y, base, alpha = 1) {
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                const size = BP_SIZE,
+                    rx = x - size / 2,
+                    ry = y - size / 2,
+                    r = 7;
+                ctx.fillStyle = getBaseColor(base, base === 'U');
+                ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(rx, ry, size, size, r);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 15px "Segoe UI","PingFang SC"';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(base, x, y);
+                ctx.restore();
+            }
+
+            // ★ 关键修正：正确返回氢键数量
+            function getHydrogenCount(base1, base2) {
+                const pair = [base1, base2].sort().join('');
+                if (pair === 'AT' || pair === 'AU') return 2; // A-T 或 A-U → 2个氢键
+                if (pair === 'CG') return 3; // G-C → 3个氢键
+                return 2;
+            }
+
+            function drawHydrogenBonds(x, yTop, yBot, base1, base2, isBroken) {
+                const half = BP_SIZE / 2;
+                const bondCount = getHydrogenCount(base1, base2);
+                const spacing = 7;
+                const startY = yTop + half - (bondCount - 1) * spacing / 2;
+                ctx.setLineDash(isBroken ? [4, 6] : [2, 4]);
+                ctx.strokeStyle = isBroken ? 'rgba(200,80,50,0.55)' : 'rgba(120,100,80,0.65)';
+                ctx.lineWidth = isBroken ? 1.6 : 2.0;
+                for (let i = 0; i < bondCount; i++) {
+                    const dy = startY + i * spacing;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 3, dy);
+                    ctx.lineTo(x + 3, dy + (yBot - yTop - BP_SIZE));
+                    ctx.stroke();
+                }
+                ctx.setLineDash([]);
+                if (isBroken) {
+                    const midY = (yTop + yBot) / 2;
+                    ctx.strokeStyle = 'rgba(200,50,30,0.7)';
+                    ctx.lineWidth = 1.8;
+                    ctx.beginPath();
+                    ctx.moveTo(x - 7, midY - 4);
+                    ctx.lineTo(x + 7, midY + 4);
+                    ctx.moveTo(x + 7, midY - 4);
+                    ctx.lineTo(x - 7, midY + 4);
+                    ctx.stroke();
+                }
+            }
+
+            function drawPhosphodiester(x1, y1, x2, y2) {
+                ctx.strokeStyle = '#d35400';
+                ctx.lineWidth = 3.2;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                const mx = (x1 + x2) / 2,
+                    my = (y1 + y2) / 2;
+                ctx.fillStyle = '#e67e22';
+                ctx.beginPath();
+                ctx.arc(mx, my, 4.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 9px "Segoe UI"';
+                ctx.textAlign = 'center';
+                ctx.fillText('P', mx, my);
+            }
+
+            function getMrnaY(i) {
+                if (i >= transcribedCount) return mrnaBaseY + 70;
+                if (mrnaReleased) return mrnaBaseY + releaseOffsetY;
+                const dist = enzymeX - bpX[i];
+                const maxOff = 60;
+                let off = dist < 0 ? 0 : (dist < 18 ? dist * 7 / 18 : maxOff * (1 - Math.exp(-(dist - 18) / 75)));
+                return templateY + BP_SIZE / 2 + 10 + Math.min(off, maxOff);
+            }
+
+            function drawRNAPolymerase(x) {
+                const ex = x,
+                    ey = (codingY + templateY) / 2,
+                    hw = ENZYME_WIDTH / 2,
+                    hh = ENZYME_HEIGHT / 2;
+                ctx.save();
+                const grad = ctx.createLinearGradient(ex - hw, ey - hh, ex + hw, ey + hh);
+                grad.addColorStop(0, '#d44637');
+                grad.addColorStop(1, '#8b1f15');
+                ctx.fillStyle = grad;
+                ctx.strokeStyle = '#4a1a12';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.ellipse(ex, ey, hw, hh, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px "Segoe UI"';
+                ctx.textAlign = 'center';
+                ctx.fillText('RNA聚合酶', ex, ey);
+                ctx.restore();
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#fefefc';
+                ctx.fillRect(0, 0, W, H);
+                // 细胞核虚线
+                ctx.strokeStyle = 'rgba(120,100,80,0.3)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([8, 14]);
+                ctx.beginPath();
+                ctx.roundRect(28, 20, W - 56, H - 90, 18);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                // DNA骨架
+                ctx.strokeStyle = '#5a4030';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(bpStartX - 55, codingY);
+                ctx.lineTo(bpEndX + 55, codingY);
+                ctx.stroke();
+                ctx.strokeStyle = '#4a3525';
+                ctx.beginPath();
+                ctx.moveTo(bpStartX - 55, templateY);
+                ctx.lineTo(bpEndX + 55, templateY);
+                ctx.stroke();
+
+                // 碱基对与氢键
+                for (let i = 0; i < NUM_BP; i++) {
+                    const x = bpX[i];
+                    const inRange = Math.abs(enzymeX - x) < ENZYME_INFLUENCE;
+                    const bondBroken = inRange || (i < transcribedCount && Math.abs(enzymeX - x) < ENZYME_INFLUENCE * 1.7);
+                    drawHydrogenBonds(x, codingY, templateY, codingStrand[i], templateStrand[i], bondBroken && cyclePhase ===
+                        'transcribing');
+                    drawBaseBlock(x, codingY, codingStrand[i], (inRange && cyclePhase === 'transcribing') ? 0.55 : 1);
+                    drawBaseBlock(x, templateY, templateStrand[i], 1);
+                    if (i < transcribedCount && !mrnaReleased) {
+                        drawBaseBlock(x, getMrnaY(i), mrnaSequence[i], 1);
+                    }
+                }
+                // mRNA磷酸二酯键
+                if (transcribedCount >= 2 && !mrnaReleased) {
+                    for (let i = 1; i < transcribedCount; i++) drawPhosphodiester(bpX[i - 1], getMrnaY(i - 1), bpX[i],
+                        getMrnaY(i));
+                }
+                if (mrnaReleased && releaseAlpha > 0.02) {
+                    const ry = mrnaBaseY + releaseOffsetY;
+                    ctx.globalAlpha = releaseAlpha;
+                    for (let i = 1; i < NUM_BP; i++) drawPhosphodiester(bpX[i - 1], ry, bpX[i], ry);
+                    for (let i = 0; i < NUM_BP; i++) drawBaseBlock(bpX[i], ry, mrnaSequence[i]);
+                    ctx.globalAlpha = 1;
+                }
+                if (cyclePhase === 'transcribing' || cyclePhase === 'releasing') drawRNAPolymerase(cyclePhase ===
+                    'releasing' ? enzymeEndX : enzymeX);
+
+                // ★ 标签：模板链与编码链左边对齐
+                const labelX = bpStartX - 18;
+                ctx.font = 'bold 14px "Segoe UI","PingFang SC"';
+                ctx.fillStyle = '#5c4f3a';
+                ctx.textAlign = 'right';
+                ctx.fillText('编码链 (5\'→3\')', labelX, codingY - BP_SIZE / 2 - 10);
+                ctx.fillStyle = '#2c2416';
+                ctx.font = 'bold 16px "Segoe UI","PingFang SC"';
+                ctx.fillText('模板链 (3\'→5\')', labelX, templateY + BP_SIZE / 2 + 22);
+
+                // 5' 3' 标记
+                ctx.fillStyle = '#888';
+                ctx.font = 'italic 12px "Segoe UI"';
+                ctx.textAlign = 'center';
+                ctx.fillText("5'", bpStartX - 40, codingY - 2);
+                ctx.fillText("3'", bpEndX + 40, codingY - 2);
+                ctx.fillText("3'", bpStartX - 40, templateY + 2);
+                ctx.fillText("5'", bpEndX + 40, templateY + 2);
+                if (transcribedCount > 0 && !mrnaReleased) {
+                    const fy = getMrnaY(0),
+                        ly = getMrnaY(transcribedCount - 1);
+                    ctx.fillStyle = '#9b59b6';
+                    ctx.font = 'bold 12px "Segoe UI"';
+                    ctx.textAlign = 'right';
+                    ctx.fillText("5'", bpX[0] - 18, fy);
+                    ctx.textAlign = 'left';
+                    ctx.fillText("3'", bpX[transcribedCount - 1] + 18, ly);
+                }
+            }
+
+            const BASE_SPEED = 52;
+            let lastTime = null;
+
+            function update(ts) {
+                if (!lastTime) lastTime = ts;
+                let dt = Math.min(0.1, (ts - lastTime) / 1000);
+                lastTime = ts;
+                if (!isPlaying && !stepTriggered) { draw();
+                    requestAnimationFrame(update); return; }
+                let fdt = stepTriggered ? 0.045 : dt;
+                stepTriggered = false;
+                const spd = BASE_SPEED * speedMultiplier;
+                switch (cyclePhase) {
+                    case 'transcribing':
+                        enzymeX += spd * fdt;
+                        while (transcribedCount < NUM_BP && enzymeX >= bpX[transcribedCount]) transcribedCount++;
+                        if (enzymeX >= enzymeEndX && transcribedCount >= NUM_BP) { enzymeX = enzymeEndX;
+                            cyclePhase = 'releasing';
+                            releaseTimer = 0; }
+                        break;
+                    case 'releasing':
+                        releaseTimer += fdt;
+                        releaseAlpha = Math.max(0, 1 - releaseTimer / 1.9);
+                        releaseOffsetY = releaseTimer * 38;
+                        if (releaseTimer > 2.3) { cyclePhase = 'resetting';
+                            resetTimer = 0;
+                            mrnaReleased = true; }
+                        break;
+                    case 'resetting':
+                        resetTimer += fdt;
+                        enzymeX = enzymeEndX - (enzymeEndX - enzymeStartX) * Math.min(1, resetTimer / 1.7);
+                        if (resetTimer >= 1.7) { resetAll();
+                            cyclePhase = 'pausing';
+                            pauseTimer = 0; }
+                        break;
+                    case 'pausing':
+                        pauseTimer += fdt;
+                        if (pauseTimer > 1.8) { resetAll();
+                            cyclePhase = 'transcribing'; }
+                        break;
+                }
+                progressText.textContent = cyclePhase === 'transcribing' ? `进度: ${Math.round(transcribedCount/NUM_BP*100)}%` : '';
+                draw();
+                requestAnimationFrame(update);
+            }
+
+            btnPlay.onclick = () => { isPlaying = !isPlaying;
+                btnPlay.textContent = isPlaying ? '⏸ 暂停' : '▶ 播放'; };
+            btnRestart.onclick = () => { resetAll();
+                isPlaying = true;
+                btnPlay.textContent = '⏸ 暂停'; };
+            btnStep.onclick = () => { if (!isPlaying) stepTriggered = true; };
+            speedSlider.oninput = () => { speedMultiplier = +speedSlider.value;
+                speedLabel.textContent = speedMultiplier.toFixed(1) + '×'; };
+
+            // 翻页知识卡片
+            const cardContent = document.getElementById('cardContent');
+            const pageIndicator = document.getElementById('pageIndicator');
+            const cards = [
+                `<h3>📝 转录过程概述</h3><p>转录是以DNA模板链为模板，在RNA聚合酶催化下合成mRNA的过程，发生在细胞核中。</p><ul><li><strong>起始：</strong>RNA聚合酶结合启动子，DNA解旋。</li><li><strong>延伸：</strong>酶沿模板链3'→5'移动，mRNA从5'→3'延伸。</li><li><strong>终止：</strong>到达终止子，mRNA释放。</li></ul>`,
+                `<h3>🔬 碱基互补配对与氢键</h3><p>转录配对规则：A-U, T-A, C-G, G-C。<br><strong>氢键数量：</strong>A与T/U之间形成<b>2个氢键</b>（两条虚线）；G与C之间形成<b>3个氢键</b>（三条虚线）。动画中已正确体现。</p>`,
+                `<h3>🧪 关键分子与方向</h3><ul><li><strong>模板链：</strong>3'→5'方向，被读取。</li><li><strong>编码链：</strong>5'→3'，与mRNA序列一致(T→U)。</li><li><strong>mRNA合成方向：</strong>5'→3'。</li><li><strong>磷酸二酯键：</strong>连接核糖3'-OH与下一位5'-磷酸。</li></ul>`,
+                `<h3>💡 演示序列</h3><p style="font-family:monospace;"><strong>编码链 5'→3'：</strong><span style="color:#3498db;">A T G C C T A G G A T</span><br><strong>模板链 3'→5'：</strong><span style="color:#e74c3c;">T A C G G A T C C T A</span><br><strong>mRNA 5'→3'：</strong><span style="color:#9b59b6;">A U G C C U A G G A U</span></p>`
+            ];
+            let currentPage = 0;
+
+            function renderCard() {
+                cardContent.innerHTML = cards[currentPage];
+                pageIndicator.textContent = `${currentPage+1} / ${cards.length}`;
+            }
+            document.getElementById('prevCardBtn').onclick = () => { currentPage = (currentPage - 1 + cards.length) % cards
+                    .length;
+                renderCard(); };
+            document.getElementById('nextCardBtn').onclick = () => { currentPage = (currentPage + 1) % cards.length;
+                renderCard(); };
+            renderCard();
+
+            resetAll();
+            draw();
+            requestAnimationFrame(update);
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高一物理 - 平抛运动演示 | 完全互动版</title>
+    <style>
+        :root {
+            --bg: #f5f0eb;
+            --panel-bg: #ffffff;
+            --text: #2c2416;
+            --text-secondary: #5c5347;
+            --accent: #c75b39;
+            --accent-hover: #a84a2e;
+            --blue: #3a6ea5;
+            --red: #c0392b;
+            --green: #2d7d46;
+            --gold: #b8860b;
+            --border: #d9cebf;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 6px 28px rgba(0, 0, 0, 0.10);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --font: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            --mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Menlo', monospace;
+            --transition: 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动时选中文本，提升滑块手感 */
+        }
+
+        body {
+            font-family: var(--font);
+            background: linear-gradient(160deg, #f7f3ed 0%, #efe8db 40%, #f2ece2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 16px;
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1300px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* 顶部标题栏 */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 20px;
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .header .icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e8744b, #c75b39);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #3d2b1a;
+        }
+        .header .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-left: 4px;
+            font-weight: 500;
+        }
+        .header .badge {
+            margin-left: auto;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            background: #fdf2e9;
+            color: #b8562e;
+            border: 1px solid #f0d5c0;
+            white-space: nowrap;
+        }
+
+        /* 主体布局 */
+        .main-layout {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* 左侧：主画布 + 分运动画布 */
+        .visual-area {
+            flex: 1 1 720px;
+            min-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .canvas-card {
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 10px;
+            position: relative;
+        }
+        .canvas-card .card-label {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 4px 10px;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .main-canvas-wrap {
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: var(--radius-sm);
+            cursor: crosshair;  /* 光标互动增强: 十字光标 */
+        }
+        .sub-canvases {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .sub-canvases .canvas-card {
+            flex: 1 1 240px;
+            min-width: 200px;
+        }
+        .sub-canvases canvas {
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+        }
+
+        /* 右侧面板 */
+        .panel {
+            flex: 0 0 340px;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .panel-card {
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            padding: 16px 18px;
+        }
+        .panel-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            color: #3d2b1a;
+            letter-spacing: 0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .panel-card h3::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 18px;
+            border-radius: 2px;
+            background: var(--accent);
+        }
+
+        /* 滑块 + 按钮 光标样式强化 */
+        .param-group {
+            margin-bottom: 13px;
+        }
+        .param-group label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+        .param-group label .val {
+            font-family: var(--mono);
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.85rem;
+            background: #fdf2e9;
+            padding: 3px 10px;
+            border-radius: 12px;
+            min-width: 56px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .param-group input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 7px;
+            border-radius: 4px;
+            background: #e8dcd0;
+            outline: none;
+            cursor: pointer;
+            margin-top: 2px;
+        }
+        .param-group input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+            cursor: grab;
+            transition: var(--transition);
+        }
+        .param-group input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--accent-hover);
+            transform: scale(1.08);
+            cursor: grabbing;
+        }
+        .param-group .unit {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            border-radius: 22px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            border: none;
+            letter-spacing: 0.03em;
+            transition: all var(--transition);
+            font-family: var(--font);
+            white-space: nowrap;
+        }
+        .btn-start {
+            background: #2d7d46;
+            color: #fff;
+            box-shadow: 0 3px 10px rgba(45, 125, 70, 0.3);
+            cursor: pointer;
+        }
+        .btn-start:hover {
+            background: #236835;
+            box-shadow: 0 4px 14px rgba(45, 125, 70, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-pause {
+            background: #d4a017;
+            color: #fff;
+            cursor: pointer;
+        }
+        .btn-pause:hover {
+            background: #b88a14;
+            transform: translateY(-1px);
+        }
+        .btn-reset {
+            background: #fff;
+            color: var(--text);
+            border: 2px solid #d5c8b5;
+            cursor: pointer;
+        }
+        .btn-reset:hover {
+            background: #faf7f2;
+            border-color: #b8a48c;
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: scale(0.96);
+            transition: 0.08s ease;
+        }
+        .btn:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            pointer-events: auto;
+            transform: none;
+        }
+
+        /* 状态指示器 */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 14px;
+            margin-left: 6px;
+        }
+        .status-running {
+            background: #e8f5e9;
+            color: #2d7d46;
+        }
+        .status-paused {
+            background: #fff8e1;
+            color: #b8860b;
+        }
+        .status-stopped {
+            background: #f5f5f5;
+            color: #888;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-running .status-dot {
+            background: #2d7d46;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        .status-paused .status-dot {
+            background: #d4a017;
+        }
+        .status-stopped .status-dot {
+            background: #bbb;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1);}
+            50% { opacity: 0.4; transform: scale(0.7);}
+        }
+
+        /* 表格滚动 */
+        .table-wrap {
+            max-height: 340px;
+            overflow-y: auto;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            margin-top: 4px;
+            scroll-behavior: smooth;
+        }
+        .table-wrap::-webkit-scrollbar {
+            width: 5px;
+        }
+        .table-wrap::-webkit-scrollbar-track {
+            background: #faf7f3;
+            border-radius: 4px;
+        }
+        .table-wrap::-webkit-scrollbar-thumb {
+            background: #d5c8b5;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            font-family: var(--mono);
+        }
+        table thead th {
+            background: #fdf9f4;
+            color: #5c4a32;
+            font-weight: 700;
+            padding: 9px 6px;
+            text-align: center;
+            border-bottom: 2px solid #d9cebf;
+            font-size: 0.73rem;
+            white-space: nowrap;
+        }
+        table tbody td {
+            padding: 7px 6px;
+            text-align: center;
+            border-bottom: 1px solid #f0e8da;
+            color: #3d2b1a;
+        }
+        table tbody tr:hover {
+            background: #fefcf8;
+            cursor: default;
+        }
+        table tbody tr:last-child {
+            background: #fffdf7;
+            font-weight: 700;
+        }
+        table tbody tr:last-child td {
+            border-bottom: 2px solid var(--accent);
+            color: #b8562e;
+        }
+        .no-data {
+            text-align: center;
+            padding: 28px;
+            color: #b8a48c;
+            font-style: italic;
+            font-size: 0.85rem;
+        }
+
+        /* 鼠标悬停信息窗 (光标互动核心) */
+        .hover-info-panel {
+            position: absolute;
+            bottom: 14px;
+            right: 14px;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(4px);
+            color: #fef7e0;
+            padding: 8px 14px;
+            border-radius: 14px;
+            font-size: 0.7rem;
+            font-family: var(--mono);
+            pointer-events: none;
+            z-index: 20;
+            border-left: 3px solid var(--accent);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            line-height: 1.4;
+            transition: 0.1s ease;
+            max-width: 280px;
+            text-shadow: 0 0 2px rgba(0,0,0,0.5);
+        }
+        .hover-info-panel span {
+            color: #ffbc7a;
+            font-weight: bold;
+        }
+
+        .legend-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            padding: 4px 0;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: help;
+        }
+        .legend-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 1050px) {
+            .main-layout { flex-direction: column; }
+            .panel { flex: 1 1 auto; flex-direction: row; flex-wrap: wrap; gap: 10px; }
+            .panel-card { flex: 1 1 260px; min-width: 240px; }
+            .visual-area { min-width: auto; }
+            .sub-canvases { flex-direction: column; }
+        }
+        @media (max-width: 600px) {
+            body { padding: 6px; }
+            .header { flex-wrap: wrap; padding: 10px 14px; }
+            .header h1 { font-size: 1.1rem; }
+            .btn-row { flex-direction: column; }
+            .btn { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="icon">🎯</div>
+        <h1>平抛运动演示</h1>
+        <span class="subtitle">Projectile Motion</span>
+        <span class="badge">高一物理 · 必修二</span>
+        <span id="statusBadge" class="status-indicator status-stopped">
+            <span class="status-dot"></span> 就绪
+        </span>
+    </div>
+
+    <div class="main-layout">
+        <div class="visual-area">
+            <!-- 主画布卡片 (含光标悬浮提示) -->
+            <div class="canvas-card main-canvas-wrap" id="mainCanvasCard">
+                <div class="card-label">📐 平抛运动轨迹 | 鼠标悬浮查看数据</div>
+                <canvas id="mainCanvas" width="760" height="460"></canvas>
+                <div id="hoverInfo" class="hover-info-panel">
+                    🖱️ 光标移至轨迹区<br>显示物理坐标 & 理论参数
+                </div>
+                <div class="legend-row" style="padding:6px 10px 2px;">
+                    <span class="legend-item"><span class="legend-dot" style="background:#3a6ea5;"></span> 抛物线轨迹</span>
+                    <span class="legend-item"><span class="legend-dot" style="background:#c0392b;"></span> X轴投影（匀速）</span>
+                    <span class="legend-item"><span class="legend-dot" style="background:#2d7d46;"></span> Y轴投影（加速）</span>
+                    <span class="legend-item"><span class="legend-dot" style="background:#7b4bcc;"></span> 合速度矢量</span>
+                </div>
+            </div>
+
+            <div class="sub-canvases">
+                <div class="canvas-card">
+                    <div class="card-label">📈 X-t 图（匀速直线运动）</div>
+                    <canvas id="xtCanvas" width="360" height="240"></canvas>
+                </div>
+                <div class="canvas-card">
+                    <div class="card-label">📉 Y-t 图（自由落体运动）</div>
+                    <canvas id="ytCanvas" width="360" height="240"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-card">
+                <h3>⚙️ 实验参数</h3>
+                <div class="param-group">
+                    <label>初速度 v₀ <span class="val" id="valV0">10.0</span> <span class="unit">m/s</span></label>
+                    <input type="range" id="sliderV0" min="3" max="20" value="10" step="0.5">
+                </div>
+                <div class="param-group">
+                    <label>抛出高度 h <span class="val" id="valH">8.0</span> <span class="unit">m</span></label>
+                    <input type="range" id="sliderH" min="3" max="16" value="8" step="0.5">
+                </div>
+                <div class="param-group">
+                    <label>模拟速度 <span class="val" id="valSpeed">0.5x</span></label>
+                    <input type="range" id="sliderSpeed" min="0.1" max="2" value="0.5" step="0.1">
+                </div>
+                <div class="param-group">
+                    <label>重力加速度 g <span class="val" id="valG">10.0</span> <span class="unit">m/s²</span></label>
+                    <input type="range" id="sliderG" min="5" max="15" value="10" step="0.5">
+                </div>
+                <div class="btn-row">
+                    <button class="btn btn-start" id="btnStart">▶ 开始</button>
+                    <button class="btn btn-pause" id="btnPause" disabled>⏯ 暂停</button>
+                    <button class="btn btn-reset" id="btnReset">↻ 重置</button>
+                </div>
+                <div style="margin-top:10px;font-size:0.78rem;color:var(--text-secondary);text-align:center;">
+                    💡 提示：修改参数自动重置 | 空格 开始/暂停，R 重置
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h3>📋 实验数据记录</h3>
+                <div style="font-size:0.76rem;color:var(--text-secondary);margin-bottom:8px;">
+                    记录间隔：<strong>0.10 s</strong>（模拟时间）&nbsp;|&nbsp;
+                    已记录：<strong id="recordCount">0</strong> 条
+                </div>
+                <div class="table-wrap" id="tableWrap">
+                    <table>
+                        <thead>
+                        <tr><th>#</th><th>t (s)</th><th>X (m)</th><th>Y (m)</th><th>v<sub>x</sub></th><th>v<sub>y</sub></th><th>v<sub>合</sub></th><th>θ (°)</th></tr>
+                        </thead>
+                        <tbody id="tableBody">
+                        <tr><td colspan="8" class="no-data">🔬 点击「开始」运行实验以记录数据</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM 元素
+        const mainCanvas = document.getElementById('mainCanvas');
+        const mainCtx = mainCanvas.getContext('2d');
+        const xtCanvas = document.getElementById('xtCanvas');
+        const xtCtx = xtCanvas.getContext('2d');
+        const ytCanvas = document.getElementById('ytCanvas');
+        const ytCtx = ytCanvas.getContext('2d');
+        const btnStart = document.getElementById('btnStart');
+        const btnPause = document.getElementById('btnPause');
+        const btnReset = document.getElementById('btnReset');
+        const sliderV0 = document.getElementById('sliderV0');
+        const sliderH = document.getElementById('sliderH');
+        const sliderSpeed = document.getElementById('sliderSpeed');
+        const sliderG = document.getElementById('sliderG');
+        const valV0 = document.getElementById('valV0');
+        const valH = document.getElementById('valH');
+        const valSpeed = document.getElementById('valSpeed');
+        const valG = document.getElementById('valG');
+        const tableBody = document.getElementById('tableBody');
+        const tableWrap = document.getElementById('tableWrap');
+        const recordCountSpan = document.getElementById('recordCount');
+        const statusBadge = document.getElementById('statusBadge');
+        const hoverInfoDiv = document.getElementById('hoverInfo');
+
+        // 物理量
+        let v0 = parseFloat(sliderV0.value);
+        let h0 = parseFloat(sliderH.value);
+        let simSpeed = parseFloat(sliderSpeed.value);
+        let g = parseFloat(sliderG.value);
+
+        function getLandTime() { return Math.sqrt(2 * h0 / g); }
+        function getMaxX() { return v0 * getLandTime(); }
+
+        // 模拟状态
+        let simTime = 0;
+        let isRunning = false;
+        let isPaused = false;
+        let hasStarted = false;
+        let trailPoints = [];
+        let recordData = [];
+        let nextRecordTime = 0;
+        let lastFrameTime = null;
+        let animationId = null;
+        let markPoints = [];
+
+        // 坐标映射常量
+        const mainWidth = mainCanvas.width, mainHeight = mainCanvas.height;
+        const originX = 90, originY = 55;
+        const marginRight = 40, marginBottom = 45;
+        const plotWidth = mainWidth - originX - marginRight;
+        const plotHeight = mainHeight - originY - marginBottom;
+
+        function getMainScale() {
+            const tLand = getLandTime();
+            const maxX = v0 * tLand;
+            const maxY = h0;
+            const sx = plotWidth / maxX;
+            const sy = plotHeight / maxY;
+            return Math.min(sx, sy);
+        }
+
+        function physToCanvas(px, py) {
+            const s = getMainScale();
+            return { cx: originX + px * s, cy: originY + py * s };
+        }
+
+        // 逆转换：canvas坐标 -> 物理坐标 (px, py)
+        function canvasToPhys(cx, cy) {
+            const s = getMainScale();
+            const px = (cx - originX) / s;
+            const py = (cy - originY) / s;
+            return { px, py };
+        }
+
+        // 更新悬浮信息 (光标互动核心)
+        function updateHoverInfo(e) {
+            if (!mainCanvas) return;
+            const rect = mainCanvas.getBoundingClientRect();
+            const scaleX = mainCanvas.width / rect.width;   // canvas物理像素比
+            const scaleY = mainCanvas.height / rect.height;
+            let mouseCanvasX = (e.clientX - rect.left) * scaleX;
+            let mouseCanvasY = (e.clientY - rect.top) * scaleY;
+            mouseCanvasX = Math.min(Math.max(0, mouseCanvasX), mainWidth);
+            mouseCanvasY = Math.min(Math.max(0, mouseCanvasY), mainHeight);
+            
+            const { px, py } = canvasToPhys(mouseCanvasX, mouseCanvasY);
+            const tLand = getLandTime();
+            const maxX = getMaxX();
+            // 有效性判断 (物理范围内)
+            const isValidX = px >= 0 && px <= maxX + 0.5;
+            const isValidY = py >= 0 && py <= h0 + 0.5;
+            
+            if (isValidX && isValidY && py >= 0) {
+                // 根据下落位移计算理论时间
+                const tFromY = Math.sqrt(2 * py / g);
+                const xTheory = v0 * tFromY;
+                const vx_cur = v0;
+                const vy_cur = g * tFromY;
+                const vTotal = Math.sqrt(vx_cur * vx_cur + vy_cur * vy_cur);
+                const theta = Math.atan2(vy_cur, vx_cur) * 180 / Math.PI;
+                const deltaX = px - xTheory;
+                hoverInfoDiv.innerHTML = `
+                    <div style="font-weight:bold; margin-bottom:4px;">📌 光标物理坐标</div>
+                    <div>📍 X = <span>${px.toFixed(2)}</span> m &nbsp; Y = <span>${py.toFixed(2)}</span> m</div>
+                    <div>⏱️ 理论时间 t = <span>${tFromY.toFixed(3)}</span> s</div>
+                    <div>📐 理论水平位置 X₀ = <span>${xTheory.toFixed(2)}</span> m &nbsp; ΔX = <span>${deltaX.toFixed(2)}</span> m</div>
+                    <div>⚡ vₓ = ${vx_cur.toFixed(1)} m/s &nbsp; vᵧ = ${vy_cur.toFixed(2)} m/s</div>
+                    <div>🔻 合速度 = <span>${vTotal.toFixed(2)}</span> m/s &nbsp; θ = <span>${theta.toFixed(1)}°</span></div>
+                `;
+            } else {
+                hoverInfoDiv.innerHTML = `🖱️ 移至轨迹区域<br>显示实时物理量 & 运动分析`;
+            }
+        }
+
+        // 鼠标监听
+        mainCanvas.addEventListener('mousemove', (e) => { updateHoverInfo(e); });
+        mainCanvas.addEventListener('mouseleave', () => {
+            hoverInfoDiv.innerHTML = `🖱️ 光标移至轨迹区<br>显示物理坐标 & 理论参数`;
+        });
+
+        // 通用刷新数值
+        function updateDisplayValues() {
+            valV0.textContent = v0.toFixed(1);
+            valH.textContent = h0.toFixed(1);
+            valSpeed.textContent = simSpeed.toFixed(1) + 'x';
+            valG.textContent = g.toFixed(1);
+        }
+
+        function updateStatusBadge(status, text) {
+            statusBadge.className = 'status-indicator status-' + status;
+            statusBadge.innerHTML = '<span class="status-dot"></span> ' + text;
+        }
+
+        function addTableRow(idx, t, x, y, vx, vy, vTot, theta) {
+            if (idx === 1 && tableBody.querySelector('.no-data')) tableBody.innerHTML = '';
+            const row = document.createElement('tr');
+            row.innerHTML = `<td>${idx}</td><td>${t.toFixed(2)}</td><td>${x.toFixed(2)}</td><td>${y.toFixed(2)}</td>
+                <td>${vx.toFixed(1)}</td><td>${vy.toFixed(2)}</td><td>${vTot.toFixed(2)}</td><td>${theta.toFixed(1)}°</td>`;
+            tableBody.appendChild(row);
+            tableWrap.scrollTop = tableWrap.scrollHeight;
+        }
+
+        // 重置所有
+        function resetAll() {
+            if (animationId) cancelAnimationFrame(animationId);
+            isRunning = false;
+            isPaused = false;
+            hasStarted = false;
+            simTime = 0;
+            trailPoints = [];
+            recordData = [];
+            nextRecordTime = 0;
+            markPoints = [];
+            lastFrameTime = null;
+            tableBody.innerHTML = '<tr><td colspan="8" class="no-data">🔬 点击「开始」运行实验以记录数据</td></tr>';
+            recordCountSpan.textContent = '0';
+            btnStart.disabled = false;
+            btnPause.disabled = true;
+            btnPause.textContent = '⏯ 暂停';
+            updateStatusBadge('stopped', '就绪');
+            updateDisplayValues();
+            drawAll();
+        }
+
+        function resumeExperiment() {
+            if (!isPaused) return;
+            isPaused = false;
+            lastFrameTime = null;
+            btnPause.textContent = '⏯ 暂停';
+            btnStart.disabled = true;
+            updateStatusBadge('running', '运行中');
+            animationId = requestAnimationFrame(animationLoop);
+        }
+
+        function pauseExperiment() {
+            if (!isRunning || isPaused) return;
+            isPaused = true;
+            lastFrameTime = null;
+            btnPause.textContent = '▶ 继续';
+            btnStart.disabled = false;
+            updateStatusBadge('paused', '已暂停');
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+
+        function startExperiment() {
+            if (isRunning && !isPaused) return;
+            if (isPaused) { resumeExperiment(); return; }
+            if (hasStarted && simTime >= getLandTime()) resetAll();
+            trailPoints = [];
+            recordData = [];
+            nextRecordTime = 0;
+            markPoints = [];
+            simTime = 0;
+            hasStarted = true;
+            isRunning = true;
+            isPaused = false;
+            lastFrameTime = null;
+            btnStart.disabled = true;
+            btnPause.disabled = false;
+            btnPause.textContent = '⏯ 暂停';
+            updateStatusBadge('running', '运行中');
+            tableBody.innerHTML = '';
+            recordCountSpan.textContent = '0';
+            if (animationId) cancelAnimationFrame(animationId);
+            animationId = requestAnimationFrame(animationLoop);
+        }
+
+        function animationLoop(timestamp) {
+            if (!isRunning || isPaused) return;
+            if (lastFrameTime === null) { lastFrameTime = timestamp; requestAnimationFrame(animationLoop); return; }
+            const realDt = Math.min((timestamp - lastFrameTime) / 1000, 0.1);
+            lastFrameTime = timestamp;
+            const simDt = realDt * simSpeed;
+            const tLand = getLandTime();
+            const prevSimTime = simTime;
+            simTime += simDt;
+            let landed = false;
+            if (simTime >= tLand) { simTime = tLand; landed = true; }
+
+            // 轨迹填充
+            const numSteps = Math.max(1, Math.floor(simDt / 0.005));
+            const stepDt = (simTime - prevSimTime) / numSteps;
+            for (let i = 1; i <= numSteps; i++) {
+                let t = prevSimTime + i * stepDt;
+                if (t > tLand) t = tLand;
+                const px = v0 * t;
+                const py = 0.5 * g * t * t;
+                trailPoints.push({ x: px, y: py, t });
+                if (t >= tLand) break;
+            }
+            if (landed && (trailPoints.length === 0 || trailPoints[trailPoints.length-1].t < tLand - 1e-6))
+                trailPoints.push({ x: v0 * tLand, y: h0, t: tLand });
+
+            // 等时标记点 (0.2s)
+            markPoints = [];
+            for (let mt = 0.2; mt <= simTime + 1e-5; mt += 0.2) if (mt <= tLand) markPoints.push({ x: v0 * mt, y: 0.5 * g * mt * mt, t: mt });
+
+            // 数据记录
+            while (nextRecordTime <= simTime + 1e-5 && nextRecordTime <= tLand) {
+                const rt = nextRecordTime;
+                const rx = v0 * rt;
+                const ry = 0.5 * g * rt * rt;
+                const rvx = v0;
+                const rvy = g * rt;
+                const rvTot = Math.hypot(rvx, rvy);
+                const thetaDeg = Math.atan2(rvy, rvx) * 180 / Math.PI;
+                recordData.push({ t: rt, x: rx, y: ry, vx: rvx, vy: rvy, vTotal: rvTot, theta: thetaDeg });
+                addTableRow(recordData.length, rt, rx, ry, rvx, rvy, rvTot, thetaDeg);
+                nextRecordTime += 0.10;
+            }
+            recordCountSpan.textContent = recordData.length;
+            drawAll();
+
+            if (landed) {
+                isRunning = false;
+                isPaused = false;
+                hasStarted = true;
+                btnStart.disabled = false;
+                btnPause.disabled = true;
+                btnPause.textContent = '⏯ 暂停';
+                updateStatusBadge('stopped', '已落地');
+                animationId = null;
+                drawAll();
+                return;
+            }
+            animationId = requestAnimationFrame(animationLoop);
+        }
+
+        // 绘图函数 (精简保留原有丰富绘图，追加光标十字辅助)
+        function drawMainCanvas() {
+            const ctx = mainCtx, w = mainWidth, h = mainHeight;
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = '#fefdfb';
+            ctx.fillRect(0, 0, w, h);
+            const s = getMainScale();
+            const tLand = getLandTime();
+            const maxX = v0 * tLand;
+            const maxY = h0;
+            // 网格
+            ctx.strokeStyle = '#e8e0d4'; ctx.lineWidth = 0.6; ctx.setLineDash([4,6]);
+            const gridSpacing = maxY > 8 ? 2 : 1;
+            for (let gy = gridSpacing; gy <= maxY; gy += gridSpacing) {
+                let yc = originY + gy * s; ctx.beginPath(); ctx.moveTo(originX, yc); ctx.lineTo(originX + maxX * s, yc); ctx.stroke();
+            }
+            for (let gx = gridSpacing; gx <= maxX; gx += gridSpacing) {
+                let xc = originX + gx * s; ctx.beginPath(); ctx.moveTo(xc, originY); ctx.lineTo(xc, originY + maxY * s); ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            // 轴
+            ctx.strokeStyle = '#4a3f35'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(originX-15, originY); ctx.lineTo(originX+maxX*s+20, originY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(originX, originY-15); ctx.lineTo(originX, originY+maxY*s+20); ctx.stroke();
+            ctx.fillStyle = '#4a3f35';
+            ctx.beginPath(); ctx.moveTo(originX+maxX*s+20, originY); ctx.lineTo(originX+maxX*s+8, originY-7); ctx.lineTo(originX+maxX*s+8, originY+7); ctx.fill();
+            ctx.beginPath(); ctx.moveTo(originX, originY+maxY*s+20); ctx.lineTo(originX-7, originY+maxY*s+8); ctx.lineTo(originX+7, originY+maxY*s+8); ctx.fill();
+            ctx.fillStyle = '#4a3f35'; ctx.font = 'bold 13px "Segoe UI"'; ctx.fillText('X (m)', originX+maxX*s/2, originY+maxY*s+32);
+            ctx.save(); ctx.translate(originX-32, originY+maxY*s/2); ctx.rotate(-Math.PI/2); ctx.fillText('Y (m)', 0,0); ctx.restore();
+            // 轨迹
+            if (trailPoints.length > 1) {
+                ctx.beginPath(); ctx.strokeStyle = '#3a6ea5'; ctx.lineWidth = 2.8;
+                for (let i=0;i<trailPoints.length;i++) { let p = physToCanvas(trailPoints[i].x, trailPoints[i].y); if(i===0) ctx.moveTo(p.cx,p.cy); else ctx.lineTo(p.cx,p.cy); }
+                ctx.stroke();
+            }
+            // 标记点
+            for (const mp of markPoints) { let p = physToCanvas(mp.x, mp.y); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.cx,p.cy,7,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#3a6ea5'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(p.cx,p.cy,7,0,Math.PI*2); ctx.stroke(); ctx.fillStyle='#1d4d7a'; ctx.beginPath(); ctx.arc(p.cx,p.cy,3.5,0,Math.PI*2); ctx.fill(); }
+            // 当前球体
+            if (simTime > 0 && simTime <= tLand+0.001) {
+                let ct = Math.min(simTime, tLand), cx_ball = v0*ct, cy_ball = 0.5*g*ct*ct, pt = physToCanvas(cx_ball, cy_ball);
+                ctx.strokeStyle = '#c0392b'; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(pt.cx, pt.cy); ctx.lineTo(pt.cx, originY); ctx.stroke();
+                ctx.strokeStyle = '#2d7d46'; ctx.beginPath(); ctx.moveTo(pt.cx, pt.cy); ctx.lineTo(originX, pt.cy); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = '#c0392b'; ctx.beginPath(); ctx.arc(pt.cx, originY, 6, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#2d7d46'; ctx.beginPath(); ctx.arc(originX, pt.cy, 6, 0, Math.PI*2); ctx.fill();
+                // 速度矢量简化示意保留
+                const vLen = Math.hypot(v0, g*ct) * getMainScale() * 0.4;
+                const ang = Math.atan2(g*ct, v0);
+                const vEndX = pt.cx + vLen*Math.cos(ang), vEndY = pt.cy + vLen*Math.sin(ang);
+                ctx.strokeStyle = '#7b4bcc'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(pt.cx, pt.cy); ctx.lineTo(vEndX, vEndY); ctx.stroke();
+                // 小球
+                const grad = ctx.createRadialGradient(pt.cx-3, pt.cy-3, 3, pt.cx, pt.cy, 10);
+                grad.addColorStop(0,'#ffcf90'); grad.addColorStop(1,'#c95a1e');
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(pt.cx, pt.cy, 9, 0, Math.PI*2); ctx.fill();
+            }
+            ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.fillRect(mainWidth-195, 12, 182, 78);
+            ctx.fillStyle = '#3d2b1a'; ctx.font = 'bold 11px monospace';
+            ctx.fillText(`落地时间: ${tLand.toFixed(3)} s`, mainWidth-185, 28);
+            ctx.fillText(`水平距离: ${(v0*tLand).toFixed(2)} m`, mainWidth-185, 46);
+            ctx.fillText(`初速度: ${v0.toFixed(1)} m/s`, mainWidth-185, 64);
+            ctx.fillText(`高度: ${h0.toFixed(1)} m`, mainWidth-185, 80);
+        }
+
+        function drawXtCanvas() {
+            const ctx = xtCtx, w=xtCanvas.width, h=xtCanvas.height;
+            ctx.clearRect(0,0,w,h); ctx.fillStyle='#fefdfb'; ctx.fillRect(0,0,w,h);
+            const tLand=getLandTime(), maxX=v0*tLand, L=50, R=30, T=25, B=40, pw=w-L-R, ph=h-T-B;
+            ctx.strokeStyle='#e8e0d4'; ctx.setLineDash([3,5]);
+            for(let tg=0.2; tg<=tLand; tg+=0.2){ let xc=L+(tg/tLand)*pw; ctx.beginPath(); ctx.moveTo(xc,T); ctx.lineTo(xc,T+ph); ctx.stroke();}
+            ctx.setLineDash([]);
+            ctx.beginPath(); ctx.moveTo(L,T); ctx.lineTo(L,T+ph); ctx.lineTo(L+pw,T+ph); ctx.stroke();
+            if(recordData.length) {
+                ctx.beginPath(); ctx.strokeStyle='#c0392b'; ctx.lineWidth=2.5;
+                for(let i=0;i<recordData.length;i++){ let rd=recordData[i]; let xc=L+(rd.t/tLand)*pw, yc=T+ph-(rd.x/maxX)*ph; if(i===0) ctx.moveTo(xc,yc); else ctx.lineTo(xc,yc);}
+                ctx.stroke();
+            }
+        }
+
+        function drawYtCanvas() {
+            const ctx = ytCtx, w=ytCanvas.width, h=ytCanvas.height;
+            ctx.clearRect(0,0,w,h); ctx.fillStyle='#fefdfb'; ctx.fillRect(0,0,w,h);
+            const tLand=getLandTime(), L=50,R=30,T=25,B=40, pw=w-L-R, ph=h-T-B;
+            ctx.strokeStyle='#e8e0d4'; ctx.setLineDash([3,5]);
+            for(let tg=0.2; tg<=tLand; tg+=0.2){ let xc=L+(tg/tLand)*pw; ctx.beginPath(); ctx.moveTo(xc,T); ctx.lineTo(xc,T+ph); ctx.stroke();}
+            ctx.setLineDash([]);
+            ctx.beginPath(); ctx.moveTo(L,T); ctx.lineTo(L,T+ph); ctx.lineTo(L+pw,T+ph); ctx.stroke();
+            if(recordData.length){
+                ctx.beginPath(); ctx.strokeStyle='#2d7d46'; ctx.lineWidth=2.5;
+                for(let i=0;i<recordData.length;i++){ let rd=recordData[i]; let xc=L+(rd.t/tLand)*pw, yc=T+ph-(rd.y/h0)*ph; if(i===0) ctx.moveTo(xc,yc); else ctx.lineTo(xc,yc);}
+                ctx.stroke();
+            }
+        }
+        function drawAll() { drawMainCanvas(); drawXtCanvas(); drawYtCanvas(); }
+
+        // 参数联动重置
+        function paramChangeHandler() {
+            v0 = parseFloat(sliderV0.value); h0 = parseFloat(sliderH.value); g = parseFloat(sliderG.value);
+            simSpeed = parseFloat(sliderSpeed.value);
+            updateDisplayValues();
+            if (isRunning || hasStarted) resetAll();
+            else drawAll();
+        }
+        sliderV0.addEventListener('input', paramChangeHandler);
+        sliderH.addEventListener('input', paramChangeHandler);
+        sliderG.addEventListener('input', paramChangeHandler);
+        sliderSpeed.addEventListener('input', () => { simSpeed = parseFloat(sliderSpeed.value); valSpeed.textContent = simSpeed.toFixed(1)+'x'; if(!isRunning && !hasStarted) drawAll(); });
+        btnStart.addEventListener('click', startExperiment);
+        btnPause.addEventListener('click', pauseExperiment);
+        btnReset.addEventListener('click', resetAll);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') { e.preventDefault(); if (isRunning && !isPaused) pauseExperiment(); else if (isPaused) resumeExperiment(); else startExperiment(); }
+            else if (e.code === 'KeyR') { e.preventDefault(); resetAll(); }
+        });
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){ this.beginPath(); this.moveTo(x+r,y); this.lineTo(x+w-r,y); this.quadraticCurveTo(x+w,y,x+w,y+r); this.lineTo(x+w,y+h-r); this.quadraticCurveTo(x+w,y+h,x+w-r,y+h); this.lineTo(x+r,y+h); this.quadraticCurveTo(x,y+h,x,y+h-r); this.lineTo(x,y+r); this.quadraticCurveTo(x,y,x+r,y); this.closePath(); };
+        }
+        resetAll();
+        console.log('✅ 平抛运动互动版已启动 | 光标移动到主画布实时显示物理量');
+    })();
+</script>
+</body>
+</html>

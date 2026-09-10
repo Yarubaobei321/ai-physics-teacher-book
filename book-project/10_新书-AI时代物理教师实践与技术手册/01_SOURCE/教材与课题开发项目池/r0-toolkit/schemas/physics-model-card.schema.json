@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/schemas/physics-model-card.schema.json",
+  "title": "物理模型卡R0",
+  "description": "结构候选；机器校验不能替代高中物理教师签发。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "card_id",
+    "title",
+    "model_version",
+    "review_status",
+    "claim_ceiling",
+    "research_object",
+    "system_boundary",
+    "interval",
+    "assumptions",
+    "variables",
+    "core_relations",
+    "applicability_boundaries",
+    "independent_truths",
+    "test_suites",
+    "gate_status",
+    "teacher_review",
+    "stop_conditions",
+    "sources"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "card_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,}$" },
+    "title": { "$ref": "#/$defs/nonEmptyString" },
+    "model_version": { "$ref": "#/$defs/nonEmptyString" },
+    "review_status": {
+      "enum": ["draft", "teacher_review_pending", "teacher_approved", "stopped"]
+    },
+    "claim_ceiling": { "$ref": "#/$defs/nonEmptyString" },
+    "research_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objects", "process", "purpose"],
+      "properties": {
+        "objects": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "process": { "$ref": "#/$defs/nonEmptyString" },
+        "purpose": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "system_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["included", "external", "exchange_handling"],
+      "properties": {
+        "included": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "external": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "exchange_handling": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["time", "space", "states"],
+      "properties": {
+        "time": { "$ref": "#/$defs/nonEmptyString" },
+        "space": { "$ref": "#/$defs/nonEmptyString" },
+        "states": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/assumption" }
+    },
+    "variables": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/variable" }
+    },
+    "core_relations": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/relation" }
+    },
+    "applicability_boundaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "independent_truths": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/independentTruth" }
+    },
+    "test_suites": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["standard", "boundary_zero", "extreme", "counter_expected", "independent_benchmark"],
+      "properties": {
+        "standard": { "$ref": "#/$defs/nonEmptyTestArray" },
+        "boundary_zero": { "$ref": "#/$defs/nonEmptyTestArray" },
+        "extreme": { "$ref": "#/$defs/nonEmptyTestArray" },
+        "counter_expected": { "$ref": "#/$defs/nonEmptyTestArray" },
+        "independent_benchmark": { "$ref": "#/$defs/nonEmptyTestArray" }
+      }
+    },
+    "gate_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "physics", "teaching", "release"],
+      "properties": {
+        "runtime": { "$ref": "#/$defs/gateVerdict" },
+        "physics": { "$ref": "#/$defs/gateVerdict" },
+        "teaching": { "$ref": "#/$defs/gateVerdict" },
+        "release": { "$ref": "#/$defs/gateVerdict" }
+      }
+    },
+    "teacher_review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "required_role", "pending_items"],
+      "properties": {
+        "status": { "enum": ["pending", "approved", "rejected"] },
+        "required_role": { "$ref": "#/$defs/nonEmptyString" },
+        "pending_items": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "reviewer": { "$ref": "#/$defs/nonEmptyString" },
+        "reviewed_at": { "type": "string", "format": "date-time" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "approved" } } },
+          "then": { "required": ["reviewer", "reviewed_at"] }
+        }
+      ]
+    },
+    "stop_conditions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    },
+    "sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "role", "path_or_description"],
+        "properties": {
+          "source_id": { "$ref": "#/$defs/nonEmptyString" },
+          "role": { "$ref": "#/$defs/nonEmptyString" },
+          "path_or_description": { "$ref": "#/$defs/nonEmptyString" }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "review_status": { "const": "teacher_approved" } } },
+      "then": {
+        "properties": {
+          "teacher_review": { "properties": { "status": { "const": "approved" } } },
+          "gate_status": { "properties": { "physics": { "properties": { "status": { "const": "pass" } } } } }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "assumption": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assumption_id", "statement", "status", "consequence"],
+      "properties": {
+        "assumption_id": { "$ref": "#/$defs/nonEmptyString" },
+        "statement": { "$ref": "#/$defs/nonEmptyString" },
+        "status": { "enum": ["verified", "teacher_review_pending", "rejected"] },
+        "consequence": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "meaning", "object_binding", "input_unit", "internal_unit", "display_unit", "data_identity"],
+      "properties": {
+        "symbol": { "$ref": "#/$defs/nonEmptyString" },
+        "meaning": { "$ref": "#/$defs/nonEmptyString" },
+        "object_binding": { "$ref": "#/$defs/nonEmptyString" },
+        "input_unit": { "$ref": "#/$defs/nonEmptyString" },
+        "internal_unit": { "$ref": "#/$defs/nonEmptyString" },
+        "display_unit": { "$ref": "#/$defs/nonEmptyString" },
+        "data_identity": {
+          "enum": ["model_input", "model_output", "derived_model_output", "measured", "manual", "synthetic", "default", "corrected"]
+        },
+        "allowed_range": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["minimum", "maximum"],
+          "properties": {
+            "minimum": { "type": "number" },
+            "maximum": { "type": "number" }
+          }
+        }
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["relation_id", "name", "expression", "conditions", "status"],
+      "properties": {
+        "relation_id": { "$ref": "#/$defs/nonEmptyString" },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "expression": { "$ref": "#/$defs/nonEmptyString" },
+        "conditions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "status": { "enum": ["verified", "teacher_review_pending", "rejected"] }
+      }
+    },
+    "independentTruth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["truth_id", "type", "description", "source", "independence"],
+      "properties": {
+        "truth_id": { "$ref": "#/$defs/nonEmptyString" },
+        "type": { "enum": ["analytic_derivation", "manual_calculation", "independent_solver", "measurement", "authoritative_source"] },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "source": { "$ref": "#/$defs/nonEmptyString" },
+        "independence": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "testCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["test_id", "description", "input", "expected", "observed", "status", "evidence_identity"],
+      "properties": {
+        "test_id": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "input": {},
+        "expected": {},
+        "observed": {},
+        "status": { "enum": ["pass", "fail", "pending"] },
+        "evidence_identity": { "enum": ["automatic_precheck", "human_manual_check", "teacher_review", "measurement"] },
+        "evidence_path": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "nonEmptyTestArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/testCase" }
+    },
+    "gateVerdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "scope", "reviewer_role", "evidence", "pending_or_return_items"],
+      "properties": {
+        "status": { "enum": ["pass", "return", "pause_pending_confirmation", "stop"] },
+        "scope": { "$ref": "#/$defs/nonEmptyString" },
+        "reviewer_role": { "$ref": "#/$defs/nonEmptyString" },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "pending_or_return_items": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    }
+  }
+}

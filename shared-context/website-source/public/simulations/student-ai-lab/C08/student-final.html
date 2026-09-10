@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>简单有机物 · 球棍模型 | 化学必修二</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    }
+    #info {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 30px;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      font-size: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      letter-spacing: 1px;
+      z-index: 10;
+    }
+    #panel-left {
+      position: absolute;
+      left: 25px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      background: rgba(30, 30, 40, 0.8);
+      backdrop-filter: blur(20px);
+      padding: 20px 15px;
+      border-radius: 45px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.25);
+      z-index: 10;
+    }
+    #panel-right {
+      position: absolute;
+      right: 25px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(30, 30, 40, 0.8);
+      backdrop-filter: blur(20px);
+      padding: 20px 15px;
+      border-radius: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.25);
+      z-index: 10;
+      min-width: 100px;
+    }
+    .atom-btn {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+      position: relative;
+      backdrop-filter: blur(5px);
+      border: 2px solid rgba(255,255,255,0.5);
+      letter-spacing: 1px;
+      line-height: 1.2;
+    }
+    .atom-btn:hover {
+      transform: scale(1.08);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.6);
+      border-color: white;
+    }
+    .atom-btn:active {
+      transform: scale(0.95);
+    }
+    .atom-size {
+      font-size: 12px;
+      opacity: 0.9;
+      margin-top: 2px;
+      background: rgba(0,0,0,0.5);
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    #carbon-btn {
+      background: radial-gradient(circle at 30% 30%, #6b6b6b, #2d2d2d);
+      border-color: #aaaaaa;
+    }
+    #hydrogen-btn {
+      background: radial-gradient(circle at 30% 30%, #f5f5f5, #b0b0b0);
+      color: #222;
+      border-color: #ffffff;
+    }
+    #oxygen-btn {
+      background: radial-gradient(circle at 30% 30%, #ff6b6b, #b32b2b);
+      border-color: #ffaaaa;
+    }
+    .molecule-btn {
+      padding: 12px 18px;
+      border-radius: 25px;
+      border: 2px solid rgba(255,255,255,0.4);
+      background: rgba(40, 50, 70, 0.7);
+      backdrop-filter: blur(10px);
+      color: white;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    .molecule-btn:hover {
+      background: rgba(60, 80, 120, 0.8);
+      border-color: rgba(255,255,255,0.7);
+      transform: scale(1.05);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+    }
+    .molecule-btn:active {
+      transform: scale(0.95);
+    }
+    .panel-title {
+      color: #aaa;
+      font-size: 13px;
+      text-align: center;
+      margin-bottom: 5px;
+      letter-spacing: 2px;
+    }
+    .instruction {
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(10px);
+      color: #ddd;
+      padding: 10px 25px;
+      border-radius: 40px;
+      font-size: 15px;
+      white-space: nowrap;
+      z-index: 10;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .clear-btn {
+      position: absolute;
+      right: 150px;
+      top: 30px;
+      background: rgba(200, 50, 50, 0.8);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.5);
+      color: white;
+      padding: 12px 24px;
+      border-radius: 40px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 10;
+      transition: 0.2s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      letter-spacing: 1px;
+    }
+    .clear-btn:hover {
+      background: rgba(220, 60, 60, 0.9);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+    
+    #status-bar {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      backdrop-filter: blur(10px);
+      color: #aaddff;
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 14px;
+      z-index: 10;
+      pointer-events: none;
+      border: 1px solid rgba(100,150,255,0.4);
+      display: none;
+    }
+    
+    .context-menu {
+      position: fixed;
+      background: rgba(30, 30, 40, 0.95);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      padding: 8px 0;
+      min-width: 120px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+      z-index: 1000;
+      display: none;
+      pointer-events: auto;
+    }
+    .context-menu-item {
+      padding: 10px 20px;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.5px;
+    }
+    .context-menu-item:hover {
+      background: rgba(255, 70, 70, 0.7);
+    }
+    .context-menu-item.delete-icon::before {
+      content: "🗑️";
+      font-size: 14px;
+    }
+    
+    @media (max-width: 700px) {
+      #panel-left {
+        gap: 12px;
+        padding: 15px 12px;
+        left: 10px;
+      }
+      #panel-right {
+        gap: 8px;
+        padding: 12px 10px;
+        right: 10px;
+        min-width: 80px;
+      }
+      .atom-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 16px;
+      }
+      .molecule-btn {
+        padding: 8px 12px;
+        font-size: 13px;
+      }
+      .instruction {
+        font-size: 13px;
+        padding: 8px 18px;
+        white-space: normal;
+        text-align: center;
+        width: 90%;
+      }
+      .clear-btn {
+        right: 20px;
+        top: 80px;
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="info">🧪 有机物球棍模型 · 碳(C) 氢(H) 氧(O)</div>
+  <div id="status-bar">🔵 已选中原子，点击另一个可成键原子完成连接</div>
+  
+  <div id="panel-left">
+    <button id="carbon-btn" class="atom-btn">
+      C<div class="atom-size">碳</div>
+    </button>
+    <button id="hydrogen-btn" class="atom-btn">
+      H<div class="atom-size">氢</div>
+    </button>
+    <button id="oxygen-btn" class="atom-btn">
+      O<div class="atom-size">氧</div>
+    </button>
+  </div>
+  
+  <div id="panel-right">
+    <div class="panel-title">📐 预设分子</div>
+    <button class="molecule-btn" data-molecule="methane">甲烷 CH₄</button>
+    <button class="molecule-btn" data-molecule="ethane">乙烷 C₂H₆</button>
+    <button class="molecule-btn" data-molecule="ethanol">乙醇 C₂H₅OH</button>
+    <button class="molecule-btn" data-molecule="acetaldehyde">乙醛 CH₃CHO</button>
+    <button class="molecule-btn" data-molecule="propane">丙烷 C₃H₈</button>
+  </div>
+  
+  <button id="clear-btn" class="clear-btn">🗑️ 清除全部</button>
+  <div class="instruction">
+    <span>🖱️ 点击原子进入成键模式 | ✨ 拖动靠近/点击成键支持多键 | 🖱️ 右键删除 | 🔄 点击空白取消</span>
+  </div>
+  
+  <div id="context-menu" class="context-menu">
+    <div id="delete-atom" class="context-menu-item delete-icon">删除原子</div>
+    <div id="delete-bond" class="context-menu-item delete-icon">删除化学键</div>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+    import { DragControls } from 'three/addons/controls/DragControls.js';
+
+    // --- 场景初始化 ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+    
+    const gridHelper = new THREE.GridHelper(12, 20, 0x335577, 0x224466);
+    gridHelper.position.y = -2.5;
+    scene.add(gridHelper);
+    
+    const ambientLight = new THREE.AmbientLight(0x404066);
+    scene.add(ambientLight);
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight1.position.set(1, 2, 1);
+    scene.add(dirLight1);
+    const dirLight2 = new THREE.DirectionalLight(0xffccaa, 0.6);
+    dirLight2.position.set(-1, 0.5, -0.8);
+    scene.add(dirLight2);
+    
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 50);
+    camera.position.set(6, 4, 8);
+    camera.lookAt(0, 0.5, 0);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+    
+    const labelRenderer = new CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.left = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    document.body.appendChild(labelRenderer.domElement);
+    
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 0.5, 0);
+    controls.update();
+    
+    // --- 数据结构 ---
+    const atoms = [];
+    const bonds = [];
+    
+    const atomRadii = { C: 0.55, H: 0.35, O: 0.5 };
+    const atomColors = { C: 0x404040, H: 0xffffff, O: 0xff3333 };
+    const maxBonds = { C: 4, H: 1, O: 2 };
+    
+    let dragControls;
+    let selectedAtom = null;
+    let highlightedAtoms = [];
+    
+    const contextMenu = document.getElementById('context-menu');
+    const deleteAtomItem = document.getElementById('delete-atom');
+    const deleteBondItem = document.getElementById('delete-bond');
+    const statusBar = document.getElementById('status-bar');
+    let rightClickObject = null;
+    
+    // 用于防止拖拽触发点击
+    let isDragging = false;
+    
+    // --- 多键支持 ---
+    function getBondCount(atomA, atomB) {
+      let count = 0;
+      atomA.userData.bonds.forEach(bond => {
+        if ((bond.userData.atomA === atomA && bond.userData.atomB === atomB) ||
+            (bond.userData.atomA === atomB && bond.userData.atomB === atomA)) {
+          count++;
+        }
+      });
+      return count;
+    }
+    
+    function getMaxBondsBetween(atomA, atomB) {
+      const typeA = atomA.userData.type;
+      const typeB = atomB.userData.type;
+      const remainingA = maxBonds[typeA] - atomA.userData.bonds.length;
+      const remainingB = maxBonds[typeB] - atomB.userData.bonds.length;
+      let maxPossible = Math.min(remainingA, remainingB);
+      
+      if (typeA === 'H' || typeB === 'H') maxPossible = Math.min(maxPossible, 1);
+      if (typeA === 'C' && typeB === 'C') maxPossible = Math.min(maxPossible, 3);
+      if ((typeA === 'C' && typeB === 'O') || (typeA === 'O' && typeB === 'C')) maxPossible = Math.min(maxPossible, 2);
+      if (typeA === 'O' && typeB === 'O') maxPossible = Math.min(maxPossible, 1);
+      
+      return maxPossible;
+    }
+    
+    // --- 创建原子 ---
+    function createAtom(type, position) {
+      const radius = atomRadii[type];
+      const color = atomColors[type];
+      
+      const geometry = new THREE.SphereGeometry(radius, 32, 16);
+      const material = new THREE.MeshStandardMaterial({ 
+        color: color,
+        roughness: 0.3,
+        metalness: 0.1,
+        emissive: new THREE.Color(0x000000)
+      });
+      const sphere = new THREE.Mesh(geometry, material);
+      sphere.castShadow = true;
+      sphere.receiveShadow = true;
+      sphere.position.copy(position);
+      
+      sphere.userData = {
+        type: type,
+        atomType: type,
+        bonds: [],
+        radius: radius,
+        isAtom: true,
+        originalColor: color,
+        originalEmissive: 0x000000
+      };
+      
+      // 添加标签
+      const div = document.createElement('div');
+      div.textContent = type;
+      div.style.color = (type === 'H') ? '#222' : 'white';
+      div.style.fontWeight = 'bold';
+      div.style.fontSize = '16px';
+      div.style.textShadow = '1px 1px 2px black';
+      div.style.background = 'rgba(0,0,0,0.5)';
+      div.style.borderRadius = '20px';
+      div.style.padding = '2px 8px';
+      const label = new CSS2DObject(div);
+      label.position.set(0, radius + 0.35, 0);
+      label.name = 'atomLabel';
+      sphere.add(label);
+      
+      return sphere;
+    }
+    
+    // --- 创建键（支持多键偏移显示）---
+    function createBond(atomA, atomB) {
+      const currentCount = getBondCount(atomA, atomB);
+      const maxPossible = getMaxBondsBetween(atomA, atomB);
+      
+      if (currentCount >= maxPossible) return null;
+      
+      const posA = atomA.position.clone();
+      const posB = atomB.position.clone();
+      const direction = new THREE.Vector3().subVectors(posB, posA).normalize();
+      const length = posA.distanceTo(posB);
+      
+      // 计算垂直方向用于多键偏移
+      const perpDir = new THREE.Vector3();
+      if (Math.abs(direction.x) < 0.9) {
+        perpDir.set(1, 0, 0).cross(direction).normalize();
+      } else {
+        perpDir.set(0, 1, 0).cross(direction).normalize();
+      }
+      
+      // 根据已有键数计算偏移
+      const offsetDistance = 0.18;
+      let offset = new THREE.Vector3();
+      const totalBonds = currentCount + 1; // 包括即将创建的键
+      
+      if (totalBonds === 1) {
+        // 单键：居中
+        offset.set(0, 0, 0);
+      } else if (totalBonds === 2) {
+        // 双键：平行偏移
+        const sign = currentCount === 0 ? 1 : -1;
+        offset.copy(perpDir).multiplyScalar(sign * offsetDistance);
+      } else if (totalBonds === 3) {
+        // 三键：一个居中，两个偏移
+        if (currentCount === 0) {
+          offset.set(0, 0, 0);
+        } else if (currentCount === 1) {
+          offset.copy(perpDir).multiplyScalar(offsetDistance);
+        } else {
+          offset.copy(perpDir).multiplyScalar(-offsetDistance);
+        }
+      }
+      
+      const midPoint = new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
+      const bondPos = midPoint.clone().add(offset);
+      
+      const geometry = new THREE.CylinderGeometry(0.1, 0.1, length, 8);
+      const material = new THREE.MeshStandardMaterial({ 
+        color: 0xcccccc, 
+        roughness: 0.4,
+        metalness: 0.3,
+        emissive: new THREE.Color(0x111111)
+      });
+      const cylinder = new THREE.Mesh(geometry, material);
+      cylinder.castShadow = true;
+      cylinder.receiveShadow = true;
+      
+      cylinder.position.copy(bondPos);
+      cylinder.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction
+      );
+      
+      cylinder.userData = {
+        atomA: atomA,
+        atomB: atomB,
+        isBond: true,
+        bondOffset: offset.clone()
+      };
+      
+      atomA.userData.bonds.push(cylinder);
+      atomB.userData.bonds.push(cylinder);
+      
+      scene.add(cylinder);
+      bonds.push(cylinder);
+      
+      // 重新计算所有键的偏移
+      reindexBondsBetween(atomA, atomB);
+      
+      return cylinder;
+    }
+    
+    // --- 重新索引两个原子间的所有键 ---
+    function reindexBondsBetween(atomA, atomB) {
+      const pairBonds = [];
+      atomA.userData.bonds.forEach(bond => {
+        if ((bond.userData.atomA === atomA && bond.userData.atomB === atomB) ||
+            (bond.userData.atomA === atomB && bond.userData.atomB === atomA)) {
+          if (!pairBonds.includes(bond)) pairBonds.push(bond);
+        }
+      });
+      
+      // 按创建顺序排序
+      const totalBonds = pairBonds.length;
+      
+      pairBonds.forEach((bond, index) => {
+        const posA = bond.userData.atomA.position.clone();
+        const posB = bond.userData.atomB.position.clone();
+        const direction = new THREE.Vector3().subVectors(posB, posA).normalize();
+        const length = posA.distanceTo(posB);
+        
+        const perpDir = new THREE.Vector3();
+        if (Math.abs(direction.x) < 0.9) {
+          perpDir.set(1, 0, 0).cross(direction).normalize();
+        } else {
+          perpDir.set(0, 1, 0).cross(direction).normalize();
+        }
+        
+        const offsetDistance = 0.18;
+        let offset = new THREE.Vector3();
+        
+        if (totalBonds === 1) {
+          offset.set(0, 0, 0);
+        } else if (totalBonds === 2) {
+          offset.copy(perpDir).multiplyScalar((index === 0 ? 1 : -1) * offsetDistance);
+        } else if (totalBonds === 3) {
+          if (index === 0) offset.set(0, 0, 0);
+          else if (index === 1) offset.copy(perpDir).multiplyScalar(offsetDistance);
+          else offset.copy(perpDir).multiplyScalar(-offsetDistance);
+        }
+        
+        bond.userData.bondOffset = offset.clone();
+        
+        const midPoint = new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
+        const bondPos = midPoint.clone().add(offset);
+        
+        bond.position.copy(bondPos);
+        bond.geometry.dispose();
+        bond.geometry = new THREE.CylinderGeometry(0.1, 0.1, length, 8);
+        bond.quaternion.setFromUnitVectors(
+          new THREE.Vector3(0, 1, 0),
+          direction
+        );
+      });
+    }
+    
+    // --- 更新键几何 ---
+    function updateBondGeometry(bond) {
+      const atomA = bond.userData.atomA;
+      const atomB = bond.userData.atomB;
+      if (!atomA || !atomB) return;
+      
+      const posA = atomA.position.clone();
+      const posB = atomB.position.clone();
+      const direction = new THREE.Vector3().subVectors(posB, posA).normalize();
+      const length = posA.distanceTo(posB);
+      const offset = bond.userData.bondOffset || new THREE.Vector3();
+      
+      const midPoint = new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
+      const bondPos = midPoint.clone().add(offset);
+      
+      bond.position.copy(bondPos);
+      bond.geometry.dispose();
+      bond.geometry = new THREE.CylinderGeometry(0.1, 0.1, length, 8);
+      bond.quaternion.setFromUnitVectors(
+        new THREE.Vector3(0, 1, 0),
+        direction
+      );
+    }
+    
+    // --- 颜色管理 ---
+    function resetAtomColor(atom) {
+      if (atom && atom.userData.originalColor !== undefined) {
+        atom.material.color.setHex(atom.userData.originalColor);
+        atom.material.emissive.setHex(atom.userData.originalEmissive);
+      }
+    }
+    
+    function setAtomDeepBlue(atom) {
+      atom.material.color.setHex(0x003366);
+      atom.material.emissive.setHex(0x001122);
+    }
+    
+    function setAtomLightBlue(atom) {
+      atom.material.color.setHex(0x6699cc);
+      atom.material.emissive.setHex(0x112233);
+    }
+    
+    function clearAllHighlights() {
+      if (selectedAtom) {
+        resetAtomColor(selectedAtom);
+        selectedAtom = null;
+      }
+      highlightedAtoms.forEach(atom => resetAtomColor(atom));
+      highlightedAtoms = [];
+      statusBar.style.display = 'none';
+    }
+    
+    function updateHighlights(atom) {
+      clearAllHighlights();
+      
+      const type = atom.userData.type;
+      const currentBonds = atom.userData.bonds.length;
+      if (currentBonds >= maxBonds[type]) return false;
+      
+      selectedAtom = atom;
+      setAtomDeepBlue(atom);
+      
+      atoms.forEach(otherAtom => {
+        if (otherAtom === atom) return;
+        
+        const otherType = otherAtom.userData.type;
+        if (otherAtom.userData.bonds.length >= maxBonds[otherType]) return;
+        
+        const existingBonds = getBondCount(atom, otherAtom);
+        const maxBetween = getMaxBondsBetween(atom, otherAtom);
+        if (existingBonds >= maxBetween) return;
+        
+        setAtomLightBlue(otherAtom);
+        highlightedAtoms.push(otherAtom);
+      });
+      
+      statusBar.style.display = highlightedAtoms.length > 0 ? 'block' : 'none';
+      return true;
+    }
+    
+    // --- 删除函数 ---
+    function removeAtom(atom) {
+      if (selectedAtom === atom) clearAllHighlights();
+      if (highlightedAtoms.includes(atom)) {
+        resetAtomColor(atom);
+        highlightedAtoms = highlightedAtoms.filter(a => a !== atom);
+      }
+      
+      const bondsToRemove = [...atom.userData.bonds];
+      bondsToRemove.forEach(bond => removeBond(bond));
+      
+      // 递归移除所有子对象（包括标签）
+      while(atom.children.length > 0) {
+        atom.remove(atom.children[0]);
+      }
+      scene.remove(atom);
+      
+      const index = atoms.indexOf(atom);
+      if (index > -1) atoms.splice(index, 1);
+      
+      rebuildDragControls();
+    }
+    
+    function removeBond(bond) {
+      const atomA = bond.userData.atomA;
+      const atomB = bond.userData.atomB;
+      
+      if (atomA) {
+        const idx = atomA.userData.bonds.indexOf(bond);
+        if (idx > -1) atomA.userData.bonds.splice(idx, 1);
+      }
+      if (atomB) {
+        const idx = atomB.userData.bonds.indexOf(bond);
+        if (idx > -1) atomB.userData.bonds.splice(idx, 1);
+      }
+      
+      scene.remove(bond);
+      const bondIndex = bonds.indexOf(bond);
+      if (bondIndex > -1) bonds.splice(bondIndex, 1);
+      
+      // 重新索引剩余键
+      if (atomA && atomB) reindexBondsBetween(atomA, atomB);
+      
+      if (selectedAtom === atomA || selectedAtom === atomB) {
+        updateHighlights(selectedAtom);
+      }
+    }
+    
+    function clearAll() {
+      clearAllHighlights();
+      
+      // 移除所有键
+      while(bonds.length > 0) {
+        const bond = bonds[0];
+        scene.remove(bond);
+        bonds.splice(0, 1);
+      }
+      
+      // 移除所有原子及其子对象（标签）
+      while(atoms.length > 0) {
+        const atom = atoms[0];
+        // 移除所有子对象
+        while(atom.children.length > 0) {
+          atom.remove(atom.children[0]);
+        }
+        scene.remove(atom);
+        atoms.splice(0, 1);
+      }
+      
+      rebuildDragControls();
+      hideContextMenu();
+    }
+    
+    // --- 拖拽控制 ---
+    function rebuildDragControls() {
+      if (dragControls) dragControls.dispose();
+      if (atoms.length === 0) { dragControls = null; return; }
+      
+      dragControls = new DragControls(atoms, camera, renderer.domElement);
+      
+      dragControls.addEventListener('dragstart', (event) => {
+        isDragging = true;
+        controls.enabled = false;
+        hideContextMenu();
+        clearAllHighlights();
+      });
+      
+      dragControls.addEventListener('drag', () => {
+        bonds.forEach(bond => updateBondGeometry(bond));
+      });
+      
+      dragControls.addEventListener('dragend', (event) => {
+        isDragging = false;
+        controls.enabled = true;
+        resetAtomColor(event.object);
+        checkAndCreateBonds(event.object);
+        bonds.forEach(bond => updateBondGeometry(bond));
+      });
+    }
+    
+    function checkAndCreateBonds(movedAtom) {
+      const threshold = 1.3;
+      
+      atoms.forEach(otherAtom => {
+        if (otherAtom === movedAtom) return;
+        
+        const dist = movedAtom.position.distanceTo(otherAtom.position);
+        if (dist < threshold) {
+          const maxBetween = getMaxBondsBetween(movedAtom, otherAtom);
+          const currentCount = getBondCount(movedAtom, otherAtom);
+          if (currentCount < maxBetween) {
+            createBond(movedAtom, otherAtom);
+          }
+        }
+      });
+      
+      bonds.forEach(bond => updateBondGeometry(bond));
+    }
+    
+    // --- 添加原子 ---
+    function addAtom(type) {
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 2.2 + Math.random() * 1.8;
+      const position = new THREE.Vector3(
+        Math.cos(angle) * radius,
+        0.8 + Math.random() * 1.5,
+        Math.sin(angle) * radius
+      );
+      
+      const atom = createAtom(type, position);
+      scene.add(atom);
+      atoms.push(atom);
+      rebuildDragControls();
+    }
+    
+    // --- 预设分子构建 ---
+    function buildMethane() {
+      clearAll();
+      const c = createAtom('C', new THREE.Vector3(0, 0.5, 0));
+      scene.add(c); atoms.push(c);
+      
+      const hPos = [
+        new THREE.Vector3(0.9, 1.1, 0.0),
+        new THREE.Vector3(-0.45, 1.1, 0.78),
+        new THREE.Vector3(-0.45, -0.1, -0.78),
+        new THREE.Vector3(0.0, -0.1, 0.9)
+      ];
+      hPos.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c, h);
+      });
+      rebuildDragControls();
+    }
+    
+    function buildEthane() {
+      clearAll();
+      const c1 = createAtom('C', new THREE.Vector3(-0.7, 0.5, 0));
+      const c2 = createAtom('C', new THREE.Vector3(0.7, 0.5, 0));
+      scene.add(c1); atoms.push(c1);
+      scene.add(c2); atoms.push(c2);
+      createBond(c1, c2);
+      
+      const hPos1 = [
+        new THREE.Vector3(-1.3, 1.2, 0.0),
+        new THREE.Vector3(-1.3, -0.2, 0.7),
+        new THREE.Vector3(-1.3, -0.2, -0.7)
+      ];
+      const hPos2 = [
+        new THREE.Vector3(1.3, 1.2, 0.0),
+        new THREE.Vector3(1.3, -0.2, 0.7),
+        new THREE.Vector3(1.3, -0.2, -0.7)
+      ];
+      
+      hPos1.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c1, h);
+      });
+      hPos2.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c2, h);
+      });
+      rebuildDragControls();
+    }
+    
+    function buildEthanol() {
+      clearAll();
+      const c1 = createAtom('C', new THREE.Vector3(-0.9, 0.5, 0));
+      const c2 = createAtom('C', new THREE.Vector3(0.4, 0.7, 0));
+      const o = createAtom('O', new THREE.Vector3(1.3, 1.1, 0.5));
+      scene.add(c1); atoms.push(c1);
+      scene.add(c2); atoms.push(c2);
+      scene.add(o); atoms.push(o);
+      
+      createBond(c1, c2);
+      createBond(c2, o);
+      
+      const hPos1 = [
+        new THREE.Vector3(-1.6, 1.2, 0.0),
+        new THREE.Vector3(-1.6, -0.2, 0.7),
+        new THREE.Vector3(-1.6, -0.2, -0.7)
+      ];
+      const hPos2 = [
+        new THREE.Vector3(0.7, 1.5, -0.6),
+        new THREE.Vector3(0.7, -0.1, 0.5)
+      ];
+      const hO = new THREE.Vector3(2.1, 1.5, 0.8);
+      
+      hPos1.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c1, h);
+      });
+      hPos2.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c2, h);
+      });
+      const ho = createAtom('H', hO);
+      scene.add(ho); atoms.push(ho);
+      createBond(o, ho);
+      
+      rebuildDragControls();
+    }
+    
+    function buildAcetaldehyde() {
+      clearAll();
+      // 甲基碳
+      const c1 = createAtom('C', new THREE.Vector3(-1.0, 0.5, 0));
+      // 醛基碳
+      const c2 = createAtom('C', new THREE.Vector3(0.3, 0.6, 0));
+      // 醛基氧
+      const o = createAtom('O', new THREE.Vector3(1.4, 0.9, 0.2));
+      scene.add(c1); atoms.push(c1);
+      scene.add(c2); atoms.push(c2);
+      scene.add(o); atoms.push(o);
+      
+      // C-C单键
+      createBond(c1, c2);
+      // C=O双键
+      createBond(c2, o);
+      createBond(c2, o);
+      
+      // 甲基上的三个氢
+      const hPos1 = [
+        new THREE.Vector3(-1.7, 1.2, 0.0),
+        new THREE.Vector3(-1.7, -0.2, 0.7),
+        new THREE.Vector3(-1.7, -0.2, -0.7)
+      ];
+      // 醛基上的氢
+      const hC2 = new THREE.Vector3(0.5, 1.5, -0.6);
+      
+      hPos1.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c1, h);
+      });
+      const h2 = createAtom('H', hC2);
+      scene.add(h2); atoms.push(h2);
+      createBond(c2, h2);
+      
+      rebuildDragControls();
+    }
+    
+    function buildPropane() {
+      clearAll();
+      const c1 = createAtom('C', new THREE.Vector3(-1.2, 0.5, 0));
+      const c2 = createAtom('C', new THREE.Vector3(0, 0.5, 0));
+      const c3 = createAtom('C', new THREE.Vector3(1.2, 0.5, 0));
+      scene.add(c1); atoms.push(c1);
+      scene.add(c2); atoms.push(c2);
+      scene.add(c3); atoms.push(c3);
+      
+      createBond(c1, c2);
+      createBond(c2, c3);
+      
+      const hPos1 = [
+        new THREE.Vector3(-1.9, 1.2, 0.0),
+        new THREE.Vector3(-1.9, -0.2, 0.7),
+        new THREE.Vector3(-1.9, -0.2, -0.7)
+      ];
+      const hPos2 = [
+        new THREE.Vector3(0, 1.3, -0.6),
+        new THREE.Vector3(0, -0.3, 0.5)
+      ];
+      const hPos3 = [
+        new THREE.Vector3(1.9, 1.2, 0.0),
+        new THREE.Vector3(1.9, -0.2, 0.7),
+        new THREE.Vector3(1.9, -0.2, -0.7)
+      ];
+      
+      hPos1.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c1, h);
+      });
+      hPos2.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c2, h);
+      });
+      hPos3.forEach(pos => {
+        const h = createAtom('H', pos);
+        scene.add(h); atoms.push(h);
+        createBond(c3, h);
+      });
+      
+      rebuildDragControls();
+    }
+    
+    // --- 右键菜单 ---
+    function showContextMenu(event, object) {
+      event.preventDefault();
+      rightClickObject = object;
+      
+      if (object.userData.isAtom) {
+        deleteAtomItem.style.display = 'flex';
+        deleteBondItem.style.display = 'none';
+      } else {
+        deleteAtomItem.style.display = 'none';
+        deleteBondItem.style.display = 'flex';
+      }
+      
+      contextMenu.style.display = 'block';
+      contextMenu.style.left = event.clientX + 'px';
+      contextMenu.style.top = event.clientY + 'px';
+      
+      const rect = contextMenu.getBoundingClientRect();
+      if (rect.right > window.innerWidth) contextMenu.style.left = (event.clientX - rect.width) + 'px';
+      if (rect.bottom > window.innerHeight) contextMenu.style.top = (event.clientY - rect.height) + 'px';
+    }
+    
+    function hideContextMenu() {
+      contextMenu.style.display = 'none';
+      rightClickObject = null;
+    }
+    
+    deleteAtomItem.addEventListener('click', () => {
+      if (rightClickObject?.userData.isAtom) {
+        removeAtom(rightClickObject);
+        hideContextMenu();
+      }
+    });
+    
+    deleteBondItem.addEventListener('click', () => {
+      if (rightClickObject?.userData.isBond) {
+        removeBond(rightClickObject);
+        hideContextMenu();
+      }
+    });
+    
+    document.addEventListener('click', (e) => {
+      if (!contextMenu.contains(e.target)) hideContextMenu();
+    });
+    contextMenu.addEventListener('contextmenu', (e) => e.preventDefault());
+    
+    // --- 射线检测 ---
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    
+    // 左键点击处理（成键模式优先）
+    renderer.domElement.addEventListener('click', (event) => {
+      // 如果正在拖拽，忽略点击
+      if (isDragging) return;
+      
+      mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+      mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(atoms);
+      
+      if (intersects.length > 0) {
+        const clickedAtom = intersects[0].object;
+        
+        if (!selectedAtom) {
+          // 没有选中原子，选中当前原子
+          updateHighlights(clickedAtom);
+        } else if (clickedAtom === selectedAtom) {
+          // 点击同一个原子，取消选择
+          clearAllHighlights();
+        } else if (highlightedAtoms.includes(clickedAtom)) {
+          // 点击高亮原子，优先创建化学键
+          createBond(selectedAtom, clickedAtom);
+          // 更新高亮状态
+          updateHighlights(selectedAtom);
+          bonds.forEach(b => updateBondGeometry(b));
+        } else {
+          // 点击其他未高亮原子，切换选择
+          updateHighlights(clickedAtom);
+        }
+      } else {
+        // 点击空白区域，取消选择
+        clearAllHighlights();
+      }
+    });
+    
+    renderer.domElement.addEventListener('contextmenu', (event) => {
+      mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+      mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+      
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects([...atoms, ...bonds]);
+      
+      if (intersects.length > 0) {
+        showContextMenu(event, intersects[0].object);
+      } else {
+        hideContextMenu();
+      }
+    });
+    
+    // --- 按钮事件 ---
+    document.getElementById('carbon-btn').addEventListener('click', () => addAtom('C'));
+    document.getElementById('hydrogen-btn').addEventListener('click', () => addAtom('H'));
+    document.getElementById('oxygen-btn').addEventListener('click', () => addAtom('O'));
+    document.getElementById('clear-btn').addEventListener('click', clearAll);
+    
+    document.querySelectorAll('.molecule-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const molecule = btn.dataset.molecule;
+        switch(molecule) {
+          case 'methane': buildMethane(); break;
+          case 'ethane': buildEthane(); break;
+          case 'ethanol': buildEthanol(); break;
+          case 'acetaldehyde': buildAcetaldehyde(); break;
+          case 'propane': buildPropane(); break;
+        }
+      });
+    });
+    
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // --- 初始示例 ---
+    buildMethane();
+    
+    // --- 动画循环 ---
+    function animate() {
+      requestAnimationFrame(animate);
+      bonds.forEach(bond => updateBondGeometry(bond));
+      controls.update();
+      renderer.render(scene, camera);
+      labelRenderer.render(scene, camera);
+    }
+    animate();
+    
+    console.log('🌟 球棍模型已启动！支持双键/三键显示，乙醛含C=O双键。');
+  </script>
+</body>
+</html>

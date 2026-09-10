@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>统计与概率 · 交互学习页</title>
+<style>
+  :root{
+    --bg:#f4f7fb; --card:#ffffff; --ink:#2b3a4a; --sub:#64748b;
+    --accent:#8b5cf6; --accent-soft:#ede9fe; --line:#e2e8f0;
+    --warn-bg:#fef3c7; --warn-ink:#92400e; --warn-border:#fcd34d;
+    --err-bg:#fee2e2; --err-ink:#b91c1c; --err-border:#fca5a5;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif; background:var(--bg); color:var(--ink);}
+  header.app{background:linear-gradient(120deg,#7c3aed,#8b5cf6); color:#fff; padding:18px 28px;}
+  header.app h1{font-size:22px; letter-spacing:1px;}
+  header.app p{font-size:13px; opacity:.92; margin-top:4px;}
+  .wrap{display:grid; grid-template-columns:1fr 1fr 360px; gap:16px; padding:16px 20px; max-width:1440px; margin:0 auto; align-items:start;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; box-shadow:0 1px 3px rgba(15,23,42,.05);}
+  .panel h2{font-size:15px; color:var(--accent); border-left:4px solid var(--accent); padding-left:8px; margin-bottom:12px;}
+  .panel h3{font-size:13px; color:var(--ink); margin:12px 0 6px;}
+  .panel p, .panel li{font-size:13px; line-height:1.7;}
+  .panel ul{padding-left:18px;}
+  .formula{background:var(--accent-soft); border-radius:8px; padding:9px 12px; margin:7px 0; font-family:"Cambria Math",Georgia,serif; font-size:14px; color:#4c1d95; text-align:center; word-break:break-all;}
+  .warn{background:var(--warn-bg); border:1px solid var(--warn-border); color:var(--warn-ink); border-radius:8px; padding:10px 12px; margin-top:10px; font-size:12.5px; line-height:1.6;}
+  .warn b{display:block; margin-bottom:4px; font-size:13px;}
+  .card-tabs{display:flex; gap:8px; margin-bottom:12px;}
+  button.btn{appearance:none; border:none; border-radius:8px; padding:9px 14px; font-size:13px; cursor:pointer; color:#fff; background:var(--accent); transition:filter .15s;}
+  button.btn:hover{filter:brightness(1.08);}
+  button.btn.ghost{background:#fff; color:var(--accent); border:1px solid var(--accent);}
+  button.btn.active{background:#6d28d9; box-shadow:0 0 0 2px #c4b5fd inset;}
+  button.btn.sm{font-size:12px; padding:6px 10px;}
+  .controls{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+  .field{margin-top:10px;}
+  .field label{display:block; font-size:12.5px; color:var(--sub); margin-bottom:4px;}
+  .field input[type=number]{width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#f8fafc;}
+  .field input[type=number]:focus{outline:2px solid var(--accent); background:#fff;}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+  canvas.chart{display:block; width:100%; height:auto; border:1px solid var(--line); border-radius:8px; background:#fff; margin-top:8px;}
+  .readout{background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:12px; margin-top:12px;}
+  .readout table{width:100%; border-collapse:collapse;}
+  .readout td{padding:6px 4px; font-size:13px; border-bottom:1px dashed var(--line);}
+  .readout td:first-child{color:var(--sub);}
+  .readout td:last-child{text-align:right; font-family:"SF Mono",Menlo,Consolas,monospace; font-size:14px; font-weight:600; color:#6d28d9;}
+  .status-msg{margin-top:8px; font-size:13px; min-height:20px;}
+  .status-msg.err{color:#dc2626;}
+  .status-msg.ok{color:#16a34a;}
+  .dist-table{width:100%; border-collapse:collapse; margin-top:8px;}
+  .dist-table th,.dist-table td{border:1px solid var(--line); padding:6px 8px; font-size:13px; text-align:center;}
+  .dist-table th{background:var(--accent-soft); color:#4c1d95;}
+  .dist-table input{width:80px; padding:5px 6px; border:1px solid var(--line); border-radius:6px; text-align:center; font-size:13px;}
+  .prob-sum{font-size:14px; font-weight:700; text-align:center; margin-top:8px; padding:8px; border-radius:8px;}
+  .prob-sum.ok{background:#dcfce7; color:#15803d;}
+  .prob-sum.bad{background:var(--err-bg); color:var(--err-ink);}
+  .prob-sum span{display:block; font-size:12px; font-weight:400; margin-top:2px;}
+  .quiz{background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:12px; margin-top:12px;}
+  .quiz b{font-size:13px; color:#166534;}
+  .quiz p{font-size:12.5px; color:#14532d;}
+  .quiz .sol{background:#dcfce7; border-radius:8px; padding:8px; margin-top:6px; font-size:12.5px; color:#14532d;}
+  @media(max-width:1180px){ .wrap{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<header class="app">
+  <h1>📊 统计与概率 · 抽样 / 图表 / 分布列</h1>
+  <p>分层抽样、四类统计图表、离散型分布列与期望 / 方差 —— 高中数学互动课堂</p>
+</header>
+
+<div class="wrap">
+
+  <!-- 统计卡片 -->
+  <section class="panel" aria-label="统计卡片">
+    <h2>一、统计卡片</h2>
+
+    <div class="card-tabs">
+      <button type="button" class="btn sm active" id="tabSampling">抽样演示</button>
+      <button type="button" class="btn sm ghost" id="tabCharts">统计图表</button>
+    </div>
+
+    <!-- 抽样演示 -->
+    <div id="samplingPane">
+      <h3>分层抽样</h3>
+      <div class="formula">n<sub>i</sub> = n × N<sub>i</sub> / N（按层比例分配样本）</div>
+      <p style="font-size:12.5px;">示例总体三层：第一层 N₁=500、第二层 N₂=300、第三层 N₃=200，总 N=1000。</p>
+      <div class="row2">
+        <div class="field">
+          <label for="totalN">总体容量 N</label>
+          <input type="number" id="totalN" min="10" max="10000" step="10" value="1000">
+        </div>
+        <div class="field">
+          <label for="sampleN">样本量 n</label>
+          <input type="number" id="sampleN" min="1" max="500" step="1" value="100">
+        </div>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn sm" id="btnStratify">分层计算</button>
+        <button type="button" class="btn sm ghost" id="btnSimple">简单随机抽样</button>
+      </div>
+      <div class="status-msg" id="sampStatus" role="status"></div>
+      <div id="sampResult" style="font-size:13px; margin-top:8px;"></div>
+    </div>
+
+    <!-- 统计图表 -->
+    <div id="chartsPane" style="display:none">
+      <h3>四类统计图表例题</h3>
+      <div class="controls" style="margin-top:0;">
+        <button type="button" class="btn sm ghost active" id="btnPie">饼图</button>
+        <button type="button" class="btn sm ghost" id="btnBar">柱状图</button>
+        <button type="button" class="btn sm ghost" id="btnLine">折线图</button>
+        <button type="button" class="btn sm ghost" id="btnHist">直方图</button>
+      </div>
+      <canvas id="chartCanvas" class="chart" width="700" height="420" aria-label="统计图表画布，展示当前选择的图表类型"></canvas>
+      <div id="chartDesc" style="font-size:12.5px; color:#475569; margin-top:8px;"></div>
+    </div>
+
+    <!-- 统计量计算 -->
+    <h3>统计量计算</h3>
+    <p style="font-size:12.5px;">样本数据集（逗号分隔，示例 {2,4,6,8,10}）：</p>
+    <div class="field" style="margin-top:6px;">
+      <input type="text" id="sampleData" value="2,4,6,8,10" placeholder="如 2,4,6,8,10">
+    </div>
+    <div class="controls">
+      <button type="button" class="btn sm" id="btnStats">计算统计量</button>
+    </div>
+    <div class="status-msg" id="statsStatus" role="status"></div>
+    <div class="readout">
+      <table>
+        <tr><td>均值 x̄</td><td id="mMean">—</td></tr>
+        <tr><td>中位数</td><td id="mMed">—</td></tr>
+        <tr><td>方差 s²</td><td id="mVar">—</td></tr>
+        <tr><td>样本量 n</td><td id="mN">—</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- 概率卡片 -->
+  <section class="panel" aria-label="概率卡片">
+    <h2>二、概率卡片</h2>
+
+    <h3>离散型分布列编辑</h3>
+    <p style="font-size:12.5px;">编辑 x<sub>i</sub> 与概率 p<sub>i</sub>，系统实时校验<b>概率和 = 1</b> 并计算期望 E(X)、方差 D(X)。</p>
+
+    <table class="dist-table">
+      <thead>
+        <tr><th>取值 x<sub>i</sub></th><th>概率 p<sub>i</sub></th></tr>
+      </thead>
+      <tbody id="distRows">
+        <tr>
+          <td><input type="number" step="any" value="1" data-role="x"></td>
+          <td><input type="number" step="0.1" min="0" value="0.2" data-role="p"></td>
+        </tr>
+        <tr>
+          <td><input type="number" step="any" value="2" data-role="x"></td>
+          <td><input type="number" step="0.1" min="0" value="0.3" data-role="p"></td>
+        </tr>
+        <tr>
+          <td><input type="number" step="any" value="3" data-role="x"></td>
+          <td><input type="number" step="0.1" min="0" value="0.5" data-role="p"></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="controls">
+      <button type="button" class="btn sm" id="btnAddRow">＋ 添加一行</button>
+      <button type="button" class="btn sm ghost" id="btnDelRow">－ 删除末行</button>
+      <button type="button" class="btn sm ghost" id="btnResetDist">重置为示例 {1,2,3}</button>
+    </div>
+
+    <div class="prob-sum ok" id="probSum">Σp = 1.00<span>概率和等于 1 ✓</span></div>
+
+    <div class="readout">
+      <table>
+        <tr><td>期望 E(X)=Σx<sub>i</sub>·p<sub>i</sub></td><td id="dExp">—</td></tr>
+        <tr><td>方差 D(X)=Σ(x<sub>i</sub>−E)²·p<sub>i</sub></td><td id="dVar">—</td></tr>
+      </table>
+    </div>
+
+    <h3>随机刷新例题（联动）</h3>
+    <div class="quiz" id="quizBox">
+      <b id="quizTitle">随机分布列例题</b>
+      <p id="quizStem">点击下方按钮刷新题目。</p>
+      <div class="sol" id="quizSol"></div>
+    </div>
+    <div class="controls">
+      <button type="button" class="btn" id="btnQuiz">🎲 随机刷新例题</button>
+    </div>
+    <div class="status-msg" id="quizStatus" role="status"></div>
+  </section>
+
+  <!-- 控制与读数区 -->
+  <section class="panel" aria-label="控制与读数区">
+    <h2>三、概念对照与结论</h2>
+
+    <h3>方差 vs 中位数（分开展列）</h3>
+    <div style="display:grid; gap:10px;">
+      <div style="background:#f8fafc; border:1px solid var(--line); border-radius:8px; padding:10px;">
+        <b style="color:#6d28d9;">中位数（集中趋势）</b>
+        <p style="font-size:12.5px;">排序后：奇数个取中间值，偶数个取中间两数均值。反映数据的「中间位置」，对极端值不敏感。</p>
+      </div>
+      <div style="background:#f8fafc; border:1px solid var(--line); border-radius:8px; padding:10px;">
+        <b style="color:#6d28d9;">方差（离散程度）</b>
+        <p style="font-size:12.5px;">s² = Σ(x<sub>i</sub>−x̄)² / n，反映数据围绕均值的「波动大小」，对极端值敏感。</p>
+      </div>
+    </div>
+
+    <div class="warn">
+      <b>⚠️ 概念要点</b>
+      <ul style="padding-left:16px;">
+        <li>分布列要求：p<sub>i</sub> ≥ 0 且 Σp<sub>i</sub> = 1（概率和恒为 1）。</li>
+        <li>期望 E(X) 是取值的<b>加权平均</b>，权重即概率。</li>
+        <li>统计研究中观察到的联系是<b>相关关系</b>，不直接表述为「因果」。</li>
+      </ul>
+    </div>
+
+    <div class="panel" style="box-shadow:none; padding:0; margin-top:14px; border:none;">
+      <h3>🧭 观察与结论</h3>
+      <p>拖动 p<sub>i</sub> 观察：只要 Σp=1，期望总等于加权平均；若把 0.5 从 x=3 移到 x=1，期望会明显下移。验证「概率和=1」是分布列成立的前提，也是检查分布列是否「合法」的第一道关。</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- 工具：判空写入 ----------
+  function setText(el, text){
+    if (el) { el.textContent = text; }
+  }
+  function setHTML(el, html){
+    if (el) { el.innerHTML = html; }
+  }
+
+  // ---------- DOM 引用 ----------
+  var tabSampling = document.getElementById('tabSampling');
+  var tabCharts = document.getElementById('tabCharts');
+  var samplingPane = document.getElementById('samplingPane');
+  var chartsPane = document.getElementById('chartsPane');
+  var totalN = document.getElementById('totalN');
+  var sampleN = document.getElementById('sampleN');
+  var btnStratify = document.getElementById('btnStratify');
+  var btnSimple = document.getElementById('btnSimple');
+  var sampStatus = document.getElementById('sampStatus');
+  var sampResult = document.getElementById('sampResult');
+  var sampleData = document.getElementById('sampleData');
+  var btnStats = document.getElementById('btnStats');
+  var statsStatus = document.getElementById('statsStatus');
+  var mMean = document.getElementById('mMean');
+  var mMed = document.getElementById('mMed');
+  var mVar = document.getElementById('mVar');
+  var mN = document.getElementById('mN');
+  var distRows = document.getElementById('distRows');
+  var btnAddRow = document.getElementById('btnAddRow');
+  var btnDelRow = document.getElementById('btnDelRow');
+  var btnResetDist = document.getElementById('btnResetDist');
+  var probSum = document.getElementById('probSum');
+  var dExp = document.getElementById('dExp');
+  var dVar = document.getElementById('dVar');
+  var btnQuiz = document.getElementById('btnQuiz');
+  var quizTitle = document.getElementById('quizTitle');
+  var quizStem = document.getElementById('quizStem');
+  var quizSol = document.getElementById('quizSol');
+  var quizStatus = document.getElementById('quizStatus');
+  var btnPie = document.getElementById('btnPie');
+  var btnBar = document.getElementById('btnBar');
+  var btnLine = document.getElementById('btnLine');
+  var btnHist = document.getElementById('btnHist');
+  var chartCanvas = document.getElementById('chartCanvas');
+  var chartDesc = document.getElementById('chartDesc');
+  var chartCtx = chartCanvas ? chartCanvas.getContext('2d') : null;
+
+  // ---------- 图表 ----------
+  var chartData = {
+    pie:   {title:'某校课外活动参与比例（饼图）',  labels:['体育','艺术','科技','文学'], values:[40,25,20,15], unit:'%'},
+    bar:   {title:'某班各科平均分（柱状图）',      labels:['语文','数学','英语','物理','化学'], values:[82,90,78,85,88], unit:'分'},
+    line:  {title:'近 6 个月销量趋势（折线图）',   labels:['1月','2月','3月','4月','5月','6月'], values:[120,160,140,200,180,230], unit:'件'},
+    hist:  {title:'学生身高分布（直方图）',        labels:['150-155','155-160','160-165','165-170','170-175','175-180'], values:[8,18,32,24,12,6], unit:'人'}
+  };
+  var currentChart = 'pie';
+
+  var PALETTE = ['#8b5cf6','#3b82f6','#10b981','#f59e0b','#ef4444','#06b6d4'];
+
+  function chartDpr(c){
+    var dpr = window.devicePixelRatio || 1;
+    c.width = 700 * dpr; c.height = 420 * dpr;
+    c.style.width = '700px'; c.style.height = '420px';
+    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function drawChart(type){
+    if (!chartCanvas || !chartCtx) return;
+    chartDpr(chartCanvas);
+    var c = chartCtx;
+    var data = chartData[type];
+    setText(chartDesc, '例题：' + data.title + '（数据：' + data.labels.join('、') + '）');
+    chartCanvas.setAttribute('aria-label', '统计图表画布，当前为' + data.title + '，' + data.labels.map(function(l,i){return l+' '+data.values[i]+data.unit;}).join('，'));
+    c.clearRect(0, 0, 700, 420);
+    c.fillStyle = '#fff'; c.fillRect(0, 0, 700, 420);
+    c.fillStyle = '#2b3a4a';
+    c.font = '15px -apple-system,"PingFang SC",sans-serif';
+    c.textAlign = 'center';
+    c.fillText(data.title, 350, 30);
+
+    if (type === 'pie'){
+      var total = 0;
+      for (var i = 0; i < data.values.length; i++) total += data.values[i];
+      var start = -Math.PI/2;
+      var cx = 260, cy = 230, R = 140;
+      for (var j = 0; j < data.values.length; j++){
+        var ang = data.values[j] / total * Math.PI * 2;
+        c.beginPath();
+        c.moveTo(cx, cy);
+        c.arc(cx, cy, R, start, start + ang);
+        c.closePath();
+        c.fillStyle = PALETTE[j % PALETTE.length];
+        c.fill();
+        c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+        var mid = start + ang/2;
+        var lx = cx + Math.cos(mid) * R * 0.65;
+        var ly = cy + Math.sin(mid) * R * 0.65;
+        c.fillStyle = '#fff';
+        c.font = '13px sans-serif';
+        c.fillText(Math.round(data.values[j]/total*100) + '%', lx, ly);
+        start += ang;
+      }
+      // 图例
+      c.textAlign = 'left';
+      for (var k = 0; k < data.labels.length; k++){
+        c.fillStyle = PALETTE[k % PALETTE.length];
+        c.fillRect(440, 80 + k*38, 18, 18);
+        c.fillStyle = '#2b3a4a';
+        c.font = '13px sans-serif';
+        c.fillText(data.labels[k] + '：' + data.values[k] + data.unit, 466, 94 + k*38);
+      }
+    } else if (type === 'bar'){
+      var bw = 60, gap = 26;
+      var chartW = data.labels.length * (bw + gap);
+      var x0 = 60, yBase = 340, maxV = Math.max.apply(null, data.values) * 1.15;
+      c.textAlign = 'center';
+      for (var m = 0; m < data.labels.length; m++){
+        var bx = x0 + m * (bw + gap);
+        var bh = data.values[m] / maxV * 260;
+        c.fillStyle = PALETTE[m % PALETTE.length];
+        c.fillRect(bx, yBase - bh, bw, bh);
+        c.fillStyle = '#2b3a4a';
+        c.font = '12px sans-serif';
+        c.fillText(data.values[m], bx + bw/2, yBase - bh - 8);
+        c.fillText(data.labels[m], bx + bw/2, yBase + 16);
+      }
+      c.strokeStyle = '#cbd5e1'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(x0 - 10, yBase); c.lineTo(x0 + data.labels.length*(bw+gap) + 6, yBase); c.stroke();
+    } else if (type === 'line'){
+      var lw = 500, xl = 100, yBase2 = 340, maxV2 = Math.max.apply(null, data.values) * 1.15;
+      var step = lw / (data.values.length - 1);
+      var pts = [];
+      for (var n2 = 0; n2 < data.values.length; n2++){
+        pts.push({x: xl + n2 * step, y: yBase2 - data.values[n2]/maxV2*260});
+      }
+      c.strokeStyle = '#cbd5e1'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(xl - 10, yBase2); c.lineTo(xl + lw + 10, yBase2); c.stroke();
+      c.strokeStyle = '#3b82f6'; c.lineWidth = 3;
+      c.beginPath();
+      c.moveTo(pts[0].x, pts[0].y);
+      for (var n3 = 1; n3 < pts.length; n3++) c.lineTo(pts[n3].x, pts[n3].y);
+      c.stroke();
+      for (var n4 = 0; n4 < pts.length; n4++){
+        c.fillStyle = '#3b82f6';
+        c.beginPath(); c.arc(pts[n4].x, pts[n4].y, 6, 0, Math.PI*2); c.fill();
+        c.fillStyle = '#2b3a4a';
+        c.font = '12px sans-serif';
+        c.fillText(data.values[n4], pts[n4].x, pts[n4].y - 12);
+        c.fillText(data.labels[n4], pts[n4].x, yBase2 + 16);
+      }
+    } else if (type === 'hist'){
+      var nBars = data.values.length;
+      var bw2 = 64, gap2 = 18;
+      var x0h = 80, yBase3 = 340, maxV3 = Math.max.apply(null, data.values) * 1.15;
+      for (var q = 0; q < nBars; q++){
+        var bx2 = x0h + q * (bw2 + gap2);
+        var bh2 = data.values[q] / maxV3 * 260;
+        c.fillStyle = '#10b981';
+        c.fillRect(bx2, yBase3 - bh2, bw2, bh2);
+        c.strokeStyle = '#065f46'; c.lineWidth = 1.2;
+        c.strokeRect(bx2, yBase3 - bh2, bw2, bh2);
+        c.fillStyle = '#2b3a4a';
+        c.font = '12px sans-serif';
+        c.fillText(data.values[q], bx2 + bw2/2, yBase3 - bh2 - 8);
+        c.fillText(data.labels[q], bx2 + bw2/2, yBase3 + 16);
+      }
+      c.strokeStyle = '#cbd5e1'; c.lineWidth = 1.5;
+      c.beginPath(); c.moveTo(x0h - 10, yBase3); c.lineTo(x0h + nBars*(bw2+gap2) + 6, yBase3); c.stroke();
+    }
+  }
+
+  function setChartTab(t){
+    currentChart = t;
+    var btns = {pie:btnPie, bar:btnBar, line:btnLine, hist:btnHist};
+    for (var key in btns){
+      if (btns[key]){
+        btns[key].classList.toggle('active', key === t);
+        btns[key].classList.toggle('ghost', key !== t);
+      }
+    }
+    drawChart(t);
+  }
+  btnPie.addEventListener('click', function(){ setChartTab('pie'); });
+  btnBar.addEventListener('click', function(){ setChartTab('bar'); });
+  btnLine.addEventListener('click', function(){ setChartTab('line'); });
+  btnHist.addEventListener('click', function(){ setChartTab('hist'); });
+
+  tabSampling.addEventListener('click', function(){
+    tabSampling.classList.toggle('active', true);
+    tabSampling.classList.toggle('ghost', false);
+    tabCharts.classList.toggle('active', false);
+    tabCharts.classList.toggle('ghost', true);
+    samplingPane.style.display = '';
+    chartsPane.style.display = 'none';
+  });
+  tabCharts.addEventListener('click', function(){
+    tabCharts.classList.toggle('active', true);
+    tabCharts.classList.toggle('ghost', false);
+    tabSampling.classList.toggle('active', false);
+    tabSampling.classList.toggle('ghost', true);
+    samplingPane.style.display = 'none';
+    chartsPane.style.display = '';
+    drawChart(currentChart);
+  });
+
+  // ---------- 抽样 ----------
+  btnStratify.addEventListener('click', function(){
+    var N = parseFloat(totalN.value);
+    var n = parseFloat(sampleN.value);
+    var status = document.getElementById('sampStatus');
+    var result = document.getElementById('sampResult');
+    if (isNaN(N) || N <= 0 || isNaN(n) || n <= 0){
+      setText(status, '⚠ 请填写有效的总体容量与样本量（均须为正数）。');
+      if (status) status.className = 'status-msg err';
+      return;
+    }
+    // 分层比例：第一层 50%、第二层 30%、第三层 20%
+    var layers = [
+      {name:'第一层（占 50%）', ratio:0.5},
+      {name:'第二层（占 30%）', ratio:0.3},
+      {name:'第三层（占 20%）', ratio:0.2}
+    ];
+    var html = '<p style="margin-bottom:6px;"><b>按层比例 n<sub>i</sub>=n×N<sub>i</sub>/N：</b></p><table style="width:100%;border-collapse:collapse;font-size:12.5px;"><tr style="background:#ede9fe;"><th style="padding:4px;border:1px solid #e2e8f0;">层</th><th style="padding:4px;border:1px solid #e2e8f0;">层容量 N<sub>i</sub></th><th style="padding:4px;border:1px solid #e2e8f0;">样本量 n<sub>i</sub></th></tr>';
+    var rows = '';
+    for (var i = 0; i < layers.length; i++){
+      var Ni = Math.round(N * layers[i].ratio);
+      var ni = n * Ni / N;
+      var niFmt = (Math.abs(ni - Math.round(ni)) < 1e-9) ? Math.round(ni) : ni.toFixed(2);
+      rows += '<tr><td style="padding:4px;border:1px solid #e2e8f0;text-align:center;">' + layers[i].name + '</td><td style="padding:4px;border:1px solid #e2e8f0;text-align:center;">' + Ni + '</td><td style="padding:4px;border:1px solid #e2e8f0;text-align:center;"><b>' + niFmt + '</b></td></tr>';
+    }
+    html += rows + '</table><p style="margin-top:6px;font-size:12px;color:#64748b;">验证：n₁+n₂+n₃ = ' + (n*0.5 + n*0.3 + n*0.2) + ' = n ✓</p>';
+    setHTML(result, html);
+    setText(status, '✓ 分层抽样结果已按比例分配。');
+    if (status) status.className = 'status-msg ok';
+  });
+
+  btnSimple.addEventListener('click', function(){
+    var n = parseFloat(sampleN.value);
+    var status = document.getElementById('sampStatus');
+    var result = document.getElementById('sampResult');
+    if (isNaN(n) || n <= 0){
+      setText(status, '⚠ 请填写有效的样本量。');
+      if (status) status.className = 'status-msg err';
+      return;
+    }
+    var picked = [];
+    for (var i = 0; i < Math.min(n, 100); i++){
+      picked.push(Math.floor(Math.random() * 1000) + 1);
+    }
+    setHTML(result, '<p>简单随机抽样：从总体 1~1000 号中随机抽出 <b>' + picked.length + '</b> 个个体，本次抽到（前 12 个）：<code style="background:#f8fafc;padding:2px 6px;border-radius:4px;">' + picked.slice(0,12).join('、') + (picked.length>12?' …':'') + '</code></p>');
+    setText(status, '✓ 简单随机抽样完成（每个个体被抽中概率相等）。');
+    if (status) status.className = 'status-msg ok';
+  });
+
+  // ---------- 统计量 ----------
+  btnStats.addEventListener('click', function(){
+    var raw = sampleData.value;
+    var status = document.getElementById('statsStatus');
+    var nums = raw.split(/[,，\s]+/).map(function(s){ return parseFloat(s); });
+    // 过滤 NaN
+    nums = nums.filter(function(v){ return !isNaN(v); });
+    if (nums.length === 0){
+      setText(status, '⚠ 请输入至少一个数字（逗号分隔）。');
+      if (status) status.className = 'status-msg err';
+      return;
+    }
+    var n = nums.length;
+    var sum = 0;
+    for (var i = 0; i < n; i++) sum += nums[i];
+    var mean = sum / n;
+    var sorted = nums.slice().sort(function(a,b){ return a-b; });
+    var median;
+    if (n % 2 === 1) median = sorted[(n-1)/2];
+    else median = (sorted[n/2 - 1] + sorted[n/2]) / 2;
+    var vsum = 0;
+    for (var j = 0; j < n; j++) vsum += (nums[j] - mean) * (nums[j] - mean);
+    var variance = vsum / n;
+    setText(mMean, mean.toFixed(4));
+    setText(mMed, median.toFixed(4));
+    setText(mVar, variance.toFixed(4));
+    setText(mN, String(n));
+    setText(status, '✓ 已计算：样本 {' + nums.join(', ') + '}');
+    if (status) status.className = 'status-msg ok';
+  });
+
+  // ---------- 分布列 ----------
+  function readDist(){
+    var rows = distRows.querySelectorAll('tr');
+    var dist = [];
+    for (var i = 0; i < rows.length; i++){
+      var xInp = rows[i].querySelector('input[data-role=x]');
+      var pInp = rows[i].querySelector('input[data-role=p]');
+      var x = xInp ? parseFloat(xInp.value) : NaN;
+      var p = pInp ? parseFloat(pInp.value) : NaN;
+      if (!isNaN(x) && !isNaN(p)) dist.push({x:x, p:p});
+    }
+    return dist;
+  }
+
+  function updateDist(){
+    var dist = readDist();
+    var sumP = 0, E = 0;
+    var valid = dist.length > 0;
+    for (var i = 0; i < dist.length; i++){
+      if (dist[i].p < 0 || dist[i].p > 1) valid = false;
+      sumP += dist[i].p;
+      E += dist[i].x * dist[i].p;
+    }
+    var D = 0;
+    for (var j = 0; j < dist.length; j++) D += (dist[j].x - E) * (dist[j].x - E) * dist[j].p;
+    var ok = valid && Math.abs(sumP - 1) < 1e-6;
+    if (ok){
+      probSum.className = 'prob-sum ok';
+      setHTML(probSum, 'Σp = 1.00<span>概率和等于 1 ✓</span>');
+    } else {
+      probSum.className = 'prob-sum bad';
+      setHTML(probSum, 'Σp = ' + sumP.toFixed(6) + '<span>⚠ 概率和不等于 1（须满足 p<sub>i</sub>≥0 且 Σp<sub>i</sub>=1）</span>');
+    }
+    setText(dExp, E.toFixed(4));
+    setText(dVar, D.toFixed(4));
+  }
+
+  function bindDistInputs(container){
+    if (!container) return;
+    container.addEventListener('input', updateDist);
+  }
+  bindDistInputs(distRows);
+
+  btnAddRow.addEventListener('click', function(){
+    var tr = document.createElement('tr');
+    var td1 = document.createElement('td');
+    var inpX = document.createElement('input');
+    inpX.type = 'number'; inpX.step = 'any'; inpX.value = String(readDist().length + 1); inpX.setAttribute('data-role','x');
+    td1.appendChild(inpX);
+    var td2 = document.createElement('td');
+    var inpP = document.createElement('input');
+    inpP.type = 'number'; inpP.step = '0.1'; inpP.min = '0'; inpP.value = '0.1'; inpP.setAttribute('data-role','p');
+    td2.appendChild(inpP);
+    tr.appendChild(td1); tr.appendChild(td2);
+    if (distRows) distRows.appendChild(tr);
+    updateDist();
+  });
+
+  btnDelRow.addEventListener('click', function(){
+    var rows = distRows.querySelectorAll('tr');
+    if (rows.length > 1 && rows[rows.length-1]){
+      rows[rows.length-1].parentNode.removeChild(rows[rows.length-1]);
+    }
+    updateDist();
+  });
+
+  btnResetDist.addEventListener('click', function(){
+    var preset = [{x:1,p:0.2},{x:2,p:0.3},{x:3,p:0.5}];
+    setHTML(distRows, '');
+    for (var i = 0; i < preset.length; i++){
+      var tr = document.createElement('tr');
+      var td1 = document.createElement('td');
+      var ix = document.createElement('input');
+      ix.type = 'number'; ix.step = 'any'; ix.value = String(preset[i].x); ix.setAttribute('data-role','x');
+      td1.appendChild(ix);
+      var td2 = document.createElement('td');
+      var ip = document.createElement('input');
+      ip.type = 'number'; ip.step = '0.1'; ip.min = '0'; ip.value = String(preset[i].p); ip.setAttribute('data-role','p');
+      td2.appendChild(ip);
+      tr.appendChild(td1); tr.appendChild(td2);
+      if (distRows) distRows.appendChild(tr);
+    }
+    updateDist();
+  });
+
+  // ---------- 随机刷新例题（联动，先判空再写入） ----------
+  function randomQuiz(){
+    var dists = [
+      {x:[1,2,3], p:[0.2,0.3,0.5]},
+      {x:[0,1,2], p:[0.1,0.6,0.3]},
+      {x:[2,4,6], p:[0.5,0.25,0.25]},
+      {x:[1,2,3,4], p:[0.4,0.3,0.2,0.1]},
+      {x:[-1,0,1], p:[0.25,0.5,0.25]}
+    ];
+    var d = dists[Math.floor(Math.random() * dists.length)];
+    var E = 0, D = 0;
+    var stem = '';
+    for (var i = 0; i < d.x.length; i++){
+      E += d.x[i] * d.p[i];
+      stem += 'P(X=' + d.x[i] + ')=' + d.p[i] + (i < d.x.length-1 ? '，' : '');
+    }
+    for (var j = 0; j < d.x.length; j++) D += (d.x[j] - E) * (d.x[j] - E) * d.p[j];
+    // 先判空再写入（规避 Cannot set properties of null）
+    var titleEl = document.getElementById('quizTitle');
+    var stemEl = document.getElementById('quizStem');
+    var solEl = document.getElementById('quizSol');
+    var statusEl = document.getElementById('quizStatus');
+    if (titleEl) titleEl.textContent = '随机分布列例题';
+    if (stemEl) stemEl.textContent = '设离散型随机变量 X 的分布列为：' + stem + '。求 E(X) 与 D(X)。';
+    if (solEl) solEl.innerHTML = '解法：E(X) = ' + d.x.map(function(x,i){ return x + '×' + d.p[i]; }).join(' + ') + ' = <b>' + E.toFixed(2) + '</b>；<br>D(X) = Σ(x<sub>i</sub>−E)²·p<sub>i</sub> = <b>' + D.toFixed(4) + '</b>。<br><span style="color:#166534;">（概率和 = ' + d.p.reduce(function(a,b){return a+b;},0) + '，满足 Σp=1 ✓）</span>';
+    if (statusEl){ statusEl.className = 'status-msg ok'; statusEl.textContent = '✓ 例题与解法已同步刷新。'; }
+  }
+
+  btnQuiz.addEventListener('click', randomQuiz);
+
+  // ---------- 初始化 ----------
+  updateDist();
+  drawChart('pie');
+  randomQuiz();
+  setText(sampStatus, '提示：先设置总体容量与样本量，再点击下方按钮。');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>动能定理 · 全场景物理实验室 | 自由落体刻度优化</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #eef2f5 0%, #d9e2ec 100%);
+            font-family: 'Segoe UI', 'Roboto', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .master-card {
+            max-width: 1550px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(2px);
+            border-radius: 56px;
+            box-shadow: 0 30px 45px -18px rgba(0, 0, 0, 0.4);
+            padding: 20px 28px 32px;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .hero h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #0f2b3d, #1b5e7a);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+        .hero .sub {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c5282;
+            border-bottom: 3px solid #fbbf24;
+            display: inline-block;
+            padding-bottom: 4px;
+        }
+
+        .scene-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0 25px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: #e2e8f0;
+            border: none;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 8px 22px;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #2d3e50;
+        }
+        .tab-btn.active {
+            background: #2c7da0;
+            color: white;
+            box-shadow: 0 6px 12px rgba(44,125,160,0.3);
+        }
+
+        .main-dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin: 15px 0 30px;
+        }
+        .control-side {
+            flex: 0.9;
+            min-width: 270px;
+            background: #fefaf2;
+            border-radius: 48px;
+            padding: 18px 20px;
+            box-shadow: 0 12px 22px rgba(0, 0, 0, 0.05);
+        }
+        .canvas-side {
+            flex: 2.8;
+            min-width: 580px;
+            background: #ffffffdd;
+            border-radius: 56px;
+            padding: 18px 20px 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .param {
+            margin-bottom: 22px;
+        }
+        .param label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #1e4a6b;
+        }
+        .param .value-badge {
+            background: #1f5e7e;
+            color: white;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+        }
+        input[type=range] {
+            width: 100%;
+            margin-top: 4px;
+        }
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0 15px;
+        }
+        .btn {
+            flex: 1;
+            background: #2c7da0;
+            color: white;
+            font-weight: bold;
+            padding: 8px 0;
+            border-radius: 50px;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-reset { background: #5e6f8d; }
+        .formula-mini {
+            background: #eef3fc;
+            border-radius: 28px;
+            padding: 10px 14px;
+            margin: 15px 0;
+            border-left: 5px solid #facc15;
+        }
+        .data-panel {
+            background: #fff7e8;
+            border-radius: 28px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+        }
+        .data-panel p {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        canvas {
+            background: #eef3e6;
+            border-radius: 40px;
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+            cursor: pointer;
+            border: 2px solid #fef7e0;
+        }
+        .canvas-caption {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            background: #e9f0f5;
+            padding: 6px;
+            border-radius: 40px;
+        }
+        .state-badge {
+            text-align: center;
+            margin-top: 8px;
+        }
+        .state-badge span {
+            background: #2c3e4e;
+            display: inline-block;
+            padding: 4px 20px;
+            border-radius: 48px;
+            color: #facc15;
+            font-weight: bold;
+        }
+        .lecture-area {
+            margin-top: 28px;
+            background: #fef7e0;
+            border-radius: 48px;
+            padding: 16px 24px;
+            border-top: 5px solid #fbbf24;
+        }
+        .lecture-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #b45309;
+            text-align: center;
+        }
+        .key-points {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        .point-card {
+            flex: 1;
+            background: white;
+            border-radius: 28px;
+            padding: 12px;
+            text-align: center;
+        }
+        .point-card .big-number {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #f97316;
+        }
+        .explain-text {
+            background: #fff5e2;
+            padding: 10px 18px;
+            border-radius: 36px;
+            line-height: 1.4;
+            font-size: 0.95rem;
+        }
+        .highlight { background: #fde68a; padding: 2px 8px; border-radius: 28px; font-weight: 700; }
+        footer { text-align: center; font-size: 0.7rem; color: #6b8e9b; margin-top: 20px; }
+        @media (max-width: 860px) { .control-side { flex:1; } .canvas-side { min-width: 360px; } }
+    </style>
+</head>
+<body>
+<div class="master-card">
+    <div class="hero">
+        <h1>⚡ 动能定理 · 综合实验室 ⚡</h1>
+        <div class="sub">水平面阻力预测 | 自由落体刻度优化 | 弹簧势能 | 摩擦生热</div>
+    </div>
+
+    <div class="scene-tabs">
+        <button class="tab-btn active" data-scene="level">🛞 水平面(阻力/预测)</button>
+        <button class="tab-btn" data-scene="freefall">🍃 自由落体(刻度优化)</button>
+        <button class="tab-btn" data-scene="spring">🔄 动能↔弹性势能</button>
+        <button class="tab-btn" data-scene="thermal">🔥 动能→热能(摩擦生热)</button>
+    </div>
+
+    <div class="main-dashboard">
+        <div class="control-side" id="controlPanel"></div>
+        <div class="canvas-side">
+            <canvas id="mainCanvas" width="950" height="420" style="width:100%; aspect-ratio:950/420;"></canvas>
+            <div class="canvas-caption" id="canvasCaption">🖱️ 点击画布暂停/继续 | 自由落体左侧刻度尺与右侧参数完全分离</div>
+            <div class="state-badge" id="stateBadge"><span>🏁 运行中</span></div>
+        </div>
+    </div>
+
+    <div class="lecture-area">
+        <div class="lecture-title">📖 动能定理 & 能量转化全景</div>
+        <div class="key-points">
+            <div class="point-card"><div class="big-number">W<sub>合</sub> = ΔE<sub>k</sub></div><p>合外力做功 = 动能变化</p></div>
+            <div class="point-card"><div class="big-number">mgh = ½mv²</div><p>重力势能 ↔ 动能 (自由落体)</p></div>
+            <div class="point-card"><div class="big-number">Q = f·s</div><p>摩擦力生热 = 动能损失</p></div>
+        </div>
+        <div class="explain-text">✨ <span class="highlight">全场景回归：</span> ①水平面有阻力动态预测停止点，无阻力标明“永远运动”；②自由落体<strong>左侧独立高度刻度尺 + 右侧实时数据面板</strong>完全不重叠；③弹簧振子动能与弹性势能相互转化；④摩擦生热显示动能转为内能及温升。所有画布元素清晰无遮挡。</div>
+    </div>
+    <footer>点击画布暂停/继续 | 各场景独立参数调节，实时可视化动能定理与能量守恒</footer>
+</div>
+
+<script>
+    (function() {
+        let currentScene = "level";
+        let isPaused = false;
+        let lastTimestamp = 0;
+        
+        // ---------- 1. 水平面 (阻力/无阻力预测 + 刻度) ----------
+        let level_mass = 2.0, level_initVel = 4.0, level_friction = 2.5;
+        let level_pos = 0, level_vel = 4.0, level_moving = true, level_acc = -2.5/2.0;
+        
+        // ---------- 2. 自由落体 (带独立高度刻度尺，参数与刻度分离) ----------
+        let free_mass = 1.5, free_height = 5.0;
+        let free_y = 5.0, free_vel = 0, free_acc = 9.8, free_moving = true;
+        
+        // ---------- 3. 弹簧振子 (动能↔弹性势能) ----------
+        let spring_mass = 1.5, spring_k = 40.0, spring_amplitude = 0.5;
+        let spring_x = 0.5, spring_vel = 0, spring_omega = Math.sqrt(40.0/1.5);
+        
+        // ---------- 4. 摩擦生热演示 (动能完全转为热能) ----------
+        let thermal_mass = 2.0, thermal_initVel = 5.0, thermal_friction = 4.0;
+        let thermal_pos = 0, thermal_vel = 5.0, thermal_moving = true, thermal_acc = -4.0/2.0;
+        let thermal_energy_lost = 0, thermal_temp_rise = 0;
+        
+        const canvas = document.getElementById('mainCanvas');
+        let ctx = canvas.getContext('2d');
+        const controlPanel = document.getElementById('controlPanel');
+        const canvasCaption = document.getElementById('canvasCaption');
+        const stateBadgeSpan = document.querySelector('#stateBadge span');
+        
+        // ---------- 控件重建 ----------
+        function rebuildControls() {
+            if(currentScene === 'level') {
+                controlPanel.innerHTML = `
+                    <div class="param"><label>⚖️ 质量 (kg) <span id="massVal">${level_mass.toFixed(2)}</span></label><input type="range" id="levelMass" min="0.5" max="5" step="0.1" value="${level_mass}"></div>
+                    <div class="param"><label>🏹 初速度 (m/s) <span id="velVal">${level_initVel.toFixed(2)}</span></label><input type="range" id="levelVel" min="0" max="8" step="0.2" value="${level_initVel}"></div>
+                    <div class="param"><label>🛞 阻力 (N) <span id="fricVal">${level_friction.toFixed(2)}</span></label><input type="range" id="levelFric" min="0" max="7" step="0.2" value="${level_friction}"></div>
+                    <div class="button-group"><button class="btn" id="applyLevel">应用重启</button><button class="btn btn-reset" id="resetLevel">重置典型</button></div>
+                    <div class="formula-mini"><div class="big-equation">½mv² − ½mv₀² = −F<sub>f</sub>·s</div><p>阻力做功 = 动能减少量</p></div>
+                    <div class="data-panel"><p>📌 初动能: <strong id="initEkL">0 J</strong></p><p>⚡ 当前动能: <strong id="currEkL">0 J</strong></p><p>🔧 阻力做功: <strong id="workL">0 J</strong></p><p>📍 预测停止位置: <strong id="stopPosL">— m</strong></p><p>♾️ 无阻力时: <strong id="noFrictionNote">永远运动</strong></p></div>
+                `;
+                document.getElementById('levelMass').addEventListener('input', (e) => { level_mass = parseFloat(e.target.value); document.getElementById('massVal').innerText = level_mass.toFixed(2); level_acc = -level_friction/level_mass; resetLevel(); drawCanvas(); });
+                document.getElementById('levelVel').addEventListener('input', (e) => { level_initVel = parseFloat(e.target.value); document.getElementById('velVal').innerText = level_initVel.toFixed(2); resetLevel(); drawCanvas(); });
+                document.getElementById('levelFric').addEventListener('input', (e) => { level_friction = parseFloat(e.target.value); document.getElementById('fricVal').innerText = level_friction.toFixed(2); level_acc = -level_friction/level_mass; resetLevel(); drawCanvas(); });
+                document.getElementById('applyLevel').onclick = () => resetLevel();
+                document.getElementById('resetLevel').onclick = () => { document.getElementById('levelMass').value=2.0; document.getElementById('levelVel').value=4.0; document.getElementById('levelFric').value=2.5; level_mass=2; level_initVel=4; level_friction=2.5; level_acc = -2.5/2; resetLevel(); drawCanvas(); };
+                resetLevel();
+            }
+            else if(currentScene === 'freefall') {
+                controlPanel.innerHTML = `
+                    <div class="param"><label>🍃 质量 (kg) <span id="freeMassVal">${free_mass.toFixed(2)}</span></label><input type="range" id="freeMass" min="0.5" max="4" step="0.1" value="${free_mass}"></div>
+                    <div class="param"><label>📏 初始高度 (m) <span id="freeHVal">${free_height.toFixed(2)}</span></label><input type="range" id="freeHeight" min="1.5" max="8.0" step="0.1" value="${free_height}"></div>
+                    <div class="button-group"><button class="btn" id="applyFree">应用重启</button><button class="btn btn-reset" id="resetFree">重置</button></div>
+                    <div class="formula-mini"><div class="big-equation">mgh = ½mv²</div><p>自由落体 机械能守恒</p></div>
+                    <div class="data-panel"><p>📈 势能 E<sub>p</sub>: <strong id="epFree">0 J</strong></p><p>⚡ 动能 E<sub>k</sub>: <strong id="ekFree">0 J</strong></p><p>🔁 机械能: <strong id="mechFree">0 J</strong></p><p>📏 左侧刻度尺 | 右侧数据面板 | 无重叠</p></div>
+                `;
+                document.getElementById('freeMass').addEventListener('input', (e) => { free_mass = parseFloat(e.target.value); document.getElementById('freeMassVal').innerText = free_mass.toFixed(2); resetFree(); drawCanvas(); });
+                document.getElementById('freeHeight').addEventListener('input', (e) => { free_height = parseFloat(e.target.value); document.getElementById('freeHVal').innerText = free_height.toFixed(2); resetFree(); drawCanvas(); });
+                document.getElementById('applyFree').onclick = () => resetFree();
+                document.getElementById('resetFree').onclick = () => { document.getElementById('freeMass').value=1.5; document.getElementById('freeHeight').value=5.0; free_mass=1.5; free_height=5.0; resetFree(); drawCanvas(); };
+                resetFree();
+            }
+            else if(currentScene === 'spring') {
+                controlPanel.innerHTML = `
+                    <div class="param"><label>⚙️ 质量 (kg) <span id="springMassVal">${spring_mass.toFixed(2)}</span></label><input type="range" id="springMass" min="0.5" max="3" step="0.1" value="${spring_mass}"></div>
+                    <div class="param"><label>🔄 劲度系数 k (N/m) <span id="kVal">${spring_k.toFixed(0)}</span></label><input type="range" id="springK" min="15" max="80" step="2" value="${spring_k}"></div>
+                    <div class="param"><label>📏 初始振幅 A (m) <span id="ampVal">${spring_amplitude.toFixed(2)}</span></label><input type="range" id="springAmp" min="0.2" max="0.9" step="0.05" value="${spring_amplitude}"></div>
+                    <div class="button-group"><button class="btn" id="applySpring">重启振荡</button><button class="btn btn-reset" id="resetSpring">重置</button></div>
+                    <div class="formula-mini"><div class="big-equation">E<sub>p弹</sub> = ½kx²</div><p>动能 ↔ 弹性势能，机械能守恒</p></div>
+                    <div class="data-panel"><p>🎯 弹性势能 E<sub>p</sub>: <strong id="epSpring">0 J</strong></p><p>⚡ 动能 E<sub>k</sub>: <strong id="ekSpring">0 J</strong></p><p>🔁 总机械能: <strong id="totalSpring">0 J</strong></p></div>
+                `;
+                document.getElementById('springMass').addEventListener('input', (e) => { spring_mass = parseFloat(e.target.value); document.getElementById('springMassVal').innerText = spring_mass.toFixed(2); spring_omega = Math.sqrt(spring_k/spring_mass); resetSpring(); drawCanvas(); });
+                document.getElementById('springK').addEventListener('input', (e) => { spring_k = parseFloat(e.target.value); document.getElementById('kVal').innerText = spring_k.toFixed(0); spring_omega = Math.sqrt(spring_k/spring_mass); resetSpring(); drawCanvas(); });
+                document.getElementById('springAmp').addEventListener('input', (e) => { spring_amplitude = parseFloat(e.target.value); document.getElementById('ampVal').innerText = spring_amplitude.toFixed(2); resetSpring(); drawCanvas(); });
+                document.getElementById('applySpring').onclick = () => resetSpring();
+                document.getElementById('resetSpring').onclick = () => { document.getElementById('springMass').value=1.5; document.getElementById('springK').value=40; document.getElementById('springAmp').value=0.5; spring_mass=1.5; spring_k=40; spring_amplitude=0.5; spring_omega = Math.sqrt(spring_k/spring_mass); resetSpring(); drawCanvas(); };
+                resetSpring();
+            }
+            else if(currentScene === 'thermal') {
+                controlPanel.innerHTML = `
+                    <div class="param"><label>🔥 质量 (kg) <span id="thermMassVal">${thermal_mass.toFixed(2)}</span></label><input type="range" id="thermMass" min="0.5" max="4" step="0.1" value="${thermal_mass}"></div>
+                    <div class="param"><label>💨 初速度 (m/s) <span id="thermVelVal">${thermal_initVel.toFixed(2)}</span></label><input type="range" id="thermVel" min="1" max="8" step="0.2" value="${thermal_initVel}"></div>
+                    <div class="param"><label>🛞 摩擦力 (N) <span id="thermFricVal">${thermal_friction.toFixed(2)}</span></label><input type="range" id="thermFric" min="1" max="8" step="0.2" value="${thermal_friction}"></div>
+                    <div class="button-group"><button class="btn" id="applyTherm">应用重启</button><button class="btn btn-reset" id="resetTherm">重置</button></div>
+                    <div class="formula-mini"><div class="big-equation">Q = f·s = ΔE<sub>k</sub></div><p>摩擦力做功转化为内能(热能)</p></div>
+                    <div class="data-panel"><p>📉 损失动能 → 热能: <strong id="heatOut">0 J</strong></p><p>🌡️ 模拟温升: <strong id="tempRise">0.0 °C</strong></p><p>📍 停止预测位置: <strong id="stopThermal">— m</strong></p></div>
+                `;
+                document.getElementById('thermMass').addEventListener('input', (e) => { thermal_mass = parseFloat(e.target.value); document.getElementById('thermMassVal').innerText = thermal_mass.toFixed(2); thermal_acc = -thermal_friction/thermal_mass; resetThermal(); drawCanvas(); });
+                document.getElementById('thermVel').addEventListener('input', (e) => { thermal_initVel = parseFloat(e.target.value); document.getElementById('thermVelVal').innerText = thermal_initVel.toFixed(2); resetThermal(); drawCanvas(); });
+                document.getElementById('thermFric').addEventListener('input', (e) => { thermal_friction = parseFloat(e.target.value); document.getElementById('thermFricVal').innerText = thermal_friction.toFixed(2); thermal_acc = -thermal_friction/thermal_mass; resetThermal(); drawCanvas(); });
+                document.getElementById('applyTherm').onclick = () => resetThermal();
+                document.getElementById('resetTherm').onclick = () => { document.getElementById('thermMass').value=2.0; document.getElementById('thermVel').value=5.0; document.getElementById('thermFric').value=4.0; thermal_mass=2; thermal_initVel=5; thermal_friction=4; thermal_acc = -4/2; resetThermal(); drawCanvas(); };
+                resetThermal();
+            }
+        }
+        
+        // 各场景重置及UI更新 (保留原有逻辑)
+        function resetLevel() { level_pos = 0; level_vel = level_initVel; level_moving = true; level_acc = -level_friction/level_mass; updateLevelUI(); drawCanvas(); }
+        function updateLevelUI() { if(currentScene !== 'level') return; let initEk=0.5*level_mass*level_initVel**2, currEk=0.5*level_mass*level_vel**2, work=-level_friction*level_pos; let stopDist=level_friction>0?initEk/level_friction:Infinity; document.getElementById('initEkL')&&(document.getElementById('initEkL').innerText=initEk.toFixed(2)+" J"); document.getElementById('currEkL')&&(document.getElementById('currEkL').innerText=currEk.toFixed(2)+" J"); document.getElementById('workL')&&(document.getElementById('workL').innerText=work.toFixed(2)+" J"); document.getElementById('stopPosL')&&(document.getElementById('stopPosL').innerText=level_friction>0?stopDist.toFixed(2)+" m":"∞ 永不停止"); document.getElementById('noFrictionNote')&&(document.getElementById('noFrictionNote').innerHTML=level_friction===0?"♾️ 无阻力 → 永远匀速运动":"有阻力 → 最终停止"); }
+        function resetFree() { free_y = free_height; free_vel = 0; free_moving = true; updateFreeUI(); drawCanvas(); }
+        function updateFreeUI() { if(currentScene !== 'freefall') return; let ep=free_mass*9.8*Math.max(0,free_y); let ek=0.5*free_mass*free_vel**2; document.getElementById('epFree')&&(document.getElementById('epFree').innerText=ep.toFixed(2)+" J"); document.getElementById('ekFree')&&(document.getElementById('ekFree').innerText=ek.toFixed(2)+" J"); document.getElementById('mechFree')&&(document.getElementById('mechFree').innerText=(ep+ek).toFixed(2)+" J"); }
+        function resetSpring() { spring_x=spring_amplitude; spring_vel=0; updateSpringUI(); drawCanvas(); }
+        function updateSpringUI() { let ep=0.5*spring_k*spring_x**2, ek=0.5*spring_mass*spring_vel**2; document.getElementById('epSpring')&&(document.getElementById('epSpring').innerText=ep.toFixed(2)+" J"); document.getElementById('ekSpring')&&(document.getElementById('ekSpring').innerText=ek.toFixed(2)+" J"); document.getElementById('totalSpring')&&(document.getElementById('totalSpring').innerText=(ep+ek).toFixed(2)+" J"); }
+        function resetThermal() { thermal_pos=0; thermal_vel=thermal_initVel; thermal_moving=true; thermal_energy_lost=0; thermal_temp_rise=0; updateThermalUI(); drawCanvas(); }
+        function updateThermalUI() { let initEk=0.5*thermal_mass*thermal_initVel**2, currEk=0.5*thermal_mass*thermal_vel**2; thermal_energy_lost=initEk-currEk; thermal_temp_rise=thermal_energy_lost/(thermal_mass*400); document.getElementById('heatOut')&&(document.getElementById('heatOut').innerText=thermal_energy_lost.toFixed(2)+" J"); document.getElementById('tempRise')&&(document.getElementById('tempRise').innerText=thermal_temp_rise.toFixed(2)+" °C"); let stopDist=thermal_friction>0?initEk/thermal_friction:Infinity; document.getElementById('stopThermal')&&(document.getElementById('stopThermal').innerText=thermal_friction>0?stopDist.toFixed(2)+" m":"∞"); }
+        
+        // 物理更新
+        function updatePhysics(dt) {
+            if(isPaused) return;
+            if(dt>0.03) dt=0.03;
+            if(currentScene === 'level') {
+                if(!level_moving) return;
+                if(level_vel<=0.01 && level_friction>0) { level_vel=0; level_moving=false; updateLevelUI(); drawCanvas(); return; }
+                let dv=level_acc*dt, newVel=level_vel+dv, ds=level_vel*dt+0.5*level_acc*dt*dt;
+                if(newVel<=0 && level_friction>0) { let t_stop=level_vel/Math.abs(level_acc); let s_stop=level_vel*t_stop+0.5*level_acc*t_stop*t_stop; level_pos+=s_stop; level_vel=0; level_moving=false; }
+                else { level_pos+=ds; level_vel=newVel; if(level_friction===0 && level_vel<0) level_vel=Math.abs(level_vel); }
+                updateLevelUI(); drawCanvas();
+            }
+            else if(currentScene === 'freefall') {
+                if(!free_moving) return;
+                if(free_y<=0.02) { free_y=0; free_vel=0; free_moving=false; updateFreeUI(); drawCanvas(); return; }
+                let dv=free_acc*dt, newVel=free_vel+dv, dy=free_vel*dt+0.5*free_acc*dt*dt;
+                let nextY=free_y-dy;
+                if(nextY<=0) { free_y=0; free_vel=Math.sqrt(2*9.8*free_height); free_moving=false; }
+                else { free_y=nextY; free_vel=newVel; }
+                updateFreeUI(); drawCanvas();
+            }
+            else if(currentScene === 'spring') {
+                let a=-(spring_k/spring_mass)*spring_x;
+                spring_vel+=a*dt; spring_x+=spring_vel*dt;
+                updateSpringUI(); drawCanvas();
+            }
+            else if(currentScene === 'thermal') {
+                if(!thermal_moving) return;
+                if(thermal_vel<=0.01 && thermal_friction>0) { thermal_vel=0; thermal_moving=false; updateThermalUI(); drawCanvas(); return; }
+                let dv=thermal_acc*dt, newVel=thermal_vel+dv, ds=thermal_vel*dt+0.5*thermal_acc*dt*dt;
+                if(newVel<=0) { let t_stop=thermal_vel/Math.abs(thermal_acc); let s_stop=thermal_vel*t_stop+0.5*thermal_acc*t_stop*t_stop; thermal_pos+=s_stop; thermal_vel=0; thermal_moving=false; }
+                else { thermal_pos+=ds; thermal_vel=newVel; }
+                updateThermalUI(); drawCanvas();
+            }
+            updateStateText();
+        }
+        
+        function updateStateText() {
+            let moving=true;
+            if(currentScene==='level') moving=level_moving;
+            else if(currentScene==='freefall') moving=free_moving;
+            else if(currentScene==='spring') moving=true;
+            else moving=thermal_moving;
+            if(!moving) stateBadgeSpan.innerText="⏹️ 已停止";
+            else if(isPaused) stateBadgeSpan.innerText="⏸️ 暂停";
+            else stateBadgeSpan.innerText="🏃 运动中 · 能量转化";
+        }
+        
+        // 绘图核心：自由落体场景独立优化 —— 左侧刻度尺与右侧数据面板完全分离
+        function drawCanvas() {
+            if(!ctx) return;
+            const w = canvas.clientWidth, h = canvas.clientHeight;
+            canvas.width = w; canvas.height = h;
+            ctx.fillStyle = "#eef3e6"; ctx.fillRect(0,0,w,h);
+            ctx.font = `bold ${Math.floor(h*0.035)}px "Segoe UI"`;
+            
+            if(currentScene === 'level') {
+                let left=70, right=w-70, maxDisp = (level_friction>0) ? (0.5*level_mass*level_initVel**2/level_friction + 1.5) : 8;
+                if(maxDisp>13) maxDisp=13;
+                let ratio = Math.min(1, level_pos/maxDisp), blockX = left + ratio*(right-left), groundY = h-65;
+                ctx.fillStyle="#bcae7a"; ctx.fillRect(0,groundY+8,w,10);
+                ctx.fillStyle="#3b82b6"; ctx.beginPath(); ctx.roundRect(blockX-22, groundY-28, 44,44,12); ctx.fill();
+                ctx.fillStyle="#facc15"; ctx.fillText("⚡", blockX-10, groundY-6);
+                ctx.fillStyle="#1f4a2f"; ctx.fillText(`v = ${level_vel.toFixed(2)} m/s`, 20, 50);
+                ctx.fillText(`动能 Ek = ${(0.5*level_mass*level_vel**2).toFixed(1)} J`, 20, 95);
+                for(let d=0; d<=maxDisp; d+=1){ let x=left+(d/maxDisp)*(right-left); if(x>left&&x<right){ ctx.beginPath(); ctx.moveTo(x,groundY+8); ctx.lineTo(x,groundY+20); ctx.stroke(); ctx.fillText(d+"m", x-8, groundY+34); } }
+                if(level_friction>0) { let stopX = left + ( (0.5*level_mass*level_initVel**2/level_friction)/maxDisp)*(right-left); if(stopX>left && stopX<right){ ctx.beginPath(); ctx.moveTo(stopX, groundY-15); ctx.lineTo(stopX, groundY+20); ctx.strokeStyle="#e07c2c"; ctx.stroke(); ctx.fillStyle="#c2410c"; ctx.fillText("⛔停止预测", stopX-35, groundY-18); } }
+                else { ctx.fillStyle="#2c6e2c"; ctx.fillText("♾️ 无阻力 → 永远运动", w-180, 40); }
+            }
+            else if(currentScene === 'freefall') {
+                // 自由落体专用绘制: 左侧刻度尺，右侧小球，右上独立数据面板，无任何重叠
+                let groundY = h-55, maxH = free_height;
+                let yRatio = Math.min(1, Math.max(0, free_y/maxH));
+                let ballY = groundY - yRatio*(groundY-55);
+                // 地面
+                ctx.fillStyle="#7c9e6e"; ctx.fillRect(0,groundY-8,w,12);
+                // 左侧高度刻度尺（完全独立区域）
+                const rulerLeftX = 45, rulerRightX = 70, rulerTopY = 35, rulerBottomY = groundY - 18;
+                ctx.fillStyle = "#fef9e6"; ctx.fillRect(rulerLeftX-6, rulerTopY-4, 42, rulerBottomY - rulerTopY + 10);
+                ctx.fillStyle = "#2d5a3b"; ctx.font = `bold ${Math.floor(h*0.028)}px monospace`;
+                ctx.fillText("高度(m)", rulerLeftX-3, rulerTopY-6);
+                for(let hm=0; hm<=maxH+0.05; hm+=0.5) {
+                    let t_mark = (maxH - hm) / maxH;
+                    let markY = rulerTopY + t_mark * (rulerBottomY - rulerTopY);
+                    if(markY>=rulerTopY && markY<=rulerBottomY) {
+                        ctx.beginPath(); ctx.moveTo(rulerLeftX, markY); ctx.lineTo(rulerLeftX+12, markY); ctx.stroke();
+                        ctx.fillText(hm.toFixed(1), rulerLeftX+14, markY+3);
+                    }
+                }
+                let currentMarkY = rulerTopY + ((maxH - free_y)/maxH) * (rulerBottomY - rulerTopY);
+                ctx.fillStyle="#e07c2c"; ctx.beginPath(); ctx.moveTo(rulerLeftX+18, currentMarkY); ctx.lineTo(rulerLeftX+28, currentMarkY-4); ctx.lineTo(rulerLeftX+28, currentMarkY+4); ctx.fill();
+                // 小球
+                ctx.fillStyle = "#f97316"; ctx.beginPath(); ctx.arc(w-90, ballY, 24, 0, 2*Math.PI); ctx.fill();
+                ctx.fillStyle = "#facc15"; ctx.fillText("⬤", w-104, ballY-8);
+                if(free_vel>0.1 && free_moving) {
+                    ctx.beginPath(); ctx.moveTo(w-60, ballY-12); ctx.lineTo(w-30, ballY-18); ctx.lineTo(w-35, ballY-6); ctx.fillStyle="#d97706"; ctx.fill();
+                }
+                // 右上独立数据面板（完全不干扰左侧刻度）
+                const panelX = w-210, panelY = 30;
+                ctx.fillStyle = "rgba(35, 45, 55, 0.85)"; ctx.fillRect(panelX, panelY, 195, 130);
+                ctx.fillStyle = "#fef9e6"; ctx.font = `bold ${Math.floor(h*0.028)}px monospace`;
+                ctx.fillText("📊 实时数据", panelX+10, panelY+22);
+                ctx.font = `${Math.floor(h*0.024)}px monospace`; ctx.fillStyle = "#facc15";
+                ctx.fillText(`速度: ${free_vel.toFixed(2)} m/s`, panelX+10, panelY+50);
+                ctx.fillStyle = "#b7e0a2"; ctx.fillText(`高度: ${free_y.toFixed(2)} m`, panelX+10, panelY+75);
+                ctx.fillStyle = "#ffd966"; ctx.fillText(`动能: ${(0.5*free_mass*free_vel**2).toFixed(1)} J`, panelX+10, panelY+100);
+                ctx.fillStyle = "#aad6d1"; ctx.fillText(`势能: ${(free_mass*9.8*Math.max(0,free_y)).toFixed(1)} J`, panelX+10, panelY+125);
+                ctx.fillStyle = "#1f4a2f"; ctx.font = `italic ${Math.floor(h*0.022)}px monospace`;
+                ctx.fillText("动能定理: mgh = ½mv²", w-200, groundY+12);
+            }
+            else if(currentScene === 'spring') {
+                let midX = w/2, baseY = h-80, offsetX = spring_x * 100;
+                ctx.fillStyle="#3b82b6"; ctx.fillRect(midX-10, baseY-20, 20, 40);
+                ctx.beginPath(); ctx.moveTo(midX+offsetX, baseY-12); ctx.lineTo(midX+offsetX+20, baseY-2); ctx.lineTo(midX+offsetX, baseY+8); ctx.fillStyle="#facc15"; ctx.fill();
+                ctx.fillStyle="#1f4a2f"; ctx.fillText(`位移 x = ${spring_x.toFixed(2)} m`, 20, 55);
+                ctx.fillText(`弹性势能 Ep = ${(0.5*spring_k*spring_x**2).toFixed(1)} J`, 20, 100);
+                ctx.fillText(`动能 Ek = ${(0.5*spring_mass*spring_vel**2).toFixed(1)} J`, 20, 145);
+            }
+            else if(currentScene === 'thermal') {
+                let left=70, right=w-70, maxDisp = (0.5*thermal_mass*thermal_initVel**2/thermal_friction + 1.2);
+                if(maxDisp>12) maxDisp=12;
+                let ratio = Math.min(1, thermal_pos/maxDisp), blockX = left + ratio*(right-left), groundY = h-65;
+                ctx.fillStyle="#bcae7a"; ctx.fillRect(0,groundY+8,w,10);
+                ctx.fillStyle="#f97316"; ctx.beginPath(); ctx.roundRect(blockX-22, groundY-28, 44,44,12); ctx.fill();
+                ctx.fillStyle="#ffcc00"; ctx.fillText("🔥", blockX-10, groundY-6);
+                ctx.fillText(`损失动能 = ${thermal_energy_lost.toFixed(1)} J`, 20, 55);
+                ctx.fillText(`温升 ≈ ${thermal_temp_rise.toFixed(1)} °C`, 20, 95);
+                let stopX = left + ( (0.5*thermal_mass*thermal_initVel**2/thermal_friction)/maxDisp)*(right-left);
+                ctx.beginPath(); ctx.moveTo(stopX, groundY-15); ctx.lineTo(stopX, groundY+20); ctx.stroke(); ctx.fillText("停止点", stopX-30, groundY-18);
+            }
+            updateStateText();
+        }
+        
+        function animate(now) {
+            if(!lastTimestamp) { lastTimestamp = now; requestAnimationFrame(animate); return; }
+            let dt = Math.min(0.033, (now - lastTimestamp)/1000);
+            if(dt>0.001 && !isPaused) updatePhysics(dt);
+            lastTimestamp = now;
+            requestAnimationFrame(animate);
+        }
+        
+        function switchScene(scene) {
+            currentScene = scene;
+            document.querySelectorAll('.tab-btn').forEach(btn=>{ if(btn.dataset.scene===scene) btn.classList.add('active'); else btn.classList.remove('active'); });
+            rebuildControls();
+            isPaused = false;
+            if(scene==='level') canvasCaption.innerText = "🛞 水平面: 有阻力→预测停止位置; 无阻力→永远运动 + 距离刻度";
+            else if(scene==='freefall') canvasCaption.innerText = "🍃 自由落体: 左侧独立高度刻度尺 + 右上数据面板 | 完全分离无重叠";
+            else if(scene==='spring') canvasCaption.innerText = "🔄 弹簧振子: 动能与弹性势能周期性转化，机械能守恒";
+            else canvasCaption.innerText = "🔥 动能→热能: 摩擦力做功生热，动能逐渐减少，温度升高";
+            drawCanvas();
+        }
+        
+        document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>switchScene(btn.dataset.scene)));
+        canvas.addEventListener('click',()=>{ isPaused = !isPaused; updateStateText(); drawCanvas(); });
+        
+        switchScene('level');
+        requestAnimationFrame(animate);
+    })();
+</script>
+</body>
+</html>

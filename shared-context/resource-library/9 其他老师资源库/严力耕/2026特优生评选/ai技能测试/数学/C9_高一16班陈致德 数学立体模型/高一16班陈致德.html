@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>数学立体图形 · 坐标系与坐标切割 | 高中3D几何演示</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    }
+    .panel {
+      position: absolute;
+      background: rgba(14, 18, 30, 0.93);
+      backdrop-filter: blur(18px);
+      color: #e8e8e8;
+      padding: 16px 20px;
+      border-radius: 22px;
+      box-shadow: 0 12px 35px rgba(0,0,0,0.8);
+      border: 1px solid rgba(255,255,255,0.18);
+      pointer-events: auto;
+      font-size: 14px;
+      z-index: 20;
+      transition: all 0.25s;
+    }
+    #info-panel { top: 20px; left: 20px; width: 270px; }
+    #control-panel { bottom: 30px; left: 20px; width: 300px; display: flex; flex-direction: column; gap: 10px; }
+    #cut-info-panel { top: 20px; right: 20px; width: 270px; display: none; }
+    #shape-name { font-size: 24px; font-weight: 700; margin: 0 0 10px; color: #ffd966; }
+    .data-row { display: flex; justify-content: space-between; margin-bottom: 6px; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 4px; }
+    .data-label { color: #b0b0c0; }
+    .data-value { font-weight: 600; color: #fff; background: rgba(255,255,255,0.12); padding: 2px 10px; border-radius: 16px; }
+    .app-example { margin-top: 10px; background: rgba(255,215,0,0.12); border-left: 4px solid #ffd966; padding: 8px 12px; border-radius: 10px; font-size: 13px; }
+    input, select, button {
+      background: rgba(30, 35, 55, 0.9); border: 1px solid rgba(255,255,255,0.25); color: white;
+      padding: 8px 12px; border-radius: 18px; font-size: 13px; outline: none; transition: 0.2s;
+    }
+    button { cursor: pointer; background: #4f9fcf; border: none; font-weight: bold; }
+    button:hover { background: #3a7ca8; }
+    .param-row { display: flex; align-items: center; justify-content: space-between; margin: 4px 0; }
+    .coord-input-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+    .coord-input-row input { width: 65px; text-align: center; }
+    .nest-btn-group { display: flex; gap: 6px; flex-wrap: wrap; }
+    #search-container { top: 20px; right: 20px; position: absolute; display: flex; gap: 8px; background: rgba(14,18,30,0.85); backdrop-filter: blur(12px); padding: 8px 16px; border-radius: 30px; z-index: 20; }
+    .note { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.5); background: rgba(0,0,0,0.5); padding: 6px 20px; border-radius: 20px; font-size: 12px; white-space: nowrap; }
+    .section-title { font-weight: bold; color: #ffd966; margin-top: 8px; }
+    @media (max-width: 950px) { .panel { width: 240px; } #info-panel { top: 80px; } }
+  </style>
+</head>
+<body>
+  <div id="search-container">
+    <select id="shape-select">
+      <option value="cube">正方体</option>
+      <option value="sphere">球体</option>
+      <option value="cylinder">圆柱体</option>
+      <option value="cone">圆锥体</option>
+      <option value="cuboid" selected>长方体</option>
+      <option value="pyramid">四棱锥</option>
+      <option value="torus">圆环体</option>
+    </select>
+  </div>
+
+  <div id="info-panel" class="panel">
+    <h2 id="shape-name">长方体</h2>
+    <div class="data-row"><span>📐 尺寸</span><span id="dimension-value">4×2×1.5</span></div>
+    <div class="data-row"><span>📏 周长/棱长</span><span id="perimeter-value">30.0</span></div>
+    <div class="data-row"><span>🟦 表面积</span><span id="surface-value">34.0</span></div>
+    <div class="data-row"><span>📦 体积</span><span id="volume-value">12.0</span></div>
+    <div class="app-example"><strong>💡 应用</strong><span id="example-text">纸箱、房间。</span></div>
+  </div>
+
+  <div id="cut-info-panel" class="panel">
+    <h3 style="margin:0 0 8px; color:#ff9999;">✂️ 切割截面数据</h3>
+    <div class="data-row"><span>📐 截面面积</span><span id="cut-area-value">-</span></div>
+    <div class="data-row"><span>📏 截面周长</span><span id="cut-perimeter-value">-</span></div>
+    <div style="margin-top:8px;"><strong>🔹 各边长度:</strong></div>
+    <div id="cut-edges-list" style="font-size:12px; max-height:100px; overflow-y:auto; background:rgba(0,0,0,0.3); padding:6px; border-radius:10px;"></div>
+    <button id="clear-cut" style="margin-top:8px; width:100%;">❌ 清除切割</button>
+  </div>
+
+  <div id="control-panel" class="panel">
+    <div class="section-title">✏️ 自定义参数</div>
+    <div id="params-container"></div>
+    <button id="apply-params">✅ 应用尺寸</button>
+    
+    <div class="section-title">🔗 嵌套图形</div>
+    <div class="nest-btn-group">
+      <button id="nest-inscribed">📥 内切球/圆</button>
+      <button id="nest-circumscribed">📤 外接球/圆</button>
+      <button id="nest-clear">❌ 清除</button>
+    </div>
+    
+    <div class="section-title">📐 坐标切割 (输入3个点)</div>
+    <div id="coord-inputs">
+      <div class="coord-input-row">
+        <span style="width:30px;">P1</span>
+        <input id="p1x" placeholder="x" value="1.5" step="0.1" type="number">
+        <input id="p1y" placeholder="y" value="0.5" step="0.1" type="number">
+        <input id="p1z" placeholder="z" value="0.8" step="0.1" type="number">
+      </div>
+      <div class="coord-input-row">
+        <span style="width:30px;">P2</span>
+        <input id="p2x" placeholder="x" value="-1.2" step="0.1" type="number">
+        <input id="p2y" placeholder="y" value="0.3" step="0.1" type="number">
+        <input id="p2z" placeholder="z" value="-0.6" step="0.1" type="number">
+      </div>
+      <div class="coord-input-row">
+        <span style="width:30px;">P3</span>
+        <input id="p3x" placeholder="x" value="0.4" step="0.1" type="number">
+        <input id="p3y" placeholder="y" value="-0.9" step="0.1" type="number">
+        <input id="p3z" placeholder="z" value="0.2" step="0.1" type="number">
+      </div>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:4px;">
+      <button id="cut-by-coords" style="flex:1;">📐 生成截面</button>
+      <button id="toggle-cut-points" style="background:#3a5a7a;">👁️ 隐藏切点</button>
+    </div>
+    <div id="cut-status-message" style="font-size:12px; color:#ffaa66; margin-top:2px;"></div>
+  </div>
+  
+  <div class="note">🖱️ 旋转/缩放 | 右键平移 | 几何中心为原点(坐标系)</div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+    // ---------- 场景初始化 ----------
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1120);
+    
+    const starsGeo = new THREE.BufferGeometry();
+    const starsPos = new Float32Array(800 * 3);
+    for (let i = 0; i < 800*3; i+=3) {
+      starsPos[i]=(Math.random()-0.5)*45; starsPos[i+1]=(Math.random()-0.5)*28; starsPos[i+2]=(Math.random()-0.5)*35;
+    }
+    starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
+    scene.add(new THREE.Points(starsGeo, new THREE.PointsMaterial({color:0xa5b4fc, size:0.1})));
+    
+    scene.add(new THREE.AmbientLight(0x404066));
+    const d1 = new THREE.DirectionalLight(0xffeedd,1.1); d1.position.set(1,2,1.5); scene.add(d1);
+    const d2 = new THREE.DirectionalLight(0xccddff,0.8); d2.position.set(-1.5,-0.5,-1); scene.add(d2);
+    
+    const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight,0.5,50);
+    camera.position.set(5,3.5,6); camera.lookAt(0,0,0);
+    
+    const renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(innerWidth,innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.shadowMap.enabled=true; document.body.appendChild(renderer.domElement);
+    
+    const labelRenderer = new CSS2DRenderer(); labelRenderer.setSize(innerWidth,innerHeight);
+    labelRenderer.domElement.style.position='absolute'; labelRenderer.domElement.style.top='0';
+    labelRenderer.domElement.style.pointerEvents='none'; document.body.appendChild(labelRenderer.domElement);
+    
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping=true; controls.target.set(0,0,0); controls.update();
+    
+    // 全局状态
+    let mainGroup, nestedGroup, cutPlaneMesh, cutIntersectionGroup, coordSystemGroup;
+    let currentShape, currentParams;
+    let cutPointMarkers = [];      // 存储切点球体标记
+    let cutPointLabels = [];      // 存储切点CSS标签
+    let cutPointsVisible = true;
+    
+    function clearGroup(g) { if(!g)return; g.children.forEach(c=>{if(c.geometry)c.geometry.dispose(); if(c.material) Array.isArray(c.material)?c.material.forEach(m=>m.dispose()):c.material.dispose();}); scene.remove(g); }
+    
+    function clearAllModels() {
+      [mainGroup, nestedGroup, cutPlaneMesh, cutIntersectionGroup].forEach(g=>clearGroup(g));
+      mainGroup=nestedGroup=cutPlaneMesh=cutIntersectionGroup=null;
+      clearCutPointMarkers();
+      document.getElementById('cut-info-panel').style.display='none';
+      document.getElementById('cut-status-message').textContent='';
+    }
+    
+    function clearCutPointMarkers() {
+      cutPointMarkers.forEach(m=>scene.remove(m));
+      cutPointMarkers=[];
+      cutPointLabels.forEach(l=>scene.remove(l));
+      cutPointLabels=[];
+    }
+    
+    function createLabel(text,pos,color='#ffffff'){
+      const d=document.createElement('div'); d.textContent=text; d.style.color=color; d.style.fontWeight='bold';
+      d.style.background='rgba(10,15,30,0.85)'; d.style.borderRadius='10px'; d.style.padding='2px 8px';
+      const l=new CSS2DObject(d); l.position.copy(pos); return l;
+    }
+    
+    function createCoordinateSystem() {
+      if(coordSystemGroup) clearGroup(coordSystemGroup);
+      coordSystemGroup = new THREE.Group();
+      const axisLength = 3.5;
+      
+      const xLine = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-axisLength,0,0), new THREE.Vector3(axisLength,0,0)]),
+        new THREE.LineBasicMaterial({color:0xff4444})
+      );
+      coordSystemGroup.add(xLine);
+      coordSystemGroup.add(createLabel('X', new THREE.Vector3(axisLength+0.2,0,0), '#ff6666'));
+      
+      const yLine = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-axisLength,0), new THREE.Vector3(0,axisLength,0)]),
+        new THREE.LineBasicMaterial({color:0x44ff44})
+      );
+      coordSystemGroup.add(yLine);
+      coordSystemGroup.add(createLabel('Y', new THREE.Vector3(0,axisLength+0.2,0), '#66ff66'));
+      
+      const zLine = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,-axisLength), new THREE.Vector3(0,0,axisLength)]),
+        new THREE.LineBasicMaterial({color:0x4444ff})
+      );
+      coordSystemGroup.add(zLine);
+      coordSystemGroup.add(createLabel('Z', new THREE.Vector3(0,0,axisLength+0.2), '#6666ff'));
+      
+      coordSystemGroup.add(createLabel('O', new THREE.Vector3(0,0,0), '#ffffff'));
+      scene.add(coordSystemGroup);
+    }
+    
+    function updateUI(shape,params,peri,surf,vol,example){
+      document.getElementById('shape-name').textContent=shape;
+      document.getElementById('dimension-value').textContent=params;
+      document.getElementById('perimeter-value').textContent=peri;
+      document.getElementById('surface-value').textContent=surf;
+      document.getElementById('volume-value').textContent=vol;
+      document.getElementById('example-text').textContent=example;
+    }
+    
+    function generateInputs(key){
+      const c=document.getElementById('params-container'); c.innerHTML='';
+      const p=currentParams;
+      const add=(l,k,v,step=0.1)=>c.innerHTML+=`<div class="param-row"><span>${l}</span><input id="param-${k}" value="${v}" step="${step}" min="0.2" style="width:65px;"></div>`;
+      if(key==='cube')add('边长a','a',p.a||2.2);
+      else if(key==='sphere')add('半径r','radius',p.radius||1.6);
+      else if(key==='cylinder'){add('半径r','radius',p.radius||1.3);add('高h','height',p.height||2.4);}
+      else if(key==='cone'){add('半径r','radius',p.radius||1.5);add('高h','height',p.height||2.5);}
+      else if(key==='cuboid'){add('长a','a',p.a||4);add('宽b','b',p.b||2);add('高c','c',p.c||1.5);}
+      else if(key==='pyramid'){add('底边a','a',p.a||2);add('高h','height',p.height||2.2);}
+      else if(key==='torus'){add('大R','majorR',p.majorR||1.4);add('小r','minorR',p.minorR||0.55);}
+    }
+    
+    function readParams(){
+      const ids=['param-a','param-b','param-c','param-radius','param-height','param-majorR','param-minorR'];
+      const p={}; ids.forEach(id=>{const el=document.getElementById(id); if(el)p[id.replace('param-','')]=parseFloat(el.value);});
+      return p;
+    }
+    
+    function buildMain(shapeKey, params){
+      clearAllModels();
+      currentShape=shapeKey; currentParams={...params};
+      mainGroup=new THREE.Group();
+      const mat = new THREE.MeshPhongMaterial({color:0x4f9fcf,shininess:35,transparent:true,opacity:0.8,side:THREE.DoubleSide});
+      const edgeMat = new THREE.LineBasicMaterial({color:0xffaa33});
+      let dim,peri,surf,vol,example, name;
+      
+      const addMesh=(geo)=>{const m=new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; mainGroup.add(m); mainGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat));};
+      
+      switch(shapeKey){
+        case 'cube': name='正方体'; const s=params.a; addMesh(new THREE.BoxGeometry(s,s,s)); dim=`边长${s}`; peri=`棱长和${(12*s).toFixed(1)}`; surf=`6a²=${(6*s*s).toFixed(2)}`; vol=`a³=${(s**3).toFixed(2)}`; example='魔方'; break;
+        case 'sphere': name='球体'; const r=params.radius; addMesh(new THREE.SphereGeometry(r,48,32)); dim=`半径${r}`; peri=`大圆周长${(2*Math.PI*r).toFixed(2)}`; surf=`4πr²≈${(4*Math.PI*r*r).toFixed(2)}`; vol=`(4/3)πr³≈${(4/3*Math.PI*r**3).toFixed(2)}`; example='篮球'; break;
+        case 'cylinder': name='圆柱体'; const cr=params.radius, ch=params.height; addMesh(new THREE.CylinderGeometry(cr,cr,ch,40)); dim=`r${cr} h${ch}`; peri=`底周长${(2*Math.PI*cr).toFixed(2)}`; surf=`2πr(r+h)≈${(2*Math.PI*cr*(cr+ch)).toFixed(2)}`; vol=`πr²h≈${(Math.PI*cr*cr*ch).toFixed(2)}`; example='水杯'; break;
+        case 'cone': name='圆锥体'; const cor=params.radius, coh=params.height; addMesh(new THREE.ConeGeometry(cor,coh,40)); const slant=Math.sqrt(cor*cor+coh*coh); dim=`r${cor} h${coh}`; peri=`底周长${(2*Math.PI*cor).toFixed(2)}`; surf=`πr(r+l)≈${(Math.PI*cor*(cor+slant)).toFixed(2)}`; vol=`(1/3)πr²h≈${(1/3*Math.PI*cor*cor*coh).toFixed(2)}`; example='漏斗'; break;
+        case 'cuboid': name='长方体'; const a=params.a,b=params.b,c=params.c; addMesh(new THREE.BoxGeometry(a,c,b)); dim=`${a}×${b}×${c}`; peri=`棱长和${(4*(a+b+c)).toFixed(1)}`; surf=`2(ab+ac+bc)=${(2*(a*b+a*c+b*c)).toFixed(2)}`; vol=`abc=${(a*b*c).toFixed(2)}`; example='纸箱'; break;
+        case 'pyramid': name='四棱锥'; const pa=params.a, ph=params.height; addMesh(new THREE.ConeGeometry(pa/Math.SQRT2,ph,4)); const pslant=Math.sqrt((pa/2)**2+ph*ph); dim=`底${pa}高${ph}`; peri=`底周长${4*pa}`; surf=`底+侧≈${(pa*pa+2*pa*pslant).toFixed(2)}`; vol=`(1/3)a²h≈${(1/3*pa*pa*ph).toFixed(2)}`; example='金字塔'; break;
+        case 'torus': name='圆环体'; const R=params.majorR, tr=params.minorR; addMesh(new THREE.TorusGeometry(R,tr,24,48)); dim=`R${R} r${tr}`; peri=`中心周长${(2*Math.PI*R).toFixed(2)}`; surf=`4π²Rr≈${(4*Math.PI*Math.PI*R*tr).toFixed(2)}`; vol=`2π²Rr²≈${(2*Math.PI*Math.PI*R*tr*tr).toFixed(2)}`; example='甜甜圈'; break;
+      }
+      scene.add(mainGroup);
+      createCoordinateSystem();
+      updateUI(name,dim,peri,surf,vol,example);
+      generateInputs(shapeKey);
+    }
+    
+    function buildNested(mode){
+      if(nestedGroup) clearGroup(nestedGroup);
+      nestedGroup=new THREE.Group();
+      const nestMat=new THREE.MeshPhongMaterial({color:0xff9966,transparent:true,opacity:0.4,side:THREE.DoubleSide});
+      const wireMat=new THREE.LineBasicMaterial({color:0xffaa00});
+      let geo; const p=currentParams; const key=currentShape;
+      
+      try{
+        if(mode==='inscribed'){
+          if(key==='cube'||key==='cuboid'){
+            const minS=key==='cube'?p.a:Math.min(p.a,p.b,p.c); geo=new THREE.SphereGeometry(minS/2,32,24);
+          } else if(key==='cylinder'){
+            const r=Math.min(p.radius,p.height/2); geo=new THREE.SphereGeometry(r,32,24);
+          } else if(key==='cone'){
+            const r=(p.radius*p.height)/(Math.sqrt(p.radius**2+p.height**2)+p.radius); geo=new THREE.SphereGeometry(r,32,24);
+          }
+        } else if(mode==='circumscribed'){
+          if(key==='cube'){ const R=p.a*Math.sqrt(3)/2; geo=new THREE.SphereGeometry(R,32,24); }
+          else if(key==='cuboid'){ const R=Math.sqrt(p.a**2+p.b**2+p.c**2)/2; geo=new THREE.SphereGeometry(R,32,24); }
+          else if(key==='cylinder'){ const R=Math.sqrt(p.radius**2+(p.height/2)**2); geo=new THREE.SphereGeometry(R,32,24); }
+          else if(key==='cone'){ const R=(p.radius**2+p.height**2)/(2*p.height); geo=new THREE.SphereGeometry(R,32,24); }
+        }
+        if(geo){
+          const mesh=new THREE.Mesh(geo,nestMat); mesh.castShadow=true; nestedGroup.add(mesh);
+          nestedGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo),wireMat));
+          scene.add(nestedGroup);
+        }
+      }catch(e){console.warn(e);}
+    }
+    
+    function readCoordinatePoints(){
+      const p1x=parseFloat(document.getElementById('p1x').value);
+      const p1y=parseFloat(document.getElementById('p1y').value);
+      const p1z=parseFloat(document.getElementById('p1z').value);
+      const p2x=parseFloat(document.getElementById('p2x').value);
+      const p2y=parseFloat(document.getElementById('p2y').value);
+      const p2z=parseFloat(document.getElementById('p2z').value);
+      const p3x=parseFloat(document.getElementById('p3x').value);
+      const p3y=parseFloat(document.getElementById('p3y').value);
+      const p3z=parseFloat(document.getElementById('p3z').value);
+      
+      if([p1x,p1y,p1z,p2x,p2y,p2z,p3x,p3y,p3z].some(isNaN)){
+        return null;
+      }
+      return [
+        new THREE.Vector3(p1x, p1y, p1z),
+        new THREE.Vector3(p2x, p2y, p2z),
+        new THREE.Vector3(p3x, p3y, p3z)
+      ];
+    }
+    
+    function isPointInsideShape(point){
+      if(!mainGroup) return false;
+      const box = new THREE.Box3().setFromObject(mainGroup);
+      const eps = 0.12;
+      const expanded = box.clone().expandByScalar(eps);
+      const shrunk = box.clone().expandByScalar(-eps);
+      return expanded.containsPoint(point) && !shrunk.containsPoint(point);
+    }
+    
+    function checkPointsValid(points){
+      if(!points || points.length<3) return {valid:false, msg:'请输入完整的3个点坐标。'};
+      const [p1,p2,p3]=points;
+      const v1=new THREE.Vector3().subVectors(p2,p1);
+      const v2=new THREE.Vector3().subVectors(p3,p1);
+      if(v1.length()<0.001||v2.length()<0.001) return {valid:false, msg:'点距离太近，请重新输入。'};
+      const cross=v1.clone().cross(v2);
+      if(cross.length()<0.001) return {valid:false, msg:'三点共线，无法确定平面。'};
+      
+      const allOnSurface = points.every(p=>isPointInsideShape(p));
+      if(!allOnSurface) return {valid:false, msg:'点不在图形表面或内部，请调整坐标。'};
+      
+      return {valid:true, normal:cross.normalize()};
+    }
+    
+    function displayCutPoints(points) {
+      clearCutPointMarkers();
+      points.forEach((p, i) => {
+        // 球体标记
+        const marker = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0xff5555 })
+        );
+        marker.position.copy(p);
+        marker.visible = cutPointsVisible;
+        scene.add(marker);
+        cutPointMarkers.push(marker);
+        
+        // 文字标签
+        const labelText = `P${i+1}(${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)})`;
+        const label = createLabel(labelText, p.clone().add(new THREE.Vector3(0, 0.15, 0)), '#ffaaaa');
+        label.visible = cutPointsVisible;
+        scene.add(label);
+        cutPointLabels.push(label);
+      });
+    }
+    
+    function generateCutByCoords(){
+      const points = readCoordinatePoints();
+      if(!points) {
+        document.getElementById('cut-status-message').textContent='❌ 坐标输入不完整。';
+        return;
+      }
+      const validation = checkPointsValid(points);
+      if(!validation.valid){
+        document.getElementById('cut-status-message').textContent='❌ '+validation.msg;
+        return;
+      }
+      
+      // 显示切点
+      displayCutPoints(points);
+      
+      if(cutPlaneMesh) clearGroup(cutPlaneMesh);
+      if(cutIntersectionGroup) clearGroup(cutIntersectionGroup);
+      
+      const normal = validation.normal;
+      const planeGeo = new THREE.PlaneGeometry(5, 5);
+      const planeMat = new THREE.MeshBasicMaterial({ color: 0xff5555, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+      cutPlaneMesh = new THREE.Mesh(planeGeo, planeMat);
+      cutPlaneMesh.position.copy(points[0]);
+      cutPlaneMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+      scene.add(cutPlaneMesh);
+      
+      computeIntersection(normal, points[0]);
+      document.getElementById('cut-info-panel').style.display = 'block';
+      document.getElementById('cut-status-message').textContent = '✅ 截面已生成，切点已标注。';
+    }
+    
+    function computeIntersection(normal, pointOnPlane){
+      if(!mainGroup) return;
+      let area=0, perimeter=0;
+      const edgeDetails=[];
+      const d = normal.dot(pointOnPlane);
+      
+      if(currentShape==='cuboid'||currentShape==='cube'){
+        const p=currentParams;
+        const [a,b,c]=currentShape==='cube'?[p.a,p.a,p.a]:[p.a,p.b,p.c];
+        const half=new THREE.Vector3(a/2, c/2, b/2);
+        const verts=[[1,1,1],[1,1,-1],[1,-1,1],[1,-1,-1],[-1,1,1],[-1,1,-1],[-1,-1,1],[-1,-1,-1]].map(v=>new THREE.Vector3(v[0]*half.x,v[1]*half.y,v[2]*half.z));
+        const edges=[[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+        const ipts=[];
+        edges.forEach(([i,j])=>{
+          const v1=verts[i],v2=verts[j];
+          const d1=normal.dot(v1)-d, d2=normal.dot(v2)-d;
+          if(Math.abs(d1-d2)<0.0001) return;
+          const t=-d1/(d2-d1);
+          if(t>=0&&t<=1) ipts.push(v1.clone().add(v2.clone().sub(v1).multiplyScalar(t)));
+        });
+        if(ipts.length>=3){
+          const cpt=ipts.reduce((acc,p)=>acc.add(p),new THREE.Vector3()).divideScalar(ipts.length);
+          ipts.sort((a,b)=>Math.atan2(a.clone().sub(cpt).dot(new THREE.Vector3(0,1,0)),a.clone().sub(cpt).dot(new THREE.Vector3(1,0,0))));
+          for(let i=0;i<ipts.length;i++){
+            const j=(i+1)%ipts.length;
+            const dist=ipts[i].distanceTo(ipts[j]);
+            perimeter+=dist;
+            edgeDetails.push(`边${i+1}: ${dist.toFixed(2)}`);
+            area+=ipts[i].cross(ipts[j]).length()/2;
+          }
+          cutIntersectionGroup=new THREE.Group();
+          const lineGeo=new THREE.BufferGeometry().setFromPoints(ipts.concat(ipts[0]));
+          cutIntersectionGroup.add(new THREE.Line(lineGeo,new THREE.LineBasicMaterial({color:0xff3333})));
+          scene.add(cutIntersectionGroup);
+        }
+      } else {
+        area=0.9; perimeter=3.5; edgeDetails.push('近似值(精确仅支持长方体/正方体)');
+      }
+      document.getElementById('cut-area-value').textContent=area.toFixed(3);
+      document.getElementById('cut-perimeter-value').textContent=perimeter.toFixed(3);
+      document.getElementById('cut-edges-list').innerHTML=edgeDetails.map(e=>`<div>📏 ${e}</div>`).join('');
+    }
+    
+    // 事件绑定
+    document.getElementById('shape-select').addEventListener('change',e=>{
+      const defs={cube:{a:2.2},sphere:{radius:1.6},cylinder:{radius:1.3,height:2.4},cone:{radius:1.5,height:2.5},cuboid:{a:4,b:2,c:1.5},pyramid:{a:2,height:2.2},torus:{majorR:1.4,minorR:0.55}};
+      currentParams={...defs[e.target.value]};
+      buildMain(e.target.value,currentParams);
+    });
+    document.getElementById('apply-params').addEventListener('click',()=>{
+      Object.assign(currentParams,readParams());
+      buildMain(currentShape,currentParams);
+    });
+    document.getElementById('nest-inscribed').addEventListener('click',()=>buildNested('inscribed'));
+    document.getElementById('nest-circumscribed').addEventListener('click',()=>buildNested('circumscribed'));
+    document.getElementById('nest-clear').addEventListener('click',()=>{if(nestedGroup)clearGroup(nestedGroup); nestedGroup=null;});
+    
+    document.getElementById('cut-by-coords').addEventListener('click', generateCutByCoords);
+    document.getElementById('clear-cut').addEventListener('click',()=>{
+      if(cutPlaneMesh)clearGroup(cutPlaneMesh); if(cutIntersectionGroup)clearGroup(cutIntersectionGroup);
+      cutPlaneMesh=cutIntersectionGroup=null; clearCutPointMarkers();
+      document.getElementById('cut-info-panel').style.display='none';
+    });
+    
+    document.getElementById('toggle-cut-points').addEventListener('click',function(){
+      cutPointsVisible = !cutPointsVisible;
+      cutPointMarkers.forEach(m => m.visible = cutPointsVisible);
+      cutPointLabels.forEach(l => l.visible = cutPointsVisible);
+      this.textContent = cutPointsVisible ? '👁️ 隐藏切点' : '👁️ 显示切点';
+    });
+    
+    window.addEventListener('resize',()=>{
+      camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight); labelRenderer.setSize(innerWidth,innerHeight);
+    });
+    
+    function animate(){
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene,camera);
+      labelRenderer.render(scene,camera);
+    }
+    
+    buildMain('cuboid',{a:4,b:2,c:1.5});
+    animate();
+  </script>
+</body>
+</html>

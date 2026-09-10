@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中生物：光合作用原理3D交互演示 | 叶绿体内部结构建模</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Roboto, Arial, sans-serif;
+        }
+        /* UI 面板样式 */
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 40px;
+            pointer-events: none;
+            font-weight: 500;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border-left: 5px solid #4caf50;
+        }
+        #title {
+            font-size: 1.2rem;
+            margin: 0;
+        }
+        #sub {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+        /* 右侧问题面板 */
+        .quiz-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 260px;
+            background: rgba(30,30,40,0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 16px 20px;
+            color: #f0f0f0;
+            z-index: 20;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            pointer-events: auto;
+            font-size: 15px;
+            transition: 0.2s;
+        }
+        .quiz-panel h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.2rem;
+            color: #ffd966;
+            border-left: 3px solid #ffd966;
+            padding-left: 10px;
+        }
+        .quiz-question {
+            margin: 12px 0;
+            line-height: 1.4;
+        }
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .quiz-btn {
+            background: #2c3e50;
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.2s;
+            text-align: left;
+        }
+        .quiz-btn:hover {
+            background: #4caf50;
+            transform: scale(1.02);
+        }
+        .quiz-feedback {
+            font-size: 13px;
+            margin-top: 8px;
+            padding: 6px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.5);
+        }
+        .correct-fb {
+            color: #a5d6a5;
+        }
+        .wrong-fb {
+            color: #ffab91;
+        }
+        .equation-input {
+            background: #1e2a32;
+            border: 1px solid #4caf50;
+            border-radius: 20px;
+            padding: 6px 12px;
+            width: 90%;
+            margin-top: 5px;
+            color: white;
+            font-family: monospace;
+        }
+        /* 总结面板 (初始隐藏，最后显示) */
+        .summary-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            padding: 16px 24px;
+            color: white;
+            z-index: 25;
+            pointer-events: auto;
+            display: none;
+            border-top: 3px solid #4caf50;
+            font-size: 14px;
+            transition: 0.3s;
+            max-height: 40%;
+            overflow-y: auto;
+            font-family: system-ui;
+        }
+        .summary-panel.show {
+            display: block;
+        }
+        .summary-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: space-between;
+        }
+        .summary-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 10px 16px;
+            flex: 1;
+            min-width: 180px;
+        }
+        .close-summary {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            background: none;
+            border: none;
+            color: #ccc;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        button {
+            cursor: pointer;
+        }
+        .control-note {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+            z-index: 10;
+            pointer-events: none;
+        }
+        @media (max-width: 700px) {
+            .quiz-panel { width: 220px; font-size: 12px; top: 10px; right: 10px; padding: 12px; }
+            .summary-panel { font-size: 12px; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <div id="title">🌿 光合作用原理 · 叶绿体内部结构3D模型</div>
+        <div id="sub">光反应 + 暗反应 | 类囊体膜 | 基质 | 中文动画交互</div>
+    </div>
+    <div class="quiz-panel" id="quizPanel">
+        <h3>📝 课前小测 & 互动</h3>
+        <div id="quizArea">
+            <!-- 动态问题 -->
+        </div>
+        <div style="margin-top: 12px;">
+            <button id="showSummaryBtn" style="background:#4caf50; border:none; padding:6px 12px; border-radius:40px; color:white; width:100%;">📖 查看总结 + 同位素拓展</button>
+        </div>
+    </div>
+    <div class="summary-panel" id="summaryPanel">
+        <button class="close-summary" id="closeSummaryBtn">✖</button>
+        <h3 style="margin-top:0;">📚 光合作用核心总结（高中版）</h3>
+        <div class="summary-grid">
+            <div class="summary-card">
+                <strong>🌞 反应物</strong><br>
+                • 二氧化碳 (CO₂)<br>
+                • 水 (H₂O)<br>
+                <strong>✨ 产物</strong><br>
+                • 有机物 (如葡萄糖 C₆H₁₂O₆)<br>
+                • 氧气 (O₂)
+            </div>
+            <div class="summary-card">
+                <strong>⚡ 条件</strong><br>
+                • 光能、叶绿体、酶<br>
+                <strong>🧪 同位素标记实验拓展</strong><br>
+                • ¹⁸O标记H₂O → 释放的O₂具有放射性<br>
+                • ¹⁴C标记CO₂ → 糖类等有机物中出现放射性<br>
+                • ³H标记水 → NADPH及有机物中可检测
+            </div>
+            <div class="summary-card">
+                <strong>📐 总方程式</strong><br>
+                CO₂ + H₂O  ——光能、叶绿体——→ (CH₂O) + O₂<br>
+                <span style="font-size:12px;">6CO₂+12H₂O → C₆H₁₂O₆+6O₂+6H₂O</span>
+            </div>
+        </div>
+        <div style="margin-top: 8px; font-size:12px; text-align:center; opacity:0.7;">✔ 光反应阶段：类囊体膜 → ATP、NADPH、O₂ &nbsp;|&nbsp; 暗反应阶段：叶绿体基质 → 碳固定、还原</div>
+    </div>
+    <div class="control-note">🖱️ 鼠标拖动旋转视角 | 滚动缩放</div>
+
+    <!-- 引入 three.js 核心库和扩展 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // --- 初始化场景、相机、渲染器 ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x071a2b); // 深邃星空蓝黑
+        scene.fog = new THREE.FogExp2(0x071a2b, 0.008);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(5, 4, 8);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true; // 开启阴影映射增强立体感
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // CSS2渲染文字标签
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
+
+        // --- 控制器 ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+        controls.zoomSpeed = 1.2;
+        controls.rotateSpeed = 1.0;
+        controls.target.set(0, 0.2, 0);
+
+        // --- 辅助元素: 环境光 + 点光源 + 背光增强立体 ---
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1);
+        mainLight.position.set(3, 5, 2);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+        const fillLight = new THREE.PointLight(0x88aaff, 0.4);
+        fillLight.position.set(-2, 1, 3);
+        scene.add(fillLight);
+        const backLight = new THREE.PointLight(0xffaa66, 0.3);
+        backLight.position.set(0, 1, -3);
+        scene.add(backLight);
+        
+        // 地面微光效果 (网格辅助线非必须但美观)
+        const gridHelper = new THREE.GridHelper(15, 20, 0x88aaff, 0x335588);
+        gridHelper.position.y = -1.2;
+        gridHelper.material.transparent = true;
+        gridHelper.material.opacity = 0.2;
+        scene.add(gridHelper);
+
+        // --- 创建叶绿体主体 (半透明椭球，表示叶绿体轮廓) ---
+        const chloroplastGeo = new THREE.SphereGeometry(1.5, 64, 64);
+        const chloroplastMat = new THREE.MeshPhongMaterial({
+            color: 0x8bc34a,
+            emissive: 0x1a4d1a,
+            transparent: true,
+            opacity: 0.25,
+            side: THREE.DoubleSide
+        });
+        const chloroplastOuter = new THREE.Mesh(chloroplastGeo, chloroplastMat);
+        chloroplastOuter.scale.set(1.8, 1.2, 1.4);
+        scene.add(chloroplastOuter);
+        
+        // 内膜线框装饰 (表现双层膜)
+        const innerMembraneGeo = new THREE.SphereGeometry(1.45, 48, 48);
+        const wireMat = new THREE.MeshBasicMaterial({ color: 0xc0ff80, wireframe: true, transparent: true, opacity: 0.3 });
+        const innerWire = new THREE.Mesh(innerMembraneGeo, wireMat);
+        innerWire.scale.set(1.7, 1.1, 1.3);
+        scene.add(innerWire);
+        
+        // --- 类囊体垛叠 (多个扁圆盘堆叠) 使用圆柱体表示类囊体膜区域---
+        const thylakoidGroup = new THREE.Group();
+        // 创建几个 "基粒" 垛叠
+        const positions = [
+            [-0.8, 0.2, 0.6], [0.5, 0.4, -0.4], [-0.2, -0.3, 0.9], [0.9, -0.1, -0.2],
+            [-0.9, -0.5, -0.3], [0.2, 0.7, -0.7], [-0.4, 0.8, 0.1], [0.7, -0.6, 0.5]
+        ];
+        const stackColors = [0x6dab3a, 0x7cb342, 0x5e8c31, 0x8bc34a];
+        positions.forEach((pos, idx) => {
+            const stack = new THREE.Group();
+            const layers = 3 + Math.floor(Math.random() * 3);
+            for (let i = 0; i < layers; i++) {
+                const diskGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.1, 24);
+                const diskMat = new THREE.MeshStandardMaterial({ color: stackColors[idx % stackColors.length], roughness: 0.3, metalness: 0.1, emissive: 0x336622, emissiveIntensity: 0.15 });
+                const disk = new THREE.Mesh(diskGeo, diskMat);
+                disk.position.y = i * 0.13 - (layers-1)*0.065;
+                disk.castShadow = true;
+                stack.add(disk);
+            }
+            stack.position.set(pos[0], pos[1] + 0.2, pos[2]);
+            thylakoidGroup.add(stack);
+        });
+        // 额外添加一些游离的类囊体（单盘）
+        for(let i=0;i<12;i++) {
+            const singleGeo = new THREE.CylinderGeometry(0.22, 0.22, 0.08, 20);
+            const matSingle = new THREE.MeshStandardMaterial({ color: 0x8bc34a, emissive: 0x447722 });
+            const disc = new THREE.Mesh(singleGeo, matSingle);
+            const angle = Math.random() * Math.PI * 2;
+            const rad = 1.1;
+            const x = Math.cos(angle) * rad * (Math.random() - 0.5)*1.6;
+            const z = Math.sin(angle) * rad * (Math.random() - 0.5)*1.6;
+            disc.position.set(x, (Math.random() - 0.5)*1.2, z);
+            disc.castShadow = true;
+            thylakoidGroup.add(disc);
+        }
+        scene.add(thylakoidGroup);
+        
+        // 添加一些粒子效果代表光能流动 (围绕叶绿体)
+        const particleCount = 600;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        for (let i = 0; i < particleCount; i++) {
+            // 粒子分布在椭球区域周围
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const r = 1.9 + Math.random() * 0.7;
+            const x = r * Math.sin(phi) * Math.cos(theta) * 1.6;
+            const y = r * Math.sin(phi) * Math.sin(theta) * 1.2;
+            const z = r * Math.cos(phi) * 1.4;
+            particlePositions[i*3] = x;
+            particlePositions[i*3+1] = y;
+            particlePositions[i*3+2] = z;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMat = new THREE.PointsMaterial({ color: 0xffdd88, size: 0.04, transparent: true, blending: THREE.AdditiveBlending });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        scene.add(particles);
+        
+        // 添加一些光晕飘浮小球 (代表光子)
+        const photonGroup = new THREE.Group();
+        const photonCount = 40;
+        const photons = [];
+        for(let i=0;i<photonCount;i++) {
+            const glowMat = new THREE.MeshStandardMaterial({ color: 0xffaa55, emissive: 0xff6600, emissiveIntensity: 0.8 });
+            const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), glowMat);
+            sphere.userData = { speed: 0.005 + Math.random() * 0.01, angle: Math.random() * Math.PI * 2, radius: 2.0 + Math.random() * 1.0 };
+            photonGroup.add(sphere);
+            photons.push(sphere);
+        }
+        scene.add(photonGroup);
+        
+        // CSS2D 文字标签: 标注结构
+        function makeLabel(text, color, position, fontSize = '1rem') {
+            const div = document.createElement('div');
+            div.textContent = text;
+            div.style.color = color;
+            div.style.fontSize = fontSize;
+            div.style.fontWeight = 'bold';
+            div.style.textShadow = '1px 1px 0px black';
+            div.style.background = 'rgba(0,0,0,0.55)';
+            div.style.padding = '2px 10px';
+            div.style.borderRadius = '20px';
+            div.style.borderLeft = `3px solid ${color}`;
+            div.style.backdropFilter = 'blur(4px)';
+            div.style.fontFamily = 'sans-serif';
+            const label = new CSS2DObject(div);
+            label.position.copy(position);
+            scene.add(label);
+            return label;
+        }
+        makeLabel('🌿 叶绿体 双层膜', '#b0ff90', new THREE.Vector3(1.8, 1.2, 1.2), '0.8rem');
+        makeLabel('⚡ 类囊体膜 (光反应)', '#ffd966', new THREE.Vector3(1.1, 0.7, 0.9), '0.85rem');
+        makeLabel('🧬 基粒 (垛叠类囊体)', '#ffb347', new THREE.Vector3(-1.2, 1.0, 0.7), '0.8rem');
+        makeLabel('💧 叶绿体基质 (暗反应)', '#7ad0ff', new THREE.Vector3(0.5, -0.9, 1.2), '0.85rem');
+        makeLabel('🔆 光能 → 电子传递', '#ffe082', new THREE.Vector3(1.4, -0.2, -1.1), '0.7rem');
+        
+        // --- 动画循环: 粒子旋转 + 光子浮动，模拟能量流动 ---
+        let time = 0;
+        
+        // 添加一个简单的光反应氧分子冒出的小粒子效果
+        const oxygenParticles = new THREE.BufferGeometry();
+        const oxyCount = 150;
+        const oxyPositions = new Float32Array(oxyCount * 3);
+        for(let i=0;i<oxyCount;i++) {
+            oxyPositions[i*3] = (Math.random() - 0.5)*3;
+            oxyPositions[i*3+1] = Math.random() * 1.5 - 0.5;
+            oxyPositions[i*3+2] = (Math.random() - 0.5)*2.5;
+        }
+        oxygenParticles.setAttribute('position', new THREE.BufferAttribute(oxyPositions, 3));
+        const oxyMat = new THREE.PointsMaterial({ color: 0x88ddff, size: 0.03, transparent: true });
+        const oxyPoints = new THREE.Points(oxygenParticles, oxyMat);
+        scene.add(oxyPoints);
+        
+        // --- 交互小测 (动态生成问题) ---
+        const quizArea = document.getElementById('quizArea');
+        let currentQuizIndex = 0;
+        const questions = [
+            { type: "choice", text: "箭头所指是什么结构？（提示：绿色扁平的堆叠圆盘）", options: ["A. 线粒体嵴", "B. 类囊体膜", "C. 叶绿体基质"], correct: "B. 类囊体膜", explanation: "✔ 类囊体膜是光反应的场所，上面分布有光合色素和电子传递链。" },
+            { type: "fill", text: "光合作用的方程式填空：6CO₂ + 12H₂O → C₆H₁₂O₆ + 6___ + 6H₂O", correctAnswer: "O₂", placeholder: "填写化学式" },
+            { type: "choice", text: "暗反应（碳反应）发生的部位是？", options: ["A. 类囊体腔", "B. 叶绿体基质", "C. 叶绿体内膜"], correct: "B. 叶绿体基质", explanation: "✔ 暗反应在叶绿体基质中进行，利用ATP和NADPH固定CO₂。" }
+        ];
+        
+        function renderQuiz() {
+            const q = questions[currentQuizIndex];
+            if (q.type === 'choice') {
+                quizArea.innerHTML = `
+                    <div class="quiz-question">❓ ${q.text}</div>
+                    <div class="quiz-options">
+                        ${q.options.map(opt => `<button class="quiz-btn" data-opt="${opt}">${opt}</button>`).join('')}
+                    </div>
+                    <div class="quiz-feedback" id="fbArea"></div>
+                    <div style="margin-top:8px;"><button id="nextQuizBtn" style="background:#3a6ea5; border:none; padding:4px 12px; border-radius:20px; color:white;">下一题 →</button></div>
+                `;
+                const btns = document.querySelectorAll('.quiz-btn');
+                btns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const selected = btn.getAttribute('data-opt');
+                        const fbDiv = document.getElementById('fbArea');
+                        if(selected === q.correct) {
+                            fbDiv.innerHTML = `<span class="correct-fb">✅ 正确！ ${q.explanation}</span>`;
+                        } else {
+                            fbDiv.innerHTML = `<span class="wrong-fb">❌ 错误。正确答案：${q.correct}。${q.explanation}</span>`;
+                        }
+                    });
+                });
+            } else if (q.type === 'fill') {
+                quizArea.innerHTML = `
+                    <div class="quiz-question">✏️ ${q.text}</div>
+                    <input type="text" id="fillInput" class="equation-input" placeholder="${q.placeholder}">
+                    <button id="checkFillBtn" style="background:#4c6e3c; margin-top:8px; border:none; padding:5px 12px; border-radius:20px; color:white;">检查答案</button>
+                    <div class="quiz-feedback" id="fbArea"></div>
+                    <div style="margin-top:8px;"><button id="nextQuizBtn" style="background:#3a6ea5; border:none; padding:4px 12px; border-radius:20px; color:white;">下一题 →</button></div>
+                `;
+                document.getElementById('checkFillBtn').addEventListener('click', () => {
+                    const answer = document.getElementById('fillInput').value.trim().toUpperCase();
+                    const fbDiv = document.getElementById('fbArea');
+                    if(answer === q.correctAnswer || answer === "O2" || answer.includes("O₂")) {
+                        fbDiv.innerHTML = `<span class="correct-fb">✅ 正确！氧气(O₂)来自水的光解。</span>`;
+                    } else {
+                        fbDiv.innerHTML = `<span class="wrong-fb">❌ 不对哦，应该是 O₂ (氧气)。光合作用释放氧气。</span>`;
+                    }
+                });
+            }
+            const nextBtn = document.getElementById('nextQuizBtn');
+            if(nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    currentQuizIndex = (currentQuizIndex + 1) % questions.length;
+                    renderQuiz();
+                });
+            }
+        }
+        renderQuiz();
+        
+        // 总结面板显示/隐藏
+        const summaryPanel = document.getElementById('summaryPanel');
+        const showBtn = document.getElementById('showSummaryBtn');
+        const closeBtn = document.getElementById('closeSummaryBtn');
+        showBtn.addEventListener('click', () => {
+            summaryPanel.classList.add('show');
+        });
+        closeBtn.addEventListener('click', () => {
+            summaryPanel.classList.remove('show');
+        });
+        
+        // 辅助: 简单指示箭头 (模拟箭头所指类囊体标注重叠效果) 使用CSS2D添加一个动态闪烁箭头提示
+        const arrowDiv = document.createElement('div');
+        arrowDiv.innerHTML = '⬅️ 箭头所指 → 类囊体垛叠';
+        arrowDiv.style.color = '#ffaa66';
+        arrowDiv.style.fontSize = '14px';
+        arrowDiv.style.fontWeight = 'bold';
+        arrowDiv.style.background = '#000000aa';
+        arrowDiv.style.padding = '2px 8px';
+        arrowDiv.style.borderRadius = '30px';
+        arrowDiv.style.border = '1px solid #ffaa66';
+        const arrowLabel = new CSS2DObject(arrowDiv);
+        arrowLabel.position.set(1.2, 1.0, 1.1);
+        scene.add(arrowLabel);
+        
+        // 微小动画变化让箭头闪烁 (setInterval简单效果)
+        let blink = true;
+        setInterval(() => {
+            arrowDiv.style.opacity = blink ? '1' : '0.5';
+            blink = !blink;
+        }, 800);
+        
+        // --- 动画循环: 旋转粒子，光球运动，展示动态光合氛围---
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.012;
+            
+            // 粒子系统整体缓慢自转
+            particles.rotation.y = time * 0.1;
+            particles.rotation.x = Math.sin(time * 0.2) * 0.1;
+            
+            // 光子浮动
+            photons.forEach((ph, idx) => {
+                const radius = ph.userData.radius;
+                const angle = ph.userData.angle + time * ph.userData.speed;
+                const x = Math.cos(angle) * radius * 0.9;
+                const z = Math.sin(angle) * radius * 0.8;
+                const y = Math.sin(angle * 1.5) * 0.5;
+                ph.position.set(x, y + 0.3, z);
+                ph.userData.angle = angle;
+            });
+            
+            // 氧气粒子上下漂浮模拟释放
+            const positions = oxygenParticles.attributes.position.array;
+            for(let i=0;i<oxyCount;i++) {
+                let y = positions[i*3+1];
+                y += 0.002;
+                if(y > 1.2) y = -0.8;
+                positions[i*3+1] = y;
+            }
+            oxygenParticles.attributes.position.needsUpdate = true;
+            
+            // 类囊体组微摆动
+            thylakoidGroup.rotation.y = Math.sin(time * 0.3) * 0.05;
+            thylakoidGroup.rotation.x = Math.sin(time * 0.2) * 0.03;
+            
+            // 更新控制器
+            controls.update();
+            
+            // 渲染
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // 适配窗口大小
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // 控制台小提示
+        console.log('3D 光合作用模型已启动 | 探索叶绿体结构');
+        
+        // 增加光圈环境辉光效果: 后处理简化, 直接添加一个环绕光晕(PointLight)
+        const glowLight = new THREE.PointLight(0x99ff66, 0.5, 5);
+        glowLight.position.set(0, 0.5, 0);
+        scene.add(glowLight);
+    </script>
+</body>
+</html>

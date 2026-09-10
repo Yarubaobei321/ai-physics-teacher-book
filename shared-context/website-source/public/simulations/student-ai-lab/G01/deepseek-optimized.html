@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>大气环流 · 三圈环流互动讲解</title>
+<style>
+:root{
+  --bg1:#e0f2fe; --bg2:#dbeafe; --card:#ffffff; --ink:#1e293b; --muted:#64748b;
+  --border:#bae6fd; --accent:#0369a1; --amber:#b45309; --green:#15803d;
+  --shadow:0 4px 14px rgba(3,105,161,.12);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--ink); background:linear-gradient(180deg,var(--bg1),var(--bg2));
+  font-size:0.95rem; line-height:1.6;
+}
+header{background:linear-gradient(135deg,#0c4a6e,#0284c7); color:#fff; padding:1rem 1.5rem; box-shadow:var(--shadow)}
+header h1{margin:0; font-size:1.25rem; font-weight:600}
+header p{margin:.2rem 0 0; font-size:.85rem; opacity:.92}
+.wrap{max-width:1420px; margin:1rem auto; padding:0 1.5rem 2rem}
+.card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.3rem; margin-bottom:1rem; box-shadow:var(--shadow)}
+.card h2{margin:.2rem 0 .7rem; color:var(--accent); font-size:1.12rem; border-left:4px solid var(--accent); padding-left:.6rem}
+.card h3{font-size:1rem; margin:.6rem 0 .35rem}
+
+/* 动画区 */
+.stage{position:relative; display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:1rem; align-items:start}
+.canvas-box{position:relative; background:linear-gradient(180deg,#f0f9ff,#e0f2fe); border:1px solid var(--border); border-radius:10px; overflow:hidden; text-align:center}
+.canvas-box canvas{display:block; width:100%; height:auto; max-width:660px; margin:0 auto}
+.tooltip{position:absolute; display:none; background:#0f172a; color:#fff; padding:.3rem .6rem; border-radius:6px; font-size:.82rem; pointer-events:none; white-space:nowrap; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.season-bar{display:flex; gap:.6rem; align-items:center; flex-wrap:wrap; margin-top:.7rem}
+.season-bar button{font-family:inherit; font-size:.92rem; padding:.45rem 1.1rem; border:1px solid var(--accent); background:#fff; color:var(--accent); border-radius:8px; cursor:pointer; transition:all .15s}
+.season-bar button.active{background:var(--accent); color:#fff; font-weight:600}
+.season-bar button:hover{background:#e0f2fe}
+.season-bar .season-state{font-size:.9rem; color:var(--muted)}
+.side-info{display:flex; flex-direction:column; gap:.7rem}
+.legend-box{background:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:.7rem .8rem; font-size:.84rem}
+.legend-box h4{margin:0 0 .4rem; color:var(--accent); font-size:.9rem}
+.legend-row{display:flex; align-items:center; gap:.5rem; margin:.22rem 0}
+.swatch{display:inline-block; width:14px; height:14px; border-radius:3px; flex:none}
+.swatch.hp{background:#fdba74; border:1px solid #ea580c}
+.swatch.lp{background:#7dd3fc; border:1px solid #0284c7}
+.dot{width:10px; height:10px; border-radius:50%; flex:none}
+.arrow-legend{display:flex; align-items:center; gap:.4rem; margin:.22rem 0}
+
+/* 表格与图景 */
+.two-col{display:grid; grid-template-columns:1fr 1fr; gap:1rem}
+table{border-collapse:collapse; width:100%; font-size:.86rem; margin-top:.3rem}
+th,td{border:1px solid var(--border); padding:.38rem .5rem; text-align:center}
+th{background:#e0f2fe; color:var(--accent)}
+.zones{display:grid; grid-template-columns:repeat(4,1fr); gap:.8rem; margin-top:.6rem}
+.zone-card{background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:.7rem; text-align:center}
+.zone-card .icon{font-size:2rem; line-height:1.2}
+.zone-card h4{margin:.3rem 0 .2rem; color:var(--accent); font-size:.92rem}
+.zone-card p{margin:.15rem 0; font-size:.8rem; color:var(--muted)}
+.zone-card .belt-tag{display:inline-block; padding:.05rem .5rem; border-radius:10px; font-size:.74rem; color:#fff; margin-top:.2rem}
+
+/* 结论区 */
+.conclude{background:#fef9c3; border:1px solid #fde68a; border-radius:10px; padding:.8rem 1rem}
+.conclude li{margin:.3rem 0}
+.note{font-size:.82rem; color:var(--muted)}
+@media(max-width:900px){
+  .stage{grid-template-columns:1fr}
+  .two-col{grid-template-columns:1fr}
+  .zones{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>大气环流 · 三圈环流互动讲解</h1>
+  <p>高中地理｜南北极剖面地球圆 · 七大气压带 · 三圈环流粒子动画 · 季节移动</p>
+</header>
+
+<div class="wrap">
+
+  <section class="card">
+    <h2>① 地球剖面动画区（北极在上 · 南极在下 · 中央为赤道）</h2>
+    <div class="stage">
+      <div class="canvas-box" id="canvasBox">
+        <canvas id="earthCanvas" width="640" height="760"
+          aria-label="大气环流南北极剖面图。当前季节：春秋分。可见赤道低压0°、北副热带高压30°、北副极地低压60°、北极高压90°及南半球对称分布，三圈环流粒子沿哈德莱、费雷尔、极地环流运动。"></canvas>
+        <div class="tooltip" id="tip"></div>
+      </div>
+      <div class="side-info">
+        <div class="legend-box">
+          <h4>图例</h4>
+          <div class="legend-row"><span class="swatch hp"></span>高压带（红橙）　极地/副热带</div>
+          <div class="legend-row"><span class="swatch lp"></span>低压带（蓝）　赤道/副极地</div>
+          <div class="legend-row"><span class="dot" style="background:#f97316"></span>哈德莱环流</div>
+          <div class="legend-row"><span class="dot" style="background:#22c55e"></span>费雷尔环流</div>
+          <div class="legend-row"><span class="dot" style="background:#3b82f6"></span>极地环流</div>
+          <div class="arrow-legend"><span>↑上升</span><span>·</span><span>↓下沉</span></div>
+        </div>
+        <div class="legend-box">
+          <h4>北半球地转偏向（右偏）</h4>
+          <div style="line-height:1.7">0–30° <b>东北信风</b>（向赤道）<br>30–60° <b>盛行西风</b>（向极地）<br>60–90° <b>极地东风</b>（向赤道）<br><span style="color:var(--muted);font-size:.8rem">南半球左偏，风向呈对称形态。</span></div>
+        </div>
+        <div class="season-bar">
+          <button type="button" data-season="1月">1月（整体南移）</button>
+          <button type="button" data-season="春秋分" class="active">春秋分（居中）</button>
+          <button type="button" data-season="7月">7月（整体北移）</button>
+          <span class="season-state" id="seasonState">当前：春秋分 · 偏移 0°</span>
+        </div>
+        <div class="season-bar">
+          <button type="button" id="pauseBtn">⏸ 暂停动画</button>
+          <span class="note">悬停气压带/风带可查看说明（≤30 字）。</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>② 归纳表 · 气压带与风带</h2>
+    <div class="two-col">
+      <div>
+        <h3>七大气压带（自北向南）</h3>
+        <table>
+          <thead><tr><th>气压带</th><th>纬度</th><th>成因</th></tr></thead>
+          <tbody>
+            <tr><td>北极高压</td><td>90°N</td><td>热力（极地冷却，空气收缩下沉）</td></tr>
+            <tr><td>北副极地低压</td><td>60°N</td><td>动力（暖冷气流交汇抬升）</td></tr>
+            <tr><td>北副热带高压</td><td>30°N</td><td>动力（高空气流堆积下沉）</td></tr>
+            <tr><td>赤道低压</td><td>0°</td><td>热力（近地面受热上升）</td></tr>
+            <tr><td>南副热带高压</td><td>30°S</td><td>动力（高空气流堆积下沉）</td></tr>
+            <tr><td>南副极地低压</td><td>60°S</td><td>动力（暖冷气流交汇抬升）</td></tr>
+            <tr><td>南极高压</td><td>90°S</td><td>热力（极地冷却，空气收缩下沉）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>地面风带（北半球右偏 / 南半球左偏）</h3>
+        <table>
+          <thead><tr><th>风带</th><th>纬度</th><th>风向</th><th>地面流向</th></tr></thead>
+          <tbody>
+            <tr><td>极地东风（北）</td><td>60–90°N</td><td>东北风</td><td>向赤道</td></tr>
+            <tr><td>盛行西风（北）</td><td>30–60°N</td><td>西南风</td><td>向极地</td></tr>
+            <tr><td>东北信风</td><td>0–30°N</td><td>东北风</td><td>向赤道</td></tr>
+            <tr><td>东南信风</td><td>0–30°S</td><td>东南风</td><td>向赤道</td></tr>
+            <tr><td>盛行西风（南）</td><td>30–60°S</td><td>西北风</td><td>向极地</td></tr>
+            <tr><td>极地东风（南）</td><td>60–90°S</td><td>东南风</td><td>向赤道</td></tr>
+          </tbody>
+        </table>
+        <p class="note">气压带随季节整体移动：1 月南移约 5°、7 月北移约 5°，春秋分居中。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>③ 气压带 · 各自然带真实图景</h2>
+    <div class="zones">
+      <div class="zone-card">
+        <div class="icon">🌴</div>
+        <h4>赤道低压</h4>
+        <p>热带雨林气候，全年高温多雨，对流雨为主。</p>
+        <span class="belt-tag" style="background:#0284c7">0° 热力上升</span>
+      </div>
+      <div class="zone-card">
+        <div class="icon">🏜️</div>
+        <h4>副热带高压</h4>
+        <p>热带沙漠气候，下沉气流晴热干燥（如撒哈拉）。</p>
+        <span class="belt-tag" style="background:#ea580c">30° 动力下沉</span>
+      </div>
+      <div class="zone-card">
+        <div class="icon">🌲</div>
+        <h4>副极地低压</h4>
+        <p>亚寒带针叶林带，冷暖气流交汇多锋面雨。</p>
+        <span class="belt-tag" style="background:#0284c7">60° 动力上升</span>
+      </div>
+      <div class="zone-card">
+        <div class="icon">🧊</div>
+        <h4>极地高压</h4>
+        <p>冰原与苔原带，极地寒冷干燥，降水稀少。</p>
+        <span class="belt-tag" style="background:#ea580c">90° 热力下沉</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>④ 观察与结论</h2>
+    <div class="conclude">
+      <ul>
+        <li><b>北半球地转偏向"右偏"：</b>低纬为东北信风、中纬为西南风（盛行西风）、高纬为东北风（极地东风）；南半球左偏形成对称风带。</li>
+        <li><b>气压带纬度分布：</b>赤道低压 0° → 副热带高压 30° → 副极地低压 60° → 极地高压 90°，南北对称共七个。</li>
+        <li><b>三圈环流环向：</b>赤道与 60° 上升、30° 与极地下沉；哈德莱环流（0–30°）地面信风回流、费雷尔环流（30–60°）与哈德莱反向、极地环流（60–90°）极地下沉地面流向 60°。</li>
+        <li><b>季节移动：</b>太阳直射点移动使气压带风带随季节整体移动约 5°——1 月偏南、7 月偏北。</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var canvas = document.getElementById('earthCanvas');
+  var ctx = canvas.getContext('2d');
+  var box = document.getElementById('canvasBox');
+  var tip = document.getElementById('tip');
+  var seasonState = document.getElementById('seasonState');
+  var pauseBtn = document.getElementById('pauseBtn');
+
+  var W = canvas.width, H = canvas.height;
+  var cx = 320, cy = 400, radX = 260, radY = 300;
+
+  // 季节偏移（有效纬度 = 标称纬度 + 偏移；1月南移=纬度减5，7月北移=纬度加5）
+  var shiftNorth = {'1月': -5, '春秋分': 0, '7月': 5};
+  var season = '春秋分';
+  var paused = false;
+
+  function effLat(nominal){ return nominal + shiftNorth[season]; }
+  function latY(lat){ return cy - (lat / 90) * radY; }           // 有效纬度 → y
+  function rimX(y){ return Math.sqrt(Math.max(0, 1 - Math.pow((y - cy) / radY, 2))) * radX; }
+
+  // ============ 七大气压带 ============
+  var BELTS = [
+    {name:'北极高压',     lat: 90, cause:'热力', col:'#fdba74', edge:'#dc2626', lp:false},
+    {name:'北副极地低压', lat: 60, cause:'动力', col:'#7dd3fc', edge:'#0284c7', lp:true},
+    {name:'北副热带高压', lat: 30, cause:'动力', col:'#fdba74', edge:'#ea580c', lp:false},
+    {name:'赤道低压',     lat:  0, cause:'热力', col:'#7dd3fc', edge:'#0284c7', lp:true},
+    {name:'南副热带高压', lat:-30, cause:'动力', col:'#fdba74', edge:'#ea580c', lp:false},
+    {name:'南副极地低压', lat:-60, cause:'动力', col:'#7dd3fc', edge:'#0284c7', lp:true},
+    {name:'南极高压',     lat:-90, cause:'热力', col:'#fdba74', edge:'#dc2626', lp:false}
+  ];
+  var HALF = 4; // 气压带半带宽（度）
+
+  // ============ 三圈环流（每半球 3 圈，北半求在左、南半球在右） ============
+  // 地面自下沉点(sink)流向上升点(rise) → 在环内顺时针/逆时针由 side 决定
+  var CELLS = [
+    {side:-1, name:'哈德莱', rise:  0, sink: 30, col:'#f97316'},
+    {side:-1, name:'费雷尔', rise: 60, sink: 30, col:'#22c55e'},
+    {side:-1, name:'极地',   rise: 60, sink: 90, col:'#3b82f6'},
+    {side: 1, name:'哈德莱', rise:  0, sink:-30, col:'#f97316'},
+    {side: 1, name:'费雷尔', rise: 60, sink:-30, col:'#22c55e'},
+    {side: 1, name:'极地',   rise: 60, sink:-90, col:'#3b82f6'}
+  ];
+  var R_OUT = 0.97, R_IN = 0.30;
+
+  // 环流粒子位置：t∈[0,1)。四段：地面sink→rise / 上升 / 高空rise→sink / 下沉
+  function cellPoint(cell, t){
+    var r, lat;
+    if(t < 0.35){ var u = t / 0.35; r = R_OUT; lat = cell.sink + (cell.rise - cell.sink) * u; }
+    else if(t < 0.50){ var u = (t - 0.35) / 0.15; r = R_OUT - (R_OUT - R_IN) * u; lat = cell.rise; }
+    else if(t < 0.85){ var u = (t - 0.50) / 0.35; r = R_IN; lat = cell.rise + (cell.sink - cell.rise) * u; }
+    else { var u = (t - 0.85) / 0.15; r = R_IN + (R_OUT - R_IN) * u; lat = cell.sink; }
+    var y = latY(effLat(lat));
+    var x = cx + cell.side * r * rimX(y);
+    return {x:x, y:y};
+  }
+
+  // ============ 地面风带 ============
+  var WINDS = [
+    {name:'东北信风', lo: 0, hi: 30, side:-1, dirY: 1},
+    {name:'盛行西风', lo: 30, hi: 60, side:-1, dirY:-1},
+    {name:'极地东风', lo: 60, hi: 90, side:-1, dirY: 1},
+    {name:'东南信风', lo: 0, hi:-30, side: 1, dirY:-1},
+    {name:'盛行西风', lo:-30, hi:-60, side: 1, dirY: 1},
+    {name:'极地东风', lo:-60, hi:-90, side: 1, dirY:-1}
+  ];
+
+  // ============ 绘制 ============
+  function drawEarth(){
+    // 大气剖面底色
+    var g = ctx.createLinearGradient(0, cy - radY, 0, cy + radY);
+    g.addColorStop(0, '#f0f9ff');
+    g.addColorStop(0.5, '#e0f2fe');
+    g.addColorStop(1, '#f0f9ff');
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, radX, radY, 0, 0, Math.PI * 2);
+    ctx.fillStyle = g;
+    ctx.fill();
+    ctx.clip();
+    ctx.strokeStyle = '#0c4a6e';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // 纬线参考（赤道、30/60）
+    ctx.setLineDash([5,6]);
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1;
+    [-60,-30,0,30,60].forEach(function(l){
+      var y = latY(effLat(l));
+      ctx.beginPath(); ctx.moveTo(cx - rimX(y), y); ctx.lineTo(cx + rimX(y), y); ctx.stroke();
+    });
+    ctx.setLineDash([]);
+
+    // 气压带
+    BELTS.forEach(function(b){
+      var y1 = latY(effLat(b.lat - HALF));
+      var y2 = latY(effLat(b.lat + HALF));
+      ctx.fillStyle = b.col;
+      ctx.fillRect(0, y1, W, y2 - y1);
+      ctx.strokeStyle = b.edge;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(0, y1, W, y2 - y1);
+    });
+
+    ctx.restore(); // 取消裁剪以绘制外框与文字
+
+    // 椭圆外框
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, radX, radY, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = '#0c4a6e';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // 两极与赤道标注
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('北极 90°N', cx, latY(effLat(90)) - 14);
+    ctx.fillText('南极 90°S', cx, latY(effLat(-90)) + 24);
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#0369a1';
+    ctx.fillText('赤道 0°', cx, latY(effLat(0)) + 18);
+
+    // 气压带名称标签（NH 在左外侧，SH 在右外侧）
+    BELTS.forEach(function(b){
+      var y = latY(effLat(b.lat));
+      var isN = b.lat >= 0;
+      var x = isN ? 8 : W - 8;
+      ctx.textAlign = isN ? 'left' : 'right';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#fff';
+      ctx.strokeText(b.name + ' ' + Math.abs(b.lat) + '°', x, y + 4);
+      ctx.fillStyle = b.lp ? '#0284c7' : '#ea580c';
+      ctx.fillText(b.name + ' ' + Math.abs(b.lat) + '°', x, y + 4);
+    });
+
+    // 地面风带箭头与标签（沿纬圈表面，指示地面经向流向）
+    WINDS.forEach(function(w){
+      var mids = [0.25, 0.5, 0.75];
+      for(var i = 0; i < 3; i++){
+        var lat = w.lo + (w.hi - w.lo) * mids[i];
+        var y = latY(effLat(lat));
+        var x = cx + w.side * 0.90 * rimX(y);
+        var len = 12;
+        var yt = y + w.dirY * len / 2;
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x, yt); ctx.lineTo(x, yt - w.dirY * len); ctx.stroke();
+        // 箭头尖
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.moveTo(x, yt + w.dirY * 5);
+        ctx.lineTo(x - 5, yt - w.dirY * 2);
+        ctx.lineTo(x + 5, yt - w.dirY * 2);
+        ctx.closePath(); ctx.fill();
+      }
+      // 风带名称
+      var yLabel = latY(effLat((w.lo + w.hi) / 2)) - (w.hi < 0 ? -10 : 10);
+      var xLabel = cx + w.side * 0.74 * rimX(yLabel);
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.strokeText(w.name, xLabel, yLabel);
+      ctx.fillStyle = '#0f172a';
+      ctx.fillText(w.name, xLabel, yLabel);
+    });
+
+    // 上升/下沉标记（中轴）：赤道与60°上升、30°与极地下沉
+    var motions = [
+      {lat:  0, up:true,  label:'↑ 上升'},
+      {lat: 30, up:false, label:'↓ 下沉'},
+      {lat: 60, up:true,  label:'↑ 上升'},
+      {lat: 90, up:false, label:'↓ 下沉'}
+    ];
+    motions.forEach(function(m){
+      var y = latY(effLat(m.lat));
+      var x = cx + (m.up ? -34 : 34);
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(255,255,255,0.92)';
+      ctx.strokeText(m.label, x, y + 4);
+      ctx.fillStyle = m.up ? '#15803d' : '#b91c1c';
+      ctx.fillText(m.label, x, y + 4);
+    });
+  }
+
+  // 环流引导线与粒子
+  function drawCirculation(tNow){
+    CELLS.forEach(function(cell){
+      // 引导线
+      ctx.beginPath();
+      for(var i = 0; i <= 60; i++){
+        var p = cellPoint(cell, i / 60);
+        if(i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = cell.col;
+      ctx.globalAlpha = 0.4;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4,4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+
+      // 粒子
+      var N = 7;
+      for(var k = 0; k < N; k++){
+        var phase = k / N;
+        var t = (tNow * 0.06 + phase) % 1;
+        var pos = cellPoint(cell, t);
+        ctx.fillStyle = cell.col;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 3.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    });
+  }
+
+  function render(t){
+    ctx.clearRect(0, 0, W, H);
+    drawEarth();
+    drawCirculation(t);
+    updateAria();
+  }
+
+  var startT = null;
+  function frame(ts){
+    if(startT === null) startT = ts;
+    var t = paused ? (frame._t || 0) : (ts - startT) / 1000;
+    if(!paused) frame._t = t;
+    render(t);
+    requestAnimationFrame(frame);
+  }
+
+  function updateAria(){
+    var names = BELTS.map(function(b){ return b.name + (Math.abs(b.lat)) + '°'; }).join('、');
+    canvas.setAttribute('aria-label',
+      '大气环流南北极剖面图。当前季节：' + season + '（气压带' +
+      (shiftNorth[season] > 0 ? '北移' : shiftNorth[season] < 0 ? '南移' : '居中') + ' ' +
+      Math.abs(shiftNorth[season]) + '°）。可见气压带：' + names + '；三圈环流粒子沿哈德莱、费雷尔、极地环流运动，赤道与60°上升、30°与极地下沉。');
+  }
+
+  // ============ 交互：季节 ============
+  document.querySelectorAll('.season-bar button[data-season]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.season-bar button[data-season]').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      season = btn.getAttribute('data-season');
+      var off = shiftNorth[season];
+      seasonState.textContent = '当前：' + season + ' · 偏移 ' + (off > 0 ? '+' : '') + off + '°';
+      updateAria();
+    });
+  });
+
+  // ============ 交互：暂停 ============
+  pauseBtn.addEventListener('click', function(){
+    paused = !paused;
+    pauseBtn.textContent = paused ? '▶ 播放动画' : '⏸ 暂停动画';
+  });
+
+  // ============ 交互：悬停提示 ============
+  function canvasCoords(e){
+    var r = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - r.left) / r.width * W,
+      y: (e.clientY - r.top) / r.height * H
+    };
+  }
+  canvas.addEventListener('mousemove', function(e){
+    var p = canvasCoords(e);
+    var dx = (p.x - cx) / radX, dy = (p.y - cy) / radY;
+    var inside = dx * dx + dy * dy <= 1;
+    if(!inside){ tip.style.display = 'none'; return; }
+
+    var eff = -(p.y - cy) / radY * 90;      // 有效纬度
+    var text = null;
+    // 先判气压带
+    for(var i = 0; i < BELTS.length; i++){
+      var b = BELTS[i];
+      if(Math.abs(eff - effLat(b.lat)) <= HALF){
+        text = b.name + ' ' + Math.abs(b.lat) + '° · ' + b.cause + '成因';
+        break;
+      }
+    }
+    if(!text){
+      // 再判风带（取标称纬度差）
+      for(var j = 0; j < WINDS.length; j++){
+        var w = WINDS[j];
+        var elo = effLat(w.lo), ehi = effLat(w.hi);
+        if(eff >= Math.min(elo, ehi) && eff <= Math.max(elo, ehi)){
+          var dir = w.dirY === 1 ? '向赤道' : '向极地';
+          text = w.name + '（' + dir + '）';
+          break;
+        }
+      }
+    }
+    if(text){
+      tip.textContent = text;
+      tip.style.display = 'block';
+      var br = canvas.getBoundingClientRect();
+      tip.style.left = (p.x / W * br.width) + 14 + 'px';
+      tip.style.top  = (p.y / H * br.height) - 24 + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
+  });
+  canvas.addEventListener('mouseleave', function(){ tip.style.display = 'none'; });
+
+  // 启动
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

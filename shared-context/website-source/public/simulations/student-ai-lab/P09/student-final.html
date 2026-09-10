@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高中物理力学 - 思维导图学习系统</title>
+    <style>
+        :root {
+            --bg: #f5f0eb;
+            --card-bg: #ffffff;
+            --text: #2d3748;
+            --text-secondary: #5a6c7d;
+            --primary: #4a7fd9;
+            --primary-light: #e8f0fb;
+            --accent-red: #e05353;
+            --accent-orange: #e89440;
+            --accent-green: #3ca374;
+            --accent-blue: #4a90d9;
+            --accent-purple: #7c5cbf;
+            --border: #e2e8f0;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --radius: 20px;
+            --radius-sm: 12px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+            background: linear-gradient(160deg, #ede7df 0%, #f5f0eb 30%, #faf7f2 60%, #f0ebe3 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        .main-header {
+            text-align: center;
+            padding: 20px 20px 5px;
+            max-width: 1100px;
+            width: 100%;
+        }
+        .main-header h1 {
+            font-size: 2.8em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #5c4033, #8b5e3c, #c07030);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+            letter-spacing: 0.03em;
+        }
+        .main-header .subtitle {
+            font-size: 1.15em;
+            color: #8b7355;
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            margin-bottom: 10px;
+        }
+        .guide-hint {
+            display: inline-block;
+            padding: 6px 20px;
+            background: rgba(139, 94, 60, 0.1);
+            border-radius: 25px;
+            font-size: 0.9em;
+            color: #8b5e3c;
+            letter-spacing: 0.03em;
+            animation: pulse 2.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .mindmap-container {
+            position: relative;
+            width: 100%;
+            max-width: 1300px;
+            min-height: 700px;
+            margin: 15px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 30px;
+            padding: 20px;
+        }
+
+        .mindmap-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .node-card {
+            position: relative;
+            z-index: 2;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 18px 22px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid transparent;
+            text-align: center;
+            min-width: 140px;
+            max-width: 220px;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .node-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-4px);
+            border-color: #c07030;
+        }
+        .node-card.central {
+            min-width: 200px;
+            max-width: 260px;
+            background: linear-gradient(135deg, #fff9f0, #fff3e0);
+            border: 3px solid #c07030;
+            box-shadow: 0 6px 25px rgba(192, 112, 48, 0.25);
+            padding: 22px 28px;
+        }
+        .node-card.central h2 {
+            font-size: 1.6em;
+            color: #5c3d24;
+        }
+        .node-card .node-icon {
+            font-size: 2.4em;
+            line-height: 1;
+        }
+        .node-card h3 {
+            font-size: 1.1em;
+            font-weight: 650;
+            color: #4a3728;
+            letter-spacing: 0.03em;
+        }
+        .node-card .node-desc {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+        }
+        .node-card .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+        }
+        .node-card .mini-badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 500;
+            background: #fef3e2;
+            color: #b87333;
+            white-space: nowrap;
+        }
+
+        .node-card.theme-blue {
+            border-left: 5px solid #4a90d9;
+        }
+        .node-card.theme-green {
+            border-left: 5px solid #3ca374;
+        }
+        .node-card.theme-purple {
+            border-left: 5px solid #7c5cbf;
+        }
+        .node-card.theme-red {
+            border-left: 5px solid #e05353;
+        }
+        .node-card.theme-orange {
+            border-left: 5px solid #e89440;
+        }
+
+        .detail-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(30, 20, 10, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+        .detail-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .detail-panel {
+            background: #fffdf8;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 92vw;
+            max-width: 1100px;
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: 30px 28px 25px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            animation: slideUp 0.35s ease;
+        }
+        @keyframes slideUp {
+            from {
+                transform: translateY(40px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .detail-panel .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #f0e8dc;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #8b7355;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+        .detail-panel .close-btn:hover {
+            background: #e0d4c2;
+            color: #5c3d24;
+        }
+        .detail-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0e8dc;
+        }
+        .detail-header .detail-icon {
+            font-size: 2.6em;
+        }
+        .detail-header h2 {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #4a3728;
+            letter-spacing: 0.03em;
+        }
+        .detail-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .detail-text {
+            flex: 1 1 300px;
+            font-size: 0.95em;
+            color: #4a4035;
+            line-height: 1.8;
+            letter-spacing: 0.02em;
+        }
+        .detail-text h3 {
+            font-size: 1.15em;
+            margin: 14px 0 8px;
+            color: #5c3d24;
+            border-left: 4px solid #c07030;
+            padding-left: 12px;
+        }
+        .detail-text .formula-box {
+            background: #fdf6ec;
+            border: 1px solid #e8d5b0;
+            border-radius: 10px;
+            padding: 10px 16px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.05em;
+            color: #8b5e3c;
+            letter-spacing: 0.02em;
+        }
+        .detail-canvas-wrap {
+            flex: 1 1 420px;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #faf8f4;
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid #e8dcc8;
+        }
+        .detail-canvas-wrap canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: #fff;
+            border: 1px solid #edf0f4;
+        }
+        .detail-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin-top: 10px;
+            width: 100%;
+            justify-content: center;
+        }
+        .detail-controls label {
+            font-size: 0.82em;
+            font-weight: 550;
+            color: #5c4a3a;
+            white-space: nowrap;
+        }
+        .detail-controls input[type="range"] {
+            width: 90px;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #dce3eb;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        .detail-controls input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #c07030;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+        }
+        .detail-controls .val-display {
+            display: inline-block;
+            min-width: 38px;
+            text-align: center;
+            font-weight: 650;
+            font-size: 0.82em;
+            color: #c07030;
+            background: #fef3e2;
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+        .detail-controls button {
+            padding: 6px 14px;
+            border-radius: 18px;
+            border: 1.5px solid #c07030;
+            background: #fff;
+            color: #c07030;
+            font-weight: 550;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.82em;
+            white-space: nowrap;
+        }
+        .detail-controls button:hover {
+            background: #fef3e2;
+        }
+        .detail-controls button.primary-btn {
+            background: #c07030;
+            color: #fff;
+            border: none;
+        }
+        .detail-controls button.primary-btn:hover {
+            background: #a55a28;
+        }
+        .detail-controls button.play-btn {
+            background: #3ca374;
+            color: #fff;
+            border: none;
+            min-width: 70px;
+        }
+        .detail-controls button.play-btn:hover {
+            background: #2e8b5e;
+        }
+        .detail-controls button.play-btn.paused-state {
+            background: #e89440;
+        }
+        .detail-controls button.play-btn.paused-state:hover {
+            background: #d47a2e;
+        }
+        .detail-controls button.force-btn {
+            background: #4a90d9;
+            color: #fff;
+            border: none;
+            min-width: 60px;
+        }
+        .detail-controls button.force-btn:hover {
+            background: #357abd;
+        }
+        .detail-controls button.force-btn.active-force {
+            background: #e74c3c;
+            box-shadow: 0 0 12px rgba(231, 76, 60, 0.5);
+        }
+        .info-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+            font-size: 0.78em;
+            color: #6b5d4f;
+        }
+        .info-row span {
+            background: #faf4ec;
+            padding: 3px 8px;
+            border-radius: 8px;
+            white-space: nowrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 14px;
+            font-size: 0.8em;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+        .status-ready {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-running {
+            background: #fff3e0;
+            color: #e65100;
+        }
+        .status-paused {
+            background: #fce4ec;
+            color: #c62828;
+        }
+
+        @media (max-width: 800px) {
+            .main-header h1 {
+                font-size: 1.8em;
+            }
+            .mindmap-container {
+                gap: 18px;
+                padding: 8px;
+            }
+            .node-card {
+                min-width: 100px;
+                max-width: 160px;
+                padding: 12px 14px;
+            }
+            .node-card.central {
+                min-width: 140px;
+                max-width: 200px;
+                padding: 16px 20px;
+            }
+            .detail-panel {
+                padding: 20px 14px;
+                max-height: 92vh;
+            }
+            .detail-content {
+                flex-direction: column;
+            }
+            .detail-canvas-wrap {
+                flex: 1 1 auto;
+                min-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-header">
+        <h1>🧭 高中物理力学 · 思维导图</h1>
+        <p class="subtitle">点击下方节点卡片，探索力学的核心概念与交互演示</p>
+        <span class="guide-hint">👆 点击任意方框进入详细学习面板 · 手动控制演示</span>
+    </div>
+
+    <div class="mindmap-container" id="mindmapContainer">
+        <svg class="mindmap-svg" id="mindmapSvg"></svg>
+
+        <div class="node-card central" data-topic="mechanics" id="nodeCentral">
+            <span class="node-icon">⚛️</span>
+            <h2>力学基础</h2>
+            <span class="node-desc">牛顿三大定律 · 力的本质</span>
+            <div class="badge-row">
+                <span class="mini-badge">核心概念</span>
+                <span class="mini-badge">F=ma</span>
+            </div>
+        </div>
+
+        <div class="node-card theme-blue" data-topic="force-decomposition" id="nodeForceDecomp">
+            <span class="node-icon">📐</span>
+            <h3>力的合成与分解</h3>
+            <span class="node-desc">平行四边形法则 · 斜面力学</span>
+            <div class="badge-row">
+                <span class="mini-badge">矢量</span>
+                <span class="mini-badge">斜面</span>
+            </div>
+        </div>
+
+        <div class="node-card theme-green" data-topic="newton-laws" id="nodeNewton">
+            <span class="node-icon">🍎</span>
+            <h3>牛顿运动定律</h3>
+            <span class="node-desc">惯性 · 加速度 · 作用力</span>
+            <div class="badge-row">
+                <span class="mini-badge">F=ma</span>
+                <span class="mini-badge">惯性</span>
+            </div>
+        </div>
+
+        <div class="node-card theme-purple" data-topic="friction" id="nodeFriction">
+            <span class="node-icon">🛡️</span>
+            <h3>摩擦力</h3>
+            <span class="node-desc">静摩擦 · 最大静摩擦力</span>
+            <div class="badge-row">
+                <span class="mini-badge">f=μN</span>
+                <span class="mini-badge">相对趋势</span>
+            </div>
+        </div>
+
+        <div class="node-card theme-orange" data-topic="elasticity" id="nodeElasticity">
+            <span class="node-icon">🪶</span>
+            <h3>弹力·胡克定律</h3>
+            <span class="node-desc">F=-kx · 弹簧振子</span>
+            <div class="badge-row">
+                <span class="mini-badge">简谐运动</span>
+                <span class="mini-badge">周期</span>
+            </div>
+        </div>
+
+        <div class="node-card theme-red" data-topic="projectile" id="nodeProjectile">
+            <span class="node-icon">🎯</span>
+            <h3>抛体运动</h3>
+            <span class="node-desc">抛物线 · 运动的独立性</span>
+            <div class="badge-row">
+                <span class="mini-badge">水平匀速</span>
+                <span class="mini-badge">竖直匀加速</span>
+            </div>
+        </div>
+
+        <div class="node-card theme-blue" data-topic="circular" id="nodeCircular">
+            <span class="node-icon">🔄</span>
+            <h3>圆周运动</h3>
+            <span class="node-desc">向心力 · 角速度</span>
+            <div class="badge-row">
+                <span class="mini-badge">F=mv²/r</span>
+                <span class="mini-badge">周期</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-overlay" id="detailOverlay">
+        <div class="detail-panel" id="detailPanel">
+            <button class="close-btn" id="closeDetailBtn">✕</button>
+            <div class="detail-header" id="detailHeader"></div>
+            <div class="detail-content" id="detailContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 思维导图连线 ====================
+        function drawMindmapLines() {
+            const svg = document.getElementById('mindmapSvg');
+            const container = document.getElementById('mindmapContainer');
+            const centralNode = document.getElementById('nodeCentral');
+            const branchNodes = [
+                document.getElementById('nodeForceDecomp'),
+                document.getElementById('nodeNewton'),
+                document.getElementById('nodeFriction'),
+                document.getElementById('nodeElasticity'),
+                document.getElementById('nodeProjectile'),
+                document.getElementById('nodeCircular'),
+            ];
+            if (!centralNode || !container) return;
+            const containerRect = container.getBoundingClientRect();
+            const centralRect = centralNode.getBoundingClientRect();
+            const centerX = centralRect.left + centralRect.width / 2 - containerRect.left;
+            const centerY = centralRect.top + centralRect.height / 2 - containerRect.top;
+            let svgContent = '';
+            branchNodes.forEach(node => {
+                if (!node) return;
+                const nodeRect = node.getBoundingClientRect();
+                const nodeX = nodeRect.left + nodeRect.width / 2 - containerRect.left;
+                const nodeY = nodeRect.top + nodeRect.height / 2 - containerRect.top;
+                const dx = nodeX - centerX;
+                const dy = nodeY - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const offset = Math.min(dist * 0.3, 50);
+                const cx1 = centerX + (nodeX > centerX ? offset : -offset) * 0.5;
+                const cy1 = centerY;
+                const cx2 = nodeX - (nodeX > centerX ? offset : -offset) * 0.5;
+                const cy2 = nodeY;
+                svgContent +=
+                    `<path d="M${centerX},${centerY} C${cx1},${cy1} ${cx2},${cy2} ${nodeX},${nodeY}" stroke="#c9b896" stroke-width="2.5" stroke-dasharray="6 3" fill="none" opacity="0.5"/>`;
+                svgContent += `<circle cx="${nodeX}" cy="${nodeY}" r="4" fill="#c07030" opacity="0.35"/>`;
+            });
+            svgContent += `<circle cx="${centerX}" cy="${centerY}" r="6" fill="#c07030" opacity="0.45"/>`;
+            svg.innerHTML = svgContent;
+        }
+        window.addEventListener('load', () => setTimeout(drawMindmapLines, 300));
+        window.addEventListener('resize', () => setTimeout(drawMindmapLines, 200));
+        setTimeout(drawMindmapLines, 500);
+
+        // ==================== 详情面板 ====================
+        const overlay = document.getElementById('detailOverlay');
+        const detailHeader = document.getElementById('detailHeader');
+        const detailContent = document.getElementById('detailContent');
+        const closeBtn = document.getElementById('closeDetailBtn');
+
+        closeBtn.addEventListener('click', closePanel);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closePanel(); });
+
+        function closePanel() {
+            overlay.classList.remove('active');
+            if (window._activeAnimId) cancelAnimationFrame(window._activeAnimId);
+            window._activeAnimId = null;
+            window._currentTopic = null;
+        }
+
+        document.querySelectorAll('.node-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const topic = card.getAttribute('data-topic');
+                openDetailPanel(topic);
+            });
+        });
+
+        function openDetailPanel(topic) {
+            if (window._activeAnimId) cancelAnimationFrame(window._activeAnimId);
+            window._activeAnimId = null;
+            window._currentTopic = topic;
+
+            let headerHTML = '';
+            let contentHTML = '';
+
+            switch (topic) {
+                case 'mechanics':
+                    headerHTML = `<span class="detail-icon">⚛️</span><h2>力学基础 · 牛顿三大定律</h2>`;
+                    contentHTML = `
+                        <div class="detail-text">
+                            <h3>📖 什么是力学？</h3>
+                            <p>力学研究<strong>物体机械运动规律</strong>。高中阶段核心是<strong>牛顿力学</strong>。</p>
+                            <h3>🍎 牛顿第一定律（惯性定律）</h3>
+                            <p>一切物体在<strong>不受外力</strong>时，保持<strong>匀速直线运动或静止</strong>。</p>
+                            <div class="formula-box">⚠️ 力不是维持运动的原因，而是<strong>改变运动状态</strong>的原因。</div>
+                            <h3>⚡ 牛顿第二定律</h3>
+                            <div class="formula-box">F<sub>合</sub> = m · a</div>
+                            <h3>🤝 牛顿第三定律</h3>
+                            <p>作用力与反作用力<strong>大小相等、方向相反</strong>，作用在<strong>不同物体</strong>上。</p>
+                            <p>💡 <strong>演示说明：</strong>下方为光滑平面，施力时物体加速，撤力后物体保持匀速直线运动。</p>
+                        </div>
+                        <div class="detail-canvas-wrap">
+                            <canvas id="canvasMechanics" width="460" height="280"></canvas>
+                            <div class="detail-controls">
+                                <button class="play-btn" id="btnPlayMechanics">▶ 开始</button>
+                                <button class="force-btn" id="btnForceRight">→ 向右施力</button>
+                                <button class="force-btn" id="btnForceLeft">← 向左施力</button>
+                                <button class="primary-btn" id="btnResetMechanics">↺ 重置</button>
+                            </div>
+                            <div class="info-row" id="infoMechanics"></div>
+                            <span class="status-indicator status-ready" id="statusMechanics">⏳ 就绪</span>
+                        </div>`;
+                    break;
+
+                case 'force-decomposition':
+                    headerHTML = `<span class="detail-icon">📐</span><h2>力的合成与分解 · 斜面力学</h2>`;
+                    contentHTML = `
+                        <div class="detail-text">
+                            <h3>📖 力的矢量性</h3>
+                            <p>力是<strong>矢量</strong>，按<strong>平行四边形法则</strong>合成与分解。</p>
+                            <h3>📐 斜面模型</h3>
+                            <div class="formula-box">
+                                沿斜面：F<sub>∥</sub> = mg·sinθ<br>
+                                垂直斜面：F<sub>⊥</sub> = mg·cosθ<br>
+                                摩擦力：f = μ·N
+                            </div>
+                        </div>
+                        <div class="detail-canvas-wrap">
+                            <canvas id="canvasSlopeDetail" width="420" height="320"></canvas>
+                            <div class="detail-controls">
+                                <button class="play-btn" id="btnPlaySlope">▶ 开始</button>
+                                <label>θ</label><input type="range" id="slopeAngleDetail" min="8" max="50" value="28" step="0.5"><span class="val-display" id="valAngleDetail">28°</span>
+                                <label>μ</label><input type="range" id="slopeFrictionDetail" min="0" max="0.7" value="0.12" step="0.01"><span class="val-display" id="valFrictionDetail">0.12</span>
+                                <button class="primary-btn" id="btnResetSlope">↺ 重置</button>
+                            </div>
+                            <div class="info-row" id="infoSlopeDetail"></div>
+                            <span class="status-indicator status-ready" id="statusSlope">⏳ 就绪</span>
+                        </div>`;
+                    break;
+
+                case 'newton-laws':
+                    headerHTML = `<span class="detail-icon">🍎</span><h2>牛顿第二定律 · 力与加速度</h2>`;
+                    contentHTML = `
+                        <div class="detail-text">
+                            <h3>📖 F=ma 的含义</h3>
+                            <p>加速度<strong>正比于合外力</strong>，反比于质量。</p>
+                            <div class="formula-box">a = F/m</div>
+                            <p>💡 <strong>演示说明：</strong>光滑平面，拉力恒定，物体做匀加速直线运动。可调整拉力和质量观察加速度变化。</p>
+                        </div>
+                        <div class="detail-canvas-wrap">
+                            <canvas id="canvasNewtonDetail" width="460" height="260"></canvas>
+                            <div class="detail-controls">
+                                <button class="play-btn" id="btnPlayNewton">▶ 开始</button>
+                                <label>F</label><input type="range" id="newtonForce" min="5" max="60" value="25" step="1"><span class="val-display" id="valNewtonForce">25 N</span>
+                                <label>m</label><input type="range" id="newtonMass" min="0.5" max="5" value="2" step="0.1"><span class="val-display" id="valNewtonMass">2.0 kg</span>
+                                <button class="primary-btn" id="btnResetNewton">↺ 重置</button>
+                            </div>
+                            <div class="info-row" id="infoNewtonDetail"></div>
+                            <span class="status-indicator status-ready" id="statusNewton">⏳ 就绪</span>
+                        </div>`;
+                    break;
+
+                case 'friction':
+                    headerHTML = `<span class="detail-icon">🛡️</span><h2>摩擦力 · 静摩擦力</h2>`;
+                    contentHTML = `
+                        <div class="detail-text">
+                            <h3>📖 静摩擦力</h3>
+                            <p>物体有<strong>相对运动趋势</strong>但尚未运动时产生。大小<strong>随外力变化</strong>，有最大值。</p>
+                            <div class="formula-box">静摩擦力最大值：f<sub>max</sub> = μ<sub>静</sub>·N</div>
+                            <p>💡 <strong>演示说明：</strong>逐步增大推力，当推力超过最大静摩擦力时物体开始运动。观察静摩擦力与推力的关系。</p>
+                        </div>
+                        <div class="detail-canvas-wrap">
+                            <canvas id="canvasFrictionDetail" width="460" height="260"></canvas>
+                            <div class="detail-controls">
+                                <button class="play-btn" id="btnPlayFriction">▶ 开始</button>
+                                <label>μ</label><input type="range" id="frictionMu" min="0.05" max="0.8" value="0.35" step="0.01"><span class="val-display" id="valFrictionMu">0.35</span>
+                                <label>推力</label><input type="range" id="frictionPush" min="0" max="40" value="10" step="0.5"><span class="val-display" id="valFrictionPush">10 N</span>
+                                <button class="primary-btn" id="btnResetFriction">↺ 重置</button>
+                            </div>
+                            <div class="info-row" id="infoFrictionDetail"></div>
+                            <span class="status-indicator status-ready" id="statusFriction">⏳ 就绪</span>
+                        </div>`;
+                    break;
+
+                case 'elasticity':
+                    headerHTML = `<span class="detail-icon">🪶</span><h2>弹力与胡克定律 · 弹簧振子</h2>`;
+                    contentHTML = `
+                        <div class="detail-text">
+                            <h3>📖 胡克定律</h3>
+                            <div class="formula-box">F = -k·x</div>
+                            <h3>🪶 简谐运动周期</h3>
+                            <div class="formula-box">T = 2π√(m/k)</div>
+                        </div>
+                        <div class="detail-canvas-wrap">
+                            <canvas id="canvasSpringDetail" width="420" height="280"></canvas>
+                            <div class="detail-controls">
+                                <button class="play-btn" id="btnPlaySpring">▶ 开始</button>
+                                <label>k</label><input type="range" id="springKDetail" min="20" max="180" value="70" step="1"><span class="val-display" id="valSpringK">70</span>
+                                <label>m</label><input type="range" id="springMassDetail" min="0.3" max="3" value="1" step="0.05"><span class="val-display" id="valSpringMass">1.0</span>
+                                <button class="primary-btn" id="btnResetSpring">↺ 重置</button>
+                            </div>
+                            <div class="info-row" id="infoSpringDetail"></div>
+                            <span class="status-indicator status-ready" id="statusSpring">⏳ 就绪</span>
+                        </div>`;
+                    break;
+
+                case 'projectile':
+                    headerHTML = `<span class="detail-icon">🎯</span><h2>抛体运动 · 抛物线轨迹</h2>`;
+                    contentHTML = `
+                        <div class="detail-text">
+                            <h3>📖 运动的独立性</h3>
+                            <p>水平匀速 + 竖直自由落体</p>
+                            <div class="formula-box">
+                                射程：R = v₀²·sin(2θ)/g<br>
+                                最大高度：H = v₀²·sin²θ/(2g)
+                            </div>
+                        </div>
+                        <div class="detail-canvas-wrap">
+                            <canvas id="canvasProjectileDetail" width="420" height="340"></canvas>
+                            <div class="detail-controls">
+                                <button class="play-btn" id="btnPlayProjectile">▶ 发射</button>
+                                <label>v₀</label><input type="range" id="projV0Detail" min="8" max="26" value="15" step="0.5"><span class="val-display" id="valProjV0Detail">15</span>
+                                <label>θ</label><input type="range" id="projAngleDetail" min="15" max="75" value="45" step="0.5"><span class="val-display" id="valProjAngleDetail">45°</span>
+                                <button class="primary-btn" id="btnResetProjectile">↺ 清除轨迹</button>
+                            </div>
+                            <div class="info-row" id="infoProjectileDetail"></div>
+                            <span class="status-indicator status-ready" id="statusProjectile">⏳ 就绪</span>
+                        </div>`;
+                    break;
+
+                case 'circular':
+                    headerHTML = `<span class="detail-icon">🔄</span><h2>圆周运动 · 向心力</h2>`;
+                    contentHTML = `
+                        <div class="detail-text">
+                            <h3>📖 匀速圆周运动</h3>
+                            <div class="formula-box">
+                                向心力：F = m·v²/r = m·ω²·r<br>
+                                周期：T = 2πr/v
+                            </div>
+                        </div>
+                        <div class="detail-canvas-wrap">
+                            <canvas id="canvasCircularDetail" width="420" height="340"></canvas>
+                            <div class="detail-controls">
+                                <button class="play-btn" id="btnPlayCircular">▶ 开始</button>
+                                <label>v</label><input type="range" id="circV" min="2" max="12" value="6" step="0.2"><span class="val-display" id="valCircV">6.0</span>
+                                <label>r</label><input type="range" id="circR" min="40" max="120" value="75" step="1"><span class="val-display" id="valCircR">75</span>
+                                <button class="primary-btn" id="btnResetCircular">↺ 重置</button>
+                            </div>
+                            <div class="info-row" id="infoCircDetail"></div>
+                            <span class="status-indicator status-ready" id="statusCircular">⏳ 就绪</span>
+                        </div>`;
+                    break;
+            }
+
+            detailHeader.innerHTML = headerHTML;
+            detailContent.innerHTML = contentHTML;
+            overlay.classList.add('active');
+            setTimeout(() => initDetailCanvas(topic), 150);
+        }
+
+        // ==================== Canvas初始化 ====================
+        function initDetailCanvas(topic) {
+            if (window._activeAnimId) cancelAnimationFrame(window._activeAnimId);
+            window._activeAnimId = null;
+            switch (topic) {
+                case 'mechanics':
+                    initMechanicsCanvas();
+                    break;
+                case 'force-decomposition':
+                    initSlopeDetailCanvas();
+                    break;
+                case 'newton-laws':
+                    initNewtonDetailCanvas();
+                    break;
+                case 'friction':
+                    initFrictionDetailCanvas();
+                    break;
+                case 'elasticity':
+                    initSpringDetailCanvas();
+                    break;
+                case 'projectile':
+                    initProjectileDetailCanvas();
+                    break;
+                case 'circular':
+                    initCircularDetailCanvas();
+                    break;
+            }
+        }
+
+        // ====== 力学基础：光滑平面 + 撤力匀速 + 小物体 + 长轨道 ======
+        function initMechanicsCanvas() {
+            const canvas = document.getElementById('canvasMechanics');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const btnPlay = document.getElementById('btnPlayMechanics');
+            const btnRight = document.getElementById('btnForceRight');
+            const btnLeft = document.getElementById('btnForceLeft');
+            const btnReset = document.getElementById('btnResetMechanics');
+            const infoDiv = document.getElementById('infoMechanics');
+            const statusSpan = document.getElementById('statusMechanics');
+
+            const trackY = H - 50;
+            const trackStart = 25;
+            const trackEnd = W - 25;
+            let ballX = trackStart + 15;
+            let ballVX = 0;
+            let forceRight = false,
+                forceLeft = false;
+            let running = false;
+            let lastTime = null;
+            let animId = null;
+
+            function resetState() {
+                ballX = trackStart + 15;
+                ballVX = 0;
+                forceRight = false;
+                forceLeft = false;
+                lastTime = null;
+                updateButtons();
+                updateStatus('ready');
+            }
+
+            function updateStatus(state) {
+                statusSpan.textContent = state === 'running' ? '▶ 运行中' : state === 'paused' ? '⏸ 暂停' : '⏳ 就绪';
+                statusSpan.className = 'status-indicator ' + (state === 'running' ? 'status-running' : state === 'paused' ?
+                    'status-paused' : 'status-ready');
+            }
+
+            function updateButtons() {
+                btnRight.classList.toggle('active-force', forceRight);
+                btnLeft.classList.toggle('active-force', forceLeft);
+                btnPlay.textContent = running ? '⏸ 暂停' : '▶ 开始';
+                btnPlay.classList.toggle('paused-state', running);
+            }
+
+            function draw(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.016;
+                lastTime = timestamp;
+
+                if (running) {
+                    const accelForce = 30;
+                    if (forceRight && !forceLeft) ballVX += accelForce * dt;
+                    else if (forceLeft && !forceRight) ballVX -= accelForce * dt;
+                    // 光滑平面：无力时匀速（不减速）
+                    ballX += ballVX * dt;
+                    if (ballX > trackEnd - 8) { ballX = trackEnd - 8;
+                        ballVX = 0; }
+                    if (ballX < trackStart + 8) { ballX = trackStart + 8;
+                        ballVX = 0; }
+                }
+
+                const stateText = (!forceRight && !forceLeft && Math.abs(ballVX) > 0.1) ? '匀速直线运动' :
+                    (forceRight || forceLeft) ? '加速中' : '静止';
+                infoDiv.innerHTML =
+                    `<span>状态:${stateText}</span><span>v=${(ballVX/8).toFixed(2)} m/s</span><span>受力:${forceRight?'→右':''}${forceLeft?'←左':''}${(!forceRight&&!forceLeft)?'无':''}</span>`;
+
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#faf8f4';
+                ctx.fillRect(0, 0, W, H);
+                // 轨道
+                ctx.strokeStyle = '#c0b090';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(trackStart, trackY);
+                ctx.lineTo(trackEnd, trackY);
+                ctx.stroke();
+                // 光滑标记
+                ctx.fillStyle = '#d5c9b3';
+                for (let gx = trackStart + 20; gx < trackEnd; gx += 40) {
+                    ctx.fillRect(gx, trackY + 2, 4, 8);
+                }
+                ctx.fillStyle = '#a0c4a0';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('光滑平面', W / 2, trackY + 22);
+
+                // 小物体（半径8）
+                ctx.fillStyle = '#ee5a38';
+                ctx.beginPath();
+                ctx.arc(ballX, trackY - 10, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#a33020';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                if (forceRight) drawArrow(ctx, ballX + 12, trackY - 10, 30, 0, '#e74c3c');
+                if (forceLeft) drawArrow(ctx, ballX - 12, trackY - 10, -30, 0, '#2980b9');
+
+                // 速度矢量
+                if (Math.abs(ballVX) > 0.5) {
+                    const vxDir = Math.sign(ballVX);
+                    ctx.strokeStyle = '#27ae60';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(ballX, trackY - 22);
+                    ctx.lineTo(ballX + vxDir * Math.min(Math.abs(ballVX) * 1.5, 60), trackY - 22);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                animId = requestAnimationFrame(draw);
+            }
+
+            function drawArrow(ctx, x, y, dx, dy, color) {
+                const len = Math.sqrt(dx * dx + dy * dy);
+                if (len < 1) return;
+                const ux = dx / len,
+                    uy = dy / len;
+                ctx.strokeStyle = color;
+                ctx.fillStyle = color;
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + dx, y + dy);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x + dx, y + dy);
+                ctx.lineTo(x + dx - 8 * ux + 3 * uy, y + dy - 8 * uy - 3 * ux);
+                ctx.lineTo(x + dx - 8 * ux - 3 * uy, y + dy - 8 * uy + 3 * ux);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            btnPlay.addEventListener('click', () => {
+                running = !running;
+                if (running) { lastTime = null;
+                    updateStatus('running'); } else updateStatus('paused');
+                updateButtons();
+            });
+            btnRight.addEventListener('click', () => { forceRight = !forceRight; if (forceRight) forceLeft = false;
+                updateButtons(); });
+            btnLeft.addEventListener('click', () => { forceLeft = !forceLeft; if (forceLeft) forceRight = false;
+                updateButtons(); });
+            btnReset.addEventListener('click', resetState);
+
+            resetState();
+            animId = requestAnimationFrame(draw);
+            window._activeAnimId = animId;
+        }
+
+        // ====== 斜面演示（保持不变） ======
+        function initSlopeDetailCanvas() {
+            const canvas = document.getElementById('canvasSlopeDetail');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const btnPlay = document.getElementById('btnPlaySlope');
+            const sliderAngle = document.getElementById('slopeAngleDetail');
+            const sliderFriction = document.getElementById('slopeFrictionDetail');
+            const valAngle = document.getElementById('valAngleDetail');
+            const valFriction = document.getElementById('valFrictionDetail');
+            const btnReset = document.getElementById('btnResetSlope');
+            const infoDiv = document.getElementById('infoSlopeDetail');
+            const statusSpan = document.getElementById('statusSlope');
+
+            let thetaDeg = parseFloat(sliderAngle.value);
+            let theta = thetaDeg * Math.PI / 180;
+            let mu = parseFloat(sliderFriction.value);
+            const slopeBaseX = 50,
+                slopeBaseY = 260,
+                slopeLen = 300;
+            const PPM = 180;
+            let s = 0,
+                v = 0;
+            let running = false;
+            let lastTime = null;
+            let animId = null;
+
+            function resetState() { s = 0;
+                v = 0;
+                lastTime = null;
+                updateStatus('ready'); }
+
+            function updateStatus(state) {
+                statusSpan.textContent = state === 'running' ? '▶ 运行中' : state === 'paused' ? '⏸ 暂停' : '⏳ 就绪';
+                statusSpan.className = 'status-indicator ' + (state === 'running' ? 'status-running' : state === 'paused' ?
+                    'status-paused' : 'status-ready');
+            }
+
+            function updateInfo() {
+                const mgSin = 9.8 * Math.sin(theta);
+                const mgCos = 9.8 * Math.cos(theta);
+                const fricMax = mu * mgCos;
+                let accel = 0;
+                if (s < slopeLen - 0.5) {
+                    if (v > 0.003) accel = mgSin - fricMax;
+                    else if (v < -0.003) accel = mgSin + fricMax;
+                    else accel = (mgSin > fricMax + 0.001) ? mgSin - fricMax : 0;
+                }
+                infoDiv.innerHTML =
+                    `<span>a=${accel.toFixed(2)}m/s²</span><span>v=${Math.abs(v/PPM).toFixed(3)}m/s</span><span>mgsinθ=${mgSin.toFixed(2)}N</span><span>f=${(mu*mgCos).toFixed(2)}N</span>`;
+            }
+
+            function draw(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.016;
+                lastTime = timestamp;
+                if (running && s < slopeLen - 0.3) {
+                    const mgSin = 9.8 * Math.sin(theta);
+                    const mgCos = 9.8 * Math.cos(theta);
+                    const fricMax = mu * mgCos;
+                    let accelReal = 0;
+                    if (v > 0.003) accelReal = mgSin - fricMax;
+                    else if (v < -0.003) accelReal = mgSin + fricMax;
+                    else accelReal = (mgSin > fricMax + 0.001) ? mgSin - fricMax : 0;
+                    v += accelReal * PPM * dt * 0.5;
+                    s += v * dt;
+                    if (s >= slopeLen) { s = slopeLen;
+                        v = 0; }
+                    if (s < 0) { s = 0;
+                        v = 0; }
+                }
+                updateInfo();
+                const topX = slopeBaseX + slopeLen * Math.cos(theta);
+                const topY = slopeBaseY - slopeLen * Math.sin(theta);
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#faf8f4';
+                ctx.fillRect(0, 0, W, H);
+                ctx.fillStyle = '#c8956c';
+                ctx.strokeStyle = '#8b5e3c';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(slopeBaseX, slopeBaseY);
+                ctx.lineTo(topX, topY);
+                ctx.lineTo(topX, slopeBaseY);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                const bx = topX - s * Math.cos(theta);
+                const by = topY + s * Math.sin(theta);
+                ctx.fillStyle = '#ee5a38';
+                ctx.fillRect(bx - 14, by - 12, 28, 24);
+                ctx.strokeStyle = '#a33020';
+                ctx.strokeRect(bx - 14, by - 12, 28, 24);
+                animId = requestAnimationFrame(draw);
+            }
+
+            function onParamChange() {
+                thetaDeg = parseFloat(sliderAngle.value);
+                theta = thetaDeg * Math.PI / 180;
+                mu = parseFloat(sliderFriction.value);
+                valAngle.textContent = thetaDeg.toFixed(1) + '°';
+                valFriction.textContent = mu.toFixed(2);
+                resetState();
+            }
+            btnPlay.addEventListener('click', () => {
+                running = !running;
+                if (running) { lastTime = null;
+                    updateStatus('running'); } else updateStatus('paused');
+                btnPlay.textContent = running ? '⏸ 暂停' : '▶ 开始';
+                btnPlay.classList.toggle('paused-state', running);
+            });
+            sliderAngle.addEventListener('input', onParamChange);
+            sliderFriction.addEventListener('input', onParamChange);
+            btnReset.addEventListener('click', resetState);
+            onParamChange();
+            animId = requestAnimationFrame(draw);
+            window._activeAnimId = animId;
+        }
+
+        // ====== 牛顿第二定律：小物体 + 长轨道 + 光滑平面 ======
+        function initNewtonDetailCanvas() {
+            const canvas = document.getElementById('canvasNewtonDetail');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const btnPlay = document.getElementById('btnPlayNewton');
+            const sliderF = document.getElementById('newtonForce');
+            const sliderM = document.getElementById('newtonMass');
+            const valF = document.getElementById('valNewtonForce');
+            const valM = document.getElementById('valNewtonMass');
+            const btnReset = document.getElementById('btnResetNewton');
+            const infoDiv = document.getElementById('infoNewtonDetail');
+            const statusSpan = document.getElementById('statusNewton');
+
+            const trackY = H - 50;
+            const trackStart = 25;
+            const trackEnd = W - 25;
+            let force = parseFloat(sliderF.value);
+            let mass = parseFloat(sliderM.value);
+            let posX = trackStart + 8;
+            let velX = 0;
+            let running = false;
+            let lastTime = null;
+            let animId = null;
+
+            function resetState() {
+                posX = trackStart + 8;
+                velX = 0;
+                lastTime = null;
+                updateStatus('ready');
+            }
+
+            function updateStatus(state) {
+                statusSpan.textContent = state === 'running' ? '▶ 运行中' : state === 'paused' ? '⏸ 暂停' : '⏳ 就绪';
+                statusSpan.className = 'status-indicator ' + (state === 'running' ? 'status-running' : state === 'paused' ?
+                    'status-paused' : 'status-ready');
+            }
+
+            function draw(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.016;
+                lastTime = timestamp;
+                if (running) {
+                    const accel = force / mass;
+                    velX += accel * 8 * dt;
+                    posX += velX * dt;
+                    if (posX > trackEnd - 8) { posX = trackEnd - 8;
+                        velX = 0; }
+                    if (posX < trackStart + 8) posX = trackStart + 8;
+                }
+                const a = force / mass;
+                infoDiv.innerHTML =
+                    `<span>a=${a.toFixed(2)}m/s²</span><span>v=${(velX/8).toFixed(2)}m/s</span><span>F=${force.toFixed(1)}N</span><span>m=${mass.toFixed(2)}kg</span>`;
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#faf8f4';
+                ctx.fillRect(0, 0, W, H);
+                ctx.strokeStyle = '#c0b090';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(trackStart, trackY);
+                ctx.lineTo(trackEnd, trackY);
+                ctx.stroke();
+                ctx.fillStyle = '#a0c4a0';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('光滑平面', W / 2, trackY + 22);
+                // 小物体
+                ctx.fillStyle = '#4a90d9';
+                ctx.beginPath();
+                ctx.arc(posX, trackY - 8, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#2c5f8a';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                // 拉力箭头
+                ctx.strokeStyle = '#e74c3c';
+                ctx.fillStyle = '#e74c3c';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(posX + 10, trackY - 8);
+                ctx.lineTo(posX + 35, trackY - 8);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(posX + 35, trackY - 8);
+                ctx.lineTo(posX + 27, trackY - 14);
+                ctx.lineTo(posX + 27, trackY - 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#c0392b';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText('F', posX + 14, trackY - 16);
+                animId = requestAnimationFrame(draw);
+            }
+
+            function onParam() {
+                force = parseFloat(sliderF.value);
+                mass = parseFloat(sliderM.value);
+                valF.textContent = force.toFixed(0) + ' N';
+                valM.textContent = mass.toFixed(1) + ' kg';
+                resetState();
+            }
+            btnPlay.addEventListener('click', () => {
+                running = !running;
+                if (running) { lastTime = null;
+                    updateStatus('running'); } else updateStatus('paused');
+                btnPlay.textContent = running ? '⏸ 暂停' : '▶ 开始';
+                btnPlay.classList.toggle('paused-state', running);
+            });
+            sliderF.addEventListener('input', onParam);
+            sliderM.addEventListener('input', onParam);
+            btnReset.addEventListener('click', resetState);
+            onParam();
+            animId = requestAnimationFrame(draw);
+            window._activeAnimId = animId;
+        }
+
+        // ====== 摩擦力：仅静摩擦力演示 + 小物体 + 长轨道 ======
+        function initFrictionDetailCanvas() {
+            const canvas = document.getElementById('canvasFrictionDetail');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const btnPlay = document.getElementById('btnPlayFriction');
+            const sliderMu = document.getElementById('frictionMu');
+            const sliderPush = document.getElementById('frictionPush');
+            const valMu = document.getElementById('valFrictionMu');
+            const valPush = document.getElementById('valFrictionPush');
+            const btnReset = document.getElementById('btnResetFriction');
+            const infoDiv = document.getElementById('infoFrictionDetail');
+            const statusSpan = document.getElementById('statusFriction');
+
+            const trackY = H - 50;
+            const trackStart = 25;
+            const trackEnd = W - 25;
+            const mass = 2;
+            const N = mass * 9.8;
+            let mu = parseFloat(sliderMu.value);
+            let pushForce = parseFloat(sliderPush.value);
+            let posX = trackStart + 8;
+            let velX = 0;
+            let running = false;
+            let lastTime = null;
+            let animId = null;
+
+            function resetState() {
+                posX = trackStart + 8;
+                velX = 0;
+                lastTime = null;
+                updateStatus('ready');
+            }
+
+            function updateStatus(state) {
+                statusSpan.textContent = state === 'running' ? '▶ 运行中' : state === 'paused' ? '⏸ 暂停' : '⏳ 就绪';
+                statusSpan.className = 'status-indicator ' + (state === 'running' ? 'status-running' : state === 'paused' ?
+                    'status-paused' : 'status-ready');
+            }
+
+            function draw(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.016;
+                lastTime = timestamp;
+
+                if (running) {
+                    const fricMax = mu * N;
+                    let netForce = 0;
+                    // 静止状态：推力未超过最大静摩擦力
+                    if (Math.abs(velX) < 0.01 && pushForce <= fricMax) {
+                        netForce = 0;
+                        velX = 0;
+                    } else if (Math.abs(velX) < 0.01 && pushForce > fricMax) {
+                        // 突破静摩擦，开始运动（简化处理：物体开始滑动后演示结束）
+                        netForce = pushForce - fricMax * 0.8;
+                    } else {
+                        netForce = pushForce - fricMax * 0.8;
+                    }
+                    const accel = netForce / mass;
+                    velX += accel * 6 * dt;
+                    posX += velX * dt;
+                    if (posX > trackEnd - 8) { posX = trackEnd - 8;
+                        velX = 0; }
+                    if (posX < trackStart + 8) posX = trackStart + 8;
+                }
+
+                const fricMax = mu * N;
+                const isStatic = (Math.abs(velX) < 0.01 && pushForce <= fricMax);
+                const stateText = isStatic ? '静止(静摩擦平衡)' : '突破静摩擦→运动';
+                const frictionForce = isStatic ? pushForce : fricMax * 0.8;
+                infoDiv.innerHTML =
+                    `<span>状态:${stateText}</span><span>f_max=${fricMax.toFixed(1)}N</span><span>静摩擦力=${frictionForce.toFixed(1)}N</span><span>推力=${pushForce.toFixed(1)}N</span>`;
+
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#faf8f4';
+                ctx.fillRect(0, 0, W, H);
+                ctx.strokeStyle = '#c0b090';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(trackStart, trackY);
+                ctx.lineTo(trackEnd, trackY);
+                ctx.stroke();
+                // 粗糙表面标记
+                ctx.fillStyle = '#d5c0a0';
+                for (let gx = trackStart + 10; gx < trackEnd; gx += 16) {
+                    ctx.fillRect(gx, trackY + 2, 3, 6);
+                }
+                ctx.fillStyle = '#b09070';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('粗糙表面', W / 2, trackY + 22);
+                // 小物体
+                ctx.fillStyle = '#8e44ad';
+                ctx.beginPath();
+                ctx.arc(posX, trackY - 8, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#6c3483';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                // 推力箭头
+                if (pushForce > 0) {
+                    ctx.strokeStyle = '#e74c3c';
+                    ctx.fillStyle = '#e74c3c';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(posX + 10, trackY - 8);
+                    ctx.lineTo(posX + 30, trackY - 8);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(posX + 30, trackY - 8);
+                    ctx.lineTo(posX + 23, trackY - 13);
+                    ctx.lineTo(posX + 23, trackY - 3);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+                // 静摩擦力箭头（与推力方向相反）
+                if (pushForce > 0 && isStatic) {
+                    ctx.strokeStyle = '#2980b9';
+                    ctx.fillStyle = '#2980b9';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([4, 3]);
+                    ctx.beginPath();
+                    ctx.moveTo(posX - 10, trackY - 8);
+                    ctx.lineTo(posX - 30, trackY - 8);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(posX - 30, trackY - 8);
+                    ctx.lineTo(posX - 23, trackY - 13);
+                    ctx.lineTo(posX - 23, trackY - 3);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = '#2471a3';
+                    ctx.font = 'bold 10px sans-serif';
+                    ctx.fillText('f静', posX - 36, trackY - 14);
+                }
+                animId = requestAnimationFrame(draw);
+            }
+
+            function onParam() {
+                mu = parseFloat(sliderMu.value);
+                pushForce = parseFloat(sliderPush.value);
+                valMu.textContent = mu.toFixed(2);
+                valPush.textContent = pushForce.toFixed(1) + ' N';
+                resetState();
+            }
+            btnPlay.addEventListener('click', () => {
+                running = !running;
+                if (running) { lastTime = null;
+                    updateStatus('running'); } else updateStatus('paused');
+                btnPlay.textContent = running ? '⏸ 暂停' : '▶ 开始';
+                btnPlay.classList.toggle('paused-state', running);
+            });
+            sliderMu.addEventListener('input', onParam);
+            sliderPush.addEventListener('input', onParam);
+            btnReset.addEventListener('click', resetState);
+            valMu.textContent = mu.toFixed(2);
+            valPush.textContent = pushForce.toFixed(1) + ' N';
+            resetState();
+            animId = requestAnimationFrame(draw);
+            window._activeAnimId = animId;
+        }
+
+        // ====== 弹簧振子演示 ======
+        function initSpringDetailCanvas() {
+            const canvas = document.getElementById('canvasSpringDetail');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const btnPlay = document.getElementById('btnPlaySpring');
+            const sliderK = document.getElementById('springKDetail');
+            const sliderM = document.getElementById('springMassDetail');
+            const valK = document.getElementById('valSpringK');
+            const valM = document.getElementById('valSpringMass');
+            const btnReset = document.getElementById('btnResetSpring');
+            const infoDiv = document.getElementById('infoSpringDetail');
+            const statusSpan = document.getElementById('statusSpring');
+            let k = parseFloat(sliderK.value);
+            let m = parseFloat(sliderM.value);
+            const wallX = 70,
+                balanceX = 220,
+                railY = 170;
+            let amp = 60;
+            let omega = Math.sqrt(k / m);
+            let running = false;
+            let startTime = null;
+            let pausedElapsed = 0;
+            let animId = null;
+
+            function resetState() {
+                k = parseFloat(sliderK.value);
+                m = parseFloat(sliderM.value);
+                omega = Math.sqrt(k / m);
+                startTime = null;
+                pausedElapsed = 0;
+                updateStatus('ready');
+            }
+
+            function updateStatus(state) {
+                statusSpan.textContent = state === 'running' ? '▶ 运行中' : state === 'paused' ? '⏸ 暂停' : '⏳ 就绪';
+                statusSpan.className = 'status-indicator ' + (state === 'running' ? 'status-running' : state === 'paused' ?
+                    'status-paused' : 'status-ready');
+            }
+
+            function draw(timestamp) {
+                if (running && !startTime) startTime = timestamp;
+                let elapsed = running ? (timestamp - startTime) / 1000 : pausedElapsed;
+                if (!running && startTime) pausedElapsed = elapsed;
+                const disp = amp * Math.cos(omega * elapsed);
+                const bx = balanceX + disp;
+                const T = 2 * Math.PI / omega;
+                infoDiv.innerHTML =
+                    `<span>T=${T.toFixed(3)}s</span><span>ω=${omega.toFixed(2)}rad/s</span><span>x=${(disp/80).toFixed(2)}m</span>`;
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#faf8f4';
+                ctx.fillRect(0, 0, W, H);
+                ctx.strokeStyle = '#b0b8c1';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(20, railY);
+                ctx.lineTo(W - 20, railY);
+                ctx.stroke();
+                ctx.fillStyle = '#5d6d7e';
+                ctx.fillRect(wallX - 12, railY - 50, 12, 60);
+                ctx.strokeStyle = '#7f8c8d';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(wallX, railY - 8);
+                const totalLen = bx - 18 - wallX;
+                const segs = 14;
+                for (let i = 1; i <= segs * 2; i++) {
+                    const cx = wallX + i * (totalLen / (segs * 2 + 1));
+                    const cy = railY - 8 + ((i % 2 === 1) ? 8 : -8) * Math.min(1, totalLen / 80);
+                    ctx.lineTo(cx, cy);
+                }
+                ctx.lineTo(bx - 18, railY - 8);
+                ctx.stroke();
+                ctx.fillStyle = '#5b9bd5';
+                ctx.fillRect(bx - 16, railY - 28, 32, 28);
+                ctx.strokeStyle = '#2c5f8a';
+                ctx.strokeRect(bx - 16, railY - 28, 32, 28);
+                animId = requestAnimationFrame(draw);
+            }
+            btnPlay.addEventListener('click', () => {
+                running = !running;
+                if (running) {
+                    if (!startTime && pausedElapsed === 0) startTime = null;
+                    else if (pausedElapsed > 0) startTime = performance.now() - pausedElapsed * 1000;
+                    updateStatus('running');
+                } else updateStatus('paused');
+                btnPlay.textContent = running ? '⏸ 暂停' : '▶ 开始';
+                btnPlay.classList.toggle('paused-state', running);
+            });
+            sliderK.addEventListener('input', () => { valK.textContent = sliderK.value;
+                resetState(); });
+            sliderM.addEventListener('input', () => { valM.textContent = parseFloat(sliderM.value).toFixed(2);
+                resetState(); });
+            btnReset.addEventListener('click', resetState);
+            valK.textContent = k;
+            valM.textContent = m.toFixed(2);
+            resetState();
+            animId = requestAnimationFrame(draw);
+            window._activeAnimId = animId;
+        }
+
+        // ====== 抛体运动演示 ======
+        function initProjectileDetailCanvas() {
+            const canvas = document.getElementById('canvasProjectileDetail');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const btnPlay = document.getElementById('btnPlayProjectile');
+            const sliderV0 = document.getElementById('projV0Detail');
+            const sliderAngle = document.getElementById('projAngleDetail');
+            const valV0 = document.getElementById('valProjV0Detail');
+            const valAngle = document.getElementById('valProjAngleDetail');
+            const btnReset = document.getElementById('btnResetProjectile');
+            const infoDiv = document.getElementById('infoProjectileDetail');
+            const statusSpan = document.getElementById('statusProjectile');
+            const SCALE = 6;
+            const groundY = 290;
+            const launchX = 40;
+            const G_PX = 9.8 * SCALE;
+            let v0, theta, px, py, vx, vy;
+            let active = false;
+            let points = [];
+            let running = false;
+            let lastTime = null;
+            let animId = null;
+
+            function prepareLaunch() {
+                v0 = parseFloat(sliderV0.value);
+                theta = parseFloat(sliderAngle.value) * Math.PI / 180;
+                px = launchX;
+                py = groundY;
+                vx = v0 * SCALE * Math.cos(theta);
+                vy = -v0 * SCALE * Math.sin(theta);
+                active = true;
+                points = [{ x: px, y: py }];
+                lastTime = null;
+                updateStatus('running');
+            }
+
+            function resetAll() {
+                active = false;
+                running = false;
+                points = [];
+                px = launchX;
+                py = groundY;
+                lastTime = null;
+                updateStatus('ready');
+                btnPlay.textContent = '▶ 发射';
+                btnPlay.classList.remove('paused-state');
+            }
+
+            function updateStatus(state) {
+                statusSpan.textContent = state === 'running' ? '▶ 飞行中' : state === 'done' ? '✓ 已落地' : '⏳ 就绪';
+                statusSpan.className = 'status-indicator ' + (state === 'running' ? 'status-running' : state === 'done' ?
+                    'status-paused' : 'status-ready');
+            }
+
+            function draw(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.016;
+                lastTime = timestamp;
+                if (active && running) {
+                    vy += G_PX * dt;
+                    px += vx * dt;
+                    py += vy * dt;
+                    if (points.length === 0 || Math.hypot(px - points[points.length - 1].x, py - points[points.length -
+                            1].y) > 2) {
+                        points.push({ x: px, y: py });
+                    }
+                    if (points.length > 500) points.shift();
+                    if (py >= groundY && vy > 0) {
+                        py = groundY;
+                        active = false;
+                        running = false;
+                        points.push({ x: px, y: groundY });
+                        updateStatus('done');
+                        btnPlay.textContent = '▶ 发射';
+                        btnPlay.classList.remove('paused-state');
+                    }
+                }
+                const R = (v0 * v0 * Math.sin(2 * theta)) / 9.8;
+                const Hmax = (v0 * v0 * Math.sin(theta) * Math.sin(theta)) / 19.6;
+                const Tflight = (2 * v0 * Math.sin(theta)) / 9.8;
+                infoDiv.innerHTML =
+                    `<span>射程R=${R.toFixed(2)}m</span><span>最大高度=${Hmax.toFixed(2)}m</span><span>飞行时间=${Tflight.toFixed(2)}s</span>`;
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#faf8f4';
+                ctx.fillRect(0, 0, W, H);
+                ctx.fillStyle = '#c8b89a';
+                ctx.fillRect(0, groundY, W, H - groundY);
+                ctx.strokeStyle = '#a89878';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, groundY);
+                ctx.lineTo(W, groundY);
+                ctx.stroke();
+                if (points.length > 1) {
+                    ctx.strokeStyle = 'rgba(74,127,217,0.8)';
+                    ctx.lineWidth = 2.5;
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(points[0].x, points[0].y);
+                    for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+                    ctx.stroke();
+                }
+                const dx = active ? px : (points.length > 0 ? points[points.length - 1].x : launchX);
+                const dy = active ? py : (points.length > 0 ? points[points.length - 1].y : groundY);
+                ctx.fillStyle = '#ee6633';
+                ctx.beginPath();
+                ctx.arc(dx, dy, 7, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#992200';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                animId = requestAnimationFrame(draw);
+            }
+            btnPlay.addEventListener('click', () => {
+                if (!active) { running = true;
+                    prepareLaunch();
+                    btnPlay.textContent = '⏸ 暂停';
+                    btnPlay.classList.add('paused-state'); } else if (active && running) { running = false;
+                    updateStatus('paused');
+                    btnPlay.textContent = '▶ 继续';
+                    btnPlay.classList.remove('paused-state'); } else if (active && !running) { running = true;
+                    lastTime = null;
+                    updateStatus('running');
+                    btnPlay.textContent = '⏸ 暂停';
+                    btnPlay.classList.add('paused-state'); }
+            });
+            sliderV0.addEventListener('input', () => { valV0.textContent = parseFloat(sliderV0.value).toFixed(1);
+                resetAll(); });
+            sliderAngle.addEventListener('input', () => { valAngle.textContent = parseFloat(sliderAngle.value).toFixed(1) +
+                    '°';
+                resetAll(); });
+            btnReset.addEventListener('click', resetAll);
+            valV0.textContent = '15.0';
+            valAngle.textContent = '45°';
+            v0 = 15;
+            theta = 45 * Math.PI / 180;
+            px = launchX;
+            py = groundY;
+            resetAll();
+            animId = requestAnimationFrame(draw);
+            window._activeAnimId = animId;
+        }
+
+        // ====== 圆周运动演示 ======
+        function initCircularDetailCanvas() {
+            const canvas = document.getElementById('canvasCircularDetail');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width,
+                H = canvas.height;
+            const btnPlay = document.getElementById('btnPlayCircular');
+            const sliderV = document.getElementById('circV');
+            const sliderR = document.getElementById('circR');
+            const valV = document.getElementById('valCircV');
+            const valR = document.getElementById('valCircR');
+            const btnReset = document.getElementById('btnResetCircular');
+            const infoDiv = document.getElementById('infoCircDetail');
+            const statusSpan = document.getElementById('statusCircular');
+            const cx = W / 2,
+                cy = H / 2 + 10;
+            let v = parseFloat(sliderV.value);
+            let r = parseFloat(sliderR.value);
+            let angle = 0;
+            let running = false;
+            let lastTime = null;
+            let animId = null;
+
+            function resetState() { angle = 0;
+                lastTime = null;
+                updateStatus('ready'); }
+
+            function updateStatus(state) {
+                statusSpan.textContent = state === 'running' ? '▶ 运行中' : state === 'paused' ? '⏸ 暂停' : '⏳ 就绪';
+                statusSpan.className = 'status-indicator ' + (state === 'running' ? 'status-running' : state === 'paused' ?
+                    'status-paused' : 'status-ready');
+            }
+
+            function draw(timestamp) {
+                if (!lastTime) lastTime = timestamp;
+                let dt = (timestamp - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.016;
+                lastTime = timestamp;
+                if (running) { const omega = v / (r / 30);
+                    angle += omega * dt; }
+                const bx = cx + r * Math.cos(angle);
+                const by = cy + r * Math.sin(angle);
+                const omega = v / (r / 30);
+                const centripetal = (v * v) / (r / 30);
+                infoDiv.innerHTML =
+                    `<span>向心力=${centripetal.toFixed(2)}N</span><span>ω=${omega.toFixed(2)}rad/s</span><span>T=${(2*Math.PI/omega).toFixed(2)}s</span>`;
+                ctx.clearRect(0, 0, W, H);
+                ctx.fillStyle = '#faf8f4';
+                ctx.fillRect(0, 0, W, H);
+                ctx.strokeStyle = '#c0b090';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.fillStyle = '#c07030';
+                ctx.beginPath();
+                ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(cx, cy);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#ee6633';
+                ctx.beginPath();
+                ctx.arc(bx, by, 10, 0, Math.PI * 2);
+                ctx.fill();
+                animId = requestAnimationFrame(draw);
+            }
+            btnPlay.addEventListener('click', () => {
+                running = !running;
+                if (running) { lastTime = null;
+                    updateStatus('running'); } else updateStatus('paused');
+                btnPlay.textContent = running ? '⏸ 暂停' : '▶ 开始';
+                btnPlay.classList.toggle('paused-state', running);
+            });
+            sliderV.addEventListener('input', () => { v = parseFloat(sliderV.value);
+                valV.textContent = v.toFixed(1);
+                resetState(); });
+            sliderR.addEventListener('input', () => { r = parseFloat(sliderR.value);
+                valR.textContent = r.toFixed(0);
+                resetState(); });
+            btnReset.addEventListener('click', resetState);
+            valV.textContent = v.toFixed(1);
+            valR.textContent = r.toFixed(0);
+            resetState();
+            animId = requestAnimationFrame(draw);
+            window._activeAnimId = animId;
+        }
+
+        setTimeout(() => { openDetailPanel('mechanics'); }, 600);
+    </script>
+</body>
+</html>

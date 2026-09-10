@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>落体法数据工作台｜教学 MVP</title>
+  <meta name="description" content="可离线打开的落体法机械能实验数据工作台：手动输入纸带位置，自动计算速度、能量变化和相对差异并绘图。">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5d6678;
+      --line: #d9deea;
+      --paper: #f6f4ef;
+      --card: #ffffff;
+      --blue: #1d5f9d;
+      --blue-soft: #eaf3fb;
+      --amber: #b66218;
+      --amber-soft: #fff2dc;
+      --green: #1f6b50;
+      --green-soft: #e7f5ef;
+      --red: #a33a37;
+      --red-soft: #fbeceb;
+      --shadow: 0 18px 44px rgba(27, 38, 62, 0.09);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(29, 95, 157, 0.10), transparent 34rem),
+        var(--paper);
+      line-height: 1.65;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    header { padding: 46px 0 24px; }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--blue);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 900px;
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1.12;
+      letter-spacing: -0.04em;
+    }
+
+    .lead {
+      max-width: 840px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1.06rem;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+      margin-top: 20px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.72);
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .card {
+      margin: 18px 0;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .card-head, .card-body { padding: 22px; }
+    .card-head { border-bottom: 1px solid var(--line); }
+
+    h2, h3 { margin: 0; line-height: 1.25; }
+    h2 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
+    h3 { font-size: 1.05rem; }
+
+    .subtle { margin: 8px 0 0; color: var(--muted); }
+
+    .spec-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .spec {
+      padding: 16px;
+      border-radius: 12px;
+      background: var(--blue-soft);
+    }
+
+    .spec strong { display: block; margin-bottom: 4px; }
+    .spec span { color: var(--muted); font-size: 0.9rem; }
+
+    .formula-line {
+      margin-top: 14px;
+      padding: 15px 16px;
+      border-left: 4px solid var(--blue);
+      border-radius: 8px;
+      background: #f7f9fc;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.02rem;
+      overflow-wrap: anywhere;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    label span {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    input {
+      width: 100%;
+      min-height: 46px;
+      padding: 9px 11px;
+      border: 1px solid #b8c0cf;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+    }
+
+    input:focus, button:focus-visible {
+      outline: 3px solid rgba(29, 95, 157, 0.24);
+      outline-offset: 2px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      min-height: 44px;
+      padding: 9px 14px;
+      border: 1px solid #aab4c4;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+      font-weight: 750;
+    }
+
+    button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    button:hover { filter: brightness(0.98); transform: translateY(-1px); }
+
+    .status-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .mode {
+      display: inline-flex;
+      align-items: center;
+      min-height: 34px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      color: var(--green);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    .mode.demo { background: var(--amber-soft); color: var(--amber); }
+
+    .notice {
+      margin-top: 14px;
+      padding: 13px 14px;
+      border-radius: 10px;
+      background: var(--amber-soft);
+      color: #78400f;
+    }
+
+    .notice[hidden] { display: none; }
+
+    .warning-list {
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .warning-list li {
+      margin-top: 7px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      background: var(--red-soft);
+      color: var(--red);
+      font-size: 0.9rem;
+      font-weight: 650;
+    }
+
+    .table-wrap { overflow: auto; border-top: 1px solid var(--line); }
+
+    table {
+      width: 100%;
+      min-width: 1040px;
+      border-collapse: collapse;
+      font-size: 0.91rem;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #e8ebf1;
+      text-align: right;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+
+    th:first-child, td:first-child { text-align: center; }
+    th:nth-child(2), td:nth-child(2) { text-align: left; }
+    th { background: #f1f4f8; color: #4e596c; font-size: 0.78rem; }
+    td.output { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    td.energy-p { background: #fff8e9; }
+    td.energy-k { background: #eef8ff; }
+
+    .position-input { min-width: 128px; min-height: 42px; }
+
+    .reference-row td {
+      border-top: 2px solid var(--blue);
+      border-bottom: 2px solid var(--blue);
+    }
+
+    .point-note {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 0.72rem;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+      gap: 18px;
+    }
+
+    .chart-box {
+      min-height: 390px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #101827;
+    }
+
+    canvas { display: block; width: 100%; height: 360px; }
+
+    .check-box {
+      padding: 18px;
+      border-radius: 12px;
+      background: var(--green-soft);
+    }
+
+    .check-box.fail { background: var(--red-soft); }
+
+    .check-title { color: var(--green); font-weight: 850; }
+    .check-box.fail .check-title { color: var(--red); }
+    .check-detail { margin: 10px 0 0; color: #385447; font-size: 0.9rem; }
+    .check-box.fail .check-detail { color: #73312e; }
+
+    .governance {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .governance > div {
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fafbfc;
+    }
+
+    .governance p { margin: 8px 0 0; color: var(--muted); font-size: 0.9rem; }
+
+    footer {
+      padding: 12px 0 48px;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    @media (max-width: 900px) {
+      .spec-grid, .controls { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chart-grid { grid-template-columns: 1fr; }
+      .governance { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 560px) {
+      .shell { width: min(100% - 20px, 1180px); }
+      header { padding-top: 28px; }
+      .card-head, .card-body { padding: 17px; }
+      .spec-grid, .controls { grid-template-columns: 1fr; }
+      .status-row { flex-direction: column; }
+      .actions button { flex: 1 1 100%; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .shell { width: 100%; }
+      .card { box-shadow: none; break-inside: avoid; }
+      .actions { display: none; }
+      .table-wrap { overflow: visible; }
+      table { min-width: 0; font-size: 0.72rem; }
+      th, td { padding: 7px 4px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <p class="eyebrow">Falling-body data workbench</p>
+    <h1>落体法数据工作台</h1>
+    <p class="lead">先手动录入纸带位置，再由页面计算速度、重力势能减小量、动能增加量和相对差异。它是一份教学最小可用版本（MVP），不接入蓝牙，不代替实验结论。</p>
+    <div class="badges" aria-label="页面特性">
+      <span class="badge">单文件离线运行</span>
+      <span class="badge">无外部依赖</span>
+      <span class="badge">手动录入优先</span>
+      <span class="badge">数据不上传</span>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="card" aria-labelledby="model-title">
+      <div class="card-head">
+        <h2 id="model-title">先确认参考点，再看能量</h2>
+        <p class="subtle">纸带位置沿下落方向增大。0 号点只帮助估算 1 号点速度；能量比较从 1 号点开始。</p>
+      </div>
+      <div class="card-body">
+        <div class="spec-grid">
+          <div class="spec"><strong>学生手动输入</strong><span>m、g、T 与 0—6 号点位置 x<sub>n</sub></span></div>
+          <div class="spec"><strong>页面自动计算</strong><span>h、v、ΔE<sub>p</sub>、ΔE<sub>k</sub>、相对差异 ε</span></div>
+          <div class="spec"><strong>能量参考点</strong><span>1 号点；并非纸带打下的第一个点</span></div>
+          <div class="spec"><strong>结果解释</strong><span>保留测量值，只提供比较，不自动下结论</span></div>
+        </div>
+        <div class="formula-line">
+          h<sub>n</sub> = (x<sub>n</sub> − x<sub>1</sub>)/100；
+          v<sub>n</sub> = [(x<sub>n+1</sub> − x<sub>n−1</sub>)/100]/(2T)；
+          ΔE<sub>p</sub> = mgh<sub>n</sub>；
+          ΔE<sub>k</sub> = ½m(v<sub>n</sub><sup>2</sup> − v<sub>1</sub><sup>2</sup>)；
+          ε = |ΔE<sub>k</sub> − ΔE<sub>p</sub>|/|ΔE<sub>p</sub>|。
+        </div>
+        <p class="subtle">ε 比较两种实验能量变化量，并不把其中一项当作真值；本页称为“相对差异”，原 Excel 字段名为“相对误差”。它只在 n≥2 且按既定向下正方向得到 ΔE<sub>p</sub>&gt;0 时计算；方向或高度关系不符时保留输入和能量值，并把该行标成“方向／高度不符”。</p>
+        <p class="subtle">本 MVP 忠实保持原始 V2 表格的计算范围：只计算 n=1—4。x<sub>0</sub> 和 x<sub>5</sub> 分别作为 v<sub>1</sub>、v<sub>4</sub> 的相邻点；x<sub>6</sub> 保留原表输入位，但当前不参与计算。</p>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="input-title">
+      <div class="card-head">
+        <h2 id="input-title">一、输入实验条件</h2>
+        <p class="subtle">默认参数与演示数据来自原始“落体法表格 V2”；请按本次实验实际条件修改。</p>
+      </div>
+      <div class="card-body">
+        <div class="controls">
+          <label><span>小组代号（请勿填姓名）</span><input id="group" type="text" value="第1组" autocomplete="off" maxlength="30"></label>
+          <label><span>重锤质量 m / kg</span><input id="mass" type="number" value="0.1000" min="0.0001" step="0.0001" inputmode="decimal"></label>
+          <label><span>重力加速度 g / (m·s⁻²)</span><input id="gravity" type="number" value="9.8000" min="0.0001" step="0.0001" inputmode="decimal"></label>
+          <label><span>相邻计数点时间 T / s</span><input id="interval" type="number" value="0.0200" min="0.0001" step="0.0001" inputmode="decimal"></label>
+        </div>
+        <div class="actions">
+          <button id="load-demo" class="primary" type="button">载入演示数据（非实测）</button>
+          <button id="clear" type="button">清空位置数据</button>
+          <button id="export" type="button">导出 CSV</button>
+          <button id="print" type="button">打印／存为 PDF</button>
+        </div>
+        <div class="status-row">
+          <div><span id="mode" class="mode" aria-live="polite">等待手动录入</span></div>
+          <p class="subtle">浏览器不会把数据上传或保存到服务器；关闭页面前如需留档，请导出 CSV。</p>
+        </div>
+        <div id="demo-notice" class="notice" hidden><strong>演示数据，非课堂实测。</strong> 即使修改其中个别数值，这一组仍保留“演示数据”身份；若要录入自己测得的数据，请先清空，数据来源由使用者确认。</div>
+        <ul id="warnings" class="warning-list" aria-live="polite"></ul>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>计数点 n</th>
+              <th>位置 x<sub>n</sub> / cm（输入）</th>
+              <th>相对1号点下降高度 h=(x<sub>n</sub>−x<sub>1</sub>)/100 / m</th>
+              <th>v<sub>n</sub> / (m·s⁻¹)</th>
+              <th>ΔE<sub>p</sub> / J</th>
+              <th>ΔE<sub>k</sub> / J</th>
+              <th>相对差异 ε / %<br>（原表名“相对误差”）</th>
+            </tr>
+          </thead>
+          <tbody id="data-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="chart-title">
+      <div class="card-head">
+        <h2 id="chart-title">二、比较能量变化</h2>
+        <p class="subtle">图表随输入同步更新。若数据不完整或参考方向有问题，页面保留输入并给出提醒，不擅自排序、修正或生成实验结论。</p>
+      </div>
+      <div class="card-body chart-grid">
+        <div class="chart-box">
+          <canvas id="chart" role="img" aria-label="各计数点重力势能减小量和动能增加量柱状图，纵轴单位焦耳"></canvas>
+        </div>
+        <aside id="self-check" class="check-box" aria-live="polite">
+          <div class="check-title">独立手算验收等待演示数据</div>
+          <p class="check-detail">载入演示数据后，页面会把 n=2 的结果与冻结手算值比较。验收只检查公式实现，不把演示值当成实测。</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="boundary-title">
+      <div class="card-head">
+        <h2 id="boundary-title">三、四道不同的验收门</h2>
+      </div>
+      <div class="card-body governance">
+        <div><h3>运行门</h3><p>文件能离线打开，输入、计算、绘图和导出可工作。</p></div>
+        <div><h3>物理门</h3><p>参考点、中心差分、单位换算和差异分母由教师核对，并用手算复验。</p></div>
+        <div><h3>教学门</h3><p>还需在实际平板、投屏和课堂节奏中由教师与学生试走；本页不声称已经验证学习效果。</p></div>
+        <div><h3>发布门</h3><p>使用小组代号，数据只在当前浏览器处理；演示数据、实测数据和学习成效必须分开标记。</p></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">教学 MVP · 2026-09-02 · 原始实验数据请由教师另行保管；公开分享前删除姓名和可识别信息。</footer>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const pointCount = 7;
+      const lastCalculatedPoint = 4;
+      const demoPositions = [0, 0.20, 0.79, 1.76, 3.15, 4.88, 7.07];
+      const expectedN2 = {
+        referenceVelocity: 0.1975,
+        h: 0.0059,
+        velocity: 0.39,
+        potential: 0.005782,
+        kinetic: 0.0056546875,
+        error: 0.022018765133172
+      };
+
+      const els = {
+        group: document.querySelector('#group'),
+        mass: document.querySelector('#mass'),
+        gravity: document.querySelector('#gravity'),
+        interval: document.querySelector('#interval'),
+        rows: document.querySelector('#data-rows'),
+        mode: document.querySelector('#mode'),
+        demoNotice: document.querySelector('#demo-notice'),
+        warnings: document.querySelector('#warnings'),
+        chart: document.querySelector('#chart'),
+        selfCheck: document.querySelector('#self-check'),
+        loadDemo: document.querySelector('#load-demo'),
+        clear: document.querySelector('#clear'),
+        export: document.querySelector('#export'),
+        print: document.querySelector('#print')
+      };
+
+      let provenance = 'blank';
+      let latestRows = [];
+
+      const finite = value => Number.isFinite(value);
+      const closeTo = (actual, expected, tolerance = 1e-10) => finite(actual) && Math.abs(actual - expected) <= tolerance;
+      const fmt = (value, digits = 6) => finite(value) ? value.toFixed(digits) : '—';
+      const readPositive = input => {
+        const value = Number(input.value);
+        return finite(value) && value > 0 ? value : null;
+      };
+
+      const createRows = () => {
+        for (let n = 0; n < pointCount; n += 1) {
+          const tr = document.createElement('tr');
+          if (n === 1) tr.className = 'reference-row';
+          const note = n === 1
+            ? '<span class="point-note">能量参考点</span>'
+            : (n === 0 || n === 5
+              ? '<span class="point-note">速度辅助点</span>'
+              : (n === 6 ? '<span class="point-note">原表保留，当前未使用</span>' : ''));
+          tr.innerHTML = `
+            <td><strong>${n}</strong>${note}</td>
+            <td><input class="position-input" data-position="${n}" type="number" step="0.0001" inputmode="decimal" aria-label="${n}号点位置，单位厘米"></td>
+            <td class="output" data-field="height" data-index="${n}">—</td>
+            <td class="output" data-field="velocity" data-index="${n}">—</td>
+            <td class="output energy-p" data-field="potential" data-index="${n}">—</td>
+            <td class="output energy-k" data-field="kinetic" data-index="${n}">—</td>
+            <td class="output" data-field="error" data-index="${n}">—</td>`;
+          els.rows.append(tr);
+        }
+      };
+
+      const positionInputs = () => Array.from(document.querySelectorAll('[data-position]'));
+
+      const readPositions = () => positionInputs().map(input => {
+        const raw = input.value.trim();
+        if (raw === '') return null;
+        const value = Number(raw);
+        return finite(value) ? value : null;
+      });
+
+      const calculate = (positions, mass, gravity, interval) => {
+        const rows = positions.map((position, n) => ({ n, position, height: null, velocity: null, potential: null, kinetic: null, error: null, errorReason: '' }));
+
+        for (let n = 1; n <= lastCalculatedPoint; n += 1) {
+          const previous = positions[n - 1];
+          const next = positions[n + 1];
+          if (interval && finite(previous) && finite(next)) rows[n].velocity = ((next - previous) / 100) / (2 * interval);
+          if (finite(positions[1]) && finite(positions[n])) rows[n].height = (positions[n] - positions[1]) / 100;
+        }
+
+        const referenceVelocity = rows[1].velocity;
+        for (let n = 1; n <= lastCalculatedPoint; n += 1) {
+          const row = rows[n];
+          if (mass && gravity && finite(row.height)) row.potential = mass * gravity * row.height;
+          if (mass && finite(row.velocity) && finite(referenceVelocity)) row.kinetic = 0.5 * mass * (row.velocity ** 2 - referenceVelocity ** 2);
+          if (n >= 2 && finite(row.potential) && row.potential > 0 && finite(row.kinetic)) {
+            row.error = Math.abs(row.kinetic - row.potential) / Math.abs(row.potential);
+          } else if (n >= 2 && finite(row.potential) && row.potential <= 0) {
+            row.errorReason = '方向／高度不符';
+          }
+        }
+        return rows;
+      };
+
+      const setCell = (field, index, value) => {
+        const cell = document.querySelector(`[data-field="${field}"][data-index="${index}"]`);
+        if (cell) cell.textContent = value;
+      };
+
+      const validate = (positions, mass, gravity, interval) => {
+        const warnings = [];
+        if (!mass) warnings.push('重锤质量 m 必须是正数。');
+        if (!gravity) warnings.push('重力加速度 g 必须是正数。');
+        if (!interval) warnings.push('相邻计数点时间 T 必须是正数。');
+        const filled = positions.filter(finite);
+        if (filled.length && !finite(positions[1])) warnings.push('请填写 1 号点位置；它是能量参考点。');
+        if (filled.length) {
+          const missing = [0, 1, 2, 3, 4, 5].filter(index => !finite(positions[index]));
+          if (missing.length) warnings.push(`要完成 n=1—4 的计算，还缺少 ${missing.join('、')} 号点位置；依赖这些点的速度和能量暂留空。`);
+        }
+        if (filled.length > 1) {
+          for (let n = 1; n < positions.length; n += 1) {
+            if (finite(positions[n - 1]) && finite(positions[n]) && positions[n] <= positions[n - 1]) {
+              warnings.push(`${n - 1}号点到${n}号点的位置没有沿下落方向增大。页面保留原值，请检查读数、点号或正方向。`);
+              break;
+            }
+          }
+        }
+        return warnings;
+      };
+
+      const renderWarnings = warnings => {
+        els.warnings.replaceChildren();
+        for (const warning of warnings) {
+          const li = document.createElement('li');
+          li.textContent = warning;
+          els.warnings.append(li);
+        }
+      };
+
+      const updateMode = () => {
+        const map = {
+          blank: ['等待手动录入', false],
+          manual: ['手动录入', false],
+          demo: ['演示数据（非实测）', true],
+          'demo-edited': ['演示数据已编辑（仍非实测）', true]
+        };
+        const [text, isDemo] = map[provenance];
+        els.mode.textContent = text;
+        els.mode.classList.toggle('demo', isDemo);
+        els.demoNotice.hidden = !isDemo;
+      };
+
+      const renderTable = rows => {
+        for (const row of rows) {
+          setCell('height', row.n, fmt(row.height));
+          setCell('velocity', row.n, fmt(row.velocity));
+          setCell('potential', row.n, fmt(row.potential));
+          setCell('kinetic', row.n, fmt(row.kinetic));
+          setCell('error', row.n, finite(row.error) ? `${(row.error * 100).toFixed(3)}%` : (row.errorReason || '—'));
+        }
+      };
+
+      const drawChart = rows => {
+        const canvas = els.chart;
+        const rect = canvas.getBoundingClientRect();
+        const ratio = Math.max(1, window.devicePixelRatio || 1);
+        const width = Math.max(320, Math.floor(rect.width));
+        const height = 360;
+        canvas.width = Math.floor(width * ratio);
+        canvas.height = Math.floor(height * ratio);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = '#101827';
+        ctx.fillRect(0, 0, width, height);
+
+        const points = rows.filter(row => row.n >= 2 && finite(row.potential) && finite(row.kinetic));
+        ctx.fillStyle = '#dce8f7';
+        ctx.font = '13px system-ui, sans-serif';
+        if (!points.length) {
+          ctx.textAlign = 'center';
+          ctx.fillText('填写至少四个连续位置点后生成能量图', width / 2, height / 2);
+          return;
+        }
+
+        const left = 62;
+        const right = 24;
+        const top = 54;
+        const bottom = 54;
+        const plotW = width - left - right;
+        const plotH = height - top - bottom;
+        const values = points.flatMap(point => [point.potential, point.kinetic]);
+        let minValue = Math.min(0, ...values);
+        let maxValue = Math.max(0, ...values);
+        if (maxValue === minValue) maxValue = minValue + 0.01;
+        const padding = (maxValue - minValue) * 0.12;
+        maxValue += padding;
+        if (minValue < 0) minValue -= padding;
+        const yFor = value => top + (maxValue - value) / (maxValue - minValue) * plotH;
+        const zeroY = yFor(0);
+
+        ctx.strokeStyle = 'rgba(220,232,247,0.16)';
+        ctx.lineWidth = 1;
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (let i = 0; i <= 5; i += 1) {
+          const value = minValue + (maxValue - minValue) * i / 5;
+          const y = yFor(value);
+          ctx.beginPath();
+          ctx.moveTo(left, y);
+          ctx.lineTo(left + plotW, y);
+          ctx.stroke();
+          ctx.fillStyle = '#b9c8dc';
+          ctx.fillText(value.toFixed(3), left - 8, y);
+        }
+
+        ctx.strokeStyle = '#e4edf8';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(left, top);
+        ctx.lineTo(left, top + plotH);
+        ctx.moveTo(left, zeroY);
+        ctx.lineTo(left + plotW, zeroY);
+        ctx.stroke();
+
+        const groupW = plotW / points.length;
+        const barW = Math.min(28, groupW * 0.24);
+        for (const [order, point] of points.entries()) {
+          const center = left + groupW * (order + 0.5);
+          const bars = [
+            { value: point.potential, color: '#f2b84b', x: center - barW - 3 },
+            { value: point.kinetic, color: '#49a9dc', x: center + 3 }
+          ];
+          for (const bar of bars) {
+            const y = yFor(bar.value);
+            ctx.fillStyle = bar.color;
+            ctx.fillRect(bar.x, Math.min(y, zeroY), barW, Math.max(1.5, Math.abs(zeroY - y)));
+          }
+          ctx.fillStyle = '#dce8f7';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(`n=${point.n}`, center, top + plotH + 14);
+        }
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#f2b84b';
+        ctx.fillRect(left, 20, 12, 12);
+        ctx.fillStyle = '#dce8f7';
+        ctx.fillText('ΔEp 势能减小', left + 18, 31);
+        ctx.fillStyle = '#49a9dc';
+        ctx.fillRect(left + 145, 20, 12, 12);
+        ctx.fillStyle = '#dce8f7';
+        ctx.fillText('ΔEk 动能增加', left + 163, 31);
+        ctx.fillStyle = '#b9c8dc';
+        ctx.fillText('能量变化 / J', left, 49);
+      };
+
+      const renderSelfCheck = (rows, positions, mass, gravity, interval) => {
+        const row = rows[2];
+        const ready = provenance === 'demo' || provenance === 'demo-edited';
+        if (!ready || !row) {
+          els.selfCheck.classList.remove('fail');
+          els.selfCheck.innerHTML = '<div class="check-title">独立手算验收等待演示数据</div><p class="check-detail">载入演示数据后，页面会把 n=2 的结果与冻结手算值比较。验收只检查公式实现，不把演示值当成实测。</p>';
+          return;
+        }
+        const frozenInputs = closeTo(mass, 0.1)
+          && closeTo(gravity, 9.8)
+          && closeTo(interval, 0.02)
+          && positions.every((value, index) => closeTo(value, demoPositions[index]));
+        if (!frozenInputs) {
+          els.selfCheck.classList.remove('fail');
+          els.selfCheck.innerHTML = '<div class="check-title">演示样例已修改，自检不适用</div><p class="check-detail">页面保留“演示数据（非实测）”身份，但不再把新参数与冻结手算值比较。清空可开始手动录入；重新载入演示数据可恢复固定样例验收。</p>';
+          return;
+        }
+        const passed = closeTo(rows[1]?.velocity, expectedN2.referenceVelocity) && closeTo(row.height, expectedN2.h) && closeTo(row.velocity, expectedN2.velocity) && closeTo(row.potential, expectedN2.potential) && closeTo(row.kinetic, expectedN2.kinetic) && closeTo(row.error, expectedN2.error);
+        els.selfCheck.classList.toggle('fail', !passed);
+        els.selfCheck.innerHTML = passed
+          ? `<div class="check-title">✓ n=2 独立手算验收通过</div><p class="check-detail">v₁=0.197500 m/s；h₂=0.005900 m；v₂=0.390000 m/s；ΔEp=0.005782 J；ΔEk=0.0056546875 J；ε=2.2018765%。页面结果与冻结手算值一致。</p>`
+          : `<div class="check-title">✕ n=2 独立手算验收未通过</div><p class="check-detail">当前结果：h=${fmt(row.height, 8)}，v=${fmt(row.velocity, 8)}，ΔEp=${fmt(row.potential, 10)}，ΔEk=${fmt(row.kinetic, 10)}，ε=${finite(row.error) ? (row.error * 100).toFixed(7) + '%' : '—'}。请检查参数或实现。</p>`;
+      };
+
+      const render = () => {
+        const positions = readPositions();
+        const mass = readPositive(els.mass);
+        const gravity = readPositive(els.gravity);
+        const interval = readPositive(els.interval);
+        latestRows = calculate(positions, mass, gravity, interval);
+        renderTable(latestRows);
+        renderWarnings(validate(positions, mass, gravity, interval));
+        drawChart(latestRows);
+        renderSelfCheck(latestRows, positions, mass, gravity, interval);
+        updateMode();
+      };
+
+      const markManualEdit = () => {
+        const hasAny = readPositions().some(finite);
+        if (provenance === 'demo' || provenance === 'demo-edited') provenance = 'demo-edited';
+        else provenance = hasAny ? 'manual' : 'blank';
+        render();
+      };
+
+      const loadDemo = () => {
+        positionInputs().forEach((input, index) => { input.value = demoPositions[index].toFixed(2); });
+        els.mass.value = '0.1000';
+        els.gravity.value = '9.8000';
+        els.interval.value = '0.0200';
+        provenance = 'demo';
+        render();
+      };
+
+      const clearPositions = () => {
+        positionInputs().forEach(input => { input.value = ''; });
+        provenance = 'blank';
+        render();
+        positionInputs()[0].focus();
+      };
+
+      const safeCsvText = value => {
+        const text = String(value ?? '');
+        return typeof value === 'string' && /^[\s]*[=+\-@]/.test(text) ? `'${text}` : text;
+      };
+      const csvEscape = value => `"${safeCsvText(value).replaceAll('"', '""')}"`;
+      const csvNumber = value => finite(value) ? Number(value.toPrecision(12)) : '';
+      const exportCsv = () => {
+        const currentWarnings = Array.from(els.warnings.children).map(item => item.textContent).join('；') || '无';
+        const meta = [
+          ['页面', '落体法数据工作台教学MVP'],
+          ['页面版本', '2026-09-02-MVP-v2'],
+          ['小组代号', els.group.value.trim() || '未填写'],
+          ['数据身份', provenance === 'manual' ? '手动录入' : provenance.includes('demo') ? '演示数据（非实测）' : '空白'],
+          ['m / kg', els.mass.value],
+          ['g / (m·s^-2)', els.gravity.value],
+          ['T / s', els.interval.value],
+          ['公式范围', '原表V2口径，仅计算n=1—4；x0和x5用于中心差分；x6保留但不参与计算'],
+          ['DeltaEp 定义', '正值的重力势能减小量 mgh；相对差异分母取其绝对值'],
+          ['字段说明', '相对差异比较两种实验能量变化量；原Excel字段名为相对误差'],
+          ['当前提醒', currentWarnings],
+          ['导出时间', new Date().toISOString()],
+          [],
+          ['n', 'x_n / cm', 'h=(x_n-x_1)/100 / m', 'v_n / (m/s)', 'DeltaEp_decrease / J', 'DeltaEk_increase / J', 'relative difference / %', 'status / exception']
+        ];
+        const rows = latestRows.map(row => [row.n, csvNumber(row.position), csvNumber(row.height), csvNumber(row.velocity), csvNumber(row.potential), csvNumber(row.kinetic), csvNumber(finite(row.error) ? row.error * 100 : null), row.errorReason]);
+        const csv = '\uFEFF' + [...meta, ...rows].map(line => line.map(csvEscape).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const recordType = provenance.includes('demo') ? '演示数据' : provenance === 'manual' ? '手动录入' : '空白记录';
+        link.download = `落体法-${(els.group.value.trim() || '未命名小组').replace(/[\\/:*?"<>|]/g, '-')}-${recordType}.csv`;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      };
+
+      createRows();
+      positionInputs().forEach(input => input.addEventListener('input', markManualEdit));
+      [els.mass, els.gravity, els.interval].forEach(input => input.addEventListener('input', markManualEdit));
+      els.loadDemo.addEventListener('click', loadDemo);
+      els.clear.addEventListener('click', clearPositions);
+      els.export.addEventListener('click', exportCsv);
+      els.print.addEventListener('click', () => window.print());
+      window.addEventListener('resize', () => drawChart(latestRows));
+      render();
+    })();
+  </script>
+</body>
+</html>

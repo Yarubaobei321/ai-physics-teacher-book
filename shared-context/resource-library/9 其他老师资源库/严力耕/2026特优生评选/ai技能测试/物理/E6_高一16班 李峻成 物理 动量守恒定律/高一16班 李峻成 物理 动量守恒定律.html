@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>高中物理：动量守恒定律 | 弹性碰撞 & 非弹性碰撞 交互演示</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f2f5fa 0%, #e6ecf3 100%);
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 28px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.45;
+        }
+
+        .physics-lab {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(1px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.2), 0 0 0 1px rgba(148, 176, 202, 0.3);
+            padding: 1.8rem 2rem 2rem 2rem;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            margin: 0 0 0.35rem 0;
+            color: #1a2c3e;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        h1 small {
+            font-size: 0.85rem;
+            font-weight: normal;
+            background: #1e466e20;
+            padding: 4px 14px;
+            border-radius: 40px;
+            color: #1f5e8e;
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 600;
+            margin: 0.75rem 0 1rem 0;
+            color: #0f2b3b;
+            border-left: 5px solid #3b82f6;
+            padding-left: 14px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1.5rem;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+            padding: 1.3rem 1.6rem;
+            margin-bottom: 1.8rem;
+            line-height: 1.5;
+        }
+
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            margin: 1.2rem 0 1rem;
+        }
+
+        .col-sim {
+            flex: 1.5;
+            min-width: 280px;
+        }
+
+        .col-stats {
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .canvas-container {
+            background: #fefefe;
+            border-radius: 1.2rem;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.2rem;
+            border: 1px solid #cfdfed;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fbfeff;
+            border-radius: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin: 1rem 0 0.8rem;
+        }
+
+        .slider-card {
+            flex: 1;
+            background: #f8fafd;
+            border-radius: 1.2rem;
+            padding: 12px 18px;
+            box-shadow: inset 0 1px 2px #0001, 0 2px 5px #0001;
+        }
+
+        .slider-card label {
+            font-weight: 600;
+            color: #1e4a76;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        input {
+            width: 100%;
+            margin: 8px 0;
+            accent-color: #3b82f6;
+        }
+
+        .value-badge {
+            background: #e2eaf1;
+            padding: 2px 10px;
+            border-radius: 24px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        button {
+            background: #1f6392;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.1s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background: #0e4b70;
+            transform: scale(0.97);
+        }
+
+        .momentum-stats {
+            background: #eef3fc;
+            padding: 12px 18px;
+            border-radius: 1.2rem;
+            margin: 1rem 0 0.4rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 0.5rem 0;
+        }
+
+        .stat-badge {
+            background: #e6edf4;
+            padding: 6px 12px;
+            border-radius: 28px;
+            font-weight: 500;
+        }
+
+        .collision-type-bar {
+            display: flex;
+            gap: 12px;
+            margin: 15px 0 5px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .type-btn {
+            background: #e2e8f0;
+            color: #1f4662;
+            box-shadow: none;
+        }
+        .type-btn.active {
+            background: #1f6392;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .chart-box {
+            background: #f9f9ff;
+            border-radius: 1.2rem;
+            padding: 8px;
+            margin-top: 6px;
+        }
+
+        canvas[id="momentumChart"] {
+            width: 100%;
+            height: 170px;
+            background: #ffffff;
+            border-radius: 1rem;
+        }
+
+        /* 表格样式 */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            background: #fefefe;
+            border-radius: 1rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .compare-table th {
+            background: #1e3a5f;
+            color: white;
+            padding: 8px 6px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .compare-table td {
+            border: 1px solid #d4e2f0;
+            padding: 8px 6px;
+            text-align: center;
+            background-color: #ffffff;
+        }
+        .compare-table tr td:first-child {
+            font-weight: 600;
+            background: #f1f6fd;
+        }
+        .table-caption {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 6px;
+            color: #3d6a8f;
+        }
+
+        /* 新增：守恒条件对比卡片 */
+        .law-compare {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            margin-top: 1rem;
+        }
+        .law-card {
+            flex: 1;
+            background: #f9fafc;
+            border-radius: 1.2rem;
+            padding: 0.8rem 1rem;
+            border-top: 4px solid #3b82f6;
+        }
+        .law-card h4 {
+            margin: 0 0 0.5rem 0;
+            color: #1e4662;
+        }
+        .badge-condition {
+            background: #eef2ff;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .examples-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            margin-top: 0.8rem;
+        }
+        .example-card {
+            flex: 1;
+            background: #fffaf2;
+            border-radius: 1.2rem;
+            padding: 1rem 1.3rem;
+            border-left: 6px solid #f59e0b;
+        }
+        .questions-card {
+            flex: 1.2;
+            background: #f2f6fc;
+            border-radius: 1.2rem;
+            padding: 1rem 1.3rem;
+        }
+        table.simple-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 0.6rem 0;
+        }
+        .simple-table td, .simple-table th {
+            padding: 8px 6px;
+            border-bottom: 1px solid #cbdde9;
+        }
+        .footnote {
+            text-align: center;
+            font-size: 0.72rem;
+            color: #4a6a85;
+            margin-top: 28px;
+            border-top: 1px solid #cbdde9;
+            padding-top: 18px;
+        }
+        @media (max-width: 780px) {
+            .physics-lab { padding: 1.2rem; }
+            .control-group { flex-direction: column; }
+            .two-columns { flex-direction: column; }
+        }
+        .inline-math {
+            font-family: monospace;
+            background: #f0f2f5;
+            padding: 0 4px;
+            border-radius: 8px;
+        }
+        .restitution-info {
+            font-size: 0.75rem;
+            color: #2b5e7a;
+            margin-top: 8px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="physics-lab">
+    <h1>⚡ 动量守恒定律 · 交互实验室 <small>弹性碰撞 | 非弹性碰撞</small></h1>
+    
+    <!-- 第一部分：动量定义 & 实验验证 & 动量守恒条件 & 与机械能守恒对比 -->
+    <div class="card">
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 2;">
+                <h3 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.35rem;">📖 动量定义 & 实验验证</h3>
+                <p><strong>动量 p</strong> = 质量 m × 速度 v （矢量），单位：kg·m/s。<br>
+                <strong>动量守恒定律</strong>：系统合外力为零 → 系统总动量保持不变：m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'。</p>
+                <p><strong>⚗️ 气垫导轨验证</strong>：两滑块在近无摩擦轨道碰撞，光电门测速，总动量误差范围内恒定。本模块支持<strong>弹性碰撞</strong>(动能守恒)与<strong>完全非弹性碰撞</strong>(碰后共速，动能损失最大)。</p>
+            </div>
+            <div style="background: #e5f0fa; border-radius: 1.2rem; padding: 0.8rem 1rem; min-width: 160px;">
+                <span style="font-weight: bold;">🎯 核心公式</span><br>
+                m₁v₁ + m₂v₂ = m₁v₁' + m₂v₂'
+            </div>
+        </div>
+
+        <!-- 新增：动量守恒条件 + 动量守恒与机械能守恒的异同 -->
+        <div style="margin-top: 1.2rem; background: #f1f5f9; border-radius: 1.2rem; padding: 1rem 1.2rem;">
+            <h4 style="margin: 0 0 0.5rem 0; display: flex; gap: 12px; align-items: center;">🔍 动量守恒条件 &nbsp;<span class="badge-condition">必要条件</span></h4>
+            <p style="margin: 0 0 0.8rem 0;"><strong>动量守恒成立条件：</strong>系统所受<strong>合外力为零</strong> (或内力远大于外力，如碰撞、爆炸瞬间)。常见情形：光滑水平面碰撞、爆炸、人船模型等。</p>
+            
+            <div class="law-compare">
+                <div class="law-card">
+                    <h4>📐 动量守恒定律</h4>
+                    <p><strong>适用范围：</strong>宏观低速、微观高速均成立；无论碰撞是否弹性，只要合外力为零即守恒。</p>
+                    <p><strong>守恒条件：</strong>合外力为零 或 外力远小于内力。</p>
+                </div>
+                <div class="law-card">
+                    <h4>⚡ 机械能守恒定律</h4>
+                    <p><strong>适用范围：</strong>只有重力或弹力做功的系统，无摩擦、无耗散力。</p>
+                    <p><strong>守恒条件：</strong>只有保守力做功，动能与势能相互转化，总量不变。</p>
+                </div>
+            </div>
+            <div style="background: #eef2ff; border-radius: 1rem; padding: 0.6rem 1rem; margin-top: 0.5rem;">
+                <span style="font-weight: 700;">📌 相同点 & 不同点：</span><br>
+                ✅ <strong>相同</strong>：都是自然界普遍规律，可用于解决碰撞、爆炸等问题；均需明确系统。<br>
+                🔄 <strong>不同</strong>：动量守恒只需合外力为零，<strong>无论碰撞是否弹性都成立</strong>；机械能守恒要求只有保守力做功，<strong>非弹性碰撞机械能不守恒</strong>。动量是矢量，机械能是标量。
+            </div>
+        </div>
+    </div>
+
+    <!-- 第二部分：一维碰撞模型 + 右侧动态显示/图像 -->
+    <div class="two-columns">
+        <div class="col-sim">
+            <div class="card">
+                <h3 style="margin-top: 0;">🎨 一维碰撞模型 (可选择碰撞类型)</h3>
+                <div class="collision-type-bar">
+                    <button id="elasticBtn" class="type-btn active">⚡ 完全弹性碰撞 (e=1)</button>
+                    <button id="inelasticBtn" class="type-btn">🌀 完全非弹性碰撞 (e=0, 碰后共速)</button>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="collisionCanvas" width="700" height="210" style="width:100%; height:auto; max-width:700px; aspect-ratio:700/210"></canvas>
+                </div>
+                <div class="control-group">
+                    <div class="slider-card">
+                        <label>🔴 小球1 质量 m₁ <span id="m1Val" class="value-badge">2.0 kg</span></label>
+                        <input type="range" id="mass1" min="0.5" max="5.0" step="0.1" value="2.0">
+                        <label>📈 速度 v₁ <span id="v1Val" class="value-badge">+1.8 m/s</span></label>
+                        <input type="range" id="vel1" min="-3.0" max="3.0" step="0.1" value="1.8">
+                    </div>
+                    <div class="slider-card">
+                        <label>🔵 小球2 质量 m₂ <span id="m2Val" class="value-badge">2.0 kg</span></label>
+                        <input type="range" id="mass2" min="0.5" max="5.0" step="0.1" value="2.0">
+                        <label>📉 速度 v₂ <span id="v2Val" class="value-badge">-1.2 m/s</span></label>
+                        <input type="range" id="vel2" min="-3.0" max="3.0" step="0.1" value="-1.2">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: space-between; gap: 12px; margin: 12px 0 6px;">
+                    <button id="resetBtn">⟳ 重置典型碰撞 (一动一静)</button>
+                    <button id="reverseBtn">🔄 交换两球属性</button>
+                </div>
+                <div class="momentum-stats">
+                    <div>🔹 碰撞前总动量: <strong id="pBefore">0.00</strong> kg·m/s</div>
+                    <div>🔸 碰撞后总动量: <strong id="pAfter">0.00</strong> kg·m/s</div>
+                    <div>✨ 相对误差: <strong id="deltaP">0.00</strong> %</div>
+                </div>
+                <div class="restitution-info" id="collisionTypeDesc">⚡ 当前：弹性碰撞 | 动能守恒，动量守恒</div>
+            </div>
+        </div>
+
+        <div class="col-stats">
+            <div class="card">
+                <h3 style="margin-top: 0;">📊 实时物理量 & 动量图像</h3>
+                <div class="stats-row">
+                    <div class="stat-badge">⚪ 球1动量: <span id="p1Show">0.00</span> kg·m/s</div>
+                    <div class="stat-badge">🔵 球2动量: <span id="p2Show">0.00</span> kg·m/s</div>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-badge">⚡ 总动能: <span id="ekTotal">0.00</span> J</div>
+                    <div class="stat-badge">📐 碰后速度: <span id="postVelocities">v₁'=-- , v₂'=--</span></div>
+                </div>
+                <div class="chart-box">
+                    <canvas id="momentumChart" width="400" height="170" style="width:100%; height:auto; background:#fff; border-radius:16px;"></canvas>
+                    <p style="font-size:0.7rem; text-align:center; margin: 8px 0 0;">⬆ 碰撞前后总动量柱状对比（严格守恒）</p>
+                </div>
+                <div style="background:#eef2fa; border-radius: 1rem; padding: 10px; margin-top: 12px;">
+                    <span style="font-weight: 600;">📐 动量-速度关系</span><br>
+                    系统总动量 <span class="inline-math">p = m₁v₁ + m₂v₂</span> 碰撞前后恒定；弹性碰撞动能不变，非弹性碰撞动能减少。
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增模块：弹性碰撞 vs 非弹性碰撞 前后动能/动量对比表格 (位于真实例子之上) -->
+    <div class="card">
+        <h3 style="margin-top: 0;">📋 弹性碰撞 vs 非弹性碰撞 前后物理量对比表</h3>
+        <div style="overflow-x: auto;">
+            <table class="compare-table" id="compareTable">
+                <thead>
+                    <tr>
+                        <th>物理量</th>
+                        <th>碰撞前 (当前)</th>
+                        <th>弹性碰撞后 (e=1)</th>
+                        <th>完全非弹性碰撞后 (e=0, 共速)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>球1动量 p₁ (kg·m/s)</td><td id="pre_p1">--</td><td id="elas_p1">--</td><td id="inela_p1">--</td></tr>
+                    <tr><td>球2动量 p₂ (kg·m/s)</td><td id="pre_p2">--</td><td id="elas_p2">--</td><td id="inela_p2">--</td></tr>
+                    <tr><td><strong>总动量 P_total (kg·m/s)</strong></td><td id="pre_ptot">--</td><td id="elas_ptot">--</td><td id="inela_ptot">--</td></tr>
+                    <tr><td>球1动能 Ek₁ (J)</td><td id="pre_ek1">--</td><td id="elas_ek1">--</td><td id="inela_ek1">--</td></tr>
+                    <tr><td>球2动能 Ek₂ (J)</td><td id="pre_ek2">--</td><td id="elas_ek2">--</td><td id="inela_ek2">--</td></tr>
+                    <tr><td><strong>总动能 Ek_total (J)</strong></td><td id="pre_eksum">--</td><td id="elas_eksum">--</td><td id="inela_eksum">--</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="table-caption">※ 弹性碰撞满足动量守恒+动能守恒；完全非弹性碰撞碰后共速，动量守恒但动能损失最大。</div>
+    </div>
+
+    <!-- 真实例子 + 常见题型解题思路（已移除当前碰撞完全弹性解部分） -->
+    <div class="examples-area">
+        <div class="example-card">
+            <h3 style="margin-top: 0; display: flex; gap: 6px;">🌟 生活中的真实例子</h3>
+            <p><strong>🎱 台球碰撞</strong>：母球撞击静止彩球（质量相等），弹性碰撞近似，母球停下彩球前进 → 动量守恒。<br>
+            <strong>🚀 火箭推进</strong>：燃料向后喷出，箭体获得向前动量，系统总动量保持为零。<br>
+            <strong>🚗 汽车碰撞试验</strong>：完全非弹性碰撞，两车吸能后共同运动，动量守恒但动能转化为内能。</p>
+        </div>
+        <div class="questions-card">
+            <h3 style="margin-top: 0;">📝 常见题型 & 解题思路</h3>
+            <table class="simple-table">
+                <tr><th>题型</th><th>核心方法</th></tr>
+                <tr><td>⛵ 人船模型</td><td>平均动量守恒：m₁x₁ = m₂x₂</td></tr>
+                <tr><td>🔫 子弹打木块</td><td>动量守恒 + 能量损失（摩擦生热）</td></tr>
+                <tr><td>🎯 弹性碰撞</td><td>动量守恒 + 动能守恒，速度公式代换</td></tr>
+                <tr><td>💥 爆炸问题</td><td>内力远大于外力 → 动量守恒</td></tr>
+                <tr><td>🚗 完全非弹性碰撞</td><td>碰后共速，动量守恒求共同速度，动能损失最大</td></tr>
+            </table>
+        </div>
+    </div>
+    <div class="footnote">
+        🧪 交互模拟：可切换弹性/完全非弹性碰撞，实时更新动量守恒数据与对比表格。滑块改变初始状态，总动量始终保持不变。
+    </div>
+</div>
+
+<script>
+    (function(){
+        // DOM 元素
+        const canvas = document.getElementById('collisionCanvas');
+        const ctx = canvas.getContext('2d');
+        const chartCanvas = document.getElementById('momentumChart');
+        const chartCtx = chartCanvas.getContext('2d');
+        
+        const m1Slider = document.getElementById('mass1'), m2Slider = document.getElementById('mass2');
+        const v1Slider = document.getElementById('vel1'), v2Slider = document.getElementById('vel2');
+        const m1Val = document.getElementById('m1Val'), m2Val = document.getElementById('m2Val');
+        const v1Val = document.getElementById('v1Val'), v2Val = document.getElementById('v2Val');
+        const pBeforeSpan = document.getElementById('pBefore'), pAfterSpan = document.getElementById('pAfter');
+        const deltaPSpan = document.getElementById('deltaP'), p1ShowSpan = document.getElementById('p1Show');
+        const p2ShowSpan = document.getElementById('p2Show'), ekTotalSpan = document.getElementById('ekTotal');
+        const postVelocitiesSpan = document.getElementById('postVelocities');
+        const collisionTypeDesc = document.getElementById('collisionTypeDesc');
+        
+        const elasticBtn = document.getElementById('elasticBtn');
+        const inelasticBtn = document.getElementById('inelasticBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const reverseBtn = document.getElementById('reverseBtn');
+        
+        // 表格元素
+        const pre_p1 = document.getElementById('pre_p1'), pre_p2 = document.getElementById('pre_p2'), pre_ptot = document.getElementById('pre_ptot');
+        const elas_p1 = document.getElementById('elas_p1'), elas_p2 = document.getElementById('elas_p2'), elas_ptot = document.getElementById('elas_ptot');
+        const inela_p1 = document.getElementById('inela_p1'), inela_p2 = document.getElementById('inela_p2'), inela_ptot = document.getElementById('inela_ptot');
+        const pre_ek1 = document.getElementById('pre_ek1'), pre_ek2 = document.getElementById('pre_ek2'), pre_eksum = document.getElementById('pre_eksum');
+        const elas_ek1 = document.getElementById('elas_ek1'), elas_ek2 = document.getElementById('elas_ek2'), elas_eksum = document.getElementById('elas_eksum');
+        const inela_ek1 = document.getElementById('inela_ek1'), inela_ek2 = document.getElementById('inela_ek2'), inela_eksum = document.getElementById('inela_eksum');
+        
+        // 物理参数
+        let m1 = 2.0, m2 = 2.0;
+        let v1 = 1.8, v2 = -1.2;
+        let collisionType = "elastic"; // "elastic" 或 "inelastic"
+        
+        // 动画参数
+        const r = 19;
+        const xMin = r + 12;
+        const xMax = canvas.width - r - 12;
+        let x1 = 140, x2 = 550;
+        let animFrameId = null;
+        
+        // 弹性碰撞公式
+        function getElasticVelocities(m1, m2, v1, v2) {
+            let v1f = ((m1 - m2)*v1 + 2*m2*v2) / (m1 + m2);
+            let v2f = ((m2 - m1)*v2 + 2*m1*v1) / (m1 + m2);
+            return { v1f, v2f };
+        }
+        // 完全非弹性碰撞后共速
+        function getInelasticVelocities(m1, m2, v1, v2) {
+            let v_common = (m1*v1 + m2*v2) / (m1 + m2);
+            return { v1f: v_common, v2f: v_common };
+        }
+        
+        function getCollisionResult() {
+            if(collisionType === "elastic") return getElasticVelocities(m1, m2, v1, v2);
+            else return getInelasticVelocities(m1, m2, v1, v2);
+        }
+        
+        function updateAllDisplays() {
+            // 碰撞前
+            let p1_pre = m1 * v1, p2_pre = m2 * v2, pTotal_pre = p1_pre + p2_pre;
+            let ek1_pre = 0.5 * m1 * v1 * v1, ek2_pre = 0.5 * m2 * v2 * v2, ekTotal_pre = ek1_pre + ek2_pre;
+            p1ShowSpan.innerText = p1_pre.toFixed(3);
+            p2ShowSpan.innerText = p2_pre.toFixed(3);
+            ekTotalSpan.innerText = ekTotal_pre.toFixed(2);
+            pBeforeSpan.innerText = pTotal_pre.toFixed(3);
+            
+            // 当前碰撞类型结果
+            let { v1f, v2f } = getCollisionResult();
+            let p1_after = m1 * v1f, p2_after = m2 * v2f, pTotal_after = p1_after + p2_after;
+            let ek1_after = 0.5*m1*v1f*v1f, ek2_after = 0.5*m2*v2f*v2f, ekTotal_after = ek1_after+ek2_after;
+            pAfterSpan.innerText = pTotal_after.toFixed(3);
+            let delta = (Math.abs(pTotal_pre) < 0.001) ? 0 : Math.abs((pTotal_after - pTotal_pre)/pTotal_pre)*100;
+            deltaPSpan.innerText = delta.toFixed(5);
+            postVelocitiesSpan.innerHTML = `v₁'=${v1f.toFixed(2)} m/s , v₂'=${v2f.toFixed(2)} m/s`;
+            
+            // 弹性碰撞预估值 (用于表格对比)
+            let elastic = getElasticVelocities(m1, m2, v1, v2);
+            let inelastic = getInelasticVelocities(m1, m2, v1, v2);
+            
+            // 表格填充碰撞前
+            pre_p1.innerText = p1_pre.toFixed(3); pre_p2.innerText = p2_pre.toFixed(3); pre_ptot.innerText = pTotal_pre.toFixed(3);
+            pre_ek1.innerText = ek1_pre.toFixed(3); pre_ek2.innerText = ek2_pre.toFixed(3); pre_eksum.innerText = ekTotal_pre.toFixed(3);
+            
+            // 弹性碰撞后
+            let p1_elas = m1 * elastic.v1f, p2_elas = m2 * elastic.v2f, ptot_elas = p1_elas + p2_elas;
+            let ek1_elas = 0.5*m1*elastic.v1f*elastic.v1f, ek2_elas = 0.5*m2*elastic.v2f*elastic.v2f, eks_elas = ek1_elas+ek2_elas;
+            elas_p1.innerText = p1_elas.toFixed(3); elas_p2.innerText = p2_elas.toFixed(3); elas_ptot.innerText = ptot_elas.toFixed(3);
+            elas_ek1.innerText = ek1_elas.toFixed(3); elas_ek2.innerText = ek2_elas.toFixed(3); elas_eksum.innerText = eks_elas.toFixed(3);
+            
+            // 完全非弹性碰撞后
+            let p1_ine = m1 * inelastic.v1f, p2_ine = m2 * inelastic.v2f, ptot_ine = p1_ine + p2_ine;
+            let ek1_ine = 0.5*m1*inelastic.v1f*inelastic.v1f, ek2_ine = 0.5*m2*inelastic.v2f*inelastic.v2f, eks_ine = ek1_ine+ek2_ine;
+            inela_p1.innerText = p1_ine.toFixed(3); inela_p2.innerText = p2_ine.toFixed(3); inela_ptot.innerText = ptot_ine.toFixed(3);
+            inela_ek1.innerText = ek1_ine.toFixed(3); inela_ek2.innerText = ek2_ine.toFixed(3); inela_eksum.innerText = eks_ine.toFixed(3);
+            
+            drawMomentumChart(pTotal_pre, pTotal_after);
+            if(collisionType === "elastic") collisionTypeDesc.innerHTML = "⚡ 当前：弹性碰撞 | 动能守恒，动量守恒，恢复系数 e=1";
+            else collisionTypeDesc.innerHTML = "🌀 当前：完全非弹性碰撞 | 碰后共速，动能损失最大，动量守恒 e=0";
+        }
+        
+        function drawMomentumChart(pBefore, pAfter) {
+            if (!chartCtx) return;
+            const w = chartCanvas.width, h = chartCanvas.height;
+            chartCtx.clearRect(0, 0, w, h);
+            chartCtx.fillStyle = "#f8fafc";
+            chartCtx.fillRect(0, 0, w, h);
+            let maxVal = Math.max(Math.abs(pBefore), Math.abs(pAfter), 0.2);
+            let scale = (h - 55) / maxVal;
+            let barWidth = 90, x1Bar = w/2 - barWidth - 18, x2Bar = w/2 + 18;
+            let h1 = Math.max(6, Math.abs(pBefore) * scale), h2 = Math.max(6, Math.abs(pAfter) * scale);
+            chartCtx.fillStyle = "#3b82f6";
+            chartCtx.fillRect(x1Bar, h - h1 - 28, barWidth, h1);
+            chartCtx.fillStyle = "#10b981";
+            chartCtx.fillRect(x2Bar, h - h2 - 28, barWidth, h2);
+            chartCtx.fillStyle = "#1f3a4b";
+            chartCtx.font = "11px 'Segoe UI'";
+            chartCtx.fillText("碰撞前总动量", x1Bar, h - 10);
+            chartCtx.fillText(pBefore.toFixed(2)+" kg·m/s", x1Bar, h - h1 - 32);
+            chartCtx.fillText("碰撞后总动量", x2Bar, h - 10);
+            chartCtx.fillText(pAfter.toFixed(2)+" kg·m/s", x2Bar, h - h2 - 32);
+        }
+        
+        function handleCollisionAndUpdate() {
+            let dist = x2 - x1;
+            if(dist <= 2*r && ((v1 - v2) > 0.01)) {
+                let result = getCollisionResult();
+                v1 = result.v1f; v2 = result.v2f;
+                v1Slider.value = v1; v2Slider.value = v2;
+                updateSliderDisplay();
+                updateAllDisplays();
+                if(x2 - x1 < 2*r) {
+                    let overlap = 2*r - (x2 - x1);
+                    let shift = overlap/2 + 1;
+                    x1 -= shift; x2 += shift;
+                    x1 = Math.min(Math.max(x1, xMin), xMax);
+                    x2 = Math.min(Math.max(x2, xMin), xMax);
+                }
+            }
+        }
+        
+        function updateSliderDisplay() {
+            m1Val.innerText = m1.toFixed(1)+" kg";
+            m2Val.innerText = m2.toFixed(1)+" kg";
+            v1Val.innerText = v1.toFixed(2)+" m/s";
+            v2Val.innerText = v2.toFixed(2)+" m/s";
+        }
+        
+        function bindSliders() {
+            m1Slider.addEventListener('input', (e) => { m1 = parseFloat(e.target.value); m1Val.innerText = m1.toFixed(1)+" kg"; updateAllDisplays(); resetPositions(); });
+            m2Slider.addEventListener('input', (e) => { m2 = parseFloat(e.target.value); m2Val.innerText = m2.toFixed(1)+" kg"; updateAllDisplays(); resetPositions(); });
+            v1Slider.addEventListener('input', (e) => { v1 = parseFloat(e.target.value); v1Val.innerText = v1.toFixed(2)+" m/s"; updateAllDisplays(); resetPositions(); });
+            v2Slider.addEventListener('input', (e) => { v2 = parseFloat(e.target.value); v2Val.innerText = v2.toFixed(2)+" m/s"; updateAllDisplays(); resetPositions(); });
+        }
+        
+        function resetPositions() {
+            x1 = xMin + 25; x2 = xMax - 25;
+            if(x2 - x1 < 2*r) { x1 = xMin; x2 = xMax - 2*r; }
+            drawCanvas();
+        }
+        
+        function resetTypical() {
+            m1Slider.value = "2.0"; m2Slider.value = "2.0";
+            v1Slider.value = "1.5"; v2Slider.value = "0";
+            m1 = 2.0; m2 = 2.0; v1 = 1.5; v2 = 0;
+            updateSliderDisplay(); updateAllDisplays(); resetPositions();
+        }
+        
+        function swapProps() {
+            let tempM = m1, tempV = v1;
+            m1 = m2; v1 = v2;
+            m2 = tempM; v2 = tempV;
+            m1Slider.value = m1; m2Slider.value = m2;
+            v1Slider.value = v1; v2Slider.value = v2;
+            updateSliderDisplay(); updateAllDisplays(); resetPositions();
+        }
+        
+        function setElastic() {
+            collisionType = "elastic";
+            elasticBtn.classList.add("active"); inelasticBtn.classList.remove("active");
+            let res = getElasticVelocities(m1,m2,v1,v2);
+            v1 = res.v1f; v2 = res.v2f;
+            v1Slider.value = v1; v2Slider.value = v2;
+            updateSliderDisplay(); updateAllDisplays(); resetPositions();
+        }
+        
+        function setInelastic() {
+            collisionType = "inelastic";
+            inelasticBtn.classList.add("active"); elasticBtn.classList.remove("active");
+            let res = getInelasticVelocities(m1,m2,v1,v2);
+            v1 = res.v1f; v2 = res.v2f;
+            v1Slider.value = v1; v2Slider.value = v2;
+            updateSliderDisplay(); updateAllDisplays(); resetPositions();
+        }
+        
+        function updateMotion() {
+            let dt = 0.68;
+            x1 += v1 * dt; x2 += v2 * dt;
+            x1 = Math.min(Math.max(x1, xMin), xMax);
+            x2 = Math.min(Math.max(x2, xMin), xMax);
+            handleCollisionAndUpdate();
+            drawCanvas();
+        }
+        
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#fefcf5";
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(xMin-5, canvas.height/2+12);
+            ctx.lineTo(xMax+5, canvas.height/2+12);
+            ctx.lineWidth=2.5; ctx.strokeStyle="#7f9eb5"; ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x1, canvas.height/2, r, 0, 2*Math.PI);
+            ctx.fillStyle = "#f97316";
+            ctx.fill();
+            ctx.fillStyle="#ffffff";
+            ctx.font="bold 14px 'Segoe UI'";
+            ctx.fillText("1", x1-6, canvas.height/2+6);
+            ctx.fillStyle="#1f2f3e";
+            ctx.font="10px monospace";
+            ctx.fillText(`${v1.toFixed(1)}m/s`, x1-20, canvas.height/2-12);
+            ctx.beginPath();
+            ctx.arc(x2, canvas.height/2, r, 0, 2*Math.PI);
+            ctx.fillStyle = "#3b82f6";
+            ctx.fill();
+            ctx.fillStyle="white";
+            ctx.fillText("2", x2-6, canvas.height/2+6);
+            ctx.fillStyle="#1f2f3e";
+            ctx.fillText(`${v2.toFixed(1)}m/s`, x2-20, canvas.height/2-12);
+        }
+        
+        function animate() {
+            updateMotion();
+            animFrameId = requestAnimationFrame(animate);
+        }
+        
+        function init() {
+            bindSliders();
+            resetPositions();
+            updateAllDisplays();
+            resetTypical();
+            elasticBtn.addEventListener('click', setElastic);
+            inelasticBtn.addEventListener('click', setInelastic);
+            resetBtn.addEventListener('click', resetTypical);
+            reverseBtn.addEventListener('click', swapProps);
+            animate();
+        }
+        init();
+    })();
+</script>
+</body>
+</html>

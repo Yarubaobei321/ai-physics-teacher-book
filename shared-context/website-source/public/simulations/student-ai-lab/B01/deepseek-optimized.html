@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA 半保留复制交互演示</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    background: #0d1420; color: #dbe7f5; overflow: hidden;
+  }
+  header.topbar {
+    height: 60px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; background: linear-gradient(90deg,#101b30,#16233f);
+    border-bottom: 2px solid #2a3f63;
+  }
+  header.topbar h1 { font-size: 1.25rem; color: #8fd0ff; letter-spacing: 1px; }
+  #phaseBadge {
+    padding: 6px 16px; border-radius: 20px; font-size: 0.95rem; font-weight: 600;
+    background: #1d3a5f; color: #ffd54f; border: 1px solid #35608f;
+  }
+  main { display: flex; gap: 14px; padding: 12px; height: calc(100vh - 60px); }
+  .col-canvas {
+    flex: 1 1 0; min-width: 0; background: #101a2c; border: 1px solid #22304a;
+    border-radius: 10px; display: flex; flex-direction: column; align-items: center; padding: 8px;
+  }
+  canvas#dna {
+    width: 100%; height: calc(100% - 44px); max-width: 100%; max-height: 100%;
+    display: block; background: radial-gradient(circle at 50% 40%, #0f1a30 0%, #0a1120 100%);
+    border-radius: 8px; outline: none;
+  }
+  canvas#dna:focus { box-shadow: 0 0 0 2px #4fc3f7; }
+  #statusBar {
+    width: 100%; min-height: 34px; margin-top: 6px; padding: 6px 12px;
+    background: #16233f; border-radius: 8px; font-size: 0.85rem; color: #a9c2e0;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  #statusBar b { color: #ffd54f; }
+  .panel {
+    width: 320px; background: #111c30; border: 1px solid #22304a; border-radius: 10px;
+    padding: 14px; overflow-y: auto;
+  }
+  .panel h2 {
+    font-size: 0.95rem; color: #8fd0ff; margin-bottom: 12px;
+    border-bottom: 1px solid #2a3f63; padding-bottom: 6px;
+  }
+  .ctrl { margin-bottom: 14px; }
+  .ctrl label {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.85rem; color: #c7d8ee; margin-bottom: 4px;
+  }
+  .ctrl label span { color: #ffd54f; font-weight: 600; min-width: 52px; text-align: right; }
+  input[type="range"] { width: 100%; accent-color: #4fc3f7; cursor: pointer; }
+  .chk { font-size: 0.85rem; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; color: #c7d8ee; }
+  .btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  button {
+    font-size: 0.9rem; padding: 8px 10px; border-radius: 8px; cursor: pointer;
+    border: 1px solid #3a5b86; background: #1c2f4d; color: #e6f0fb; font-weight: 600;
+  }
+  button:hover { background: #274465; }
+  button:active { transform: translateY(1px); }
+  button#playBtn { background: #14532d; border-color: #2e9e5b; }
+  button#playBtn.playing { background: #7a1f1f; border-color: #d64545; }
+  .hint { font-size: 0.8rem; color: #8fa6c4; margin-top: 12px; line-height: 1.5; }
+  #legend { margin-top: 12px; }
+  #legend .lg-row { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; margin: 5px 0; color: #c7d8ee; }
+  .sw { width: 18px; height: 12px; border-radius: 3px; display: inline-block; border: 1px solid #444; }
+  #stageText { font-size: 0.9rem; line-height: 1.65; color: #dce8f7; }
+  #stageText .step { color: #8fd0ff; font-weight: 600; }
+  #resultBox { margin-top: 14px; border: 1px solid #2e9e5b; border-radius: 8px; padding: 10px; background: #123120; font-size: 0.82rem; line-height: 1.6; }
+  #resultBox h3 { color: #7fe0a8; font-size: 0.9rem; margin-bottom: 6px; }
+  #resultBox table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  #resultBox td, #resultBox th { border: 1px solid #2a4a36; padding: 3px 6px; text-align: center; }
+  #particleLog { margin-top: 12px; border-top: 1px dashed #2a3f63; padding-top: 10px; font-size: 0.8rem; color: #9db8d8; line-height: 1.6; }
+  #particleLog b { color: #ffd54f; }
+  #editTip { font-size: 0.8rem; color: #7fe0a8; margin-top: 8px; min-height: 18px; }
+  #editPop {
+    position: fixed; display: none; z-index: 50; background: #1c2f4d;
+    border: 1px solid #4fc3f7; border-radius: 10px; padding: 8px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.5);
+  }
+  #editPop .cap { font-size: 0.75rem; color: #ffd54f; margin-bottom: 6px; text-align: center; }
+  #editPop .btns { display: flex; gap: 6px; }
+  #editPop button { min-width: 42px; padding: 6px; font-size: 0.95rem; font-weight: 700; }
+  .b-A { color: #ef5350; } .b-T { color: #26a69a; } .b-G { color: #fdd835; } .b-C { color: #5c6bc0; }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1>🧬 DNA 半保留复制 · 交互演示</h1>
+  <span id="phaseBadge" role="status">解旋阶段</span>
+</header>
+<main>
+  <section class="col-canvas">
+    <canvas id="dna" width="700" height="780" tabindex="0"
+      aria-label="DNA半保留复制交互画布：双螺旋、复制叉处环形六聚体解旋酶、DNA聚合酶合成新链、游离核苷酸粒子按互补碱基飞入。可点击碱基编辑。"></canvas>
+    <div id="statusBar" role="status">
+      <span id="stProgress">进度 <b>0%</b></span>
+      <span id="stFork">复制叉位置 <b>0</b>/12</span>
+      <span id="stSynth">新链合成 <b>0</b>/12</span>
+      <span id="stDaughter">子代DNA分子 <b>1</b></span>
+    </div>
+  </section>
+
+  <aside class="panel" aria-label="控制区">
+    <h2>🎛 控制区</h2>
+    <div class="ctrl">
+      <label for="progress">复制进度 <span id="progressVal">0%</span></label>
+      <input type="range" id="progress" min="0" max="100" step="1" value="0">
+    </div>
+    <div class="ctrl">
+      <label for="speed">动画速度 <span id="speedVal">1.0×</span></label>
+      <input type="range" id="speed" min="20" max="300" step="10" value="100">
+    </div>
+    <label class="chk"><input type="checkbox" id="loop" checked> 循环播放动画</label>
+    <div class="btnrow">
+      <button id="playBtn" aria-label="开始或暂停动画">▶ 开始 / 暂停</button>
+      <button id="resetBtn" aria-label="重置复制">↺ 重置</button>
+      <button id="completeBtn" aria-label="完成复制">✔ 完成复制</button>
+      <button id="extendBtn" aria-label="延长链长">＋ 延长链长</button>
+    </div>
+    <button id="resetLenBtn" style="width:100%; margin-top:8px;" aria-label="重置链长">↩ 重置链长（回到 12 对）</button>
+    <p class="hint">💡 操作提示：<br>① 拖动"进度"滑杆或按"开始"观看解旋→配对→合成；<br>② <b>点击画布上任一碱基</b>可编辑为 A/T/G/C，其互补链对应位点会自动更新为正确互补碱基；<br>③ 键盘方向键移动选中碱基，Enter 打开编辑。</p>
+    <div id="editTip" role="status"></div>
+  </aside>
+
+  <aside class="panel" aria-label="讲解区">
+    <h2>📖 讲解区</h2>
+    <div id="stageText"></div>
+    <div id="legend">
+      <div class="lg-row"><span class="sw" style="background:#4fc3f7"></span> 母链（旧链，作模板）</div>
+      <div class="lg-row"><span class="sw" style="background:#ffb74d"></span> 新链（新合成子链）</div>
+      <div class="lg-row"><span class="sw" style="background:#ba68c8"></span> 解旋酶（环形六聚体）</div>
+      <div class="lg-row"><span class="sw" style="background:#81d4fa"></span> DNA 聚合酶</div>
+      <div class="lg-row"><span class="b-A">■</span> A — <span class="b-T">■</span> T · <span class="b-G">■</span> G — <span class="b-C">■</span> C（碱基互补配对，DNA 层面无 A-U）</div>
+      <div class="lg-row">氢键：A＝T（2 键），G≡C（3 键）</div>
+    </div>
+    <div id="resultBox" hidden>
+      <h3>✔ 复制结果核对（半保留）</h3>
+      <p>子代 DNA 分子数：<b>2</b>；每个子代 DNA = 一条母链（蓝）+ 一条新链（橙）。</p>
+      <p id="resultPairing"></p>
+      <p id="resultSample"></p>
+    </div>
+    <div id="particleLog">
+      <b>🧪 游离核苷酸粒子抽样（模板碱基 → 飞入粒子）：</b><br>
+      <span id="particleList">（播放动画过程中自动记录）</span>
+    </div>
+  </aside>
+</main>
+
+<div id="editPop" role="dialog" aria-label="碱基编辑">
+  <div class="cap" id="editPopCap">编辑第 0 位（上链）</div>
+  <div class="btns">
+    <button class="b-A" data-b="A">A</button>
+    <button class="b-T" data-b="T">T</button>
+    <button class="b-G" data-b="G">G</button>
+    <button class="b-C" data-b="C">C</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var cv = document.getElementById('dna');
+  var ctx = cv.getContext('2d');
+  var W = cv.width, H = cv.height;
+
+  // ---------- 数据模型 ----------
+  var DEF_TOP = 'ATGCGATCGTAC';               // 上链 5'→3'
+  var DEF_LEN = 12;
+  function comp(b) { return b === 'A' ? 'T' : b === 'T' ? 'A' : b === 'G' ? 'C' : 'G'; }
+  function compArr(a) { return a.map(comp); }
+
+  var len = DEF_LEN;
+  var motherTop = DEF_TOP.split('');          // 上链（母链）
+  var motherBot = compArr(motherTop);         // 下链（母链）
+  var newTop = new Array(DEF_LEN);            // 以母链下链为模板合成的新链
+  var newBot = new Array(DEF_LEN);            // 以母链上链为模板合成的新链
+  var progress = 0, playing = false, speed = 1, loop = true;
+  var particles = [], particleHistory = [];
+  var landedTop = {}, landedBot = {};
+  var selected = { chain: 'top', i: 0 };
+  var editing = null;                          // {chain, i}
+
+  function resetDNA() {
+    motherTop = DEF_TOP.slice(0, len).split('');
+    motherBot = compArr(motherTop);
+    newTop = new Array(len); newBot = new Array(len);
+    progress = 0; playing = false;
+    particles = []; particleHistory = []; landedTop = {}; landedBot = {};
+    updateStatusBar();
+    updateStageText();
+    updatePlayBtn();
+    syncProgressUI();
+  }
+
+  function extendDNA() {
+    if (len >= 20) { editTip('链长已达上限 20 对碱基。'); return; }
+    var add = Math.min(4, 20 - len);
+    var rnd = [];
+    for (var i = 0; i < add; i++) rnd.push(['A', 'T', 'G', 'C'][Math.floor(Math.random() * 4)]);
+    motherTop = motherTop.concat(rnd);
+    len = motherTop.length;
+    motherBot = compArr(motherTop);
+    newTop = new Array(len); newBot = new Array(len);
+    progress = 0; playing = false;
+    particles = []; particleHistory = []; landedTop = {}; landedBot = {};
+    editTip('链长已延长至 ' + len + ' 对碱基。');
+    updateStatusBar(); updateStageText(); updatePlayBtn(); syncProgressUI();
+  }
+
+  // ---------- 交互控件 ----------
+  var progressEl = document.getElementById('progress');
+  var speedEl = document.getElementById('speed');
+  var loopEl = document.getElementById('loop');
+  var playBtn = document.getElementById('playBtn');
+
+  function syncProgressUI() {
+    progressEl.value = Math.round(progress);
+    document.getElementById('progressVal').textContent = Math.round(progress) + '%';
+  }
+
+  progressEl.addEventListener('input', function () {
+    progress = parseFloat(progressEl.value);
+    particles = []; particleHistory = []; landedTop = {}; landedBot = {};
+    updateStageText(); updateStatusBar();
+  });
+
+  speedEl.addEventListener('input', function () {
+    speed = parseFloat(speedEl.value) / 100;
+    document.getElementById('speedVal').textContent = speed.toFixed(1) + '×';
+  });
+  loopEl.addEventListener('change', function () { loop = loopEl.checked; });
+
+  playBtn.addEventListener('click', function () {
+    if (!playing) {
+      if (progress >= 100) { progress = 0; particles = []; landedTop = {}; landedBot = {}; syncProgressUI(); }
+      playing = true;
+    } else { playing = false; }
+    updatePlayBtn(); updateStageText();
+  });
+  function updatePlayBtn() {
+    playBtn.classList.toggle('playing', playing);
+    playBtn.textContent = playing ? '⏸ 暂停' : '▶ 开始';
+    playBtn.setAttribute('aria-label', playing ? '暂停动画' : '开始动画');
+  }
+  document.getElementById('resetBtn').addEventListener('click', function () {
+    progress = 0; playing = false; particles = []; particleHistory = [];
+    landedTop = {}; landedBot = {};
+    editTip('已重置，回到双螺旋初始状态。');
+    updatePlayBtn(); updateStageText(); updateStatusBar(); syncProgressUI();
+  });
+  document.getElementById('completeBtn').addEventListener('click', function () {
+    progress = 100; playing = false;
+    particles = []; landedTop = {}; landedBot = {};
+    updatePlayBtn(); updateStageText(); updateStatusBar(); syncProgressUI();
+    editTip('已一次完成复制：1 个 DNA → 2 个子代 DNA。');
+  });
+  document.getElementById('extendBtn').addEventListener('click', extendDNA);
+  document.getElementById('resetLenBtn').addEventListener('click', function () {
+    len = DEF_LEN;
+    motherTop = DEF_TOP.split('');
+    motherBot = compArr(motherTop);
+    newTop = new Array(len); newBot = new Array(len);
+    progress = 0; playing = false; particles = []; particleHistory = [];
+    landedTop = {}; landedBot = {};
+    editTip('已重置链长为 ' + len + ' 对碱基。');
+    updatePlayBtn(); updateStageText(); updateStatusBar(); syncProgressUI();
+  });
+
+  function editTip(msg) {
+    document.getElementById('editTip').textContent = '✅ ' + msg;
+  }
+
+  // ---------- 阶段与派生状态 ----------
+  function forkPos() { return (progress < 90 ? progress / 90 : 1) * len; }
+  function synthLimit() { return Math.max(0, Math.round(forkPos() - 2)); }
+  function phase() {
+    if (progress < 35) return 'unwind';
+    if (progress < 80) return 'synthesize';
+    return 'complete';
+  }
+
+  var PHASE_TEXT = {
+    unwind: '<div class="step">【解旋阶段】</div>解旋酶（环形六聚体）位于复制叉前方，将双链之间的氢键打开，两条链逐渐分开，各自成为模板链。此阶段 DNA 聚合酶尚未大量工作。',
+    synthesize: '<div class="step">【配对合成阶段】</div>游离的核苷酸从核苷酸池飞入，按照碱基互补配对原则（A—T、G—C）与模板链碱基配对；DNA 聚合酶把新加入的核苷酸连接成新链，新链合成方向为 5′→3′。',
+    complete: '<div class="step">【连接完成阶段】</div>复制完成：1 个 DNA 分子得到 <b>2 个子代 DNA 分子</b>，每个子代 DNA 都含有一条母链（蓝）和一条新链（橙）——这就是<b>半保留复制</b>。<br>引导归纳：① 看图 → ② 逐位读碱基（点开"复制结果核对"） → ③ 归纳"旧链保留、新链互补"。'
+  };
+  function updateStageText() {
+    var box = document.getElementById('stageText');
+    var p = phase();
+    box.innerHTML = PHASE_TEXT[p];
+    var badge = document.getElementById('phaseBadge');
+    badge.textContent = p === 'unwind' ? '解旋阶段' : p === 'synthesize' ? '配对合成阶段' : '连接完成（半保留）';
+    var rb = document.getElementById('resultBox');
+    rb.hidden = progress < 100;
+    if (progress >= 100) renderResult();
+  }
+
+  function updateStatusBar() {
+    document.getElementById('stProgress').innerHTML = '进度 <b>' + Math.round(progress) + '%</b>';
+    document.getElementById('stFork').innerHTML = '复制叉位置 <b>' + Math.round(forkPos()) + '</b>/' + len;
+    document.getElementById('stSynth').innerHTML = '新链合成 <b>' + synthLimit() + '</b>/' + len;
+    document.getElementById('stDaughter').innerHTML = '子代DNA分子 <b>' + (progress >= 100 ? 2 : 1) + '</b>';
+  }
+
+  // ---------- 渲染 ----------
+  function baseColor(b) {
+    return b === 'A' ? '#ef5350' : b === 'T' ? '#26a69a' : b === 'G' ? '#fdd835' : '#5c6bc0';
+  }
+  function drawBase(x, y, b, r, label) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = baseColor(b); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#0b1220'; ctx.font = 'bold ' + (label ? 13 : 12) + 'px "PingFang SC", sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(b, x, y + 0.5);
+  }
+  function drawStrand(points, color, w) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (var i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
+    ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+  function drawArrow5to3(x, y, dir, color) {
+    ctx.fillStyle = color; ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(dir > 0 ? '5′→3′' : '3′←5′', x, y);
+  }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    var done = progress >= 90;
+    var splitF = clamp((progress - 90) / 10, 0, 1);
+    var cyA = 360 - 165 * splitF, cyB = 360 + 165 * splitF;
+    var amp = 36;
+    var x0 = 60, dx = (W - 150) / (len - 1);
+    var turn = 2 * Math.PI / 7;
+
+    if (!done) {
+      var fp = forkPos(), sl = synthLimit();
+      var pT = [], pB = [], pNT = [], pNB = [];
+      for (var i = 0; i < len; i++) {
+        var o = clamp((fp - i) / 2, 0, 1);
+        var sepF = fp > 0 ? clamp((fp - i) / fp, 0, 1) : 0;
+        var th = i * turn;
+        var x = x0 + i * dx;
+        var yT = cyA - (1 - o) * amp * Math.sin(th) - o * sepF * 115;
+        var yB = cyA + (1 - o) * amp * Math.sin(th) + o * sepF * 115;
+        pT.push({ x: x, y: yT }); pB.push({ x: x, y: yB });
+        if (o < 0.6) { // 配对区画氢键横线
+          ctx.beginPath(); ctx.moveTo(x, yT); ctx.lineTo(x, yB);
+          ctx.strokeStyle = 'rgba(120,170,220,.18)'; ctx.lineWidth = 2; ctx.stroke();
+        }
+        drawBase(x, yT, motherTop[i], 12, true);
+        drawBase(x, yB, motherBot[i], 12, true);
+        // 新链
+        if (i < sl) {
+          var nyT = yT + 26, nyB = yB - 26;
+          pNT.push({ x: x, y: nyT }); pNB.push({ x: x, y: nyB });
+          ctx.beginPath(); ctx.moveTo(x, yT); ctx.lineTo(x, nyT);
+          ctx.moveTo(x, yB); ctx.lineTo(x, nyB);
+          ctx.strokeStyle = 'rgba(255,183,77,.5)'; ctx.lineWidth = 2; ctx.stroke();
+        }
+      }
+      drawStrand(pT, '#4fc3f7', 3);
+      drawStrand(pB, '#4fc3f7', 3);
+      drawStrand(pNT, '#ffb74d', 3);
+      drawStrand(pNB, '#ffb74d', 3);
+      for (var j = 0; j < len; j++) {
+        var oj = clamp((fp - j) / 2, 0, 1);
+        var thj = j * turn;
+        var xj = x0 + j * dx;
+        var yTj = cyA - (1 - oj) * amp * Math.sin(thj) - oj * (fp > 0 ? clamp((fp - j) / fp, 0, 1) : 0) * 115;
+        var yBj = cyA + (1 - oj) * amp * Math.sin(thj) + oj * (fp > 0 ? clamp((fp - j) / fp, 0, 1) : 0) * 115;
+        if (j < sl) {
+          drawBase(xj, yTj + 26, newBot[j], 11, false);
+          drawBase(xj, yBj - 26, newTop[j], 11, false);
+        }
+      }
+      // 链端方向标注
+      ctx.fillStyle = '#ff8a80'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+      ctx.fillText('5′', x0 - 24, pT[0] ? pT[0].y : cyA);
+      ctx.fillText('3′', x0 + (len - 1) * dx + 24, pT[len - 1] ? pT[len - 1].y : cyA);
+      ctx.fillStyle = '#80cbc4';
+      ctx.fillText('3′', x0 - 24, pB[0] ? pB[0].y : cyA);
+      ctx.fillText('5′', x0 + (len - 1) * dx + 24, pB[len - 1] ? pB[len - 1].y : cyA);
+      // 解旋酶（环形六聚体）
+      var fx = clamp(x0 + fp * dx, x0 + 20, x0 + (len - 1) * dx);
+      var fy = cyA;
+      drawHexamer(fx, fy, '#ba68c8', '解旋酶');
+      // DNA 聚合酶（位于新链合成位点）
+      if (sl > 0) {
+        var tipX = x0 + (sl - 1) * dx;
+        var tipYT = cyA - (1 - clamp((fp - (sl - 1)) / 2, 0, 1)) * amp * Math.sin((sl - 1) * turn)
+                    - clamp((fp - (sl - 1)) / 2, 0, 1) * (fp > 0 ? clamp((fp - (sl - 1)) / fp, 0, 1) : 0) * 115;
+        drawPolymerase(tipX, tipYT + 34, '#81d4fa', 'DNA聚合酶');
+        drawPolymerase(tipX, tipYT - 6 - 34, '#81d4fa', 'DNA聚合酶');
+      }
+      drawPool();
+      drawParticles();
+      // 新链方向标注
+      if (pNT.length) drawArrow5to3(pNT[0].x, pNT[0].y - 18, 1, '#ffb74d');
+      if (pNB.length) drawArrow5to3(pNB[0].x, pNB[0].y + 18, 1, '#ffb74d');
+      // 结构提示
+      ctx.fillStyle = 'rgba(160,200,255,.55)'; ctx.font = '12px sans-serif';
+      ctx.fillText('复制叉', fx, fy + 38);
+    } else {
+      // 完成：两个子代双螺旋
+      drawDaughter(cyA, '子代 DNA ①', motherTop, newBot, '#4fc3f7', '#ffb74d');
+      drawDaughter(cyB, '子代 DNA ②', motherBot, newTop, '#4fc3f7', '#ffb74d');
+      drawPool();
+      // 新链方向
+      var xA = x0 + (len - 1) * dx;
+      ctx.fillStyle = '#ffb74d'; ctx.font = 'bold 12px sans-serif';
+      ctx.fillText('新链 5′→3′', xA + 30, cyA + 30);
+      ctx.fillText('新链 5′→3′', xA + 30, cyB + 30);
+      ctx.fillStyle = '#ff8a80';
+      ctx.fillText('5′', x0 - 24, cyA - amp - 20); ctx.fillText('3′', xA + 24, cyA - amp - 20);
+      ctx.fillText('3′', x0 - 24, cyA + amp + 20); ctx.fillText('5′', xA + 24, cyA + amp + 20);
+      ctx.fillStyle = '#80cbc4';
+      ctx.fillText('5′', x0 - 24, cyB - amp - 20); ctx.fillText('3′', xA + 24, cyB - amp - 20);
+      ctx.fillText('3′', x0 - 24, cyB + amp + 20); ctx.fillText('5′', xA + 24, cyB + amp + 20);
+    }
+  }
+
+  function drawDaughter(cy, label, template, newStr, colOld, colNew) {
+    var amp = 34, x0 = 60, dx = (W - 150) / (len - 1), turn = 2 * Math.PI / 7;
+    var pT = [], pB = [];
+    for (var i = 0; i < len; i++) {
+      var th = i * turn;
+      var x = x0 + i * dx;
+      var yT = cy - amp * Math.sin(th), yB = cy + amp * Math.sin(th);
+      pT.push({ x: x, y: yT }); pB.push({ x: x, y: yB });
+      ctx.beginPath(); ctx.moveTo(x, yT); ctx.lineTo(x, yB);
+      ctx.strokeStyle = 'rgba(120,170,220,.15)'; ctx.lineWidth = 2; ctx.stroke();
+      drawBase(x, yT, template[i], 12, true);
+      drawBase(x, yB, newStr[i], 12, true);
+    }
+    drawStrand(pT, colOld, 3); drawStrand(pB, colNew, 3);
+    ctx.fillStyle = '#8fd0ff'; ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(label, 14, cy - amp - 40);
+    ctx.font = '11px sans-serif'; ctx.fillStyle = '#ffb74d';
+    ctx.fillText('（上链=母链 · 下链=新链）', 14, cy - amp - 24);
+    ctx.fillStyle = '#4fc3f7';
+    ctx.fillText('（上链=母链 · 下链=新链）', 14, cy + amp + 34);
+    ctx.textAlign = 'center';
+  }
+
+  function drawHexamer(x, y, color, label) {
+    ctx.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 3 * i - Math.PI / 6;
+      var px = x + 17 * Math.cos(a), py = y + 17 * Math.sin(a);
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(186,104,200,.25)'; ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.stroke();
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, y + 40);
+  }
+
+  function drawPolymerase(x, y, color, label) {
+    ctx.fillStyle = 'rgba(129,212,250,.28)';
+    ctx.beginPath(); ctx.ellipse(x, y, 30, 16, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#eaf6ff'; ctx.font = 'bold 10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, x, y + 26);
+  }
+
+  function drawPool() {
+    var px = W / 2, py = H - 42;
+    ctx.fillStyle = 'rgba(28,47,77,.85)';
+    ctx.beginPath(); ctx.roundRect(px - 150, py - 22, 300, 44, 12); ctx.fill();
+    ctx.strokeStyle = '#3a5b86'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#9db8d8'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('游离核苷酸池（飞入粒子的字母=位点互补碱基）', px, py - 6);
+    ['A', 'T', 'G', 'C'].forEach(function (b, idx) {
+      drawBase(px - 70 + idx * 48, py + 12, b, 10, true);
+    });
+  }
+
+  function spawnParticle(col, chain) {
+    var template = chain === 'top' ? motherTop[col] : motherBot[col];
+    var letter = comp(template);
+    var x0 = W / 2 + (Math.random() * 80 - 40), y0 = H - 26;
+    var target = targetPos(col, chain);
+    particles.push({ x0: x0, y0: y0, x1: target.x, y1: target.y, t: 0, dur: 0.55, letter: letter, col: col, chain: chain });
+    particleHistory.push({ letter: letter, template: template, col: col, chain: chain });
+    if (particleHistory.length > 8) particleHistory.shift();
+    updateParticleList();
+  }
+
+  function targetPos(col, chain) {
+    var done = progress >= 90;
+    var splitF = clamp((progress - 90) / 10, 0, 1);
+    var cyA = 360 - 165 * splitF, cyB = 360 + 165 * splitF;
+    var amp = done ? 34 : 36;
+    var x0 = 60, dx = (W - 150) / (len - 1), turn = 2 * Math.PI / 7;
+    var fp = done ? len : forkPos();
+    // 默认用子代①的相应链位（子代②同列同位，取①即可）；下链在子代②中为上链模板
+    var cy = done ? cyA : cyA;
+    var yT = helixY(col, 'top', cy, amp, x0, dx, turn, fp);
+    var yB = helixY(col, 'bot', cy, amp, x0, dx, turn, fp);
+    return chain === 'top' ? { x: x0 + col * dx, y: yT + (done ? 0 : 26) } : { x: x0 + col * dx, y: yB - (done ? 0 : 26) };
+  }
+
+  function drawParticles() {
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+      if (p.t >= p.dur) continue;
+      var k = p.t / p.dur;
+      var e = 1 - Math.pow(1 - k, 3);
+      var x = p.x0 + (p.x1 - p.x0) * e, y = p.y0 + (p.y1 - p.y0) * e;
+      drawBase(x, y, p.letter, 11, true);
+    }
+  }
+
+  function updateParticleList() {
+    var el = document.getElementById('particleList');
+    if (!particleHistory.length) { el.textContent = '（播放动画过程中自动记录）'; return; }
+    var html = '';
+    for (var i = 0; i < particleHistory.length; i++) {
+      var p = particleHistory[i];
+      html += '模板<span class="b-' + p.template + '">' + p.template + '</span>→飞入<span class="b-' + p.letter + '">' + p.letter + '</span>　';
+    }
+    el.innerHTML = html;
+  }
+
+  // ---------- 复制结果核对 ----------
+  function renderResult() {
+    var pairing = document.getElementById('resultPairing');
+    var samples = [1, 5, 8];
+    var rows = '<table><tr><th>位点</th><th>模板链碱基</th><th>新链碱基</th><th>配对是否正确</th></tr>';
+    for (var i = 0; i < samples.length; i++) {
+      var c = samples[i];
+      var t1 = motherTop[c], n1 = newBot[c];
+      var t2 = motherBot[c], n2 = newTop[c];
+      var ok1 = n1 === comp(t1), ok2 = n2 === comp(t2);
+      rows += '<tr><td>第' + (c + 1) + '位</td><td>' + t1 + '</td><td>' + n1 + '</td><td>' + (ok1 ? '✔' : '✘') + '</td></tr>';
+      rows += '<tr><td>第' + (c + 1) + '位(下)</td><td>' + t2 + '</td><td>' + n2 + '</td><td>' + (ok2 ? '✔' : '✘') + '</td></tr>';
+    }
+    rows += '</table>';
+    pairing.innerHTML = '<b>逐位核对（抽样 3 个位点）：</b>' + rows;
+    var sample = document.getElementById('resultSample');
+    var txt = '任一子代 DNA 中，母链碱基与新链碱基逐一互补（A↔T、G↔C，无 A-U）。';
+    sample.textContent = txt;
+  }
+
+  // ---------- 碱基编辑 ----------
+  var editPop = document.getElementById('editPop');
+  var editPopCap = document.getElementById('editPopCap');
+  function helixY(i, chain, cyCenter, amp, x0, dx, turn, fp) {
+    var th = i * turn;
+    var o = clamp((fp - i) / 2, 0, 1);
+    var sepF = fp > 0 ? clamp((fp - i) / fp, 0, 1) : 0;
+    var yT = cyCenter - (1 - o) * amp * Math.sin(th) - o * sepF * 115;
+    var yB = cyCenter + (1 - o) * amp * Math.sin(th) + o * sepF * 115;
+    return chain === 'top' ? yT : yB;
+  }
+  function hitTest(x, y) {
+    var done = progress >= 90;
+    var splitF = clamp((progress - 90) / 10, 0, 1);
+    var cyA = 360 - 165 * splitF, cyB = 360 + 165 * splitF;
+    var amp = done ? 34 : 36;
+    var x0 = 60, dx = (W - 150) / (len - 1), turn = 2 * Math.PI / 7;
+    var fp = done ? len : forkPos();
+    var centers = done ? [{ cy: cyA, top: 'top', bot: 'bot' }, { cy: cyB, top: 'top', bot: 'bot' }] : [{ cy: cyA, top: 'top', bot: 'bot' }];
+    for (var c = 0; c < centers.length; c++) {
+      var cent = centers[c];
+      for (var i = 0; i < len; i++) {
+        var bx = x0 + i * dx;
+        var yT = helixY(i, 'top', cent.cy, amp, x0, dx, turn, fp);
+        var yB = helixY(i, 'bot', cent.cy, amp, x0, dx, turn, fp);
+        if (Math.hypot(x - bx, y - yT) <= 18) return { chain: 'top', i: i, x: bx, y: yT };
+        if (Math.hypot(x - bx, y - yB) <= 18) return { chain: 'bot', i: i, x: bx, y: yB };
+      }
+    }
+    return null;
+  }
+
+  cv.addEventListener('click', function (ev) {
+    var rect = cv.getBoundingClientRect();
+    var scaleX = W / rect.width, scaleY = H / rect.height;
+    var mx = (ev.clientX - rect.left) * scaleX, my = (ev.clientY - rect.top) * scaleY;
+    var hit = hitTest(mx, my);
+    if (hit) {
+      openEdit(hit.chain, hit.i, hit.x, hit.y);
+    } else {
+      closeEdit();
+    }
+  });
+
+  function openEdit(chain, i, cx, cy) {
+    editing = { chain: chain, i: i };
+    editPopCap.textContent = '编辑第 ' + (i + 1) + ' 位（' + (chain === 'top' ? '上链' : '下链') + '，当前 ' + (chain === 'top' ? motherTop[i] : motherBot[i]) + '）';
+    editPop.style.display = 'block';
+    var rect = cv.getBoundingClientRect();
+    var px = rect.left + cx / W * rect.width;
+    var py = rect.top + cy / H * rect.height;
+    editPop.style.left = Math.min(window.innerWidth - 190, px + 14) + 'px';
+    editPop.style.top = Math.min(window.innerHeight - 120, py + 14) + 'px';
+  }
+  function closeEdit() {
+    editing = null; editPop.style.display = 'none';
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#editPop .btns button'), function (btn) {
+    btn.addEventListener('click', function () {
+      if (!editing) return;
+      var b = btn.getAttribute('data-b');
+      applyEdit(editing.chain, editing.i, b);
+      closeEdit();
+    });
+  });
+  function applyEdit(chain, i, b) {
+    if (chain === 'top') {
+      motherTop[i] = b;
+      motherBot[i] = comp(b);
+      newBot[i] = comp(b);            // 新链=模板(上链)的互补
+      newTop[i] = comp(motherBot[i]); // 新链=模板(下链)的互补
+    } else {
+      motherBot[i] = b;
+      motherTop[i] = comp(b);
+      newTop[i] = comp(b);
+      newBot[i] = comp(motherTop[i]);
+    }
+    var okTop = comp(motherTop[i]) === motherBot[i];
+    var okNew = comp(motherTop[i]) === newBot[i] && comp(motherBot[i]) === newTop[i];
+    editTip('第 ' + (i + 1) + ' 位已编辑：上链 ' + motherTop[i] + ' / 下链 ' + motherBot[i] +
+      '，互补正确=' + (okTop && okNew ? '是 ✔' : '否 ✘'));
+    if (progress >= 100) renderResult();
+  }
+
+  // 键盘操作
+  cv.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') { closeEdit(); return; }
+    if (editing) return;
+    if (ev.key === 'ArrowLeft') {
+      selected.i = Math.max(0, selected.i - 1); ev.preventDefault();
+      flashSelected();
+    } else if (ev.key === 'ArrowRight') {
+      selected.i = Math.min(len - 1, selected.i + 1); ev.preventDefault();
+      flashSelected();
+    } else if (ev.key === 'ArrowUp') {
+      selected.chain = 'top'; ev.preventDefault(); flashSelected();
+    } else if (ev.key === 'ArrowDown') {
+      selected.chain = 'bot'; ev.preventDefault(); flashSelected();
+    } else if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      var pos = targetPos(selected.i, selected.chain);
+      openEdit(selected.chain, selected.i, pos.x, pos.y);
+    }
+  });
+  function flashSelected() {
+    editTip('已选中第 ' + (selected.i + 1) + ' 位（' + (selected.chain === 'top' ? '上链' : '下链') +
+      '，碱基 ' + (selected.chain === 'top' ? motherTop[selected.i] : motherBot[selected.i]) + '），按 Enter 编辑。');
+    var p = targetPos(selected.i, selected.chain);
+    ctx.save();
+    ctx.strokeStyle = '#4fc3f7'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+    ctx.strokeRect(p.x - 18, p.y - 18, 36, 36);
+    ctx.restore();
+  }
+
+  // ---------- 动画循环 ----------
+  var lastT = 0;
+  function tick(t) {
+    if (lastT && playing) {
+      var dt = (t - lastT) / 1000 * speed;
+      progress += dt * 12;
+      if (progress >= 100) {
+        if (loop) { progress = 0; particles = []; landedTop = {}; landedBot = {}; }
+        else { progress = 100; playing = false; updatePlayBtn(); }
+      }
+      // 新列合成时产生飞入粒子
+      var sl = synthLimit();
+      for (var i = 0; i < sl; i++) {
+        if (!landedTop[i]) { landedTop[i] = true; spawnParticle(i, 'top'); }
+        if (!landedBot[i]) { landedBot[i] = true; spawnParticle(i, 'bot'); }
+      }
+      syncProgressUI(); updateStatusBar();
+    }
+    lastT = t;
+    updateParticles(t);
+    draw();
+    updateStageText();
+    requestAnimationFrame(tick);
+  }
+  function updateParticles(t) {
+    for (var i = 0; i < particles.length; i++) particles[i].t += (1 / 60) * speed;
+    particles = particles.filter(function (p) { return p.t < p.dur; });
+  }
+
+  // ---------- 初始化与自检 ----------
+  resetDNA();
+  updateStageText();
+  updateStatusBar();
+  requestAnimationFrame(tick);
+
+  // 自检：互补函数正确性
+  var selfTest = ['A', 'T', 'G', 'C'].every(function (b) { return comp(comp(b)) === b; });
+  var mrnaT = 'AUGCCUAAGUGA';
+  console.log('[B01 自检] 互补函数自反：', selfTest, '；模板 ATGC → 新链', compArr('ATGC'.split('')).join(''), '（期望 TACG）');
+})();
+</script>
+</body>
+</html>

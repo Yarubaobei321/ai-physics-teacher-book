@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>微积分可视化：导数与积分原理 | 高中数学互动演示</title>
+    <!-- 使用 MathJax 渲染数学公式 -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" id="MathJax-script" async></script>
+    <!-- Chart.js 用于绘制函数图表 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖动干扰，但不影响输入框 */
+        }
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #f5f7fc 0%, #eef2f7 100%);
+            margin: 0;
+            padding: 20px;
+            color: #1e2a3e;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2rem;
+            margin: 0 0 0.2rem 0;
+            font-weight: 600;
+            background: linear-gradient(135deg, #1f4870, #2a5f8a);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .sub {
+            color: #2c5a7a;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #3b82f6;
+            padding-left: 1rem;
+            font-weight: 400;
+        }
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .card {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.02);
+            padding: 1.25rem 1.5rem;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .chart-panel {
+            flex: 2;
+            min-width: 320px;
+        }
+        .control-panel {
+            flex: 1.2;
+            min-width: 280px;
+        }
+        .rule-panel {
+            flex: 1.5;
+            min-width: 280px;
+        }
+        canvas {
+            max-height: 400px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 1.5rem;
+            padding: 0.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .chart-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .slider-group {
+            margin-bottom: 1.2rem;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.85rem;
+            color: #1e3a5f;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            background: #cbd5e1;
+            height: 4px;
+            border-radius: 5px;
+        }
+        .param-value {
+            font-family: monospace;
+            background: #e9edf2;
+            padding: 0.2rem 0.6rem;
+            border-radius: 2rem;
+            font-size: 0.85rem;
+            margin-left: 0.6rem;
+        }
+        .function-select {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 1rem;
+            border: 1px solid #cbd5e6;
+            background: white;
+            font-weight: 500;
+            margin-top: 0.3rem;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            justify-content: center;
+        }
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .color-badge {
+            width: 1rem;
+            height: 0.8rem;
+            border-radius: 0.3rem;
+            display: inline-block;
+        }
+        .info-text {
+            background: #f0f4fa;
+            border-radius: 1rem;
+            padding: 0.8rem 1rem;
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            border-left: 4px solid #3b82f6;
+        }
+        .rule-box {
+            margin-bottom: 1rem;
+        }
+        .rule-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #b9d0f0;
+            display: inline-block;
+            margin-bottom: 0.6rem;
+        }
+        .rule-content {
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+        .integral-area {
+            background: rgba(59,130,246,0.15);
+            transition: all 0.1s;
+        }
+        button {
+            background: #2c5f8a;
+            border: none;
+            color: white;
+            padding: 0.3rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+        button:hover {
+            background: #1e4462;
+        }
+        footer {
+            text-align: center;
+            font-size: 0.7rem;
+            margin-top: 2rem;
+            color: #5c6f87;
+        }
+        @media (max-width: 800px) {
+            .card { padding: 1rem; }
+            h1 { font-size: 1.6rem; }
+        }
+        .math-inline {
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📐 导数与积分 · 直观原理</h1>
+    <div class="sub">瞬时变化率 + 累积面积 | 基本概念与运算法则可视化</div>
+
+    <div class="grid">
+        <!-- 图表区 -->
+        <div class="card chart-panel">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <h3 style="margin:0 0 0.5rem 0;">📈 函数 \( f(x) \) 及其几何意义</h3>
+                <button id="resetView" style="background:#6c757d;">重置视图</button>
+            </div>
+            <div class="chart-container">
+                <canvas id="functionCanvas" width="700" height="400" style="width:100%; height:auto; max-width:700px; margin:0 auto; display:block;"></canvas>
+            </div>
+            <div class="legend">
+                <span><div class="color-badge" style="background: #1e6f9f;"></div> \( f(x) \) 曲线</span>
+                <span><div class="color-badge" style="background: #e67e22;"></div> 切线 (导数 = 斜率)</span>
+                <span><div class="color-badge" style="background: #2ecc71;"></div> 积分区域 \([a, x]\) 面积</span>
+                <span><div class="color-badge" style="background: #e74c3c;"></div> 动点 \( P(x_0, f(x_0)) \)</span>
+            </div>
+            <div class="info-text" id="mathDetails">
+                <strong>📖 当前解析</strong><br>
+                拖动下方滑块改变 \( x_0 \) 观察切线斜率 (导数) 与积分累积量。
+            </div>
+        </div>
+
+        <!-- 控制区: 函数选择, 参数, 点坐标 -->
+        <div class="card control-panel">
+            <h3>🎮 交互控制</h3>
+            <div class="slider-group">
+                <label>📌 选择函数 \( f(x) \)</label>
+                <select id="funcSelect" class="function-select">
+                    <option value="poly">\( f(x) = x^2 - 2x + 1 \)</option>
+                    <option value="sin">\( f(x) = \sin(x) \)</option>
+                    <option value="exp">\( f(x) = e^{0.3x} \)</option>
+                    <option value="cubic">\( f(x) = 0.2x^3 - x \)</option>
+                </select>
+            </div>
+            <div class="slider-group">
+                <label>📍 观测点 \( x_0 \) <span id="x0ValDisplay" class="param-value">0.00</span></label>
+                <input type="range" id="x0Slider" min="-2.5" max="2.5" step="0.02" value="0.8">
+            </div>
+            <div class="slider-group">
+                <label>📏 积分下限 \( a \) <span id="aValDisplay" class="param-value">-1.50</span></label>
+                <input type="range" id="aSlider" min="-2.5" max="2.5" step="0.05" value="-1.5">
+            </div>
+            <div class="slider-group">
+                <label>📏 积分上限 (动点 \( x \) 固定?) 实际展示从 \( a \) 到 \( x_0 \) 的面积</label>
+                <p style="font-size:0.75rem; margin-top:-5px;">当前积分区间: \([a, x_0]\) &nbsp;→ 着色区域</p>
+            </div>
+            <div class="info-text" style="margin-top:0.5rem;">
+                <strong>🧾 导数定义:</strong> \( f'(x_0) = \lim_{h\to 0}\frac{f(x_0+h)-f(x_0)}{h} \)<br>
+                <strong>🧾 积分定义:</strong> \( \int_a^{x_0} f(t)dt \) = 曲线下净面积
+            </div>
+        </div>
+
+        <!-- 法则与概念区 -->
+        <div class="card rule-panel">
+            <h3>📚 基本概念 & 运算法则</h3>
+            <div class="rule-box">
+                <div class="rule-title">🔷 导数 · 基本法则</div>
+                <div class="rule-content">
+                    • 常数导数: \( \frac{d}{dx}[c] = 0 \) <br>
+                    • 幂法则: \( \frac{d}{dx}[x^n] = n x^{n-1} \) <br>
+                    • 和差法则: \( (u \pm v)' = u' \pm v' \) <br>
+                    • 乘积法则: \( (uv)' = u'v + uv' \) <br>
+                    • 商法则: \( \left(\frac{u}{v}\right)' = \frac{u'v - uv'}{v^2} \) <br>
+                    • 链式法则: \( \frac{d}{dx}f(g(x)) = f'(g(x))g'(x) \) <br>
+                    • 三角函数: \( \frac{d}{dx}\sin x = \cos x,\ \frac{d}{dx}\cos x = -\sin x \) <br>
+                    • 指数: \( \frac{d}{dx}e^{kx} = k e^{kx} \)
+                </div>
+            </div>
+            <div class="rule-box">
+                <div class="rule-title">🔷 积分 · 基本法则</div>
+                <div class="rule-content">
+                    • 幂积分: \( \int x^n dx = \frac{x^{n+1}}{n+1} + C\ (n \neq -1) \) <br>
+                    • 常数倍: \( \int cf(x)dx = c\int f(x)dx \) <br>
+                    • 和差: \( \int [u\pm v]dx = \int u dx \pm \int v dx \) <br>
+                    • 微积分基本定理: \( \int_a^b f(x)dx = F(b)-F(a) \) <br>
+                    • 定积分几何意义: 曲线下面积 (x轴上方为正, 下方为负) <br>
+                    • 换元积分 & 分部积分 (高阶扩展)
+                </div>
+            </div>
+            <div class="rule-box">
+                <div class="rule-title">🔷 当前函数解析导数/积分值</div>
+                <div id="dynamicRules" class="rule-content" style="background: #eef3fc; padding: 0.6rem; border-radius: 1rem;">
+                    选中函数将显示导数公式和积分表达式...
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        ⚡ 互动演示 | 拖动滑块观察切线斜率（导数）和积分累积面积 | 曲线为函数图像，切点处斜率即导数，绿色区域为从 a 到 x₀ 的定积分值
+    </footer>
+</div>
+
+<script>
+    // --- 定义函数库 及 导数/原函数 (解析用)---
+    const functions = {
+        poly: {
+            expr: "x^2 - 2x + 1",
+            f: (x) => x*x - 2*x + 1,
+            df: (x) => 2*x - 2,
+            F: (x) => (x*x*x)/3 - x*x + x,   // 原函数 (不定积分) 用于计算定积分
+            tex: "f(x)=x^2-2x+1",
+            derivTex: "f'(x)=2x-2",
+            integralTex: "\\int f(x)dx = \\frac{x^3}{3} - x^2 + x + C"
+        },
+        sin: {
+            expr: "sin(x)",
+            f: (x) => Math.sin(x),
+            df: (x) => Math.cos(x),
+            F: (x) => -Math.cos(x),
+            tex: "f(x)=\\sin x",
+            derivTex: "f'(x)=\\cos x",
+            integralTex: "\\int \\sin x dx = -\\cos x + C"
+        },
+        exp: {
+            expr: "e^{0.3x}",
+            f: (x) => Math.exp(0.3 * x),
+            df: (x) => 0.3 * Math.exp(0.3 * x),
+            F: (x) => (1/0.3) * Math.exp(0.3 * x), // 1/0.3 ≈ 3.3333
+            tex: "f(x)=e^{0.3x}",
+            derivTex: "f'(x)=0.3e^{0.3x}",
+            integralTex: "\\int e^{0.3x}dx = \\frac{1}{0.3}e^{0.3x}+C"
+        },
+        cubic: {
+            expr: "0.2x^3 - x",
+            f: (x) => 0.2 * x*x*x - x,
+            df: (x) => 0.6 * x*x - 1,
+            F: (x) => 0.2 * (Math.pow(x,4)/4) - (x*x)/2, // 0.2/4 = 0.05 => 0.05 x^4 - 0.5 x^2
+            tex: "f(x)=0.2x^3 - x",
+            derivTex: "f'(x)=0.6x^2-1",
+            integralTex: "\\int (0.2x^3 - x)dx = 0.05x^4 - 0.5x^2 + C"
+        }
+    };
+    
+    // DOM 元素
+    const canvas = document.getElementById('functionCanvas');
+    const ctx = canvas.getContext('2d');
+    const funcSelect = document.getElementById('funcSelect');
+    const x0Slider = document.getElementById('x0Slider');
+    const aSlider = document.getElementById('aSlider');
+    const x0ValDisplay = document.getElementById('x0ValDisplay');
+    const aValDisplay = document.getElementById('aValDisplay');
+    const resetBtn = document.getElementById('resetView');
+    const dynamicRulesDiv = document.getElementById('dynamicRules');
+    const mathDetailsSpan = document.getElementById('mathDetails'); // 额外更新细节
+
+    // 设置画布实际分辨率 (避免模糊)
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        const width = Math.min(700, container.clientWidth);
+        canvas.width = width;
+        canvas.height = 400;
+        canvas.style.width = `${width}px`;
+        canvas.style.height = '400px';
+        drawAll();
+    }
+    window.addEventListener('resize', () => resizeCanvas());
+    
+    // 全局状态
+    let currentFuncKey = 'poly';
+    let x0 = 0.8;
+    let a = -1.5;
+    let xRange = { min: -2.5, max: 2.5 };
+    
+    // 辅助函数: 世界坐标到画布坐标
+    function toPixel(x, y) {
+        const w = canvas.width, h = canvas.height;
+        const xMin = xRange.min, xMax = xRange.max;
+        const yMin = -2.8, yMax = 4.2;   // 固定Y范围适应各种函数 (sin值域[-1,1] exp最大~2.1 三次函数在-2.5~2.5区间大概 -3~3)
+        // 动态适配一下exp范围, 确保e^{0.3*2.5}=~2.11, 安全yMax 4
+        const px = ((x - xMin) / (xMax - xMin)) * w;
+        const py = h - ((y - yMin) / (yMax - yMin)) * h;
+        return { x: px, y: py };
+    }
+    
+    // 绘制网格, 曲线, 切线, 积分区域
+    function drawGrid() {
+        const w = canvas.width, h = canvas.height;
+        const xMin = xRange.min, xMax = xRange.max;
+        const yMin = -2.8, yMax = 4.2;
+        
+        ctx.save();
+        ctx.strokeStyle = "#cbd5e1";
+        ctx.lineWidth = 0.5;
+        // 绘制垂直网格线
+        for (let x = -2; x <= 2; x+=0.5) {
+            if (x < xMin || x > xMax) continue;
+            const p = toPixel(x, 0);
+            ctx.beginPath();
+            ctx.moveTo(p.x, 0);
+            ctx.lineTo(p.x, h);
+            ctx.stroke();
+        }
+        for (let y = -2; y <= 4; y+=1) {
+            const p = toPixel(0, y);
+            ctx.beginPath();
+            ctx.moveTo(0, p.y);
+            ctx.lineTo(w, p.y);
+            ctx.stroke();
+        }
+        // 绘制坐标轴
+        ctx.beginPath();
+        ctx.lineWidth = 1.8;
+        ctx.strokeStyle = "#475569";
+        const originX = toPixel(0,0).x;
+        const originY = toPixel(0,0).y;
+        ctx.moveTo(0, originY);
+        ctx.lineTo(w, originY);
+        ctx.moveTo(originX, 0);
+        ctx.lineTo(originX, h);
+        ctx.stroke();
+        // 刻度标签略
+        ctx.font = "12px 'Segoe UI'";
+        ctx.fillStyle = "#334155";
+        for (let x = -2; x <= 2; x+=1) {
+            const px = toPixel(x,0).x;
+            ctx.fillText(x, px-5, originY+15);
+        }
+        for (let y = -2; y <= 4; y+=1) {
+            const py = toPixel(0,y).y;
+            if(y!==0) ctx.fillText(y, originX+8, py+4);
+        }
+        ctx.fillText("x", toPixel(xMax-0.2,0).x-5, originY-8);
+        ctx.fillText("y", originX+8, toPixel(0,yMax-0.3).y-5);
+        ctx.restore();
+    }
+    
+    // 绘制函数曲线
+    function drawCurve() {
+        const func = functions[currentFuncKey].f;
+        const step = (xRange.max - xRange.min) / 500;
+        ctx.beginPath();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = "#1e6f9f";
+        let first = true;
+        for (let x = xRange.min; x <= xRange.max; x += step) {
+            let y = func(x);
+            if (Math.abs(y) > 10) { first = true; continue; } // 避免飞线
+            const {x: px, y: py} = toPixel(x, y);
+            if (first) {
+                ctx.moveTo(px, py);
+                first = false;
+            } else {
+                ctx.lineTo(px, py);
+            }
+        }
+        ctx.stroke();
+    }
+    
+    // 绘制积分区域 (从 a 到 x0)
+    function drawIntegralArea() {
+        const func = functions[currentFuncKey].f;
+        const start = Math.min(a, x0);
+        const end = Math.max(a, x0);
+        const step = (end - start) / 200;
+        if (step <= 0) return;
+        ctx.beginPath();
+        let firstPoint = true;
+        // 构建多边形: 从左下开始沿着曲线再到x轴
+        for (let x = start; x <= end; x += step) {
+            let y = func(x);
+            const {x: px, y: py} = toPixel(x, y);
+            if (firstPoint) {
+                ctx.moveTo(px, py);
+                firstPoint = false;
+            } else {
+                ctx.lineTo(px, py);
+            }
+        }
+        // 最后连接到x轴上对应终点
+        const lastX = end;
+        const lastY = 0;
+        const lastPix = toPixel(lastX, lastY);
+        ctx.lineTo(lastPix.x, lastPix.y);
+        // 沿x轴回到起点
+        const firstPix = toPixel(start, 0);
+        ctx.lineTo(firstPix.x, firstPix.y);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(46, 204, 113, 0.25)";
+        ctx.fill();
+        ctx.strokeStyle = "#2ecc71";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+    
+    // 绘制切线与切点
+    function drawTangentAndPoint() {
+        const func = functions[currentFuncKey].f;
+        const deriv = functions[currentFuncKey].df;
+        const x0Val = x0;
+        const y0 = func(x0Val);
+        const slope = deriv(x0Val);
+        // 切线延长范围 [-2.5,2.5] 区间内
+        const xLeft = Math.max(xRange.min, x0Val - 1.5);
+        const xRight = Math.min(xRange.max, x0Val + 1.5);
+        const yLeft = slope * (xLeft - x0Val) + y0;
+        const yRight = slope * (xRight - x0Val) + y0;
+        const p1 = toPixel(xLeft, yLeft);
+        const p2 = toPixel(xRight, yRight);
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.strokeStyle = "#e67e22";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        // 绘制切点
+        const point = toPixel(x0Val, y0);
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
+        ctx.fillStyle = "#e74c3c";
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+        ctx.fillStyle = "white";
+        ctx.fill();
+    }
+    
+    // 更新动态数学公式 + 积分/导数数值
+    function updateMathDetails() {
+        const funcObj = functions[currentFuncKey];
+        const x0v = x0;
+        const av = a;
+        const f_at_x0 = funcObj.f(x0v);
+        const deriv_at_x0 = funcObj.df(x0v);
+        // 计算定积分从 a 到 x0 的数值积分 (采用自适应simpson或简单累加)
+        const n = 300;
+        const stepInt = (x0v - av) / n;
+        let integralValue = 0;
+        if (Math.abs(stepInt) > 1e-8) {
+            for (let i = 0; i < n; i++) {
+                const xi = av + i * stepInt;
+                const xi1 = xi + stepInt;
+                integralValue += (funcObj.f(xi) + funcObj.f(xi1)) / 2 * stepInt;
+            }
+        } else {
+            integralValue = 0;
+        }
+        // 解析原函数计算精确值 (用于显示)
+        const exactIntegral = funcObj.F(x0v) - funcObj.F(av);
+        // 更新details卡片
+        dynamicRulesDiv.innerHTML = `
+            <strong>📌 当前函数: </strong> \(${funcObj.tex}\) <br>
+            <strong>📈 导数公式: </strong> \(${funcObj.derivTex}\) <br>
+            <strong>∫ 不定积分: </strong> \(${funcObj.integralTex}\) <br>
+            <hr style="margin:8px 0;">
+            <strong>📍 在 \(x_0 = ${x0v.toFixed(3)}\) 处: </strong><br>
+            &nbsp;&nbsp; \( f(x_0) = ${f_at_x0.toFixed(4)}\) <br>
+            &nbsp;&nbsp; 切线斜率 \(f'(x_0) = ${deriv_at_x0.toFixed(4)}\) <br>
+            <strong>📐 定积分 \( \int_{${av.toFixed(2)}}^{${x0v.toFixed(2)}} f(t) dt \) : </strong><br>
+            &nbsp;&nbsp; 数值 ≈ \(${integralValue.toFixed(5)}\) &nbsp; (解析精确值: ${exactIntegral.toFixed(5)})<br>
+            <span style="font-size:0.7rem;">💡 绿色区域面积 = 积分值 (负面积向下)</span>
+        `;
+        mathDetailsSpan.innerHTML = `<strong>📖 当前解析</strong><br>
+        点P(${x0v.toFixed(3)}, ${f_at_x0.toFixed(3)}) 切线斜率 = ${deriv_at_x0.toFixed(4)} <br>
+        积分区间 [${av.toFixed(2)}, ${x0v.toFixed(2)}] 对应净面积 ≈ ${integralValue.toFixed(4)}<br>
+        微积分基本定理: 原函数差值 = ${exactIntegral.toFixed(5)} ✅`;
+    }
+    
+    // 绘制全部
+    function drawAll() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawGrid();
+        drawIntegralArea();      // 先绘制填充区域，再画曲线在上层
+        drawCurve();
+        drawTangentAndPoint();
+        updateMathDetails();
+    }
+    
+    // 根据滑块刷新数值并重绘
+    function refreshFromSliders() {
+        x0 = parseFloat(x0Slider.value);
+        a = parseFloat(aSlider.value);
+        x0ValDisplay.innerText = x0.toFixed(3);
+        aValDisplay.innerText = a.toFixed(3);
+        drawAll();
+    }
+    
+    // 函数选择变更
+    function onFuncChange() {
+        currentFuncKey = funcSelect.value;
+        // 根据函数适应性调整视图范围？保持原样但重绘即可
+        drawAll();
+    }
+    
+    // 重置视图: 恢复默认范围，且重置a, x0到合理位置
+    function resetView() {
+        x0Slider.value = "0.8";
+        aSlider.value = "-1.5";
+        funcSelect.value = "poly";
+        currentFuncKey = "poly";
+        x0 = 0.8;
+        a = -1.5;
+        x0ValDisplay.innerText = "0.800";
+        aValDisplay.innerText = "-1.500";
+        drawAll();
+    }
+    
+    // 绑定事件
+    function bindEvents() {
+        x0Slider.addEventListener('input', refreshFromSliders);
+        aSlider.addEventListener('input', refreshFromSliders);
+        funcSelect.addEventListener('change', () => {
+            onFuncChange();
+            refreshFromSliders(); // 双重确保
+        });
+        resetBtn.addEventListener('click', resetView);
+    }
+    
+    // 初始化
+    function init() {
+        resizeCanvas();
+        bindEvents();
+        refreshFromSliders();
+    }
+    
+    init();
+</script>
+</body>
+</html>

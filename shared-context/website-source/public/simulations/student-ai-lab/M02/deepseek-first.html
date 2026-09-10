@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>数学可视化：复数的几何意义 | 交互式演示</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none; /* 避免拖拽时选中文本，提升体验，但输入框不受影响 */
+        }
+        body {
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', 'Fira Code', monospace, system-ui, -apple-system;
+            background: linear-gradient(145deg, #f5f7fc 0%, #e9eef4 100%);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        /* 主卡片容器 */
+        .demo-container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(2px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px -12px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+        /* 头部 */
+        .header {
+            background: #1e2a3e;
+            color: white;
+            padding: 1.2rem 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-weight: 600;
+            font-size: 1.8rem;
+            letter-spacing: -0.3px;
+        }
+        .header h1 span {
+            font-family: monospace;
+            background: #2c3e4e;
+            padding: 0.2rem 0.6rem;
+            border-radius: 40px;
+            font-size: 1.4rem;
+        }
+        .header p {
+            margin: 0.5rem 0 0;
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+        /* 双栏布局 */
+        .main-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.8rem;
+            padding: 1.8rem 2rem 2rem;
+        }
+        /* 画布区域 */
+        .canvas-area {
+            flex: 2;
+            min-width: 280px;
+            background: #ffffffdd;
+            border-radius: 1.8rem;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            padding: 1rem;
+        }
+        .canvas-wrapper {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 0.5rem;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.1);
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #fefefe;
+            border-radius: 0.8rem;
+            cursor: crosshair;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        /* 控制区 */
+        .controls-area {
+            flex: 1.2;
+            min-width: 260px;
+            background: #ffffffcc;
+            backdrop-filter: blur(8px);
+            border-radius: 1.8rem;
+            padding: 1.2rem 1.5rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        .control-group {
+            margin-bottom: 1.8rem;
+        }
+        .control-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 600;
+            color: #1f3b4c;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        .control-group label i {
+            font-style: normal;
+            font-weight: bold;
+            background: #eef2f9;
+            padding: 0 6px;
+            border-radius: 30px;
+        }
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: #2c7da0;
+        }
+        .value-display {
+            background: #e9edf2;
+            padding: 0.3rem 0.8rem;
+            border-radius: 40px;
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 0.5rem;
+            color: #0f2b38;
+        }
+        .info-panel {
+            background: #1e2a3e;
+            border-radius: 1.2rem;
+            padding: 1rem 1.2rem;
+            margin: 1rem 0 0.8rem;
+            color: #ecf0f1;
+        }
+        .info-panel h3 {
+            margin: 0 0 0.5rem;
+            font-size: 1.2rem;
+            border-left: 4px solid #f39c12;
+            padding-left: 10px;
+        }
+        .info-details {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .info-details p {
+            margin: 0.3rem 0;
+        }
+        .badge {
+            background: #f39c12;
+            color: #1e2a3e;
+            padding: 0.2rem 0.5rem;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        button {
+            background: #2c7da0;
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            margin-top: 0.6rem;
+            width: 100%;
+        }
+        button:hover {
+            background: #1f5e7a;
+            transform: scale(0.98);
+        }
+        .coord-status {
+            font-size: 0.8rem;
+            text-align: center;
+            margin-top: 0.8rem;
+            color: #3e5c6f;
+        }
+        footer {
+            font-size: 0.75rem;
+            text-align: center;
+            background: #eef2f6;
+            padding: 0.8rem;
+            color: #5d6e7e;
+            border-top: 1px solid #cbd5e1;
+        }
+        @media (max-width: 780px) {
+            .main-grid { padding: 1rem; gap: 1rem; }
+            .header h1 { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="demo-container">
+    <div class="header">
+        <h1>📐 复数的几何意义 · <span>z = a + b i</span></h1>
+        <p>复平面 | 向量表示 | 模长 & 辐角</p>
+    </div>
+    <div class="main-grid">
+        <!-- Canvas 绘图区 -->
+        <div class="canvas-area">
+            <div class="canvas-wrapper">
+                <canvas id="complexCanvas" width="600" height="600" style="width:100%; height:auto; max-width:600px; aspect-ratio:1/1"></canvas>
+            </div>
+            <div class="coord-status">
+                💡 点击画布任意位置 → 直接改变复数位置 | 也可拖动下方滑块
+            </div>
+        </div>
+
+        <!-- 右侧交互控制区 -->
+        <div class="controls-area">
+            <div class="control-group">
+                <label>📌 实部 (Re) : <span id="realValLabel">0.00</span>  &nbsp; <i>a</i></label>
+                <input type="range" id="realSlider" min="-4" max="4" step="0.01" value="2.5">
+                <div class="value-display" id="realReadout">a = 2.50</div>
+            </div>
+            <div class="control-group">
+                <label>📌 虚部 (Im) : <span id="imagValLabel">0.00</span>  &nbsp; <i>b</i></label>
+                <input type="range" id="imagSlider" min="-4" max="4" step="0.01" value="1.8">
+                <div class="value-display" id="imagReadout">b = 1.80</div>
+            </div>
+            <div class="control-group">
+                <button id="resetBtn">⟳ 重置复数 (2.5 + 1.8i)</button>
+                <button id="randomBtn">🎲 随机复数示例</button>
+            </div>
+
+            <!-- 动态数学信息 -->
+            <div class="info-panel">
+                <h3>🧮 复数参数</h3>
+                <div class="info-details" id="mathInfo">
+                    <p>📌 z = <strong id="zFormula">2.50 + 1.80i</strong></p>
+                    <p>📐 模长 |z| = <strong id="modulusVal">3.08</strong></p>
+                    <p>🎯 辐角 θ = <strong id="argVal">0.62</strong> rad  ( <span id="argDeg">35.5°</span> )</p>
+                    <p>📌 共轭 z̅ = <strong id="conjVal">2.50 - 1.80i</strong></p>
+                    <p>🔷 向量坐标: (<span id="vecX">2.50</span> , <span id="vecY">1.80</span>)</p>
+                </div>
+            </div>
+            <div class="badge" style="text-align:center; display:inline-block; width:100%; margin-top:6px;">✨ 拖动滑块/点击画布 → 实时更新</div>
+        </div>
+    </div>
+    <footer>
+        ⚡ 复平面：横轴为实轴(Re)，纵轴为虚轴(Im) | 点P(a,b) 对应复数 a+bi | 向量 OP 的模为 |z|，辐角为与实轴夹角
+    </footer>
+</div>
+
+<script>
+    (function(){
+        // ---------- DOM 元素绑定 ----------
+        const canvas = document.getElementById('complexCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 滑块
+        const realSlider = document.getElementById('realSlider');
+        const imagSlider = document.getElementById('imagSlider');
+        const realReadout = document.getElementById('realReadout');
+        const imagReadout = document.getElementById('imagReadout');
+        const realValLabel = document.getElementById('realValLabel');
+        const imagValLabel = document.getElementById('imagValLabel');
+        
+        // 信息展示
+        const zFormulaSpan = document.getElementById('zFormula');
+        const modulusValSpan = document.getElementById('modulusVal');
+        const argValSpan = document.getElementById('argVal');
+        const argDegSpan = document.getElementById('argDeg');
+        const conjValSpan = document.getElementById('conjVal');
+        const vecXSpan = document.getElementById('vecX');
+        const vecYSpan = document.getElementById('vecY');
+        
+        // 按钮
+        const resetBtn = document.getElementById('resetBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        
+        // 当前复数 实部 a , 虚部 b
+        let a = 2.5;   // 实部
+        let b = 1.8;   // 虚部
+        
+        // 坐标变换参数: canvas坐标系 -> 数学坐标系
+        // 我们定义数学坐标范围: x:[-5,5] , y:[-5,5] (但为了美观留边距，实际绘制区域内部留出padding)
+        // 设定坐标轴范围: xMin = -5, xMax = 5 ; yMin = -5, yMax = 5
+        const xMin = -5.0;
+        const xMax = 5.0;
+        const yMin = -5.0;
+        const yMax = 5.0;
+        
+        let canvasWidth = 600, canvasHeight = 600;
+        
+        // 更新canvas尺寸 (适应CSS宽高但保留实际像素)
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const containerWidth = container.clientWidth;
+            // 保持canvas绘制分辨率 600x600，但显示尺寸由css控制，为了清晰固定600px绘图
+            canvas.width = 600;
+            canvas.height = 600;
+            canvasWidth = 600;
+            canvasHeight = 600;
+            drawGridAndPoint();
+        }
+        
+        // 数学坐标 (x,y) -> canvas像素坐标 (px, py)
+        function toPixel(x, y) {
+            const px = ((x - xMin) / (xMax - xMin)) * canvasWidth;
+            const py = canvasHeight - ((y - yMin) / (yMax - yMin)) * canvasHeight;
+            return { px, py };
+        }
+        
+        // 反向转换: canvas像素 -> 数学坐标
+        function toMathCoords(px, py) {
+            const x = xMin + (px / canvasWidth) * (xMax - xMin);
+            const y = yMax - (py / canvasHeight) * (yMax - yMin);
+            return { x, y };
+        }
+        
+        // 绘制网格、坐标轴、点、向量
+        function drawGridAndPoint() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // 1. 绘制极浅背景网格
+            ctx.save();
+            ctx.strokeStyle = "#cbd5e1";
+            ctx.lineWidth = 0.6;
+            // 绘制纵向网格线 (x整数线)
+            for (let x = -5; x <= 5; x += 1) {
+                if (Math.abs(x) < 0.01) continue; // 轴线单独绘制
+                const start = toPixel(x, yMin);
+                const end = toPixel(x, yMax);
+                ctx.beginPath();
+                ctx.moveTo(start.px, start.py);
+                ctx.lineTo(end.px, end.py);
+                ctx.stroke();
+            }
+            // 横向网格线 (y整数线)
+            for (let y = -5; y <= 5; y += 1) {
+                if (Math.abs(y) < 0.01) continue;
+                const start = toPixel(xMin, y);
+                const end = toPixel(xMax, y);
+                ctx.beginPath();
+                ctx.moveTo(start.px, start.py);
+                ctx.lineTo(end.px, end.py);
+                ctx.stroke();
+            }
+            
+            // 2. 绘制坐标轴 (实轴/虚轴，加粗)
+            ctx.beginPath();
+            ctx.lineWidth = 2.2;
+            ctx.strokeStyle = "#2c3e66";
+            // X轴 (实轴)
+            const xAxisStart = toPixel(xMin, 0);
+            const xAxisEnd = toPixel(xMax, 0);
+            ctx.beginPath();
+            ctx.moveTo(xAxisStart.px, xAxisStart.py);
+            ctx.lineTo(xAxisEnd.px, xAxisEnd.py);
+            ctx.stroke();
+            // Y轴 (虚轴)
+            const yAxisStart = toPixel(0, yMin);
+            const yAxisEnd = toPixel(0, yMax);
+            ctx.beginPath();
+            ctx.moveTo(yAxisStart.px, yAxisStart.py);
+            ctx.lineTo(yAxisEnd.px, yAxisEnd.py);
+            ctx.stroke();
+            
+            // 绘制箭头 (简单三角)
+            ctx.fillStyle = "#2c3e66";
+            // x轴箭头
+            const arrowX = toPixel(xMax, 0);
+            drawArrowhead(ctx, arrowX.px, arrowX.py, 0);
+            // y轴箭头
+            const arrowY = toPixel(0, yMax);
+            drawArrowhead(ctx, arrowY.px, arrowY.py, 90);
+            
+            // 轴标签
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#1f4e6e";
+            const reLabel = toPixel(5.3, -0.2);
+            ctx.fillText("Re", reLabel.px, reLabel.py);
+            const imLabel = toPixel(0.2, 5.3);
+            ctx.fillText("Im", imLabel.px, imLabel.py);
+            
+            // 刻度数值标记 (简单)
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#4a627a";
+            for (let x = -4; x <= 4; x++) {
+                if (x === 0) continue;
+                const pos = toPixel(x, -0.15);
+                ctx.fillText(x.toString(), pos.px-5, pos.py+4);
+            }
+            for (let y = -4; y <= 4; y++) {
+                if (y === 0) continue;
+                const pos = toPixel(-0.25, y);
+                ctx.fillText(y.toString(), pos.px-8, pos.py+4);
+            }
+            
+            // 原点标记
+            const origin = toPixel(0,0);
+            ctx.fillStyle = "#2c3e66";
+            ctx.beginPath();
+            ctx.arc(origin.px, origin.py, 4, 0, 2*Math.PI);
+            ctx.fillStyle = "#f1c40f";
+            ctx.fill();
+            ctx.fillStyle = "#1e2a3e";
+            ctx.font = "bold 12px";
+            ctx.fillText("O", origin.px-8, origin.py-2);
+            
+            // 3. 绘制复数点及向量
+            const pointPixel = toPixel(a, b);
+            // 绘制从原点指向点的向量 (带箭头)
+            const originPixel = toPixel(0,0);
+            ctx.beginPath();
+            ctx.moveTo(originPixel.px, originPixel.py);
+            ctx.lineTo(pointPixel.px, pointPixel.py);
+            ctx.strokeStyle = "#e67e22";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            // 绘制箭头 (向量末端)
+            const angleVec = Math.atan2(b, a);
+            const arrowSize = 12;
+            const headX = pointPixel.px;
+            const headY = pointPixel.py;
+            const angle1 = angleVec + Math.PI - 0.5;
+            const angle2 = angleVec + Math.PI + 0.5;
+            const dx1 = Math.cos(angle1) * arrowSize;
+            const dy1 = Math.sin(angle1) * arrowSize;
+            const dx2 = Math.cos(angle2) * arrowSize;
+            const dy2 = Math.sin(angle2) * arrowSize;
+            ctx.beginPath();
+            ctx.moveTo(headX, headY);
+            ctx.lineTo(headX + dx1, headY + dy1);
+            ctx.lineTo(headX + dx2, headY + dy2);
+            ctx.fillStyle = "#e67e22";
+            ctx.fill();
+            
+            // 绘制点 (实心圆)
+            ctx.beginPath();
+            ctx.arc(pointPixel.px, pointPixel.py, 9, 0, 2*Math.PI);
+            ctx.fillStyle = "#d35400";
+            ctx.shadowBlur = 6;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(pointPixel.px, pointPixel.py, 4, 0, 2*Math.PI);
+            ctx.fillStyle = "#f39c12";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            // 点标签
+            ctx.font = "bold 14px 'Segoe UI'";
+            ctx.fillStyle = "#c0392b";
+            ctx.fillText(`P(${a.toFixed(2)}, ${b.toFixed(2)})`, pointPixel.px+10, pointPixel.py-6);
+            
+            // 绘制辅助虚线 投影到实轴虚轴
+            ctx.beginPath();
+            ctx.setLineDash([6, 8]);
+            ctx.strokeStyle = "#94a3b8";
+            ctx.lineWidth = 1.2;
+            // 垂直线到实轴
+            const footReal = toPixel(a, 0);
+            ctx.moveTo(pointPixel.px, pointPixel.py);
+            ctx.lineTo(footReal.px, footReal.py);
+            ctx.stroke();
+            // 水平线到虚轴
+            const footImag = toPixel(0, b);
+            ctx.moveTo(pointPixel.px, pointPixel.py);
+            ctx.lineTo(footImag.px, footImag.py);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // 辐角圆弧 (仅当模长>0.05时绘制)
+            const r = Math.hypot(a, b);
+            if (r > 0.05) {
+                const angle = Math.atan2(b, a);
+                let startAngle = 0;
+                let endAngle = angle;
+                if (endAngle < 0) endAngle = 2*Math.PI + endAngle;
+                const radiusArc = Math.min(1.2, r * 0.7);
+                const arcCenter = toPixel(0,0);
+                ctx.beginPath();
+                ctx.arc(arcCenter.px, arcCenter.py, radiusArc * 40, 0, endAngle, false);
+                ctx.strokeStyle = "#16a085";
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                // 添加弧度小标记
+                const midAngle = endAngle / 2;
+                const textRadX = Math.cos(midAngle) * radiusArc * 48;
+                const textRadY = Math.sin(midAngle) * radiusArc * 48;
+                ctx.fillStyle = "#1e8449";
+                ctx.font = "italic 12px monospace";
+                ctx.fillText("θ", arcCenter.px + textRadX, arcCenter.py - textRadY);
+            }
+            
+            // 额外标出模长线段样式: 从原点到点已绘制
+            ctx.restore();
+        }
+        
+        // 辅助绘制箭头 (角度deg, 简易)
+        function drawArrowhead(ctx, x, y, angleDeg) {
+            const angleRad = angleDeg * Math.PI / 180;
+            const size = 8;
+            const a1 = angleRad + Math.PI - 0.4;
+            const a2 = angleRad + Math.PI + 0.4;
+            const dx1 = Math.cos(a1) * size;
+            const dy1 = Math.sin(a1) * size;
+            const dx2 = Math.cos(a2) * size;
+            const dy2 = Math.sin(a2) * size;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + dx1, y + dy1);
+            ctx.lineTo(x + dx2, y + dy2);
+            ctx.fillStyle = "#2c3e66";
+            ctx.fill();
+        }
+        
+        // 更新全部UI、数学信息以及重绘
+        function updateFromAB() {
+            // 限制范围（滑块已经限制，但以防越界）
+            a = Math.min(xMax, Math.max(xMin, a));
+            b = Math.min(yMax, Math.max(yMin, b));
+            
+            // 更新滑块数值 (避免循环触发)
+            realSlider.value = a;
+            imagSlider.value = b;
+            
+            // 更新显示数值
+            realReadout.innerText = `a = ${a.toFixed(3)}`;
+            imagReadout.innerText = `b = ${b.toFixed(3)}`;
+            realValLabel.innerText = a.toFixed(3);
+            imagValLabel.innerText = b.toFixed(3);
+            
+            // 计算模长、辐角
+            const modulus = Math.hypot(a, b);
+            let argRad = Math.atan2(b, a);
+            let argDeg = argRad * 180 / Math.PI;
+            
+            // 公式显示
+            const signIm = (b >= 0 ? '+' : '-');
+            const absIm = Math.abs(b).toFixed(3);
+            zFormulaSpan.innerText = `${a.toFixed(3)} ${signIm} ${absIm}i`;
+            modulusValSpan.innerText = modulus.toFixed(4);
+            argValSpan.innerText = argRad.toFixed(4);
+            argDegSpan.innerText = argDeg.toFixed(2) + "°";
+            const conjSign = (b >= 0 ? '-' : '+');
+            conjValSpan.innerText = `${a.toFixed(3)} ${conjSign} ${absIm}i`;
+            vecXSpan.innerText = a.toFixed(3);
+            vecYSpan.innerText = b.toFixed(3);
+            
+            // 重绘canvas
+            drawGridAndPoint();
+        }
+        
+        // 滑块事件
+        function onRealChange() {
+            a = parseFloat(realSlider.value);
+            b = parseFloat(imagSlider.value);
+            updateFromAB();
+        }
+        function onImagChange() {
+            a = parseFloat(realSlider.value);
+            b = parseFloat(imagSlider.value);
+            updateFromAB();
+        }
+        
+        // 重置
+        function resetValue() {
+            a = 2.5;
+            b = 1.8;
+            updateFromAB();
+        }
+        
+        // 随机复数 (-4~4范围内)
+        function randomComplex() {
+            a = (Math.random() * 8) - 4; // -4..4
+            b = (Math.random() * 8) - 4;
+            updateFromAB();
+        }
+        
+        // 画布点击处理: 将点击坐标映射为复数 (a,b)
+        function handleCanvasClick(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;   // canvas实际像素600 / 显示宽度
+            const scaleY = canvas.height / rect.height;
+            let mouseX = (e.clientX - rect.left) * scaleX;
+            let mouseY = (e.clientY - rect.top) * scaleY;
+            mouseX = Math.min(canvasWidth, Math.max(0, mouseX));
+            mouseY = Math.min(canvasHeight, Math.max(0, mouseY));
+            const mathCoord = toMathCoords(mouseX, mouseY);
+            let newA = mathCoord.x;
+            let newB = mathCoord.y;
+            // 钳制在范围内
+            newA = Math.min(xMax, Math.max(xMin, newA));
+            newB = Math.min(yMax, Math.max(yMin, newB));
+            a = newA;
+            b = newB;
+            updateFromAB();
+        }
+        
+        // 窗口尺寸变化自适应显示 (但canvas分辨率固定, 仅重绘)
+        window.addEventListener('resize', () => {
+            drawGridAndPoint();
+        });
+        
+        // 初始化事件绑定
+        function init() {
+            resizeCanvas();
+            realSlider.addEventListener('input', onRealChange);
+            imagSlider.addEventListener('input', onImagChange);
+            resetBtn.addEventListener('click', resetValue);
+            randomBtn.addEventListener('click', randomComplex);
+            canvas.addEventListener('click', handleCanvasClick);
+            updateFromAB();  // 初次渲染
+        }
+        
+        init();
+    })();
+</script>
+</body>
+</html>

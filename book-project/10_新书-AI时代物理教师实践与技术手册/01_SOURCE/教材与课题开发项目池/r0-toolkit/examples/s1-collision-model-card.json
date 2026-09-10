@@ -1,0 +1,366 @@
+{
+  "schema_version": "1.0",
+  "card_id": "S1-COLLISION-MODEL-v0.3",
+  "title": "S1一维碰撞动量审计台物理模型卡",
+  "model_version": "v0.3-preaudit-2026-08-31",
+  "review_status": "teacher_review_pending",
+  "claim_ceiling": "解析模型、页面结构与9项自动预审在当前本地冻结版通过；物理教师终审、真实浏览器操作、课堂可用性、发布与学习效果均未完成。",
+  "research_object": {
+    "objects": [
+      "位于同一直线上的物体1，质量m1、碰前速度u1、碰后速度v1",
+      "位于同一直线上的物体2，质量m2、碰前速度u2、碰后速度v2"
+    ],
+    "process": "两个物体的一维弹性碰撞或完全非弹性碰撞；动画只表示碰前、事件和碰后三个状态。",
+    "purpose": "让教师和学生同时检查正方向、个体动量、系统总动量、总动能与数据身份。"
+  },
+  "system_boundary": {
+    "included": ["物体1", "物体2"],
+    "external": ["地面或轨道的支持", "可能存在但首版未建模的摩擦、空气阻力和外力冲量"],
+    "exchange_handling": "模型把碰撞短时过程中的系统外力冲量视为可忽略；若真实过程不满足此条件，不能用该模型宣称动量守恒。"
+  },
+  "interval": {
+    "time": "比较碰撞前冻结状态与碰撞后冻结状态；不计算真实接触力随时间的连续过程。",
+    "space": "一条有明确正方向的一维直线；首版约定物体1初始在左、物体2初始在右。",
+    "states": ["before_collision", "collision_event_illustration", "after_collision"]
+  },
+  "assumptions": [
+    {
+      "assumption_id": "A-S1-01",
+      "statement": "两个物体只作一维平动，不考虑旋转、二维斜碰与形变细节。",
+      "status": "teacher_review_pending",
+      "consequence": "结果不能迁移到二维碰撞、带转动碰撞或需要接触力时间曲线的任务。"
+    },
+    {
+      "assumption_id": "A-S1-02",
+      "statement": "碰撞过程系统外力冲量可忽略。",
+      "status": "verified",
+      "consequence": "在该条件下使用系统总动量守恒；真实实验仍需另证外力冲量影响。"
+    },
+    {
+      "assumption_id": "A-S1-03",
+      "statement": "质量均为正有限数；原型输入范围为0.1—10 kg，速度范围为-10—10 m/s。",
+      "status": "verified",
+      "consequence": "范围外输入不在v0.3自动测试主张内。"
+    },
+    {
+      "assumption_id": "A-S1-04",
+      "statement": "首版碰撞类型只包含完全弹性和完全非弹性。",
+      "status": "teacher_review_pending",
+      "consequence": "不支持恢复系数连续变化、部分非弹性或材料拟合。"
+    }
+  ],
+  "variables": [
+    {
+      "symbol": "m1",
+      "meaning": "物体1质量",
+      "object_binding": "物体1",
+      "input_unit": "kg",
+      "internal_unit": "kg",
+      "display_unit": "kg",
+      "data_identity": "model_input",
+      "allowed_range": { "minimum": 0.1, "maximum": 10 }
+    },
+    {
+      "symbol": "m2",
+      "meaning": "物体2质量",
+      "object_binding": "物体2",
+      "input_unit": "kg",
+      "internal_unit": "kg",
+      "display_unit": "kg",
+      "data_identity": "model_input",
+      "allowed_range": { "minimum": 0.1, "maximum": 10 }
+    },
+    {
+      "symbol": "u1",
+      "meaning": "物体1碰前速度，向右为正",
+      "object_binding": "物体1碰前状态",
+      "input_unit": "m/s",
+      "internal_unit": "m/s",
+      "display_unit": "m/s",
+      "data_identity": "model_input",
+      "allowed_range": { "minimum": -10, "maximum": 10 }
+    },
+    {
+      "symbol": "u2",
+      "meaning": "物体2碰前速度，向右为正",
+      "object_binding": "物体2碰前状态",
+      "input_unit": "m/s",
+      "internal_unit": "m/s",
+      "display_unit": "m/s",
+      "data_identity": "model_input",
+      "allowed_range": { "minimum": -10, "maximum": 10 }
+    },
+    {
+      "symbol": "v1",
+      "meaning": "物体1碰后速度，向右为正",
+      "object_binding": "物体1碰后状态",
+      "input_unit": "m/s",
+      "internal_unit": "m/s",
+      "display_unit": "m/s",
+      "data_identity": "model_output"
+    },
+    {
+      "symbol": "v2",
+      "meaning": "物体2碰后速度，向右为正",
+      "object_binding": "物体2碰后状态",
+      "input_unit": "m/s",
+      "internal_unit": "m/s",
+      "display_unit": "m/s",
+      "data_identity": "model_output"
+    },
+    {
+      "symbol": "P_total",
+      "meaning": "系统总动量",
+      "object_binding": "物体1与物体2组成的系统",
+      "input_unit": "kg·m/s",
+      "internal_unit": "kg·m/s",
+      "display_unit": "kg·m/s",
+      "data_identity": "derived_model_output"
+    },
+    {
+      "symbol": "K_total",
+      "meaning": "系统总动能",
+      "object_binding": "物体1与物体2组成的系统",
+      "input_unit": "J",
+      "internal_unit": "J",
+      "display_unit": "J",
+      "data_identity": "derived_model_output"
+    }
+  ],
+  "core_relations": [
+    {
+      "relation_id": "R-S1-MOMENTUM",
+      "name": "一维碰撞动量守恒",
+      "expression": "m1*u1 + m2*u2 = m1*v1 + m2*v2",
+      "conditions": ["物体1与物体2组成系统", "碰撞短时过程系统外力冲量可忽略", "所有速度使用同一正方向"],
+      "status": "verified"
+    },
+    {
+      "relation_id": "R-S1-ELASTIC",
+      "name": "一维完全弹性碰撞通式",
+      "expression": "v1=((m1-m2)*u1+2*m2*u2)/(m1+m2); v2=(2*m1*u1+(m2-m1)*u2)/(m1+m2)",
+      "conditions": ["一维完全弹性碰撞", "总动量与总动能守恒", "m1>0且m2>0"],
+      "status": "teacher_review_pending"
+    },
+    {
+      "relation_id": "R-S1-INELASTIC",
+      "name": "一维完全非弹性碰撞共同速度",
+      "expression": "v=(m1*u1+m2*u2)/(m1+m2)",
+      "conditions": ["碰后两物体共同运动", "碰撞短时过程系统外力冲量可忽略", "m1>0且m2>0"],
+      "status": "verified"
+    },
+    {
+      "relation_id": "R-S1-EVENT",
+      "name": "首版追碰条件",
+      "expression": "物体1初始在左、物体2初始在右且初始间距为正时，u1>u2才会在未来追碰",
+      "conditions": ["两物体沿同一直线", "初始位置顺序固定", "速度在碰前保持常量"],
+      "status": "teacher_review_pending"
+    }
+  ],
+  "applicability_boundaries": [
+    "原型只覆盖m1、m2在0.1—10 kg及u1、u2在-10—10 m/s的有限输入。",
+    "u1≤u2时仍可计算假设碰撞后的解析速度，但页面不得播放成未来必然发生的追碰事件。",
+    "动画、箭头、条形图和数值均为解析模型输出，不是实测数据。",
+    "模型不提供真实接触力—时间曲线，不用于器材冲击安全评估。",
+    "当前未连接真实器材、学生数据、外部API或在线部署。"
+  ],
+  "independent_truths": [
+    {
+      "truth_id": "T-S1-TEXTBOOK",
+      "type": "authoritative_source",
+      "description": "教材提供动量守恒条件、碰撞分类和第二物体初始静止的教材特例。",
+      "source": "S1事实源中的src-textbook-rj-x1",
+      "independence": "教材来源独立于页面渲染和AI生成的界面。"
+    },
+    {
+      "truth_id": "T-S1-DERIVATION",
+      "type": "analytic_derivation",
+      "description": "由动量守恒与相对接近／分离速度关系推导一维弹性通式。",
+      "source": "01_RESEARCH/一维弹性碰撞通式独立推导与复算.md",
+      "independence": "书面代数推导不调用页面主求解函数。"
+    },
+    {
+      "truth_id": "T-S1-COM",
+      "type": "independent_solver",
+      "description": "质心速度反射法作为第二求解器，与通式比较500组确定性随机参数。",
+      "source": "02_PROTOTYPE/tests/verify.mjs中的R1",
+      "independence": "第二求解器采用质心系路径，不复用通式函数。"
+    },
+    {
+      "truth_id": "T-S1-MANUAL",
+      "type": "manual_calculation",
+      "description": "等质量速度交换、零总动量、同速不追碰和质量比极限由表格特例复算。",
+      "source": "01_RESEARCH/一维弹性碰撞通式独立推导与复算.md第4—5节",
+      "independence": "使用可人工检查的特殊值与趋势，不依赖动画画面。"
+    }
+  ],
+  "test_suites": {
+    "standard": [
+      {
+        "test_id": "T1",
+        "description": "等质量弹性碰撞交换速度",
+        "input": { "m1": 1, "m2": 1, "u1": 4, "u2": 0, "type": "elastic" },
+        "expected": { "v1": 0, "v2": 4 },
+        "observed": { "v1": 0, "v2": 4 },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      },
+      {
+        "test_id": "T2",
+        "description": "等质量完全非弹性碰撞共同速度与动能损失",
+        "input": { "m1": 1, "m2": 1, "u1": 4, "u2": 0, "type": "perfectly-inelastic" },
+        "expected": { "v1": 2, "v2": 2, "kineticEnergyRatio": 0.5 },
+        "observed": { "v1": 2, "v2": 2, "kineticEnergyRatio": 0.5 },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      },
+      {
+        "test_id": "T3",
+        "description": "等质量反向运动交换速度",
+        "input": { "m1": 2, "m2": 2, "u1": 3, "u2": -3, "type": "elastic" },
+        "expected": { "v1": -3, "v2": 3, "totalMomentum": 0 },
+        "observed": { "v1": -3, "v2": 3, "totalMomentum": 0 },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      }
+    ],
+    "boundary_zero": [
+      {
+        "test_id": "T4",
+        "description": "碰前总动量为0时碰后仍为0",
+        "input": { "m1": 2, "m2": 1, "u1": 1, "u2": -2, "type": "elastic" },
+        "expected": { "totalMomentumBefore": 0, "totalMomentumAfter": 0 },
+        "observed": { "totalMomentumBefore": 0, "totalMomentumAfter": 0 },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      },
+      {
+        "test_id": "T5",
+        "description": "同向且后方物体不更快时不会追碰",
+        "input": { "m1": 1, "m2": 1, "u1": 1, "u2": 2, "type": "elastic" },
+        "expected": { "collisionPossible": false },
+        "observed": { "collisionPossible": false },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      },
+      {
+        "test_id": "B1",
+        "description": "零质量和非有限速度必须拒绝",
+        "input": [{ "m1": 0 }, { "u1": "NaN" }],
+        "expected": { "rejected": 2 },
+        "observed": { "rejected": 2 },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      }
+    ],
+    "extreme": [
+      {
+        "test_id": "T6",
+        "description": "原型允许质量与速度范围两端保持有限并通过残差审计",
+        "input": [
+          { "m1": 0.1, "m2": 10, "u1": 10, "u2": -10, "type": "elastic" },
+          { "m1": 10, "m2": 0.1, "u1": 10, "u2": 0, "type": "perfectly-inelastic" }
+        ],
+        "expected": { "allFinite": true, "allAuditPass": true },
+        "observed": { "allFinite": true, "allAuditPass": true },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      }
+    ],
+    "counter_expected": [
+      {
+        "test_id": "T7",
+        "description": "对正确末速度故意增加0.25 m/s后独立审计必须拒绝",
+        "input": { "m1": 1.5, "m2": 2, "u1": 4, "u2": -1, "injectedChangeToV1_m_per_s": 0.25 },
+        "expected": { "auditPass": false },
+        "observed": { "auditPass": false, "momentumResidual_kg_m_per_s": 0.375 },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      }
+    ],
+    "independent_benchmark": [
+      {
+        "test_id": "R1",
+        "description": "通式与质心系第二求解器比较500组确定性随机参数",
+        "input": { "seed": 20260831, "count": 500 },
+        "expected": { "maxVelocityDifferenceBelow": 1e-10, "maxMomentumResidualBelow": 1e-10, "maxEnergyResidualBelow": 1e-9 },
+        "observed": { "maxVelocityDifference": 5.329070518200751e-15, "maxMomentumResidual": 2.842170943040401e-14, "maxEnergyResidual": 2.2737367544323206e-13 },
+        "status": "pass",
+        "evidence_identity": "automatic_precheck",
+        "evidence_path": "04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+      }
+    ]
+  },
+  "gate_status": {
+    "runtime": {
+      "status": "pause_pending_confirmation",
+      "scope": "源码语法、构建包和9项自动预审通过；尚未由教师按真实入口完成G4浏览器操作。",
+      "reviewer_role": "项目执行者与实际使用教师",
+      "evidence": ["S1 v0.3自动验证报告：9/9 checks passed", "02_PROTOTYPE/RUN.md"],
+      "pending_or_return_items": ["教师真实打开页面并完成一条核心操作路径", "记录浏览器、设备和重置／边界操作"]
+    },
+    "physics": {
+      "status": "pause_pending_confirmation",
+      "scope": "指定自动样例和第二求解器通过；弹性通式、学段表达、状态显示与边界仍待另一位物理教师终审。",
+      "reviewer_role": "高中物理教师",
+      "evidence": ["一维弹性碰撞通式独立推导与复算", "S1 v0.3自动验证报告"],
+      "pending_or_return_items": ["教师独立复核弹性通式", "核对箭头、数值、图表和结论是否同源", "形成通过／退回及复验记录"]
+    },
+    "teaching": {
+      "status": "pause_pending_confirmation",
+      "scope": "已有预测、变参、比较和复算的设计意图；尚未完成目标教师走查和课堂时长审读。",
+      "reviewer_role": "任课教师或教研者",
+      "evidence": ["S1项目任务书中的学生动作和完成标准"],
+      "pending_or_return_items": ["教师走查3分钟操作路径", "确认提示未替学生完成关键判断", "课堂试用需另行授权"]
+    },
+    "release": {
+      "status": "pause_pending_confirmation",
+      "scope": "当前仅为本地预审原型，不部署、不接学生数据、不自动进入书稿。",
+      "reviewer_role": "作者或项目负责人",
+      "evidence": ["S1 README当前停止点", "项目组合V03成熟度说明"],
+      "pending_or_return_items": ["前三门完成", "作者裁决公开范围与入书用途", "建立发布版本和维护责任"]
+    }
+  },
+  "teacher_review": {
+    "status": "pending",
+    "required_role": "未参与本次实现的高中物理教师",
+    "pending_items": ["弹性通式与相对速度关系", "质量和速度输入范围", "正方向与箭头", "课堂任务与用时", "退回和复验记录"]
+  },
+  "stop_conditions": [
+    "任何页面把解析模型输出标成测量值、实验数据或学生数据。",
+    "动画、箭头、数值、条形图或结论不再由同一解析状态生成。",
+    "标准、边界、反预期或独立基准测试失败后仍允许发布。",
+    "物理教师确认核心公式、系统边界或学段表达不成立且无法修复。",
+    "未经作者裁决部署、接入真实学生数据或覆盖数智育才网站现有页面。"
+  ],
+  "sources": [
+    {
+      "source_id": "S1-FACTS",
+      "role": "模型事实、公式状态、来源和当前主张上限",
+      "path_or_description": "/Users/yaril/个人文档/3 写作/图书出版/新项目推进/S1-一维碰撞动量审计台/00_TASK/事实源.yaml"
+    },
+    {
+      "source_id": "S1-DERIVATION",
+      "role": "弹性通式、质心系第二路径、特殊值与碰撞条件",
+      "path_or_description": "/Users/yaril/个人文档/3 写作/图书出版/新项目推进/S1-一维碰撞动量审计台/01_RESEARCH/一维弹性碰撞通式独立推导与复算.md"
+    },
+    {
+      "source_id": "S1-TESTS",
+      "role": "9项自动预审的输入、期望、实见和边界",
+      "path_or_description": "/Users/yaril/个人文档/3 写作/图书出版/新项目推进/S1-一维碰撞动量审计台/04_EVIDENCE/S1-PREAUDIT-20260831/test-report.md"
+    },
+    {
+      "source_id": "FOUR-GATES",
+      "role": "物理模型卡、五类样例与四门状态口径",
+      "path_or_description": "../../B2/14_四道验收门操作手册.md"
+    }
+  ]
+}
