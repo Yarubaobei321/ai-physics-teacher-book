@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>落体法机械能守恒计算工具</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1f2430; --sub:#5b6472; --line:#e2e6ec;
+    --accent:#2f6df0; --accent2:#c0392b; --warn:#b4690e; --ok:#1f8a4c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,sans-serif;
+    font-size:14px;line-height:1.6}
+  .wrap{max-width:1000px;margin:0 auto;padding:20px 18px 60px}
+  h1{font-size:20px;margin:0 0 4px}
+  h2{font-size:15px;margin:26px 0 10px;padding-left:9px;border-left:3px solid var(--accent)}
+  .sub{color:var(--sub);font-size:12.5px;margin:0 0 14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+  .badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid}
+  .b-empty{background:#eef1f5;color:#5b6472;border-color:#d7dde5}
+  .b-demo{background:#fff3e0;color:#a15c00;border-color:#f0c98a}
+  .b-demo-edit{background:#fdecea;color:#b12d1d;border-color:#f0b3aa}
+  .b-manual{background:#e8f1ff;color:#1f52b5;border-color:#b7cdf5}
+  .row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+  .fld{display:flex;flex-direction:column;gap:4px}
+  .fld label{font-size:12px;color:var(--sub)}
+  .fld input{width:96px;padding:6px 8px;border:1px solid #cfd6df;border-radius:6px;font-size:14px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#fff;color:var(--ink)}
+  .fld input:focus{outline:2px solid #cfe0ff;border-color:var(--accent)}
+  .fld .unit{font-size:11px;color:#9aa3af}
+  button{padding:7px 14px;border-radius:7px;border:1px solid #cfd6df;background:#fff;color:var(--ink);
+    font-size:13px;cursor:pointer}
+  button:hover{background:#f0f3f7}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{background:#255bd6}
+  .msg{font-size:13px;padding:8px 12px;border-radius:7px;margin-top:10px;border:1px solid}
+  .msg.err{background:#fdecea;border-color:#f3c3bc;color:#a4261a}
+  .msg.warn{background:#fff6e6;border-color:#f0d59a;color:#8a5a00}
+  .msg.ok{background:#eafaf0;border-color:#b6e6c8;color:#1a6e3f}
+  .msg.note{background:#eef4ff;border-color:#c7d9f7;color:#274b8c}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:right}
+  th{background:#f0f3f7;font-weight:600;text-align:center;color:#38414f}
+  td.k{text-align:center;font-weight:600;background:#fafbfc}
+  td.blank{color:#c0c6cf}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#f0f3f7;padding:1px 5px;border-radius:4px;font-size:12.5px}
+  .formula{background:#fbfcfe;border:1px dashed #d3dbe6;border-radius:8px;padding:10px 14px;font-size:13px}
+  .formula div{margin:3px 0}
+  canvas{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:8px}
+  .chartnote{font-size:12px;color:var(--sub);margin-top:8px}
+  .hint{font-size:12px;color:var(--sub)}
+  ol{margin:6px 0 0 4px;padding-left:18px}
+  li{margin:3px 0;font-size:13px}
+  .tblwrap{overflow-x:auto}
+  .printOnly{display:none}
+  #validity{margin:0 0 8px;font-size:13px}
+  .v-ok{color:#1a6e3f;font-weight:600}
+  .v-bad{color:#a4261a;font-weight:600}
+  .v-mid{color:#8a5a00;font-weight:600}
+  #resTable.invalid td{background:#fff5f4}
+  @media print{
+    body{background:#fff}
+    .noprint{display:none !important}
+    .printOnly{display:block !important}
+    .card{border:1px solid #ccc;break-inside:avoid}
+    .wrap{max-width:none;padding:0}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>落体法机械能守恒计算工具</h1>
+  <p class="sub">沿位置增大方向下落；中心差分求速度；以点 1 为能量参考。离线单文件，无需联网。</p>
+
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <div><span class="fld"><label>数据身份</label></span></div>
+      <div id="identityBadge" class="badge b-empty">等待手动录入</div>
+    </div>
+  </div>
+
+  <div class="card printOnly" id="printMetaCard">
+    <h2 style="margin-top:0">参数与原始位置（打印用）</h2>
+    <div id="printMeta"></div>
+  </div>
+
+  <div class="card noprint">
+    <h2 style="margin-top:0">参数</h2>
+    <div class="row">
+      <div class="fld"><label>质量 m</label><input id="m" inputmode="decimal" placeholder="kg"><span class="unit">kg</span></div>
+      <div class="fld"><label>重力加速度 g</label><input id="g" inputmode="decimal" placeholder="m/s²"><span class="unit">m/s²</span></div>
+      <div class="fld"><label>时间间隔 T</label><input id="T" inputmode="decimal" placeholder="s"><span class="unit">s</span></div>
+    </div>
+  </div>
+
+  <div class="card noprint">
+    <h2 style="margin-top:0">位置（单位：cm）</h2>
+    <div class="row" id="posRow"></div>
+    <p class="hint" style="margin:10px 0 0">提示：x0…x6 从空白录入；演示数据需点“载入演示数据”。空值不按 0 处理。</p>
+  </div>
+
+  <div class="card noprint">
+    <div class="row">
+      <button class="primary" id="btnDemo">载入演示数据</button>
+      <button id="btnClear">清空</button>
+      <button id="btnCsv">导出 CSV</button>
+      <button id="btnPrint">打印</button>
+    </div>
+    <div id="messages"></div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">输入与结果表</h2>
+    <div id="validity"></div>
+    <div class="tblwrap">
+    <table id="resTable">
+      <thead>
+        <tr>
+          <th>点号 n</th><th>xₙ (cm)</th><th>xₙ (m)</th><th>vₙ (m/s)</th>
+          <th>hₙ = xₙ−x₁ (m)</th><th>ΔEp = mghₙ (J)<br>重力势能减少量</th><th>ΔEk = ½m(vₙ²−v₁²) (J)<br>动能增加量</th><th>ε = (ΔEk−ΔEp)/ΔEp<br>（带符号）</th>
+        </tr>
+      </thead>
+      <tbody id="resBody"></tbody>
+    </table>
+    </div>
+    <p class="hint" style="margin-top:8px">点位用途：<strong>x0 与 x2 → v1</strong>、<strong>x3 与 x5 → v4</strong>（中心差分需相邻点），x1 为能量参考点，<strong>x6 仅作原始位置保存</strong>、不参与计算（计算范围不扩展到 n=5）。</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">公式与单位</h2>
+    <div class="formula">
+      <div>位置换算：<code>xₙ(m) = xₙ(cm) / 100</code></div>
+      <div>中心差分速度：<code>vₙ = (xₙ₊₁ − xₙ₋₁) / (2T)</code>（n=1 用 x₀、x₂；n=4 用 x₃、x₅）</div>
+      <div>高度变化：<code>hₙ = xₙ − x₁</code>　（点 1 为参考，h₁ = 0）</div>
+      <div>重力势能减少量：<code>ΔEp = m·g·hₙ</code>（J）</div>
+      <div>动能增加量：<code>ΔEk = ½·m·(vₙ² − v₁²)</code>（J）</div>
+      <div class="hint">本页 h 沿下落方向为正，因此 mghₙ 表示<strong>重力势能的减少量</strong>（不是"变化量"的通用写法）。</div>
+      <div>相对差异（保留正负号）：<code>ε = (ΔEk − ΔEp) / ΔEp</code></div>
+      <div class="hint">ε &lt; 0 表示<strong>动能增加量偏小</strong>（ΔEk &lt; ΔEp）；ε &gt; 0 表示动能增加量偏大，显示时带 “+”。当 <strong>ΔEp ≤ 0</strong> 时 ε 留空（分母非正，相对差异无意义）。</div>
+      <div class="hint" style="margin-top:6px">不使用 v = g·t 或 v = √(2gh)；速度一律由位置中心差分得到。</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">能量对比图</h2>
+    <canvas id="chart" width="960" height="420"></canvas>
+    <p class="chartnote" id="chartNote"></p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">使用说明</h2>
+    <ol>
+      <li>填 m、g、T（均为正数），再逐格录入 x0…x6（cm）。输入可用“0”“0.”“0.79”等写法，不会清空其他格子。</li>
+      <li>结果表随输入实时重算；某项所需数据缺失时该格留空，不显示上一次的旧值。</li>
+      <li>“载入演示数据”仅用于演示，始终标<strong>非实测</strong>；改动其中任一数值也<strong>不会</strong>变成“实测”。点“清空”回到“等待手动录入”。</li>
+      <li>位置不自增（未按点号递增）时，结果<strong>判为无效</strong>并保留你录入的原数；不做自动排序、不代替你改数；ΔEp ≤ 0 处 ε 留空。</li>
+      <li>“导出 CSV”保存原输入、参数、单位、数据身份与计算值；“打印”输出当前页面。</li>
+      <li>本工具不判断“验证成功”；ε 的值（含正负号）由你自己结合实验误差分析。</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============ 状态 ============ */
+// 身份：empty=等待手动录入；demo=演示数据（非实测）；demoEdit=演示数据（已修改）·非实测；manual=手动录入·未标注为实测
+var state = { m:"", g:"", T:"", x:["","","","","","",""], identity:"empty" };
+
+var DEMO = { m:"0.1", g:"9.8", T:"0.02", x:["0","0.20","0.79","1.76","3.15","4.88","7.07"] };
+
+var $ = function(id){ return document.getElementById(id); };
+
+/* ============ 输入区构建 ============ */
+var posInputs = [];
+(function buildPos(){
+  var row = $("posRow");
+  for(var i=0;i<=6;i++){
+    var f = document.createElement("div");
+    f.className = "fld";
+    var lab = document.createElement("label");
+    lab.textContent = "x"+i;
+    var inp = document.createElement("input");
+    inp.inputMode = "decimal";
+    inp.placeholder = "cm";
+    inp.dataset.idx = String(i);
+    inp.value = state.x[i];
+    inp.addEventListener("input", function(e){
+      var idx = parseInt(e.target.dataset.idx,10);
+      state.x[idx] = e.target.value;            // 原样保存，绝不因输入中间态清空其他格
+      markEditedIfDemo();
+      render();
+    });
+    var u = document.createElement("span"); u.className="unit"; u.textContent="cm";
+    f.appendChild(lab); f.appendChild(inp); f.appendChild(u);
+    row.appendChild(f);
+    posInputs.push(inp);
+  }
+})();
+
+["m","g","T"].forEach(function(k){
+  var el = $(k);
+  el.value = state[k];
+  el.addEventListener("input", function(e){
+    state[k] = e.target.value;
+    markEditedIfDemo();
+    render();
+  });
+});
+
+function markEditedIfDemo(){
+  if(state.identity === "demo") state.identity = "demoEdit";
+  else if(state.identity === "demoEdit") { /* 保持 */ }
+  else if(state.identity !== "manual" && anyFilled()) state.identity = "manual";
+}
+function anyFilled(){
+  if(state.m!==""||state.g!==""||state.T!=="") return true;
+  return state.x.some(function(v){return v!=="";});
+}
+
+/* ============ 数值解析（宽容中间态） ============ */
+function num(s){
+  s = (s===undefined||s===null)?"":String(s).trim();
+  if(s==="") return null;             // 空 = 缺项（不按 0）
+  if(s==="."||s==="-"||s==="+") return null;
+  var v = Number(s);
+  return isFinite(v) ? v : null;      // 非有限数视为缺项
+}
+
+/* ============ 计算 ============ */
+function compute(){
+  var m = num(state.m), g = num(state.g), T = num(state.T);
+  var xs = state.x.map(num);
+  var res = { m:m, g:g, T:T, xs:xs, paramsOk:false, rows:[], warnings:[], partial:false };
+  res.paramsOk = (m!==null && m>0 && g!==null && g>0 && T!==null && T>0);
+
+  // 位置非递增提示（仅对相邻且都存在的对）
+  for(var i=0;i<6;i++){
+    var a = xs[i], b = xs[i+1];
+    if(a!==null && b!==null && !(b>a)){
+      res.warnings.push("位置未按点号递增：x"+i+" = "+state.x[i]+" cm，x"+(i+1)+" = "+state.x[i+1]+" cm。"+
+        "请检查点号/运动方向/抄录是否有误（原数已保留，未做排序）。");
+    }
+  }
+
+  res.increasing = (res.warnings.length === 0);
+
+  // 计算 v1..v4
+  var v = [null,null,null,null,null]; // index1..4
+  for(var n=1;n<=4;n++){
+    var lo = xs[n-1], hi = xs[n+1];
+    if(lo!==null && hi!==null && T!==null && T>0){
+      v[n] = (hi-lo)/100/(2*T);
+    }
+  }
+
+  for(var n2=1;n2<=4;n2++){
+    var xn = xs[n2], x1 = xs[1];
+    var row = { n:n2, xcm:state.x[n2], xm:(xn!==null?xn/100:null), v:v[n2], h:null, dEp:null, dEk:null, eps:null };
+    if(xn!==null && x1!==null) row.h = (xn - x1)/100;
+    if(res.paramsOk && row.h!==null) row.dEp = m*g*row.h;
+    if(res.paramsOk && v[n2]!==null && v[1]!==null) row.dEk = 0.5*m*(v[n2]*v[n2]-v[1]*v[1]);
+    if(row.dEk!==null && row.dEp!==null && row.dEp>0) row.eps = (row.dEk-row.dEp)/row.dEp;   // 带符号：负=动能增加量偏小
+    row.epsNA = (row.dEp!==null && !(row.dEp>0));   // ΔEp<=0：相对差异不适用
+    res.rows.push(row);
+  }
+
+  if(!res.paramsOk) res.partial = true;
+  if(res.rows.some(function(r){return r.v===null||r.h===null;})) res.partial = true;
+  return res;
+}
+
+/* ============ 渲染 ============ */
+function fmt(x, d){
+  if(x===null||x===undefined||!isFinite(x)) return null;
+  return x.toFixed(d);
+}
+function fmtEnc(x){
+  if(x===null || !isFinite(x)) return null;
+  var v = x*100;
+  if(Math.abs(v) < 0.005) return "0.00%";            // 四舍五入到 0.00% 时不再带符号
+  return (v > 0 ? "+" : "") + v.toFixed(2) + "%";    // 正数显式 “+”，负数由 toFixed 带 “-”
+}
+function fmtEps(v){
+  if(v===null || !isFinite(v)) return "";
+  if(Math.abs(v) < 5e-7) return "0.000000";
+  return (v > 0 ? "+" : "") + v.toFixed(6);
+}
+
+function render(){
+  var res = compute();
+  // 身份徽章
+  var b = $("identityBadge");
+  b.className = "badge";
+  if(state.identity==="empty" && !anyFilled()){ b.classList.add("b-empty"); b.textContent="等待手动录入"; }
+  else if(state.identity==="demo"){ b.classList.add("b-demo"); b.textContent="演示数据 · 非实测"; }
+  else if(state.identity==="demoEdit"){ b.classList.add("b-demo-edit"); b.textContent="演示数据（已修改）· 非实测"; }
+  else { b.classList.add("b-manual"); b.textContent="手动录入 · 未标注为实测"; }
+
+  // 有效性判定（③：违反递增约定即判无效）
+  var invalid = (res.warnings.length > 0) || (anyFilled() && !res.paramsOk);
+  var vbox = $("validity");
+  if(vbox){
+    if(!anyFilled()) vbox.innerHTML = '<span class="hint">尚未录入数据。</span>';
+    else if(invalid) vbox.innerHTML = '<span class="v-bad">✗ 结果无效</span><span class="hint">（不满足本页约定，见下方提示）</span>';
+    else if(res.partial) vbox.innerHTML = '<span class="v-mid">◐ 部分有效</span><span class="hint">（部分单元格因数据缺失留空）</span>';
+    else vbox.innerHTML = '<span class="v-ok">✓ 结果有效（当前输入）</span>';
+  }
+  $("resTable").className = invalid ? "invalid" : "";
+
+  // 打印用：完整参数与七点原始位置（②）
+  var pm = $("printMeta");
+  if(pm){
+    var h = "";
+    h += '<table><tr><th>数据身份</th><th>m (kg)</th><th>g (m/s²)</th><th>T (s)</th></tr>';
+    h += '<tr><td style="text-align:center">'+identityText()+'</td><td>'+(state.m===""?"—":state.m)+'</td>'
+       + '<td>'+(state.g===""?"—":state.g)+'</td><td>'+(state.T===""?"—":state.T)+'</td></tr></table>';
+    h += '<table style="margin-top:8px"><tr><th>点号</th>';
+    for(var pi=0;pi<=6;pi++) h += '<th>x'+pi+' (cm)</th>';
+    h += '</tr><tr><td style="text-align:center;font-weight:600;background:#fafbfc">原始值</td>';
+    for(var pj=0;pj<=6;pj++) h += '<td>'+(state.x[pj]===""?"—":state.x[pj])+'</td>';
+    h += '</tr></table>';
+    pm.innerHTML = h;
+  }
+
+  // 结果表
+  var tb = $("resBody"); tb.innerHTML="";
+  for(var i=0;i<res.rows.length;i++){
+    var r = res.rows[i];
+    var tr = document.createElement("tr");
+    function cell(txt){ var td=document.createElement("td"); if(txt===null){td.className="blank";td.textContent="—";} else td.textContent=txt; return td; }
+    var td0=document.createElement("td"); td0.className="k"; td0.textContent=r.n; tr.appendChild(td0);
+    tr.appendChild(cell(r.xcm===null?null:String(r.xcm)));
+    tr.appendChild(cell(fmt(r.xm,4)));
+    tr.appendChild(cell(fmt(r.v,4)));
+    tr.appendChild(cell(fmt(r.h,4)));
+    tr.appendChild(cell(fmt(r.dEp,6)));
+    tr.appendChild(cell(fmt(r.dEk,6)));
+    tr.appendChild(cell(fmtEnc(r.eps)));
+    tb.appendChild(tr);
+  }
+
+  // 提示信息
+  var msgs = $("messages"); msgs.innerHTML="";
+  function addMsg(cls, text){ var d=document.createElement("div"); d.className="msg "+cls; d.textContent=text; msgs.appendChild(d); }
+  if(state.identity==="demo") addMsg("note","当前为演示数据，非实测。修改任一数值仍为非实测，不会自动变为实测。");
+  if(state.identity==="demoEdit") addMsg("warn","演示数据已被修改，仍标记为【非实测】。如需重新载入演示可点“载入演示数据”。");
+  if(!res.paramsOk && anyFilled()) addMsg("err","参数 m、g、T 必须为正数；缺失或非正时能量相关结果留空。");
+  res.warnings.forEach(function(w){ addMsg("err", "结果无效：" + w); });
+  if(res.warnings.length){
+    addMsg("err","结论：当前输入不满足本页“位置随点号递增”的约定，以上结果判为【无效】，不作物理结论。"+
+      "ΔEp ≤ 0 处的相对差异 ε 留空——分母非正时相对差异无意义。"+
+      "原输入已完整保留，未做排序、未代替录入者改数。");
+  } else if(res.paramsOk && !res.partial){
+    addMsg("ok","已按当前输入完成 n=1…4 的计算。ε 大小需结合实验误差自行判断，本工具不下“验证成功”结论。");
+  } else if(anyFilled() && res.partial){
+    addMsg("note","部分数据缺失：相应单元格留空（不按 0、不沿用旧值），补齐后自动重算。");
+  }
+  if(!anyFilled()) addMsg("note","等待手动录入：请填写参数与位置，或点“载入演示数据”查看示例。");
+
+  drawChart(res);
+}
+
+/* ============ 图表 ============ */
+function drawChart(res){
+  var c = $("chart"), ctx = c.getContext("2d");
+  var W = 960, H = 420;
+  var ratio = Math.max(1, c.getBoundingClientRect().width / W) * (window.devicePixelRatio || 1) * (window.visualViewport ? window.visualViewport.scale : 1);
+  c.width = Math.ceil(W * ratio); c.height = Math.ceil(H * ratio);
+  ctx.setTransform(c.width / W, 0, 0, c.height / H, 0, 0);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,W,H);
+  var padL=70, padR=24, padT=28, padB=52;
+  var plotW = W-padL-padR, plotH = H-padT-padB;
+
+  var pts = res.rows.filter(function(r){ return r.dEp!==null && r.dEk!==null; });
+  var note = $("chartNote");
+  if(pts.length<2){
+    ctx.fillStyle="#8a93a0"; ctx.font="14px sans-serif";
+    ctx.fillText("暂无可绘制数据：需至少 2 个 n 同时具备 ΔEp 与 ΔEk。", padL, H/2);
+    note.textContent = "数据不足时不绘图。";
+    return;
+  }
+  var vals=[]; pts.forEach(function(r){ vals.push(r.dEp, r.dEk); });
+  var vmax = Math.max.apply(null, vals), vmin = Math.min.apply(null, vals);
+  if(vmax===vmin){ vmax = vmin + (Math.abs(vmin)>1e-9 ? Math.abs(vmin) : 1); }
+  var yTop = vmax + (vmax-vmin)*0.12, yBot = vmin - (vmax-vmin)*0.12;
+  function X(n){ return padL + (n-1)/(4-1)*plotW; }
+  function Y(val){ return padT + (yTop-val)/(yTop-yBot)*plotH; }
+
+  // 网格 + y 轴
+  ctx.strokeStyle="#eceff4"; ctx.lineWidth=1; ctx.font="12px sans-serif"; ctx.fillStyle="#7b8493";
+  var ticks=5;
+  for(var t=0;t<=ticks;t++){
+    var val = yBot + (yTop-yBot)*t/ticks;
+    var y = Y(val);
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    ctx.textAlign="right"; ctx.fillText(val.toFixed(4), padL-8, y+4);
+  }
+  // 轴
+  ctx.strokeStyle="#c3cad4"; ctx.beginPath();
+  ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(W-padR,padT+plotH); ctx.stroke();
+  // x 刻度
+  ctx.textAlign="center"; ctx.fillStyle="#7b8493";
+  for(var n=1;n<=4;n++){ ctx.fillText("n="+n, X(n), padT+plotH+20); }
+  ctx.fillStyle="#5b6472"; ctx.fillText("点号 n", padL+plotW/2, H-10);
+
+  function series(key,color){
+    ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=2.2;
+    ctx.beginPath();
+    var started=false;
+    pts.forEach(function(r){
+      var x=X(r.n), y=Y(r[key]);
+      if(!started){ ctx.moveTo(x,y); started=true; } else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    pts.forEach(function(r){
+      var x=X(r.n), y=Y(r[key]);
+      ctx.beginPath(); ctx.arc(x,y,3.6,0,Math.PI*2); ctx.fill();
+    });
+  }
+  series("dEp", "#2f6df0");
+  series("dEk", "#c0392b");
+
+  // 图例
+  var lx=padL+10, ly=padT+6;
+  ctx.textAlign="left"; ctx.font="13px sans-serif";
+  ctx.fillStyle="#2f6df0"; ctx.fillRect(lx,ly-9,14,10);
+  ctx.fillStyle="#1f2430"; ctx.fillText("ΔEp 重力势能减少量 (J)", lx+20, ly);
+  ctx.fillStyle="#c0392b"; ctx.fillRect(lx+200,ly-9,14,10);
+  ctx.fillStyle="#1f2430"; ctx.fillText("ΔEk 动能增加量 (J)", lx+220, ly);
+
+  note.textContent = "纵轴单位：J；横轴：点号 n=1…4。数据身份：" + identityText();
+}
+function identityText(){
+  if(state.identity==="demo") return "演示数据 · 非实测";
+  if(state.identity==="demoEdit") return "演示数据（已修改）· 非实测";
+  if(state.identity==="manual") return "手动录入 · 未标注为实测";
+  return "等待手动录入";
+}
+
+/* ============ 按钮 ============ */
+$("btnDemo").addEventListener("click", function(){
+  state.m=DEMO.m; state.g=DEMO.g; state.T=DEMO.T; state.x=DEMO.x.slice();
+  state.identity="demo";
+  $("m").value=state.m; $("g").value=state.g; $("T").value=state.T;
+  posInputs.forEach(function(inp,i){ inp.value=state.x[i]; });
+  render();
+});
+$("btnClear").addEventListener("click", function(){
+  state={ m:"", g:"", T:"", x:["","","","","","",""], identity:"empty" };
+  $("m").value=""; $("g").value=""; $("T").value="";
+  posInputs.forEach(function(inp){ inp.value=""; });
+  render();          // 结果清空，回到“等待手动录入”
+});
+$("btnPrint").addEventListener("click", function(){ window.print(); });
+$("btnCsv").addEventListener("click", exportCsv);
+
+/* ============ CSV ============ */
+function csvCell(s){
+  s = (s===null||s===undefined)?"":String(s);
+  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+function exportCsv(){
+  var res = compute();
+  var lines=[];
+  lines.push(["# 第07章 落体法 机械能守恒计算工具 · CSV 导出"].map(csvCell).join(","));
+  lines.push(["# 数据身份", identityText()].map(csvCell).join(","));
+  lines.push(["# 说明","本文件保存原始输入、参数、单位与计算值；ΔEp=mgh 为重力势能减少量，ΔEk 为动能增加量；ε=(ΔEk-ΔEp)/ΔEp 带符号（负=动能增加量偏小），正数显式带 +；ε 在 ΔEp<=0 时留空"].map(csvCell).join(","));
+  lines.push(["# 结果有效性", (compute().warnings.length>0 ? "无效：坐标未按点号递增" : "有效")].map(csvCell).join(","));
+  lines.push("");
+  lines.push(["参数/单位","数值","单位"].map(csvCell).join(","));
+  lines.push(["m", state.m, "kg"].map(csvCell).join(","));
+  lines.push(["g", state.g, "m/s²"].map(csvCell).join(","));
+  lines.push(["T", state.T, "s"].map(csvCell).join(","));
+  lines.push("");
+  lines.push(["# 原始位置输入（未排序，原样保存）"].map(csvCell).join(","));
+  lines.push(["点号","x (cm)"].map(csvCell).join(","));
+  for(var i=0;i<=6;i++) lines.push(["x"+i, state.x[i]].map(csvCell).join(","));
+  lines.push("");
+  lines.push(["# 计算结果"].map(csvCell).join(","));
+  lines.push(["点号n","x (cm)","x (m)","v (m/s)","h (m)","ΔEp (J) 重力势能减少量","ΔEk (J) 动能增加量","ε=(ΔEk-ΔEp)/ΔEp 带符号"].map(csvCell).join(","));
+  res.rows.forEach(function(r){
+    lines.push([r.n, r.xcm===null?"":r.xcm, fmt(r.xm,6)===null?"":fmt(r.xm,6), fmt(r.v,6)===null?"":fmt(r.v,6),
+      fmt(r.h,6)===null?"":fmt(r.h,6), fmt(r.dEp,9)===null?"":fmt(r.dEp,9),
+      fmt(r.dEk,9)===null?"":fmt(r.dEk,9), fmtEps(r.eps)].map(csvCell).join(","));
+  });
+  lines.push("");
+  lines.push(["# 提示"].map(csvCell).join(","));
+  res.warnings.forEach(function(w){ lines.push([w].map(csvCell).join(",")); });
+  if(!res.warnings.length) lines.push(["(无)"].map(csvCell).join(","));
+
+  var blob = new Blob(["\uFEFF"+lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "落体法-机械能-"+timestamp()+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+}
+function timestamp(){
+  var d=new Date(), p=function(x){return (x<10?"0":"")+x;};
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
+}
+
+window.addEventListener("resize", function(){drawChart(compute());});
+render();
+</script>
+</body>
+</html>

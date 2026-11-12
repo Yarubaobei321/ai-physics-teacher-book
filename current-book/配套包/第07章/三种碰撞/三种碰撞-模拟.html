@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>三种碰撞：把瞬间拉长成过程（模拟）</title>
+<style>
+  :root{
+    --ink:#1f2328; --ink2:#5b6570; --ink3:#8a949e;
+    --line:#e3e6ea; --card:#ffffff; --bg:#f4f6f8;
+    --blue:#2b5cab; --blue-fill:#5b93ea; --blue-soft:#dbe8fb;
+    --orange:#ff8c1a; --orange-line:#bf5b00; --orange-soft:#ffe6cc;
+    --green:#2f9e6f; --gray:#9aa3ad;
+    --warn-bg:#fff8e8; --warn-line:#f0dcae;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    font-size:16px; line-height:1.6; padding:20px 16px 48px;
+  }
+  .wrap{ max-width:1100px; margin:0 auto; }
+  h1{ font-size:24px; line-height:1.35; margin:0 0 6px; }
+  h2{ font-size:17px; margin:0 0 6px; }
+  p.sub{ margin:0 0 3px; color:var(--ink2); font-size:15px; }
+  p.sub b{ color:var(--ink); }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:10px; margin-top:12px; }
+  .stage{ padding:10px; }
+  canvas{ display:block; width:100%; height:auto; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:9px 12px; padding:11px 14px; }
+  .lab{ font-weight:700; color:var(--ink2); font-size:15px; }
+  .sep{ width:1px; height:26px; background:var(--line); }
+  button{ font-family:inherit; cursor:pointer; }
+  .main{ font-size:17px; font-weight:700; color:#fff; background:var(--blue); border:none; border-radius:7px; padding:8px 20px; min-width:92px; }
+  .pbtn{ font-size:16px; font-weight:600; color:#33475e; background:#fff; border:1px solid #ccd4de; border-radius:7px; padding:6px 12px; }
+  .pbtn:hover{ background:#f0f5fc; }
+  .pbtn.on{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  .pbtn:disabled{ opacity:.4; cursor:not-allowed; }
+  label.sl{ display:flex; align-items:center; gap:8px; font-size:16px; }
+  label.sl input{ width:190px; }
+  label.sl b{ display:inline-block; min-width:3.2em; }
+  select{ font:inherit; padding:5px 6px; border-radius:7px; border:1px solid #ccd4de; background:#fff; }
+  .readout{ display:grid; grid-template-columns:repeat(6,1fr); gap:0; padding:8px 6px; }
+  .readout div{ padding:4px 10px; border-left:1px solid var(--line); }
+  .readout div:first-child{ border-left:none; }
+  .readout span{ display:block; font-size:13.5px; color:var(--ink2); }
+  .readout b{ font-size:21px; font-variant-numeric:tabular-nums; }
+  .cA{ color:var(--orange-line); } .cB{ color:var(--blue); }
+  .grid{ display:grid; grid-template-columns:1.35fr 1fr; gap:12px; }
+  .grid .card{ padding:12px 14px; }
+  .ask{ background:var(--warn-bg); border-color:var(--warn-line); padding:11px 16px; font-size:17px; }
+  .notes{ padding:12px 18px; font-size:15px; color:var(--ink2); }
+  .notes b{ color:var(--ink); }
+  .notes ul{ margin:4px 0 0; padding-left:1.2em; }
+  .hidden{ display:none; }
+  @media (max-width:860px){ .grid{ grid-template-columns:1fr; } .readout{ grid-template-columns:repeat(3,1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>三种碰撞：把瞬间拉长成过程</h1>
+  <p class="sub">运动的 A 碰静止的 B。把碰撞中看不见的形变，想象成 B 左端的一根轻弹簧：先压缩，再看形变恢复多少。</p>
+  <p class="sub">模型条件：光滑水平面，<b>地面参考系，向右为正</b>；A 初速度 4 m/s，B 静止。<b>慢放</b>：弹簧取得很软，一次碰撞拉长到 1 s 左右。</p>
+
+  <div class="card bar">
+    <span class="lab">质量</span>
+    <button class="pbtn" data-m="0">A 1 kg，B 1 kg</button>
+    <button class="pbtn" data-m="1">A 3 kg，B 1 kg</button>
+    <button class="pbtn" data-m="2">A 1 kg，B 3 kg</button>
+    <span class="sep"></span>
+    <span class="lab">形变</span>
+    <button class="pbtn" data-eta="100">完全恢复</button>
+    <button class="pbtn" data-eta="25">部分恢复</button>
+    <button class="pbtn" data-eta="0">不恢复</button>
+    <label class="sl">形变能放回 <input type="range" id="eta" min="0" max="100" step="5" value="100"> <b id="etaTxt">100%</b></label>
+  </div>
+
+  <div class="card stage"><canvas id="scene"></canvas></div>
+
+  <div class="card bar">
+    <button class="main" id="play">播放</button>
+    <button class="pbtn" id="reset">复位</button>
+    <span class="sep"></span>
+    <span class="lab">停在</span>
+    <button class="pbtn" id="toI">Ⅰ 刚接触</button>
+    <button class="pbtn" id="toII">Ⅱ 压缩最大</button>
+    <button class="pbtn" id="toIII">Ⅲ 恢复结束</button>
+    <span class="sep"></span>
+    <label class="sl">播放速度
+      <select id="speed"><option value="0.25">0.25×</option><option value="0.5" selected>0.5×</option><option value="1">1×</option></select>
+    </label>
+    <span class="sep"></span>
+    <button class="pbtn" id="predict">先预测</button>
+    <button class="pbtn on" id="show">显示结果</button>
+  </div>
+
+  <div class="card ask hidden" id="ask">
+    先在纸上判断，再切到“显示结果”：① 压缩最大时，A、B 的速度有什么关系？② 恢复结束后，A、B 的速度比压缩最大时各是变大还是变小？③ 换一种恢复程度，这两个速度最大、最小能到多少？
+  </div>
+
+  <div class="card readout" id="readout">
+    <div><span>时间 t</span><b id="rT">0.00 s</b></div>
+    <div><span class="cA">A 的速度</span><b id="rA" class="cA"></b></div>
+    <div><span class="cB">B 的速度</span><b id="rB" class="cB"></b></div>
+    <div><span>弹簧压缩量</span><b id="rD"></b></div>
+    <div><span>系统动能</span><b id="rK"></b></div>
+    <div><span>已转化为内能</span><b id="rQ"></b></div>
+  </div>
+
+  <div class="grid" id="panels">
+    <div class="card">
+      <h2>速度—时间图（只画已经发生的过程）</h2>
+      <canvas id="graph"></canvas>
+    </div>
+    <div class="card">
+      <h2>能量此刻在哪里</h2>
+      <canvas id="energy"></canvas>
+      <h2 style="margin-top:8px">碰后速度落在哪里</h2>
+      <canvas id="range"></canvas>
+    </div>
+  </div>
+
+  <div class="card notes">
+    <b>怎样看</b>
+    <ul>
+      <li>三种碰撞从接触到压缩最大（Ⅱ）完全相同：A 减速、B 加速，直到共速。共速时系统动能最小，速度等于完全非弹性碰撞的共同速度。</li>
+      <li>区别在 Ⅱ 之后。形变完全恢复，弹簧把 B 继续向前推、把 A 继续向后推，得到弹性碰撞的结果；形变不恢复，两者保持共速；只恢复一部分，结果落在两者之间。</li>
+      <li>“碰后速度落在哪里”里的色带，就是 A、B 碰后速度的全部可能范围：一端是共同速度，另一端是弹性碰撞的结果。</li>
+    </ul>
+    <b style="display:block;margin-top:8px">模型说明</b>
+    <ul>
+      <li>压缩阶段弹力 F = kx（k = π²/2 ≈ 4.93 N/m）。恢复阶段弹力下降得更快，弹力减到零时还留有一部分压缩量不再恢复，弹簧与 A 分开。“形变能放回”指压缩最大时用于形变的那部分动能，最后有多少变回动能。</li>
+      <li>内能在压缩阶段按比例计入，恢复阶段不再增加，这是本页的简化。真实碰撞中损失怎样分配在压缩和恢复两段，不影响碰后速度：碰后速度只取决于放回的比例。</li>
+      <li>弹簧原长 2.4 m 是绘图设定，不进入计算。画面、读数、曲线取自同一组解析解。</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+/*PHYS-BEGIN*/
+const K = Math.PI*Math.PI/2, V0 = 4, T0 = 0.5, L0 = 2.4, BW = 1.0, XA0 = 1.2;
+function makeModel(m1, m2, eta){
+  const M = m1+m2, mu = m1*m2/M, e = Math.sqrt(eta);
+  const w1 = Math.sqrt(K/mu), t1 = Math.PI/(2*w1), dmax = V0/w1;
+  const t2 = e*t1, dres = dmax*(1-eta);
+  const vc = m1*V0/M, E0 = 0.5*m1*V0*V0;
+  const s0 = L0 + V0*T0, X0 = XA0 + (m2/M)*s0;
+  function at(t){
+    const tc = t - T0; let d, dd, gap = 0, phase;
+    if (tc < 0){ d = 0; dd = V0; gap = -V0*tc; phase = 'before'; }
+    else if (tc <= t1){ d = dmax*Math.sin(w1*tc); dd = V0*Math.cos(w1*tc); phase = 'compress'; }
+    else if (eta > 0 && tc < t1+t2){ const th = (w1/e)*(tc-t1); d = dres + eta*dmax*Math.cos(th); dd = -e*V0*Math.sin(th); phase = 'restore'; }
+    else if (eta > 0){ d = dres; dd = -e*V0; gap = e*V0*(tc-t1-t2); phase = 'after'; }
+    else { d = dmax; dd = 0; phase = 'stuck'; }
+    const vA = vc + (m2/M)*dd, vB = vc - (m1/M)*dd;
+    const s = L0 - d + gap, X = X0 + vc*t;
+    const xa = X - (m2/M)*s, xb = X + (m1/M)*s;
+    const KA = 0.5*m1*vA*vA, KB = 0.5*m2*vB*vB;
+    let Ue = 0;
+    if (phase === 'compress') Ue = eta*0.5*K*d*d;
+    else if (phase === 'restore') Ue = 0.5*(K/eta)*(d-dres)*(d-dres);
+    let Q = E0 - KA - KB - Ue; if (Math.abs(Q) < 1e-9) Q = 0;
+    return {t, phase, d, gap, vA, vB, xa, xb, len: L0-d, KA, KB, Ue, Q};
+  }
+  return {m1, m2, eta, e, t1, t2, dmax, dres, vc, E0,
+          tI: T0, tII: T0+t1, tIII: eta > 0 ? T0+t1+t2 : Infinity,
+          vAel: (m1-m2)/M*V0, vBel: 2*m1/M*V0,
+          vAf: vc - (m2/M)*e*V0, vBf: vc + (m1/M)*e*V0, at};
+}
+/*PHYS-END*/
+
+const MASS = [[1,1],[3,1],[1,3]];
+const C = {A:'#ff8c1a', Al:'#bf5b00', As:'#ffe6cc', B:'#5b93ea', Bl:'#2b5cab', Bs:'#dbe8fb', S:'#2f9e6f', Q:'#9aa3ad', ink:'#1f2328', ink2:'#5b6570', grid:'#e3e6ea'};
+const FONT = '-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif';
+let mi = 0, etaPct = 100, mdl, ref, t = 0, playing = false, speed = 0.5, predict = false, last = 0;
+let tEnd, worldMax, scale, vMin, vMax;
+
+function setup(id, w, h){
+  const cv = document.getElementById(id), d = window.devicePixelRatio || 1;
+  cv.width = w*d; cv.height = h*d;
+  const c = cv.getContext('2d'); c.setTransform(d,0,0,d,0,0); c.W = w; c.H = h; return c;
+}
+const sc = setup('scene', 1060, 260), gc = setup('graph', 620, 380), ec = setup('energy', 440, 128), rc = setup('range', 440, 226);
+
+function fmtV(v){ if (Math.abs(v) < 0.005) return '0'; return (v > 0 ? '+' : '−') + Math.abs(v).toFixed(2); }
+function line(c, x1, y1, x2, y2){ c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke(); }
+function arrow(c, x, y, len, color){
+  if (Math.abs(len) < 2) return;
+  const s = Math.sign(len), x2 = x + len, h = Math.min(11, Math.abs(len));
+  c.strokeStyle = color; c.fillStyle = color; c.lineWidth = 4;
+  line(c, x, y, x2 - s*h*0.8, y);
+  c.beginPath(); c.moveTo(x2, y); c.lineTo(x2 - s*h, y-7); c.lineTo(x2 - s*h, y+7); c.closePath(); c.fill();
+}
+
+function rebuild(){
+  const [m1, m2] = MASS[mi];
+  mdl = makeModel(m1, m2, etaPct/100);
+  ref = makeModel(m1, m2, 1);                    // 比例尺和坐标范围按弹性碰撞固定，换恢复程度不跳动
+  tEnd = ref.tIII + 1.0;
+  worldMax = ref.at(tEnd).xb + BW + 0.5;
+  scale = Math.min(74, (1060-60)/worldMax);
+  vMin = Math.floor(Math.min(0, ref.vAel) - 0.5); vMax = Math.ceil(Math.max(V0, ref.vBel) + 0.3);
+  document.querySelectorAll('[data-m]').forEach(b => b.classList.toggle('on', +b.dataset.m === mi));
+  document.querySelectorAll('[data-eta]').forEach(b => {
+    const v = +b.dataset.eta; b.classList.toggle('on', v === 100 ? etaPct === 100 : v === 0 ? etaPct === 0 : (etaPct > 0 && etaPct < 100));
+  });
+  document.getElementById('eta').value = etaPct;
+  document.getElementById('etaTxt').textContent = etaPct + '%';
+  document.getElementById('toIII').disabled = etaPct === 0;
+  t = 0; setPlaying(false); draw();
+}
+
+function phaseText(st){
+  const near = x => Math.abs(t - x) < 1e-6;
+  if (predict) return near(mdl.tI) ? 'Ⅰ 刚接触' : near(mdl.tII) ? 'Ⅱ 压缩最大' : near(mdl.tIII) ? 'Ⅲ 恢复结束' : '';
+  if (near(mdl.tI)) return 'Ⅰ 刚接触：弹簧开始被压缩';
+  if (near(mdl.tII)) return 'Ⅱ 共速：压缩最大，系统动能最小';
+  if (near(mdl.tIII)) return mdl.eta === 1 ? 'Ⅲ 弹簧恢复原长，A 与弹簧分开' : 'Ⅲ 弹簧只恢复了一部分，A 与弹簧分开';
+  return {before:'接触前：A 匀速，B 静止', compress:'压缩：A 减速，B 加速', restore:'恢复：B 继续加速，A 继续减速',
+          after:'分开后：各自匀速', stuck:'形变不恢复：A、B 保持共同速度'}[st.phase];
+}
+
+function drawScene(st){
+  const c = sc, W = c.W, H = c.H, gy = 200, px = x => 30 + x*scale, bw = BW*scale, bh = bw;
+  c.clearRect(0,0,W,H);
+  c.font = '600 21px ' + FONT; c.fillStyle = C.ink; c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  c.fillText(phaseText(st), 30, 34);
+  c.font = '15px ' + FONT; c.fillStyle = C.ink2; c.textAlign = 'right';
+  c.fillText('地面参考系，向右为正；地面刻度单位 m', W-30, 32);
+  // 地面
+  c.strokeStyle = '#8a949e'; c.lineWidth = 2; line(c, 20, gy, W-20, gy);
+  c.font = '15px ' + FONT; c.textAlign = 'center'; c.fillStyle = C.ink2;
+  for (let x = 0; x <= worldMax; x++){ c.lineWidth = 1.5; line(c, px(x), gy, px(x), gy + (x%2 ? 6 : 11)); if (x%2 === 0) c.fillText(x, px(x), gy+30); }
+  // 弹簧（固定在 B 左端）
+  const yc = gy - bh/2, xr = px(st.xb), xl = px(st.xb - st.len), n = 12, seg = (xr - xl - 6)/n;
+  c.strokeStyle = C.S; c.lineWidth = 3; c.lineJoin = 'round'; c.beginPath(); c.moveTo(xl+6, yc);
+  for (let i = 0; i < n; i++) c.lineTo(xl + 6 + seg*(i+0.5), yc + (i%2 ? 13 : -13));
+  c.lineTo(xr, yc); c.stroke();
+  c.lineWidth = 6; line(c, xl+3, yc-22, xl+3, yc+22);
+  // 物块
+  const blocks = [[px(st.xa)-bw, C.A, C.Al, 'A', mdl.m1, st.vA], [px(st.xb), C.B, C.Bl, 'B', mdl.m2, st.vB]];
+  for (const [x, fill, edge, name, m, v] of blocks){
+    c.fillStyle = fill; c.strokeStyle = edge; c.lineWidth = 2.5;
+    c.beginPath(); c.rect(x, gy-bh, bw, bh-1); c.fill(); c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = '700 24px ' + FONT; c.fillText(name, x+bw/2, gy-bh/2+2);
+    c.font = '15px ' + FONT; c.fillText(m + ' kg', x+bw/2, gy-bh/2+22);
+    if (!predict){
+      const cx = x + bw/2, ay = gy - bh - 16;
+      arrow(c, cx - v*7, ay, v*14, edge);
+      c.fillStyle = edge; c.font = '600 19px ' + FONT; c.fillText(fmtV(v) + ' m/s', cx, ay - 14);
+    }
+  }
+}
+
+function drawGraph(){
+  const c = gc, W = c.W, H = c.H, L = 58, R = 24, T = 18, B = 46;
+  const X = tt => L + tt/tEnd*(W-L-R), Y = v => T + (vMax - v)/(vMax - vMin)*(H-T-B);
+  c.clearRect(0,0,W,H);
+  c.font = '15px ' + FONT; c.textBaseline = 'middle';
+  for (let v = vMin; v <= vMax; v++){
+    c.strokeStyle = v === 0 ? '#8a949e' : C.grid; c.lineWidth = v === 0 ? 1.5 : 1; line(c, L, Y(v), W-R, Y(v));
+    c.fillStyle = C.ink2; c.textAlign = 'right'; c.fillText(v, L-8, Y(v));
+  }
+  c.textAlign = 'center';
+  for (let tt = 0; tt <= tEnd + 1e-9; tt += 0.5){ c.strokeStyle = C.grid; line(c, X(tt), T, X(tt), H-B); c.fillText(tt.toFixed(1), X(tt), H-B+14); }
+  c.fillText('t / s', W-R-16, H-12); c.save(); c.translate(16, T+70); c.rotate(-Math.PI/2); c.fillText('v / (m·s⁻¹)', 0, 0); c.restore();
+  // 关键时刻
+  c.setLineDash([4,4]); c.strokeStyle = '#8a949e'; c.fillStyle = C.ink2;
+  [['Ⅰ', mdl.tI], ['Ⅱ', mdl.tII], ['Ⅲ', mdl.tIII]].forEach(([n, tk]) => { if (t >= tk - 1e-6){ line(c, X(tk), T, X(tk), H-B); c.fillText(n, X(tk), T+10); } });
+  if (t >= mdl.tII - 1e-6){ c.strokeStyle = C.ink2; line(c, L, Y(mdl.vc), W-R, Y(mdl.vc)); c.textAlign = 'right'; c.fillText('v共 = ' + mdl.vc.toFixed(2), W-R-4, Y(mdl.vc)-12); }
+  c.setLineDash([]);
+  // 曲线
+  for (const [key, col, name] of [['vA', C.A, 'A'], ['vB', C.Bl, 'B']]){
+    c.strokeStyle = col; c.lineWidth = 3.5; c.beginPath();
+    for (let tt = 0; tt <= t + 1e-9; tt += 0.005){ const s = mdl.at(tt); tt === 0 ? c.moveTo(X(tt), Y(s[key])) : c.lineTo(X(tt), Y(s[key])); }
+    const s = mdl.at(t); c.lineTo(X(t), Y(s[key])); c.stroke();
+    c.fillStyle = col; c.beginPath(); c.arc(X(t), Y(s[key]), 6, 0, 7); c.fill();
+    c.font = '700 18px ' + FONT; c.textAlign = 'left'; c.fillText(name, Math.min(X(t)+10, W-R-12), Y(s[key]) + (key === 'vA' ? 14 : -14)); c.font = '15px ' + FONT;
+  }
+  c.textBaseline = 'alphabetic';
+}
+
+function drawEnergy(st){
+  const c = ec, W = c.W, x0 = 12, bwid = W-24, k = bwid/mdl.E0;
+  c.clearRect(0,0,W,c.H);
+  const parts = [['A 的动能', st.KA, C.A], ['B 的动能', st.KB, C.B], ['弹性势能', st.Ue, C.S], ['内能', st.Q, C.Q]];
+  let x = x0;
+  for (const [, val, col] of parts){ c.fillStyle = col; c.fillRect(x, 8, val*k, 38); x += val*k; }
+  c.strokeStyle = C.ink2; c.lineWidth = 1.5; c.strokeRect(x0, 8, bwid, 38);
+  c.font = '15px ' + FONT; c.textAlign = 'left'; c.textBaseline = 'middle';
+  parts.forEach(([name, val, col], i) => {
+    const lx = x0 + (i%2)*215, ly = 68 + Math.floor(i/2)*28;
+    c.fillStyle = col; c.fillRect(lx, ly-8, 16, 16); c.fillStyle = C.ink; c.fillText(name + ' ' + val.toFixed(2) + ' J', lx+22, ly);
+  });
+  c.textBaseline = 'alphabetic';
+}
+
+function drawRange(st){
+  const c = rc, W = c.W, L = 40, R = 22, X = v => L + (v - vMin)/(vMax - vMin)*(W-L-R);
+  c.clearRect(0,0,W,c.H);
+  c.font = '15px ' + FONT; c.textAlign = 'center';
+  const ay = 176;
+  c.strokeStyle = '#8a949e'; c.lineWidth = 1.5; line(c, L-8, ay, W-R+8, ay);
+  for (let v = vMin; v <= vMax; v++){ line(c, X(v), ay, X(v), ay+6); c.fillStyle = C.ink2; c.fillText(v, X(v), ay+24); }
+  c.textAlign = 'right'; c.fillText('速度 / (m·s⁻¹)', W-R, ay+44);
+  const rows = [['A', 52, mdl.vAel, mdl.vc, C.As, C.Al, st.vA, mdl.vAf], ['B', 116, mdl.vc, mdl.vBel, C.Bs, C.Bl, st.vB, mdl.vBf]];
+  for (const [name, y, a, b, soft, col, cur, fin] of rows){
+    c.fillStyle = soft; c.fillRect(X(a), y-13, X(b)-X(a), 26); c.strokeStyle = col; c.lineWidth = 1.5; c.strokeRect(X(a), y-13, X(b)-X(a), 26);
+    c.fillStyle = col; c.font = '700 18px ' + FONT; c.textAlign = 'center'; c.fillText(name, 16, y+6);
+    c.font = '14px ' + FONT; c.fillStyle = C.ink2;
+    c.textAlign = name === 'A' ? 'left' : 'right';
+    c.fillText('弹性碰撞 ' + fmtV(name === 'A' ? a : b), name === 'A' ? X(a) : X(b), y+31);
+    if (t >= mdl.tIII - 1e-6 || st.phase === 'stuck'){
+      c.strokeStyle = col; c.lineWidth = 3; line(c, X(fin), y-17, X(fin), y+17);
+    }
+    c.fillStyle = col; c.beginPath(); c.arc(X(cur), y, 8, 0, 7); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+  }
+  c.setLineDash([4,4]); c.strokeStyle = C.ink2; c.lineWidth = 1.5; line(c, X(mdl.vc), 26, X(mdl.vc), ay); c.setLineDash([]);
+  c.fillStyle = C.ink; c.font = '14px ' + FONT; c.textAlign = 'center'; c.fillText('v共 ' + fmtV(mdl.vc) + '（完全非弹性）', Math.min(Math.max(X(mdl.vc), 96), W-96), 18);
+}
+
+function draw(){
+  const st = mdl.at(t);
+  drawScene(st);
+  document.getElementById('rT').textContent = t.toFixed(2) + ' s';
+  const q = '？';
+  document.getElementById('rA').textContent = predict ? q : fmtV(st.vA) + ' m/s';
+  document.getElementById('rB').textContent = predict ? q : fmtV(st.vB) + ' m/s';
+  document.getElementById('rD').textContent = predict ? q : st.d.toFixed(2) + ' m';
+  document.getElementById('rK').textContent = predict ? q : (st.KA + st.KB).toFixed(2) + ' J';
+  document.getElementById('rQ').textContent = predict ? q : st.Q.toFixed(2) + ' J';
+  if (!predict){ drawGraph(); drawEnergy(st); drawRange(st); }
+}
+
+function setPlaying(p){ playing = p; document.getElementById('play').textContent = p ? '暂停' : (t >= tEnd - 1e-9 ? '重播' : '播放'); if (p){ last = performance.now(); requestAnimationFrame(tick); } }
+function tick(now){
+  if (!playing) return;
+  t += Math.min(0.05, (now - last)/1000) * speed; last = now;
+  if (t >= tEnd){ t = tEnd; draw(); setPlaying(false); return; }
+  draw(); requestAnimationFrame(tick);
+}
+function jump(tk){ if (!isFinite(tk)) return; t = tk; setPlaying(false); draw(); }
+function setPredict(p){
+  predict = p;
+  document.getElementById('predict').classList.toggle('on', p); document.getElementById('show').classList.toggle('on', !p);
+  document.getElementById('ask').classList.toggle('hidden', !p); document.getElementById('panels').classList.toggle('hidden', p);
+  draw();
+}
+
+document.querySelectorAll('[data-m]').forEach(b => b.onclick = () => { mi = +b.dataset.m; rebuild(); });
+document.querySelectorAll('[data-eta]').forEach(b => b.onclick = () => { etaPct = +b.dataset.eta; rebuild(); });
+document.getElementById('eta').oninput = ev => { etaPct = +ev.target.value; rebuild(); };
+document.getElementById('play').onclick = () => { if (!playing && t >= tEnd - 1e-9) t = 0; setPlaying(!playing); };
+document.getElementById('reset').onclick = () => { t = 0; setPlaying(false); draw(); };
+document.getElementById('toI').onclick = () => jump(mdl.tI);
+document.getElementById('toII').onclick = () => jump(mdl.tII);
+document.getElementById('toIII').onclick = () => jump(mdl.tIII);
+document.getElementById('speed').onchange = ev => { speed = +ev.target.value; };
+document.getElementById('predict').onclick = () => setPredict(true);
+document.getElementById('show').onclick = () => setPredict(false);
+
+// 供截图用：?m=0&eta=25&at=II（或 at=1.2）&predict=1
+const qs = new URLSearchParams(location.search);
+if (qs.has('m')) mi = +qs.get('m');
+if (qs.has('eta')) etaPct = +qs.get('eta');
+rebuild();
+if (qs.has('predict')) setPredict(true);
+if (qs.has('at')){ const a = qs.get('at'); jump({I: mdl.tI, II: mdl.tII, III: mdl.tIII}[a] ?? +a); }
+</script>
+</body>
+</html>

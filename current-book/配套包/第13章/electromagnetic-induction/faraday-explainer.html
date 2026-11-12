@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="15 秒无声说明动画：磁铁转过线圈时，磁通量最大的那一刻电动势为零；转速加倍，峰值加倍、时间减半、面积不变。">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
+  <title>磁通量与它的变化率 | 说明动画</title>
+  <style>
+    :root { --yucai-blue: #0b63c7; --yucai-50: #eef7ff; --yucai-100: #d8ecff; --yucai-900: #0d3969; --ink: #102033; --lab: #f5f8fb; --slate-200: #e2e8f0; --slate-300: #cbd5e1; --slate-600: #475569;
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--lab); color: var(--ink); font-family: var(--font-sans); }
+    .wrap { width: min(1120px, calc(100% - 32px)); margin: 24px auto; }
+    h1 { font-size: 26px; margin: 0 0 6px; }
+    p.lead { margin: 0 0 14px; color: var(--slate-600); }
+    canvas { display: block; width: 100%; aspect-ratio: 16 / 9; background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; }
+    .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+    button { font: inherit; font-size: 15px; min-height: 38px; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--slate-300); background: #fff; color: var(--ink); cursor: pointer; }
+    button.primary { background: var(--yucai-blue); border-color: var(--yucai-blue); color: #fff; font-weight: 700; min-width: 80px; }
+    button.key { background: var(--yucai-50); border-color: var(--yucai-100); color: var(--yucai-900); }
+    input[type=range] { flex: 1; min-width: 180px; accent-color: var(--yucai-blue); }
+    .t { font-variant-numeric: tabular-nums; color: var(--slate-600); min-width: 70px; }
+    .note { font-size: 14px; color: var(--slate-600); margin-top: 10px; }
+    body.capture { background: #fff; }
+    body.capture .wrap { width: 1920px; margin: 0; }
+    body.capture h1, body.capture p, body.capture .bar { display: none; }
+    body.capture canvas { width: 1920px; height: 1080px; border: 0; border-radius: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>磁通量最大时，电动势为什么是零？</h1>
+    <p class="lead">无声说明动画，约 15 秒。可以在任一关键时刻暂停，请学生先说出下一步会怎样。</p>
+    <canvas id="cv" width="1920" height="1080" role="img" aria-label="左侧光盘带着磁铁转过固定线圈；右侧上图是磁通量随时间的变化和它的切线，下图是感应电动势"></canvas>
+    <div class="bar">
+      <button id="play" class="primary" type="button">播放</button>
+      <button id="restart" type="button">重播</button>
+      <input id="scrub" type="range" min="0" max="15" step="0.01" value="0" aria-label="动画时间">
+      <span id="tOut" class="t">0.0 s</span>
+      <button class="key" data-t="3.3" type="button">接近</button>
+      <button class="key" data-t="5.2" type="button">正对</button>
+      <button class="key" data-t="7.2" type="button">离开</button>
+      <button class="key" data-t="14.5" type="button">转速加倍</button>
+    </div>
+    <p class="note">动画按王硕老师转盘装置的磁偶极子模型计算，线圈画得离光盘较近，便于看清一次经过；慢放约 6 倍。曲线不标数值，只比较形状、高低和面积。</p>
+  </div>
+  <script src="faraday-model.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const M = window.FaradayModel;
+    const TOTAL = 15;
+    const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+    const W = 1920, H = 1080;
+    const FONT = getComputedStyle(document.body).fontFamily;
+    const C = { ink: "#102033", grid: "#e2e8f0", axis: "#64748b", magnet: "#c3543d", flux: "#008f9e", emf: "#2465a8", coil: "#a0612a", signal: "#f4a51c", ghost: "#b8c2cf", disc: "#eef2f7" };
+    // 两次经过：慢 (30 r/min) 与快 (60 r/min)，都从 θ=−90° 走到 +90°
+    const base = { turns: 1400, magnets: 10, distance: 0.03, arrangement: "stack", theta0: -Math.PI / 2 };
+    const slow = M.createExperiment(Object.assign({ rpm: 30 }, base));
+    const fast = M.createExperiment(Object.assign({ rpm: 60 }, base));
+    const TM = 1.0;                               // 图上的模型时间 0—1 s
+    const phiMax = slow.table.phiMax, emfMax = fast.peakEmf();
+    // 时间脚本（视频秒 → 模型时间）
+    function script(v) {
+      if (v < 1.5) return { phase: "intro", tm: 0, run: slow };
+      if (v < 4.6) return { phase: "approach", tm: 0.5 * (v - 1.5) / 3.1, run: slow };
+      if (v < 6.2) return { phase: "align", tm: 0.5, run: slow };
+      if (v < 8.7) return { phase: "leave", tm: 0.5 + 0.5 * (v - 6.2) / 2.5, run: slow };
+      if (v < 9.7) return { phase: "done1", tm: 1.0, run: slow };
+      if (v < 10.3) return { phase: "fastIntro", tm: 0, run: fast };
+      if (v < 12.8) return { phase: "fast", tm: 0.5 * (v - 10.3) / 2.5, run: fast };
+      return { phase: "compare", tm: 0.5, run: fast };
+    }
+    const ease = (x) => Math.max(0, Math.min(1, x));
+    function fade(v, a, b) { return ease((v - a) / (b - a)); }
+
+    // 布局
+    const dev = { cx: 420, cy: 600, s: 3400 };               // 正视图
+    const gL = 900, gR = 1840;
+    const pPhi = { top: 170, bottom: 470 }, pEmf = { top: 600, bottom: 980 };
+    const gx = (tm) => gL + tm / TM * (gR - gL);
+    const py = (phi) => pPhi.bottom - phi / (phiMax * 1.12) * (pPhi.bottom - pPhi.top);
+    const ey = (e) => (pEmf.top + pEmf.bottom) / 2 - e / (emfMax * 1.12) * (pEmf.bottom - pEmf.top) / 2;
+
+    function text(str, x, y, size, color, weight, align) {
+      ctx.font = `${weight || 600} ${size}px ${FONT}`; ctx.fillStyle = color; ctx.textAlign = align || "left"; ctx.fillText(str, x, y); ctx.textAlign = "left";
+    }
+    function caption(str, alpha) {
+      if (!str || alpha <= 0) return;
+      ctx.globalAlpha = alpha;
+      ctx.font = `700 40px ${FONT}`; const w = ctx.measureText(str).width;
+      ctx.fillStyle = "rgba(238,247,255,0.95)"; roundRect(W / 2 - w / 2 - 28, 30, w + 56, 74, 10); ctx.fill();
+      text(str, W / 2, 82, 40, "#0d3969", 700, "center");
+      ctx.globalAlpha = 1;
+    }
+    function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+    function arrowHead(x, y, ang, s, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s * Math.cos(ang - 0.42), y - s * Math.sin(ang - 0.42)); ctx.lineTo(x - s * Math.cos(ang + 0.42), y - s * Math.sin(ang + 0.42)); ctx.closePath(); ctx.fill(); }
+
+    function drawDevice(theta, v) {
+      const g = M.GEOMETRY, s = dev.s, cx = dev.cx, cy = dev.cy;
+      ctx.fillStyle = C.disc; ctx.strokeStyle = C.axis; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(cx, cy, g.discRadius * s, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = C.axis; ctx.beginPath(); ctx.arc(cx, cy, 10, 0, 2 * Math.PI); ctx.fill();
+      // 转向
+      ctx.strokeStyle = C.axis; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, 70, -2.4, -0.75); ctx.stroke();
+      arrowHead(cx + 70 * Math.cos(-0.75), cy + 70 * Math.sin(-0.75), -0.75 + Math.PI / 2, 20, C.axis);
+      // 线圈
+      const coilY = cy - g.orbitRadius * s;
+      ctx.setLineDash([14, 10]); ctx.strokeStyle = C.coil; ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(cx, coilY, g.coilRadius * s, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+      text("固定线圈（在光盘前方）", cx + g.coilRadius * s + 18, coilY - 40, 30, C.coil, 700);
+      // 磁铁
+      const x = cx + g.orbitRadius * s * Math.sin(theta), y = cy - g.orbitRadius * s * Math.cos(theta);
+      ctx.save(); ctx.translate(x, y); ctx.rotate(theta);
+      ctx.fillStyle = C.magnet; roundRect(-30, -30, 60, 60, 6); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = `800 34px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("N", 0, 2);
+      ctx.restore(); ctx.textBaseline = "alphabetic";
+    }
+
+    function axes(v) {
+      ctx.lineWidth = 2; ctx.strokeStyle = C.axis;
+      ctx.beginPath(); ctx.moveTo(gL, pPhi.top - 10); ctx.lineTo(gL, pPhi.bottom); ctx.lineTo(gR + 20, pPhi.bottom); ctx.stroke();
+      arrowHead(gR + 34, pPhi.bottom, 0, 22, C.axis); arrowHead(gL, pPhi.top - 24, -Math.PI / 2, 22, C.axis);
+      const mid = ey(0);
+      ctx.beginPath(); ctx.moveTo(gL, pEmf.top - 10); ctx.lineTo(gL, pEmf.bottom); ctx.moveTo(gL, mid); ctx.lineTo(gR + 20, mid); ctx.stroke();
+      arrowHead(gR + 34, mid, 0, 22, C.axis); arrowHead(gL, pEmf.top - 24, -Math.PI / 2, 22, C.axis);
+      text("Φ", gL - 50, pPhi.top + 20, 40, C.flux, 700);
+      text("ε", gL - 46, pEmf.top + 20, 44, C.emf, 700);
+      text("t", gR + 10, pPhi.bottom + 46, 32, C.axis, 600);
+      text("t", gR + 10, mid + 46, 32, C.axis, 600);
+      text("0", gL - 34, mid + 10, 28, C.axis, 600);
+    }
+
+    function curve(run, fn, tmEnd, color, width, mapY, dash) {
+      if (tmEnd <= 0) return;
+      ctx.strokeStyle = color; ctx.lineWidth = width; ctx.setLineDash(dash || []);
+      ctx.beginPath();
+      const n = 240;
+      for (let i = 0; i <= n; i++) { const tm = tmEnd * i / n; const X = gx(tm), Y = mapY(fn(run, tm)); i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    const PHI = (run, tm) => run.flux1(tm), EMF = (run, tm) => run.emf(tm);
+
+    function shadeLobe(run, color, alpha) {
+      // 接近段（ε<0）的面积，从 0 到正对时刻
+      const tAlign = (0 - run.theta0) / run.omega;
+      ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(gx(0), ey(0));
+      for (let i = 0; i <= 200; i++) { const tm = tAlign * i / 200; ctx.lineTo(gx(tm), ey(run.emf(tm))); }
+      ctx.lineTo(gx(tAlign), ey(0)); ctx.closePath(); ctx.fill(); ctx.globalAlpha = 1;
+    }
+
+    function renderAt(v) {
+      v = Math.max(0, Math.min(TOTAL, v));
+      const sc = script(v), run = sc.run, tm = sc.tm;
+      const pixelRatio=(window.devicePixelRatio||1)*(window.visualViewport?.scale||1);
+      const displayWidth=cv.getBoundingClientRect().width;
+      const pixelW=Math.max(W,Math.ceil(displayWidth*pixelRatio));
+      const pixelH=Math.ceil(pixelW*H/W);
+      if(cv.width!==pixelW||cv.height!==pixelH){cv.width=pixelW;cv.height=pixelH;}
+      ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, W, H);
+      axes(v);
+      // 第一遍（慢）在快速段变成灰色参照
+      const slowEnd = run === slow ? tm : TM;
+      const ghost = run === fast;
+      if (ghost) {
+        curve(slow, PHI, TM, C.ghost, 5, py);
+        curve(slow, EMF, TM, C.ghost, 5, ey);
+      }
+      if (sc.phase === "compare") {
+        const a = fade(v, 12.9, 13.6);
+        shadeLobe(slow, C.ghost, 0.45 * a);
+        shadeLobe(fast, C.emf, 0.28 * a);
+      }
+      curve(run, PHI, tm, C.flux, 7, py);
+      curve(run, EMF, tm, C.emf, 7, ey);
+      // 当前点、切线、对应的 ε 点
+      if (sc.phase !== "intro" && sc.phase !== "fastIntro") {
+        const phi = run.flux1(tm), slope = (run.flux1(tm + 1e-4) - run.flux1(tm - 1e-4)) / 2e-4;
+        const dt = 0.13;
+        if (sc.phase !== "done1" && sc.phase !== "compare") {
+          ctx.strokeStyle = C.signal; ctx.lineWidth = 7;
+          ctx.beginPath(); ctx.moveTo(gx(tm - dt), py(phi - slope * dt)); ctx.lineTo(gx(tm + dt), py(phi + slope * dt)); ctx.stroke();
+          ctx.strokeStyle = "rgba(16,32,51,0.28)"; ctx.lineWidth = 2; ctx.setLineDash([8, 8]);
+          ctx.beginPath(); ctx.moveTo(gx(tm), pPhi.top); ctx.lineTo(gx(tm), pEmf.bottom); ctx.stroke(); ctx.setLineDash([]);
+        }
+        ctx.fillStyle = C.flux; ctx.beginPath(); ctx.arc(gx(tm), py(phi), 12, 0, 2 * Math.PI); ctx.fill();
+        ctx.fillStyle = C.signal; ctx.beginPath(); ctx.arc(gx(tm), ey(run.emf(tm)), 13, 0, 2 * Math.PI); ctx.fill();
+      }
+      // 就近标签
+      if (sc.phase === "approach" && tm > 0.2) {
+        const a = fade(v, 2.6, 3.0);
+        ctx.globalAlpha = a; text("Φ 增大", gx(0.2), py(phiMax * 0.55), 34, C.flux, 700); text("切线越陡，ε 越大", gx(0.04), ey(-emfMax * 0.62), 32, C.emf, 700); ctx.globalAlpha = 1;
+      }
+      if (sc.phase === "align") {
+        const a = fade(v, 4.7, 5.0);
+        ctx.globalAlpha = a;
+        text("Φ 最大，切线水平", gx(0.5) + 24, py(phiMax) - 18, 34, C.flux, 700);
+        text("ε = 0", gx(0.5) + 24, ey(0) - 22, 38, C.emf, 800);
+        ctx.globalAlpha = 1;
+      }
+      if (sc.phase === "leave" || sc.phase === "done1") {
+        const a = fade(v, 6.5, 6.9);
+        ctx.globalAlpha = a; text("Φ 减小", gx(0.7), py(phiMax * 0.55), 34, C.flux, 700); text("ε 反向", gx(0.68), ey(emfMax * 0.62), 34, C.emf, 700); ctx.globalAlpha = 1;
+      }
+      if (sc.phase === "compare") {
+        const a = fade(v, 13.2, 13.8);
+        ctx.globalAlpha = a;
+        text("两块阴影面积相同", gx(0.30), ey(-emfMax * 0.88), 32, C.ink, 700);
+        ctx.globalAlpha = 1;
+      }
+      // 装置
+      drawDevice(run.theta(tm), v);
+      // 角标
+      text(run === fast ? "转速 ×2" : "慢放", 70, 150, 32, run === fast ? C.signal : C.axis, 700);
+      // 字幕（一段一句）
+      const caps = {
+        intro: "磁铁随光盘转，线圈不动",
+        approach: "磁铁接近：磁通量增大",
+        align: "正对线圈：磁通量最大，变化率为零",
+        leave: "磁铁离开：磁通量减小，电动势反向",
+        done1: "电动势看的是磁通量变化的快慢",
+        fastIntro: "转速加倍",
+        fast: "转速加倍：同样的变化，用一半的时间",
+        compare: "峰值加倍，时间减半，面积不变"
+      };
+      const startOf = { intro: 0, approach: 1.5, align: 4.6, leave: 6.2, done1: 8.7, fastIntro: 9.7, fast: 10.3, compare: 12.8 };
+      caption(caps[sc.phase], fade(v, startOf[sc.phase], startOf[sc.phase] + 0.35));
+      if (run === fast && sc.phase !== "fastIntro") text("灰色：原来的转速", gR - 290, pEmf.bottom + 60, 28, "#8a96a6", 600);
+    }
+
+    window.renderAt = renderAt;
+    window.ANIMATION_DURATION = TOTAL;
+
+    // 交互播放
+    const scrub = document.getElementById("scrub"), tOut = document.getElementById("tOut"), playBtn = document.getElementById("play");
+    let cur = 0, playing = false, last = null;
+    function show(v) { cur = v; scrub.value = v; tOut.textContent = v.toFixed(1) + " s"; renderAt(v); }
+    function tick(ts) {
+      if (!playing) { last = null; return; }
+      if (last !== null) cur += (ts - last) / 1000;
+      last = ts;
+      if (cur >= TOTAL) { cur = TOTAL; playing = false; playBtn.textContent = "播放"; }
+      show(cur); requestAnimationFrame(tick);
+    }
+    playBtn.onclick = () => { if (cur >= TOTAL) cur = 0; playing = !playing; playBtn.textContent = playing ? "暂停" : "播放"; if (playing) requestAnimationFrame(tick); };
+    document.getElementById("restart").onclick = () => { cur = 0; playing = true; playBtn.textContent = "暂停"; requestAnimationFrame(tick); };
+    scrub.oninput = () => { playing = false; playBtn.textContent = "播放"; show(+scrub.value); };
+    document.querySelectorAll(".key").forEach((b) => b.onclick = () => { playing = false; playBtn.textContent = "播放"; show(+b.dataset.t); });
+    if (/capture=1/.test(location.search)) document.body.classList.add("capture");
+    window.addEventListener("resize",()=>renderAt(cur));
+    window.visualViewport?.addEventListener("resize",()=>renderAt(cur));
+    show(/capture=1/.test(location.search) ? 0 : 5.2);
+  })();
+  </script>
+</body>
+</html>

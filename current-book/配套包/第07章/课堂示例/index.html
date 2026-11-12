@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>滑块与圆弧轨道：运动与守恒关系（五种情境）</title>
+<style>
+  :root{
+    --ink:#1f2328; --ink2:#5b6570; --ink3:#8a949e;
+    --line:#e3e6ea; --card:#ffffff; --bg:#f4f6f8;
+    --blue:#2b5cab; --blue-fill:#5b93ea; --blue-fill2:#3a76d2;
+    --orange:#ff8c1a; --orange-line:#bf5b00;
+    --ground:#e7e4dd; --ground-line:#8a8175;
+    --fix:#6b6455;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:15px; line-height:1.6;
+    padding:22px 18px 46px;
+  }
+  .wrap{max-width:1040px;margin:0 auto;}
+  h1{font-size:20px;line-height:1.4;margin:0 0 6px;font-weight:700;letter-spacing:.2px;}
+  .sub{margin:0 0 4px;color:var(--ink2);font-size:13.5px;}
+  .sub b{color:var(--ink);font-weight:600;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;}
+  .stage{padding:10px;margin-top:14px;}
+  #scene{display:block;width:100%;aspect-ratio:3.2/1.44;border-radius:8px;background:#fbfcfd;}
+
+  .bar-row{margin-top:12px;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;}
+  button{
+    font-family:inherit;font-size:14px;font-weight:600;color:#fff;background:var(--blue);
+    border:none;border-radius:7px;padding:8px 18px;cursor:pointer;letter-spacing:.5px;
+  }
+  button.ghost{background:#fff;color:var(--blue);border:1px solid #b9cbe4;}
+  button:hover{filter:brightness(1.07);}
+  button.ghost:hover{filter:none;background:#f0f5fc;}
+  button:disabled{opacity:.42;cursor:not-allowed;}
+  select{font-family:inherit;font-size:13.5px;padding:7px 8px;border:1px solid #ccd4de;border-radius:7px;background:#fff;color:var(--ink);}
+  .speed-lab{font-size:13.5px;color:var(--ink2);display:flex;align-items:center;gap:7px;}
+  .prog{flex:1 1 190px;min-width:150px;height:9px;background:#e9edf2;border-radius:6px;overflow:hidden;}
+  .prog > i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7fb0ff,#2b5cab);border-radius:6px;}
+  .phase{
+    font-size:13.5px;font-weight:700;padding:5px 12px;border-radius:20px;background:#eef4ff;
+    color:#1f4e9c;border:1px solid #cfe0fb;white-space:nowrap;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;
+  }
+  .bar-row.tight{margin-top:10px;padding:10px 14px;gap:8px 12px;}
+  .seg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .seg > b{font-size:13.5px;color:var(--ink2);font-weight:600;}
+  .pbtn{font-family:inherit;font-size:13.5px;font-weight:600;color:#33475e;background:#fff;
+        border:1px solid #ccd4de;border-radius:7px;padding:6px 13px;cursor:pointer;}
+  .pbtn:hover{background:#f0f5fc;}
+  .pbtn.on{background:#2b5cab;color:#fff;border-color:#2b5cab;}
+  .pbtn:disabled,button:disabled{opacity:.42;cursor:not-allowed;}
+  .pbtn.loc{border-style:dashed;color:#7a5a12;border-color:#e0c98a;}
+  .pbtn.loc:hover{background:#fffaf0;}
+  .mode{display:flex;border:1px solid #ccd4de;border-radius:8px;overflow:hidden;}
+  .mode button{border-radius:0;font-size:13.5px;padding:6px 14px;background:#fff;color:#33475e;}
+  .mode button.on{background:#0f7a4a;color:#fff;}
+  .mode button.on.ans{background:#2b5cab;color:#fff;}
+  .chk{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink2);cursor:pointer;user-select:none;}
+  .hint{display:none;margin-top:10px;padding:11px 14px;font-size:13px;color:#8a5b00;
+        background:#fff8e8;border:1px solid #f0dcae;border-radius:8px;line-height:1.75;}
+  body.predict .hint{display:block;}
+  body.predict #checkCard,body.predict #chartCard{display:none;}
+  body.predict .ansonly{display:none;}
+  body.predict .ro .v{visibility:hidden;}
+  .ro .v{position:relative;}
+  body.predict .ro .v::after{content:'？';visibility:visible;position:absolute;left:0;top:1px;color:#c3ccd6;}
+  #chartCard{padding:12px 14px 10px;margin-top:12px;}
+  #chartCard .cap{font-size:13px;color:var(--ink2);margin-bottom:4px;}
+  #chart{display:block;width:100%;height:240px;background:#fff;border-radius:8px;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2);margin-top:7px;padding-left:2px;}
+  .legend i{display:inline-block;width:15px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;}
+
+  .grid{margin-top:12px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));}
+  .ro{padding:10px 12px;}
+  .ro .k{font-size:12.5px;color:var(--ink2);letter-spacing:.2px;}
+  .ro .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:-.5px;}
+  .ro .u{font-size:12.5px;color:var(--ink3);font-weight:500;margin-left:3px;}
+  .ro.check{background:#f9fbfd;}
+  .ro.check .v{font-size:18px;color:#1f4e9c;}
+
+  h2{font-size:15px;margin:22px 0 8px;font-weight:700;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+  th{background:#f2f5f9;font-weight:600;color:var(--ink2);white-space:nowrap;}
+  td.num{font-family:ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;white-space:nowrap;}
+  tr.hi td{background:#fffaf2;}
+  .ok{color:#0a7a44;font-weight:700;}
+  .note{margin-top:14px;font-size:12.5px;color:var(--ink2);padding:12px 14px;}
+  .note code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#eef2f6;padding:1px 5px;border-radius:4px;font-size:12px;}
+  .note ul{margin:6px 0 0;padding-left:20px;}
+  .note li{margin:3px 0;}
+  .kbd{display:inline-block;border:1px solid #ccd4de;border-bottom-width:2px;border-radius:5px;padding:0 6px;font-size:12px;background:#fff;color:var(--ink2);}
+</style>
+</head>
+<body class="answer">
+<div class="wrap">
+
+  <h1>滑块与圆弧轨道：运动与守恒关系</h1>
+  <p class="sub" id="condLine">当前条件：</p>
+  <p class="sub">参考系：地面。正方向：向右、向上为正。底端高度 h = 0，滑块进入底端开始计时。所有接触面光滑，圆弧轨道不转动；轨道的水平运动情况见上方当前条件。</p>
+
+  <div class="card stage">
+    <canvas id="scene"></canvas>
+  </div>
+
+  <div class="card bar-row tight">
+    <div class="seg"><b>情境：</b>
+      <button class="pbtn on" id="q0">① 低速 1 / 3</button>
+      <button class="pbtn" id="q1">② 低速 1 / 1</button>
+      <button class="pbtn" id="q2">③ 低速 3 / 1</button>
+      <button class="pbtn" id="q3">④ 固定轨道</button>
+      <button class="pbtn" id="q4">⑤ 高速离轨</button>
+    </div>
+    <div class="seg"><b>模式：</b>
+      <span class="mode">
+        <button id="mPredict">先预测</button>
+        <button id="mAnswer" class="on ans">显示结果</button>
+      </span>
+    </div>
+    <button id="btnDefault" class="ghost">恢复默认条件</button>
+  </div>
+
+  <div class="card bar-row tight">
+    <button id="btnPlay">播放</button>
+    <button id="btnReset" class="ghost">复位</button>
+    <span class="seg" id="locBox">
+      <button class="pbtn loc" id="l0" style="display:none"></button>
+      <button class="pbtn loc" id="l1" style="display:none"></button>
+      <button class="pbtn loc" id="l2" style="display:none"></button>
+      <button class="pbtn loc" id="l3" style="display:none"></button>
+    </span>
+    <label class="speed-lab">播放速度
+      <select id="selSpeed">
+        <option value="0.05">0.05×（慢放）</option>
+        <option value="0.1" selected>0.1×（慢放）</option>
+        <option value="0.25">0.25×</option>
+        <option value="0.5">0.5×</option>
+        <option value="1">1×（真实时间）</option>
+      </select>
+    </label>
+    <label class="chk"><input type="checkbox" id="ckArrow" checked> 地面速度箭头</label>
+    <div class="prog"><i id="progFill"></i></div>
+    <span class="phase" id="phaseTag">初始状态</span>
+  </div>
+
+  <div class="hint" id="hintBox"></div>
+
+  <div class="grid">
+    <div class="card ro"><div class="k">模拟时间 t</div><div class="v" id="roT">0.000<span class="u">s</span></div></div>
+    <div class="card ro"><div class="k">高度 h</div><div class="v" id="roH">0.000<span class="u">m</span></div></div>
+    <div class="card ro"><div class="k">滑块 vx（水平）</div><div class="v" id="roVx">+0.000<span class="u">m/s</span></div></div>
+    <div class="card ro"><div class="k">滑块 vy（竖直）</div><div class="v" id="roVy">+0.000<span class="u">m/s</span></div></div>
+    <div class="card ro"><div class="k">轨道 V（水平）</div><div class="v" id="roV">+0.000<span class="u">m/s</span></div></div>
+    <div class="card ro check"><div class="k">水平动量 p</div><div class="v" id="roP">+0.000<span class="u">kg·m/s</span></div></div>
+    <div class="card ro check"><div class="k">总机械能 E</div><div class="v" id="roE">0.000<span class="u">J</span></div></div>
+  </div>
+
+  <div class="card" id="chartCard">
+    <div class="cap">速度—时间图像：vx 与 V 同轴，纵轴含负值；游标（竖虚线）对应当前模拟时刻，只画已经发生的过程。</div>
+    <canvas id="chart"></canvas>
+    <div class="legend">
+      <span><i style="background:#ff7a1a"></i>vx：滑块相对地面水平速度</span>
+      <span><i style="background:#2b5cab"></i>V：轨道相对地面水平速度</span>
+      <span id="legendNote">横轴 t / s，纵轴 v / (m/s)</span>
+    </div>
+  </div>
+
+  <div id="checkCard">
+  <h2>物理核验（“本页实际”一列与画面、读数取自同一套运动状态）</h2>
+  <table>
+    <thead>
+      <tr><th>检查项</th><th>理论值（独立预期）</th><th>本页实际</th><th>结论</th></tr>
+    </thead>
+    <tbody id="checkBody"></tbody>
+  </table>
+  </div>
+
+  <div class="card note">
+    <b>操作说明</b>
+    <ul>
+      <li><span class="kbd">情境</span>：①低速 1/3、②低速 1/1、③低速 3/1（u = 4 m/s，弧内折返后底端分离）；④固定轨道（轨道被支架固定，u = 4 m/s）；⑤高速离轨（u = 6 m/s，到顶端离轨斜抛）。只提供这五种已定情境，不开放任意参数输入。</li>
+      <li><span class="kbd">先预测 / 显示结果</span>：预测模式保留条件与问题，隐藏答案读数（只留「？」）、速度箭头、v-t 曲线与核验表，画面上的阶段结论改为提问，定位按钮禁用并改为中性名称；切回「显示结果」全部恢复。</li>
+      <li><span class="kbd">播放 / 暂停</span>：暂停只冻结时间轴，保留该时刻的瞬时速度读数；再次播放从原状态接着走，不重置。</li>
+      <li><span class="kbd">复位</span>：回到 t = 0 并暂停，<b>保留当前情境</b>；<span class="kbd">恢复默认条件</span>为另设入口：回到情境①，并恢复 0.1× 慢放、显示箭头、显示结果。</li>
+      <li><span class="kbd">定位</span>：按钮按当前情境生成（相对最高点 / 底端分离 / 离轨 / 飞行最高点 / 回落 …），一键跳到该状态并暂停，可从该状态继续播放。</li>
+      <li class="ansonly">④ 固定轨道：滑块离开底端后沿地面向左匀速，继续保留 0.7 m 可见位移；轨道与支架始终不动。</li>
+      <li class="ansonly">⑤ 高速离轨：分离后保留约 0.23 s 观察区间，轨道继续向右、滑块向左。</li>
+      <li>观察区间结束时<b>整个模拟暂停</b>（画面与时间一起停），不会出现位置停住而时间继续走的情况。可视区域边缘不是物理墙。</li>
+      <li>播放速度 0.05×–1× 只改变观看节奏，不改变运动本身。</li>
+      <li>vx-t / V-t 曲线只在游标（= 当前模拟时刻）之前绘制；纵轴含负值，0 线加粗；曲线与画面、读数取自完全相同的状态。</li>
+      <li>颜色约定：滑块橙色（m）、轨道蓝色（M）、支架深灰（固定于地面）；地面刻度固定在世界坐标上，不随物体移动。</li>
+    </ul>
+  </div>
+
+</div>
+<script>
+"use strict";
+/* ============================================================
+   1. 情境表与常量
+   ============================================================ */
+var G = 10, R = 1;                 /* 重力加速度 / 圆弧半径 */
+var AK = 0.18;                     /* 速度箭头比例，单位 m / (m/s) */
+var EXT_DIST = 0.7;                /* 观察区间位移（m）：各情境观感一致 */
+var DT = 2e-5, EVERY = 10, STORE = DT * EVERY;   /* 积分步长 / 存帧间隔 2e-4 s */
+var CANVAS_AR = 3.2 / 1.44;        /* 画布宽高比（与 CSS 一致） */
+
+/* 只提供这五种已定情境，不开放任意参数输入。
+   grp = 取景分组：同一 grp 共用一套视野（当前每个情境各自一组，
+   因为五种情境的行程差别很大，强行统一会把小行程情境压得很小）。 */
+var SCEN = [
+  { id: 'S01', grp: 'S01', kind: 'free',  m: 1, M: 3, u: 4, tag: '① 低速 1 / 3' },
+  { id: 'S02', grp: 'S02', kind: 'free',  m: 1, M: 1, u: 4, tag: '② 低速 1 / 1' },
+  { id: 'S03', grp: 'S03', kind: 'free',  m: 3, M: 1, u: 4, tag: '③ 低速 3 / 1' },
+  { id: 'F01', grp: 'F01', kind: 'fixed', m: 1,        u: 4, tag: '④ 固定轨道' },
+  { id: 'H01', grp: 'H01', kind: 'free',  m: 1, M: 3, u: 6, tag: '⑤ 高速离轨' }
+];
+var DEFI = 0;                      /* 默认情境 = ① */
+
+/* 阶段结论：只在“显示结果”模式下出现 */
+var PHASE_TXT = {
+  low: ['初始状态：滑块即将进入圆弧底端',
+        '沿圆弧上滑（两者都在运动）',
+        '相对最高点：vx = V，vy = 0，仍会下滑',
+        '沿圆弧下滑（相对速度已反向）',
+        '已回到同一底端：两者分离',
+        '分离后：各自匀速直线运动'],
+  F:   ['初始状态：滑块即将进入圆弧底端',
+        '沿圆弧上滑（轨道被支架固定，不动）',
+        '相对最高点：滑块瞬时静止（v = 0），仍在圆弧内部',
+        '沿圆弧下滑（速度已反向）',
+        '已离开圆弧底端：滑块沿地面向左匀速，轨道不动',
+        '观察结束：两者都保持匀速直线运动'],
+  H:   ['初始状态：滑块即将进入圆弧底端',
+        '沿圆弧上滑（两者都在运动）',
+        '到达顶端并离轨：圆弧在此结束，滑块沿切线被甩出',
+        '空中飞行（上升段，vx 与 V 都保持 1.5 m/s）',
+        '飞行最高点：vy = 0，h = 1.35 m',
+        '空中飞行（下降段）',
+        '落回移动后的顶端：速度沿切向连续，不是碰撞',
+        '沿圆弧下滑（相对速度已反向）',
+        '已回到同一底端：两者分离',
+        '分离后：各自匀速直线运动']
+};
+/* 同一位置的提问版本：预测模式下只给条件与问题，不给结论 */
+var PHASE_Q = {
+  low: ['预测：滑块冲上圆弧后，两者会怎样运动？',
+        '预测：滑块相对轨道的最高点在哪？到那里时两者各多快？',
+        '预测：此刻滑块与轨道的水平速度有什么关系？接下来会怎样？',
+        '预测：下滑过程中，滑块相对地面的速度怎样变化？',
+        '预测：滑块回到同一底端后，两者会分离吗？各多快？',
+        '预测：分离后滑块与轨道各自怎样运动？'],
+  F:   ['预测：滑块冲上固定圆弧后，轨道会动吗？滑块能升多高？',
+        '预测：到最高点时滑块是静止的吗？轨道呢？',
+        '预测：此刻滑块的速度是多少？接下来往哪走？',
+        '预测：滑块回到地面时速度是多少？',
+        '预测：离开底端后，滑块与轨道各自怎样运动？',
+        '预测：观察区间结束后，两者还在动吗？'],
+  H:   ['预测：滑块能到达圆弧顶端吗？轨运动会怎样？',
+        '预测：如果滑到了顶端，圆弧在那里结束，接下来会发生什么？',
+        '预测：空中飞行时，滑块的水平速度与轨道速度有什么关系？',
+        '预测：飞行的最高点比顶端高多少？',
+        '预测：下落时滑块会落在哪里？会不会“撞”上轨道？',
+        '预测：落回顶端时速度是多少？会不会损失机械能？',
+        '预测：下滑过程中，滑块相对地面的速度怎样变化？',
+        '预测：回到同一底端后，两者会分离吗？各多快？',
+        '预测：分离后滑块与轨道各自怎样运动？']
+};
+/* 预测模式下的中性定位按钮名 */
+var LOC_Q = ['关键状态 A', '关键状态 B', '关键状态 C', '关键状态 D'];
+
+/* ============================================================
+   2. 运动引擎：每种情境独立构建，状态只有 (φ, φ̇, Xc)（飞行段另用地面系量）
+   ============================================================ */
+function rk4(acc, phi, u, Xc, h, dXc) {
+  var k1 = [u, acc(phi), dXc(phi, u)];
+  var k2 = [u + h / 2 * k1[1], acc(phi + h / 2 * k1[0]), dXc(phi + h / 2 * k1[0], u + h / 2 * k1[1])];
+  var k3 = [u + h / 2 * k2[1], acc(phi + h / 2 * k2[0]), dXc(phi + h / 2 * k2[0], u + h / 2 * k2[1])];
+  var k4 = [u + h * k3[1], acc(phi + h * k3[0]), dXc(phi + h * k3[0], u + h * k3[1])];
+  return [phi + h / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]),
+          u + h / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]),
+          Xc + h / 6 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])];
+}
+
+/* ---------- 自由轨道（M 可水平平移） ---------- */
+function buildFree(S) {
+  var m = S.m, M = S.M, u0 = S.u, TOT = m + M;
+  var P0 = m * u0, E0 = 0.5 * m * u0 * u0, U0 = u0 / R;
+  var u_c = Math.sqrt(2 * G * R * TOT / M);
+  var arrives = (u0 > u_c);                     /* 是否能到顶端且不折返 */
+  var HALF = Math.PI / 2;
+
+  function uSq(phi) {
+    var cc = Math.cos(phi);
+    return 2 * (E0 - m * G * R * (1 - cc) - P0 * P0 / (2 * TOT)) /
+           (m * R * R * (M * cc * cc / TOT + 1 - cc * cc));
+  }
+  function phiDdot(phi) {
+    var cc = Math.cos(phi);
+    var N = 2 * (E0 - m * G * R * (1 - cc) - P0 * P0 / (2 * TOT)), Np = 2 * m * G * R;
+    var D = m * R * R * (M * cc * cc / TOT + 1 - cc * cc), Dp = -2 * m * m * R * R * cc / TOT;
+    return -0.5 * Math.sin(phi) * (Np * D - N * Dp) / (D * D);
+  }
+  function dXc(phi, u) { return (P0 - m * R * Math.cos(phi) * u) / TOT; }
+  function st(phi, u, Xc) {
+    var cc = Math.cos(phi), ss = Math.sin(phi);
+    var V = dXc(phi, u), vx = V + R * cc * u, vy = R * ss * u, h = R * (1 - cc);
+    return { x: Xc + R * ss, y: h, vx: vx, vy: vy, V: V, h: h,
+             p: m * vx + M * V, E: 0.5 * m * (vx * vx + vy * vy) + 0.5 * M * V * V + m * G * h };
+  }
+
+  var frames = [], reg = [], key = {}, evT = {}, marks = [];
+  var t = 0, phi = 0, u = U0, Xc = 0, stp = 0, pDrift = 0, eDrift = 0;
+  var nodeErrX = 0, nodeErrV = 0, ipErrX = 0, ipErrV = 0;
+  var phiTop = Math.acos(1 - (E0 - P0 * P0 / (2 * TOT)) / (m * G * R));   /* 弧内转折角 */
+
+  function snap(phase, isReg) {
+    var s = st(phi, u, Xc);
+    frames.push({ t: t, air: false, att: true, phi: phi, u: u, Xc: Xc, xb: s.x, yb: s.y,
+                  vx: s.vx, vy: s.vy, V: s.V, h: s.h, p: s.p, E: s.E, phase: phase });
+    if (isReg) reg.push(frames.length - 1);
+  }
+  function acc() { var s = st(phi, u, Xc); pDrift = Math.max(pDrift, Math.abs(s.p - P0)); eDrift = Math.max(eDrift, Math.abs(s.E - E0)); }
+
+  acc(); key.init = st(0, U0, 0); snap(0, false);
+
+  if (!arrives) {
+    /* ---- 低速分支：弧内折返 → 下滑 → 底端分离（与上一版一致） ---- */
+    var turned = false;
+    while (t < 3) {
+      var t0 = t, phi0 = phi, Xc0 = Xc, u0a = u;
+      var nx = rk4(function (p) { return phiDdot(p); }, phi, u, Xc, DT, dXc);
+      phi = nx[0]; u = nx[1]; Xc = nx[2]; t += DT; stp++; acc();
+      if (!turned && u0a > 0 && u <= 0) {          /* 事件① 相对最高点：时间与位置一起回算 */
+        var f1 = u0a / (u0a - u);
+        t = t0 + DT * f1; Xc = Xc0 + (Xc - Xc0) * f1;
+        phi = phiTop; u = 0; turned = true; evT.top = t;
+        key.top = st(phi, u, Xc); snap(2, false);
+      } else if (turned && phi <= 0) {             /* 事件② 回到同一底端：分离 */
+        var f2 = phi0 / (phi0 - phi);
+        t = t0 + DT * f2; Xc = Xc0 + (Xc - Xc0) * f2;
+        phi = 0; u = -U0; evT.sep = t;
+        key.sep = st(phi, u, Xc); snap(4, false);
+        break;
+      } else if (stp % EVERY === 0) { snap(u > 0 ? 1 : 3, true); }
+    }
+    var ext = EXT_DIST / key.sep.V, nE = Math.round(ext / STORE);
+    var Xs = Xc, xs = Xc;
+    for (var kk = 1; kk <= nE; kk++) {
+      var tt = kk * STORE;
+      t = evT.sep + tt;
+      frames.push({ t: t, air: false, att: false, phi: 0, u: -U0, Xc: Xs + key.sep.V * tt,
+        xb: xs + key.sep.vx * tt, yb: 0, vx: key.sep.vx, vy: 0, V: key.sep.V,
+        h: 0, p: key.sep.p, E: key.sep.E, phase: 5 });
+    }
+    marks.push({ label: '相对最高点', t: evT.top });
+    marks.push({ label: '底端分离', t: evT.sep });
+  } else {
+    /* ---- 高速分支：到顶端离轨 → 斜抛 → 落回移动后的顶端 → 下滑 → 分离 ---- */
+    while (t < 3) {                                 /* 上滑 0 → π/2 */
+      var ta = t, pa = phi, Xa = Xc, ua = u;
+      var nx2 = rk4(function (p) { return phiDdot(p); }, phi, u, Xc, DT, dXc);
+      if (nx2[0] >= HALF) {
+        var fe = (pa - HALF) / (pa - nx2[0]);
+        t = ta + DT * fe; Xc = Xa + (nx2[2] - Xa) * fe; phi = HALF; u = ua + (nx2[1] - ua) * fe;
+        break;
+      }
+      phi = nx2[0]; u = nx2[1]; Xc = nx2[2]; t += DT; stp++; acc();
+      if (stp % EVERY === 0) snap(1, true);
+    }
+    evT.fly0 = t;
+    phi = HALF;
+    u = Math.sign(u) * Math.sqrt(Math.max(0, uSq(HALF)));   /* 离轨时的 ω 按能量守恒取精确值 √7 */
+    key.fly0 = st(phi, u, Xc); snap(2, false);
+    var xe = Xc + R, ve = key.fly0.V, vye = key.fly0.vy;   /* 离轨瞬间：x−X = R，vy = +√7 */
+    var tauF = 2 * vye / G, tauP = vye / G;                /* 飞行时长 2√7/g，最高点 √7/g */
+
+    function airSnap(tau, ph) {
+      var y = R + vye * tau - 0.5 * G * tau * tau;         /* 斜抛：位置与速度按抛体关系算 */
+      var vy = vye - G * tau, Xn = Xc + ve * tau, xn = xe + ve * tau;
+      var s = { x: xn, y: y, vx: ve, vy: vy, V: ve, h: y,
+                p: m * ve + M * ve, E: 0.5 * m * (ve * ve + vy * vy) + m * G * y + 0.5 * M * ve * ve };
+      frames.push({ t: evT.fly0 + tau, air: true, att: false, phi: HALF, u: 0, Xc: Xn,
+                    xb: s.x, yb: s.y, vx: s.vx, vy: s.vy, V: s.V, h: s.h, p: s.p, E: s.E, phase: ph });
+      return s;
+    }
+    var taus = [];
+    for (var q1 = STORE; q1 < tauF - 1e-12; q1 += STORE) taus.push(q1);
+    taus.push(tauP); taus.push(tauF);
+    taus.sort(function (a, b) { return a - b; });
+    key.peak = null;
+    for (var q2 = 0; q2 < taus.length; q2++) {
+      var tau = taus[q2], ph;
+      if (Math.abs(tau - tauP) < 1e-12) { ph = 4; }        /* 飞行最高点 */
+      else if (tau < tauP) { ph = 3; }                     /* 上升段 */
+      else if (tau < tauF - 1e-12) { ph = 5; }             /* 下降段 */
+      else { ph = 6; }                                     /* 落回移动后的顶端 */
+      var sp = airSnap(tau, ph);
+      if (ph === 4) { evT.peak = evT.fly0 + tau; key.peak = sp; }
+      if (ph === 6) { evT.back = evT.fly0 + tau; key.back = sp; }
+    }
+    t = evT.back; phi = HALF; u = -vye; Xc = Xc + ve * tauF;   /* 接回约束段：位置连续、速度沿切向连续 */
+    key.backC = st(phi, u, Xc); snap(6, false);
+    while (t < 3) {                                  /* 下滑 π/2 → 0 */
+      var tb = t, pb = phi, Xb = Xc, ub = u;
+      var nx3 = rk4(function (p) { return phiDdot(p); }, phi, u, Xc, DT, dXc);
+      if (nx3[0] <= 0) {
+        var f3 = (pb - 0) / (pb - nx3[0]);
+        t = tb + DT * f3; Xc = Xb + (nx3[2] - Xb) * f3; phi = 0; u = -U0;   /* 回到同一高度：相对速率反向 */
+        evT.sep = t; key.sep = st(phi, u, Xc); snap(8, false);
+        break;
+      }
+      phi = nx3[0]; u = nx3[1]; Xc = nx3[2]; t += DT; stp++; acc();
+      if (stp % EVERY === 0) snap(7, true);
+    }
+    var ext2 = EXT_DIST / key.sep.V, nE2 = Math.round(ext2 / STORE);
+    var Xs2 = Xc, xs2 = Xc;
+    for (var kk2 = 1; kk2 <= nE2; kk2++) {
+      var tt2 = kk2 * STORE;
+      t = evT.sep + tt2;
+      frames.push({ t: t, air: false, att: false, phi: 0, u: -U0, Xc: Xs2 + key.sep.V * tt2,
+        xb: xs2 + key.sep.vx * tt2, yb: 0, vx: key.sep.vx, vy: 0, V: key.sep.V,
+        h: 0, p: key.sep.p, E: key.sep.E, phase: 9 });
+    }
+    marks.push({ label: '顶端离轨', t: evT.fly0 });
+    marks.push({ label: '飞行最高点', t: evT.peak });
+    marks.push({ label: '落回顶端', t: evT.back });
+    marks.push({ label: '底端分离', t: evT.sep });
+    /* 注意：高速情境的“顶端”不是“相对最高点”。顶端处 vy = +√7 ≠ 0，
+       vy = 0 只出现在飞行最高点（key.peak），两者不共用任何别名。 */
+  }
+
+  /* 显示误差：seek 实际使用的区间插值中点，对比同一时刻再积半步的真值。
+     只统计相邻的规则接触段帧（事件插帧、飞行帧不参与）。 */
+  for (var j = 0; j < reg.length - 1; j++) {
+    if (reg[j + 1] - reg[j] !== 1) continue;
+    var A = frames[reg[j]], B = frames[reg[j + 1]];
+    if (Math.abs((B.t - A.t) - STORE) > 1e-12) continue;
+    var half = rk4(function (p) { return phiDdot(p); }, A.phi, A.u, A.Xc, STORE / 2, dXc);
+    var dd = dispAt(A, B, A.t + STORE / 2);
+    ipErrX = Math.max(ipErrX, Math.abs(dd.xb - (half[2] + R * Math.sin(half[0]))));
+    ipErrV = Math.max(ipErrV, Math.abs(st(dd.phi, dd.u, dd.Xc).vx - st(half[0], half[1], half[2]).vx));
+    var full = rk4(function (p) { return phiDdot(p); }, half[0], half[1], half[2], STORE / 2, dXc);
+    nodeErrX = Math.max(nodeErrX, Math.abs((full[2] + R * Math.sin(full[0])) - B.xb));
+    nodeErrV = Math.max(nodeErrV, Math.abs(st(full[0], full[1], full[2]).vx - B.vx));
+  }
+
+  /* 与 seek 相同的插值：
+     接触段 —— φ 线性插值后用该位置上的精确速率重建全部读数与位置；
+     飞行段 —— 全部按地面系量线性插值（角坐标此时不承担圆弧约束）；
+     跨段接续帧 —— 端点都取自同一物理状态，直接按帧上存的地面系量线性插值。 */
+  function lerpF(A, B, f) {
+    return { x: A.xb + (B.xb - A.xb) * f, y: A.yb + (B.yb - A.yb) * f,
+             vx: A.vx + (B.vx - A.vx) * f, vy: A.vy + (B.vy - A.vy) * f,
+             V: A.V + (B.V - A.V) * f, h: A.h + (B.h - A.h) * f,
+             p: A.p + (B.p - A.p) * f, E: A.E + (B.E - A.E) * f };
+  }
+  function dispAt(A, B, tq) {
+    var f = Math.max(0, Math.min(1, (tq - A.t) / (B.t - A.t)));
+    if (A.air && B.air) {
+      var sa = lerpF(A, B, f);
+      return { air: true, att: false, phi: HALF, u: 0,
+               Xc: A.Xc + (B.Xc - A.Xc) * f, xb: sa.x, yb: sa.y, s: sa };
+    }
+    if (A.att && B.att) {
+      var phi = A.phi + (B.phi - A.phi) * f;
+      var uip = A.u + (B.u - A.u) * f;
+      var u = Math.sign(uip) * Math.sqrt(Math.max(0, uSq(phi)));
+      var Xc = A.Xc + (B.Xc - A.Xc) * f;
+      var s = st(phi, u, Xc);
+      return { air: false, att: true, phi: phi, u: u, Xc: Xc, xb: s.x, yb: s.y, s: s };
+    }
+    var s2 = lerpF(A, B, f);
+    return { air: false, att: false, phi: A.phi, u: A.u,
+             Xc: A.Xc + (B.Xc - A.Xc) * f, xb: s2.x, yb: s2.y, s: s2 };
+  }
+
+  return { id: S.id, grp: S.grp, kind: 'free', m: m, M: M, u: u0, tag: S.tag,
+           u_c: u_c, arrives: arrives, phiTop: arrives ? HALF : phiTop,
+           frames: frames, reg: reg, key: key, evT: evT, marks: marks,
+           tEnd: frames[frames.length - 1].t,
+           pDrift: pDrift, eDrift: eDrift, nodeErrX: nodeErrX, nodeErrV: nodeErrV,
+           ipErrX: ipErrX, ipErrV: ipErrV, dispAt: dispAt, st: st };
+}
+
+/* ---------- 固定轨道（支架把轨道固定在地面：V ≡ 0、Xc ≡ 0） ---------- */
+function buildFixed(S) {
+  var m = S.m, u0 = S.u, U0 = u0 / R, E0 = 0.5 * m * u0 * u0;
+  var phiTop = Math.acos(1 - u0 * u0 / (2 * G * R));      /* 转折角：h = u²/2g = 0.8 m */
+  var acc = function (p) { return -(G / R) * Math.sin(p); };
+  var zero = function () { return 0; };
+
+  function st(phi, w) {
+    var vx = R * Math.cos(phi) * w, vy = R * Math.sin(phi) * w, h = R * (1 - Math.cos(phi));
+    return { x: R * Math.sin(phi), y: h, vx: vx, vy: vy, V: 0, h: h,
+             p: m * vx, E: 0.5 * m * (vx * vx + vy * vy) + m * G * h };
+  }
+  var frames = [], reg = [], key = {}, evT = {}, marks = [];
+  var t = 0, phi = 0, u = U0, stp = 0, pDrift = 0, eDrift = 0, ipErrX = 0, ipErrV = 0;
+  function snap(phase, isReg, s) {
+    var v = s || st(phi, u);
+    frames.push({ t: t, air: false, att: true, phi: phi, u: u, Xc: 0, xb: v.x, yb: v.y,
+                  vx: v.vx, vy: v.vy, V: 0, h: v.h, p: v.p, E: v.E, phase: phase });
+    if (isReg) reg.push(frames.length - 1);
+  }
+  function acc2() { var s = st(phi, u); pDrift = Math.max(pDrift, Math.abs(s.p - m * u0)); eDrift = Math.max(eDrift, Math.abs(s.E - E0)); }
+
+  acc2(); key.init = st(0, U0); snap(0, false);
+
+  while (t < 3) {                                   /* 上滑到 ω = 0 */
+    var t0 = t, w0 = u;
+    var nx = rk4(acc, phi, u, 0, DT, zero);
+    u = nx[1]; phi = nx[0]; t += DT; stp++; acc2();
+    if (w0 > 0 && u <= 0) {
+      var f1 = w0 / (w0 - u);
+      t = t0 + DT * f1; phi = phiTop; u = 0;
+      evT.top = t; key.top = st(phi, u); snap(2, false, key.top);
+      break;
+    }
+    if (stp % EVERY === 0) snap(1, true);
+  }
+  while (t < 3) {                                   /* 下滑回到 φ = 0 */
+    var t1 = t, p1 = phi;
+    var nx2 = rk4(acc, phi, u, 0, DT, zero);
+    if (nx2[0] <= 0) {
+      var f2 = p1 / (p1 - nx2[0]);
+      t = t1 + DT * f2; phi = 0; u = -U0;
+      evT.sep = t; key.sep = st(phi, u); snap(4, false, key.sep);
+      break;
+    }
+    phi = nx2[0]; u = nx2[1]; t += DT; stp++; acc2();
+    if (stp % EVERY === 0) snap(3, true);
+  }
+  /* 离开底端后滑块沿地面向左匀速（轨道与支架不动），保留 0.7 m 可见位移 */
+  var dtv = EXT_DIST / u0, nE = Math.round(dtv / STORE);
+  for (var kk = 1; kk <= nE; kk++) {
+    var tt = kk * STORE;
+    frames.push({ t: evT.sep + tt, air: false, att: false, phi: 0, u: -U0, Xc: 0,
+      xb: -u0 * tt, yb: 0, vx: -u0, vy: 0, V: 0, h: 0,
+      p: -m * u0, E: key.sep.E, phase: 5 });
+  }
+  marks.push({ label: '相对最高点', t: evT.top });
+  marks.push({ label: '离开底端', t: evT.sep });
+
+  /* 显示误差：seek 实际使用的区间插值中点，对比同一时刻再积半步的真值 */
+  for (var j = 0; j < reg.length - 1; j++) {
+    if (reg[j + 1] - reg[j] !== 1) continue;
+    var A = frames[reg[j]], B = frames[reg[j + 1]];
+    if (Math.abs((B.t - A.t) - STORE) > 1e-12) continue;
+    var half = rk4(acc, A.phi, A.u, 0, STORE / 2, zero);
+    var dd = dispAt(A, B, A.t + STORE / 2);
+    ipErrX = Math.max(ipErrX, Math.abs(dd.xb - R * Math.sin(half[0])));
+    ipErrV = Math.max(ipErrV, Math.abs(st(dd.phi, dd.u).vx - st(half[0], half[1]).vx));
+  }
+
+  function dispAt(A, B, tq) {
+    var f = Math.max(0, Math.min(1, (tq - A.t) / (B.t - A.t)));
+    if (A.att && B.att) {
+      var phi = A.phi + (B.phi - A.phi) * f;
+      var u = A.u + (B.u - A.u) * f;
+      var s = st(phi, u);
+      return { air: false, att: true, phi: phi, u: u, Xc: 0, xb: s.x, yb: s.y, s: s };
+    }
+    return { air: false, att: false, phi: 0, u: A.u, Xc: 0,
+             xb: A.xb + (B.xb - A.xb) * f, yb: 0,
+             s: { x: A.xb + (B.xb - A.xb) * f, y: 0, vx: A.vx, vy: 0, V: 0, h: 0,
+                  p: A.p, E: A.E } };
+  }
+  return { id: S.id, grp: S.grp, kind: 'fixed', m: m, M: 0, u: u0, tag: S.tag,
+           phiTop: phiTop, arrives: false, frames: frames, reg: reg, key: key, evT: evT,
+           marks: marks, tEnd: frames[frames.length - 1].t,
+           pDrift: pDrift, eDrift: eDrift, nodeErrX: 0, nodeErrV: 0,
+           ipErrX: ipErrX, ipErrV: ipErrV, dispAt: dispAt, st: st };
+}
+
+/* ---------- 按需构建并缓存 ---------- */
+var SIMS = {};
+function getSim(id) {
+  if (!SIMS[id]) {
+    for (var i = 0; i < SCEN.length; i++)
+      if (SCEN[i].id === id) {
+        SIMS[id] = (SCEN[i].kind === 'fixed') ? buildFixed(SCEN[i]) : buildFree(SCEN[i]);
+        break;
+      }
+  }
+  return SIMS[id];
+}
+function phaseArr(S) { return S.kind === 'fixed' ? PHASE_TXT.F : (S.arrives ? PHASE_TXT.H : PHASE_TXT.low); }
+function questArr(S) { return S.kind === 'fixed' ? PHASE_Q.F : (S.arrives ? PHASE_Q.H : PHASE_Q.low); }
+/* ============================================================
+   3. 取景：按每个情境组的实际运动范围自动确定
+      —— 保证全部运动、箭头与标签都在视野内；边缘永远不是墙
+   ============================================================ */
+var cv = document.getElementById('scene'), ctx = cv.getContext('2d');
+var ch = document.getElementById('chart'), cctx = ch.getContext('2d');
+var VIEW = { x0: -0.4, x1: 2.0, y0: -0.14, y1: 1.2 };
+var VW = 2.4, VH = 1.34, PPU = 200, OFFX = 0, OFFY = 0;
+var BALL_M = 0.055;                 /* 估算视野用的滑块显示半径（米） */
+
+function extentOf(S) {
+  var e = { x0: 1e9, x1: -1e9, y0: 1e9, y1: -1e9 };
+  function add(x, y) {
+    if (x < e.x0) e.x0 = x; if (x > e.x1) e.x1 = x;
+    if (y < e.y0) e.y0 = y; if (y > e.y1) e.y1 = y;
+  }
+  for (var i = 0; i < S.frames.length; i++) {
+    var f = S.frames[i];
+    add(f.xb - BALL_M, f.yb - BALL_M); add(f.xb + BALL_M, f.yb + BALL_M);   /* 滑块本体 */
+    add(f.xb + f.vx * AK, f.yb + f.vy * AK);                                /* 滑块速度箭头尖端 */
+    add(f.xb + f.vx * AK + 0.11, f.yb + f.vy * AK);                         /* 箭头旁的 'v' 标签 */
+    add(f.Xc, 0); add(f.Xc + R, R);                                         /* 轨道包围盒 */
+    add(f.Xc + R + f.V * AK, 0.10); add(f.Xc + R + f.V * AK + 0.13, 0.10);  /* 轨道速度箭头与 'V' 标签 */
+  }
+  return e;
+}
+function viewOf(grp) {
+  var ex = null, i;
+  for (i = 0; i < SCEN.length; i++) if (SCEN[i].grp === grp) {
+    var e = extentOf(getSim(SCEN[i].id));
+    if (!ex) ex = e;
+    else {
+      ex.x0 = Math.min(ex.x0, e.x0); ex.x1 = Math.max(ex.x1, e.x1);
+      ex.y0 = Math.min(ex.y0, e.y0); ex.y1 = Math.max(ex.y1, e.y1);
+    }
+  }
+  var x0 = ex.x0 - 0.10, x1 = ex.x1 + 0.10;
+  var y0 = Math.min(ex.y0, 0) - 0.14, y1 = ex.y1 + 0.10;
+  var w = x1 - x0, h = y1 - y0;
+  if (h < 1.22) { y1 = y0 + 1.22; h = 1.22; }                 /* 至少完整容纳圆弧 */
+  var ar = Math.max(2.2, Math.min(3.2, w / h));               /* 画幅比限制在 2.2–3.2，避免过扁或过高 */
+  if (w / h < ar) { var need = h * ar; x0 -= (need - w) / 2; x1 += (need - w) / 2; }
+  else { y1 = y0 + w / ar; }                                  /* 内容偏宽时只在天上加余量，不加地板 */
+  return { x0: x0, x1: x1, y0: y0, y1: y1, ar: ar };
+}
+var VIEWS = {};
+function applyView() {
+  VW = VIEW.x1 - VIEW.x0; VH = VIEW.y1 - VIEW.y0;
+  cv.style.aspectRatio = VW.toFixed(4) + ' / ' + VH.toFixed(4);   /* 画幅随取景，图不变形也不留空带 */
+  var w = cv.clientWidth, h = cv.clientHeight;
+  PPU = Math.min(w / VW, h / VH);
+  if (!(PPU > 0)) PPU = (w / VW) || 200;     /* 布局尚未完成时兜底 */
+  OFFX = Math.max(0, (w - VW * PPU) / 2);
+  OFFY = Math.max(0, h - VH * PPU);          /* 底部对齐：地面带贴住画布下边缘 */
+}
+function sx(x) { return OFFX + (x - VIEW.x0) * PPU; }
+function sy(y) { return OFFY + (VIEW.y1 - y) * PPU; }
+function xVisMin() { return VIEW.x0 - OFFX / PPU; }
+function xVisMax() { return VIEW.x1 + (cv.clientWidth - OFFX - VW * PPU) / PPU; }
+function ballRad() { return Math.max(9, Math.min(16, 0.06 * PPU)); }
+function font(px, w) { ctx.font = (w || 600) + ' ' + px + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif'; }
+/* 文字宽度：按"当前字体"调用 measureText；环境没有 measureText 或拿不到数值时退化为粗估。
+   粗估只是退路，不等于真实浏览器字体度量。 */
+function textW(txt, px) {
+  font(px, 600);
+  var tw = 0;
+  try { var m = ctx.measureText ? ctx.measureText(txt) : null; if (m && isFinite(m.width)) tw = m.width; } catch (e) { tw = 0; }
+  if (!(tw > 0)) tw = txt.length * px * 0.92;
+  return tw;
+}
+
+function fit(el, c2) {
+  var dpr = window.devicePixelRatio || 1;
+  var w = el.clientWidth, h = el.clientHeight;
+  el.width = Math.round(w * dpr); el.height = Math.round(h * dpr);
+  c2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return w;
+}
+function resize() {
+  applyView();
+  fit(cv, ctx); fit(ch, cctx);
+  draw();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+/* 固定地面：色带 + 斜纹 + 刻度尺（固定在世界坐标，不随物体移动） */
+function drawGround() {
+  var yTop = sy(0), yBot = sy(VIEW.y0), w = cv.clientWidth;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, yTop, w, yBot - yTop); ctx.clip();
+  ctx.fillStyle = '#e7e4dd'; ctx.fillRect(0, yTop, w, yBot - yTop);
+  ctx.strokeStyle = 'rgba(120,110,95,.14)'; ctx.lineWidth = 1;
+  for (var d = -Math.ceil(yBot / 13) * 13; d < w + (yBot - yTop); d += 13) {
+    ctx.beginPath(); ctx.moveTo(d, yBot); ctx.lineTo(d + (yBot - yTop), yTop); ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.strokeStyle = '#8a8175'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.moveTo(0, yTop); ctx.lineTo(w, yTop); ctx.stroke();
+
+  var step = PPU > 300 ? 0.25 : 0.5, x;
+  var first = Math.ceil(xVisMin() / step) * step;
+  font(11, 500); ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  for (x = first; x <= xVisMax() + 1e-9; x += step) {
+    var major = Math.abs(x / (step * 2) - Math.round(x / (step * 2))) < 1e-9;
+    var px = sx(x), len = major ? 10 : 5;
+    ctx.strokeStyle = major ? '#8a8175' : '#bdb6aa'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(px, yTop); ctx.lineTo(px, yTop + len); ctx.stroke();
+    if (major) {
+      ctx.fillStyle = '#6b645a';
+      ctx.fillText((Math.round(x * 100) / 100).toString(), px, yTop + 13);
+    }
+  }
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#6b645a';
+  ctx.fillText('x / m', cv.clientWidth - 6, yTop + 13);
+  ctx.textAlign = 'left';
+}
+
+/* 轨道 M：内凹四分之一圆弧（底端切线水平，顶端切线竖直）。
+   固定轨道额外画支架底座，说明轨道被固定在地面、水平动量不守恒。 */
+function drawTrack(Xc, drawMark, fixed, markAngle) {
+  var ccx = sx(Xc), ccy = sy(R), rad = R * PPU;
+  if (fixed) {
+    var bx0 = sx(Xc - 0.10), bx1 = sx(Xc + R + 0.10), byT = sy(0), byB = sy(-0.13);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(bx0, byT, bx1 - bx0, byB - byT); ctx.clip();
+    ctx.fillStyle = '#c2bbac'; ctx.fillRect(bx0, byT, bx1 - bx0, byB - byT);
+    ctx.strokeStyle = 'rgba(72,64,52,.40)'; ctx.lineWidth = 1.8;
+    for (var d = bx0 - 60; d < bx1 + 60; d += 10) {
+      ctx.beginPath(); ctx.moveTo(d, byB); ctx.lineTo(d + (byB - byT), byT); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.strokeStyle = '#6b6455'; ctx.lineWidth = 2;
+    ctx.strokeRect(bx0, byT, bx1 - bx0, byB - byT);
+    font(11.5, 700); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.strokeText('支架（固定于地面）', (bx0 + bx1) / 2, byB - 4);
+    ctx.fillStyle = '#544e41';
+    ctx.fillText('支架（固定于地面）', (bx0 + bx1) / 2, byB - 4);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+  ctx.beginPath();
+  ctx.moveTo(sx(Xc), sy(0));
+  ctx.arc(ccx, ccy, rad, Math.PI / 2, 0, true);
+  ctx.lineTo(sx(Xc + R), sy(0));
+  ctx.closePath();
+  var g = ctx.createLinearGradient(sx(Xc), 0, sx(Xc + R), 0);
+  g.addColorStop(0, '#75a9f0'); g.addColorStop(1, '#3a76d2');
+  ctx.fillStyle = g; ctx.fill();
+  ctx.strokeStyle = '#2b5cab'; ctx.lineWidth = 2; ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(sx(Xc), sy(0));
+  ctx.arc(ccx, ccy, rad, Math.PI / 2, 0, true);
+  ctx.strokeStyle = '#1e4587'; ctx.lineWidth = 2.6; ctx.stroke();
+
+  font(15, 700); ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('M', sx(Xc + 0.80 * R), sy(0.16 * R));
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+
+  if (drawMark && markAngle) {          /* 圆弧上标出关键角位置（弧内转折点，或高速情境的弧顶端） */
+    var mx = Xc + R * Math.sin(markAngle), my = R * (1 - Math.cos(markAngle));
+    var px = sx(mx), py = sy(my);
+    var ix = sx(Xc + (R - 0.10) * Math.sin(markAngle)), iy = sy(R - (R - 0.10) * Math.cos(markAngle));
+    ctx.strokeStyle = '#1e4587'; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(ix, iy); ctx.stroke();
+  }
+}
+
+function drawArrow(x1, y1, x2, y2, color, lw) {
+  var X1 = sx(x1), Y1 = sy(y1), X2 = sx(x2), Y2 = sy(y2);
+  var dx = X2 - X1, dy = Y2 - Y1, L = Math.sqrt(dx * dx + dy * dy);
+  if (L < 7) return;
+  var ux = dx / L, uy = dy / L, hl = Math.min(13, L * 0.45);
+  var bx = X2 - ux * hl * 0.8, by = Y2 - uy * hl * 0.8;
+  var n = [-uy, ux], hw = hl * 0.5;
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = lw + 4;
+  ctx.beginPath(); ctx.moveTo(X1, Y1); ctx.lineTo(bx, by); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(X2, Y2);
+  ctx.lineTo(bx + n[0] * hw, by + n[1] * hw);
+  ctx.lineTo(bx - n[0] * hw, by - n[1] * hw);
+  ctx.closePath();
+  ctx.fillStyle = color; ctx.fill();
+  ctx.lineWidth = lw; ctx.strokeStyle = color;
+  ctx.beginPath(); ctx.moveTo(X1, Y1); ctx.lineTo(bx, by); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2;
+}
+
+/* 相位徽标：显示结果时给结论，预测时只给问题 */
+function drawBadge(S) {
+  var arr = predict ? questArr(S) : phaseArr(S);
+  var txt = arr[Math.min(cur.phase, arr.length - 1)];
+  font(13, 700);
+  var w = ctx.measureText(txt).width + 24;
+  roundRect(12, 12, w, 28, 14);
+  ctx.fillStyle = predict ? '#fff8e8' : '#eef4ff'; ctx.fill();
+  ctx.strokeStyle = predict ? '#f0dcae' : '#cfe0fb'; ctx.lineWidth = 1; ctx.stroke();
+  ctx.fillStyle = predict ? '#8a5b00' : '#1f4e9c'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, 24, 27);
+  ctx.textBaseline = 'alphabetic';
+}
+
+/* 所有元素都由同一个状态 cur 画出 */
+function draw() {
+  var S = SIM;
+  ctx.clearRect(0, 0, cv.clientWidth, cv.clientHeight);
+  var s = cur.s, ans = !predict;
+  var fixed = (S.kind === 'fixed');
+  drawGround();
+  drawTrack(cur.Xc, ans && cur.phase >= 2, fixed, S.phiTop);
+
+  if (s.h > 0.004) {                 /* 高度虚线：读数与画面同源 */
+    ctx.strokeStyle = 'rgba(40,50,60,.38)'; ctx.lineWidth = 1.4;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(sx(cur.xb), sy(s.h)); ctx.lineTo(sx(cur.xb), sy(0)); ctx.stroke();
+    ctx.setLineDash([]);
+    if (s.h > 0.12) { font(11.5, 600); ctx.fillStyle = '#5b6570'; ctx.fillText('h', sx(cur.xb) + 7, sy(s.h) + 13); }
+  }
+
+  var rad = ballRad();               /* 滑块（质点）用几何位置，不用圆心近似 */
+  ctx.beginPath(); ctx.arc(sx(cur.xb), sy(cur.yb), rad, 0, Math.PI * 2);
+  ctx.fillStyle = '#ff8c1a'; ctx.fill();
+  ctx.strokeStyle = '#bf5b00'; ctx.lineWidth = 2; ctx.stroke();
+  font(15, 700); ctx.fillStyle = '#bf5b00';
+  /* 'm' 标签：默认放在滑块左侧；左侧离画布边缘不足时移到滑块上方，避免被画布左边缘截断 */
+  var mlx = sx(cur.xb) - rad - 14, mly = sy(cur.yb) - rad + 2;
+  if (mlx < 2) { mlx = Math.max(sx(cur.xb) - 5, 2); mly = sy(cur.yb) - rad - 5; }
+  ctx.fillText('m', mlx, mly);
+
+  var vx0 = cur.Xc + R, vy0 = 0.10;
+  if (ans && showArrow) {            /* 地面速度箭头可开关；零速度不画有长度的箭头 */
+    if (Math.abs(s.vx) > 1e-9 || Math.abs(s.vy) > 1e-9)
+      drawArrow(cur.xb, cur.yb, cur.xb + s.vx * AK, cur.yb + s.vy * AK, '#ff7a1a', 3);
+    if (Math.abs(s.V) > 1e-9)
+      drawArrow(vx0, vy0, vx0 + s.V * AK, vy0, '#2b5cab', 3);
+    if (Math.abs(s.vx * AK) > 0.12 || Math.abs(s.vy * AK) > 0.12) {
+      font(12.5, 700); ctx.fillStyle = '#bf5b00';
+      ctx.fillText('v', sx(cur.xb + s.vx * AK) + 4, sy(cur.yb + s.vy * AK) - 4);
+    }
+    if (Math.abs(s.V * AK) > 0.12) {
+      font(12.5, 700); ctx.fillStyle = '#2b5cab';
+      ctx.fillText('V', sx(vx0 + s.V * AK) + 4, sy(vy0) - 6);
+    }
+    if (fixed) {                     /* 固定轨道：标出支架提供的水平外力，提醒 p 不守恒。
+                                        本说明改画在画布左侧空白区并按画布边界定位：
+                                        原先把起点挂在圆弧右端（sx(Xc+R)+14），在右栏（窄）
+                                        预览里会越过画布右边缘被截断。 */
+      font(11.5, 700); ctx.fillStyle = '#544e41';
+      var ny = Math.max(Math.min(sy(0.30), sy(0) - 18), 66);   /* [66, 地面上方 18px] 内取原高度 */
+      ctx.fillText('支架提供水平力 →', 12, ny - 14);
+      ctx.fillText('p 不守恒', 12, ny);
+    }
+  }
+
+  if (ans && cur.phase >= 2 && !S.arrives) {    /* 弧内“相对最高点”文字标注 */
+    var mx = cur.Xc + R * Math.sin(S.phiTop), my = R * (1 - Math.cos(S.phiTop));
+    font(11.5, 600); ctx.fillStyle = '#1e4587'; ctx.textAlign = 'right';
+    ctx.fillText('相对最高点', sx(mx) - 6, sy(my) - 20);
+    ctx.textAlign = 'left';
+  }
+  if (ans && cur.phase >= 2 && S.arrives) {     /* 高速情境：顶端即离轨点。
+                                                   说明改到端点（弧顶）的右下方空白处：
+                                                   弧顶右侧 x > Xc+R 是空的（轨道实体在弧顶正下方那个角里），
+                                                   而滑块的速度箭头在球心高度附近还被球挡着，
+                                                   所以起点放到球右缘外 rad+14 px、基线落到球下方 rad+12 px，
+                                                   与留在球左侧的橙色 'm' 彻底分开；再按画布左右边界收边。 */
+    font(11.5, 600); ctx.fillStyle = '#1e4587'; ctx.textAlign = 'left';
+    var topTxt = '顶端（圆弧在此结束）', topW = textW(topTxt, 11.5);
+    var topX = sx(cur.Xc + R) + rad + 14;
+    topX = Math.max(2, Math.min(topX, cv.clientWidth - 12 - topW));
+    ctx.fillText(topTxt, topX, sy(R) + rad + 12);
+    ctx.textAlign = 'left';
+  }
+
+  drawBadge(S);
+  drawChart(S);
+}
+/* ============================================================
+   4. vx-t / V-t 同轴曲线（只画已经发生的过程）
+   ============================================================ */
+var chartCache = {};
+function chartRange(S) {
+  if (!chartCache[S.id]) {
+    var lo = 0, hi = 0, i, f;
+    for (i = 0; i < S.frames.length; i++) {
+      f = S.frames[i];
+      if (f.vx < lo) lo = f.vx; if (f.vx > hi) hi = f.vx;
+      if (f.V < lo) lo = f.V; if (f.V > hi) hi = f.V;
+    }
+    chartCache[S.id] = { lo: lo, hi: hi };
+  }
+  return chartCache[S.id];
+}
+function drawChart(S) {
+  var w = ch.clientWidth, h = ch.clientHeight;
+  if (!w || !h) return;
+  cctx.clearRect(0, 0, w, h);
+  var padL = 54, padR = 18, padT = 18, padB = 30;
+  var rg = chartRange(S);
+  var vLo = rg.lo - 0.5, vHi = rg.hi + 0.5, tM = S.tEnd;
+  function X(t) { return padL + t / tM * (w - padL - padR); }
+  function Y(v) { return padT + (vHi - v) / (vHi - vLo) * (h - padT - padB); }
+  function fnt(px, wt) { cctx.font = (wt || 500) + ' ' + px + 'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif'; }
+  function chartTextW(txt) {                 /* 用"当前已设字体"量宽；环境缺 measureText 时退化为粗估 */
+    var tw = 0;
+    try { var m = cctx.measureText ? cctx.measureText(txt) : null; if (m && isFinite(m.width)) tw = m.width; } catch (e) { tw = 0; }
+    if (!(tw > 0)) tw = txt.length * 7.4;
+    return tw;
+  }
+  function halo(txt, x, y, color, align, base) {
+    fnt(11.5, 700); cctx.textAlign = align || 'left'; cctx.textBaseline = base || 'alphabetic';
+    var tw = chartTextW(txt);                /* 量宽后把整段文字收进画布左右边界；游标与曲线位置不变 */
+    if (align === 'center') x = Math.max(tw / 2 + 2, Math.min(w - tw / 2 - 2, x));
+    else if (align === 'right') x = Math.max(tw + 2, Math.min(w - 2, x));
+    else x = Math.max(2, Math.min(w - tw - 2, x));
+    cctx.lineWidth = 3.5; cctx.strokeStyle = '#fff'; cctx.strokeText(txt, x, y);
+    cctx.fillStyle = color; cctx.fillText(txt, x, y);
+  }
+
+  for (var v = Math.ceil(vLo); v <= vHi; v++) {          /* 网格 + 纵轴整数刻度（含负值） */
+    cctx.strokeStyle = v === 0 ? '#c3ccd6' : '#eef1f5'; cctx.lineWidth = 1;
+    cctx.beginPath(); cctx.moveTo(padL, Y(v)); cctx.lineTo(w - padR, Y(v)); cctx.stroke();
+    if (v !== 0) { fnt(11); cctx.fillStyle = '#98a2ac'; cctx.textAlign = 'right'; cctx.textBaseline = 'middle'; cctx.fillText(String(v), padL - 7, Y(v)); }
+  }
+  for (var tt = 0; tt <= tM + 1e-9; tt += 0.2) {
+    cctx.strokeStyle = '#f2f5f8'; cctx.lineWidth = 1;
+    cctx.beginPath(); cctx.moveTo(X(tt), padT); cctx.lineTo(X(tt), h - padB); cctx.stroke();
+    fnt(11); cctx.fillStyle = '#98a2ac'; cctx.textAlign = 'center'; cctx.textBaseline = 'top';
+    cctx.fillText(tt.toFixed(1), X(tt), h - padB + 6);
+  }
+  fnt(11.5, 600); cctx.fillStyle = '#5b6570'; cctx.textAlign = 'right'; cctx.textBaseline = 'top';
+  /* 时间轴单位下移到刻度行的下一行，避免与最末刻度（如 1.0）重叠；右端仍对齐坐标轴末端 */
+  cctx.fillText('t / s', w - padR, h - padB + 18);
+  cctx.textAlign = 'left'; cctx.fillText('v / (m/s)', 6, 4);
+
+  function curve(pick, color) {                          /* 游标之前的部分才画 */
+    var n = S.frames.length, stride = Math.max(1, Math.floor(n / 1500)), started = false, i;
+    cctx.strokeStyle = color; cctx.lineWidth = 2; cctx.beginPath();
+    for (i = 0; i < n; i += stride) {
+      var f = S.frames[i];
+      if (f.t > cur.t + 1e-12) break;
+      var val = pick(f);
+      if (!started) { cctx.moveTo(X(f.t), Y(val)); started = true; } else cctx.lineTo(X(f.t), Y(val));
+    }
+    var sc = pick({ vx: cur.s.vx, V: cur.s.V });
+    if (started) cctx.lineTo(X(cur.t), Y(sc)); else cctx.moveTo(X(cur.t), Y(sc));
+    cctx.stroke();
+  }
+  curve(function (f) { return f.vx; }, '#ff7a1a');
+  curve(function (f) { return f.V; }, '#2b5cab');
+
+  for (var e = 0; e < S.marks.length; e++) {             /* 事件竖线：过了该时刻才出现 */
+    var te = S.marks[e].t;
+    if (cur.t + 1e-12 < te) continue;
+    cctx.strokeStyle = '#cbd4dd'; cctx.lineWidth = 1; cctx.setLineDash([3, 3]);
+    cctx.beginPath(); cctx.moveTo(X(te), padT); cctx.lineTo(X(te), h - padB); cctx.stroke();
+    cctx.setLineDash([]);
+    fnt(11.5, 600); cctx.textAlign = 'center'; cctx.textBaseline = 'top';
+    cctx.lineWidth = 3.5; cctx.strokeStyle = '#fff'; cctx.strokeText(S.marks[e].label, X(te), padT);
+    cctx.fillStyle = '#98a2ac'; cctx.fillText(S.marks[e].label, X(te), padT);
+  }
+
+  var cxp = X(cur.t);                                    /* 游标 = 当前模拟时刻 */
+  cctx.strokeStyle = '#b07a1a'; cctx.lineWidth = 1.3; cctx.setLineDash([4, 3]);
+  cctx.beginPath(); cctx.moveTo(cxp, padT); cctx.lineTo(cxp, h - padB); cctx.stroke();
+  cctx.setLineDash([]);
+  function dot(val, color) {
+    cctx.beginPath(); cctx.arc(cxp, Y(val), 4, 0, Math.PI * 2);
+    cctx.fillStyle = '#fff'; cctx.fill();
+    cctx.strokeStyle = color; cctx.lineWidth = 2.2; cctx.stroke();
+  }
+  dot(cur.s.vx, '#ff7a1a'); dot(cur.s.V, '#2b5cab');
+  halo('vx ' + fmt(cur.s.vx, 2), cxp, Y(cur.s.vx) - 9, '#bf5b00', 'center', 'bottom');
+  halo('V ' + fmt(cur.s.V, 2), cxp, Y(cur.s.V) + 9, '#2b5cab', 'center', 'top');
+  halo('t = ' + cur.t.toFixed(3) + ' s', cxp, h - padB - 5, '#8a5b00', 'center', 'bottom');
+}
+
+/* ============================================================
+   5. 播放控制、读数、核验表
+   ============================================================ */
+var curIdx = DEFI;
+var SIM = getSim(SCEN[curIdx].id);
+var cur = { t: 0, phase: 0, phi: 0, u: 0, Xc: 0, xb: 0, yb: 0, s: { vx: 0, vy: 0, V: 0, h: 0, p: 0, E: 0 } };
+var tSim = 0, playing = false, speed = 0.1, lastNow = 0;
+var predict = false, showArrow = true;
+
+function seek(ts) {
+  ts = Math.max(0, Math.min(SIM.tEnd, ts));
+  var F = SIM.frames, lo = 0, hi = F.length - 1, mid;
+  while (lo < hi - 1) { mid = (lo + hi) >> 1; if (F[mid].t <= ts) lo = mid; else hi = mid; }
+  var A = F[lo], B = F[Math.min(lo + 1, F.length - 1)];
+  var d = (A === B) ? SIM.dispAt(A, B, A.t) : SIM.dispAt(A, B, ts);
+  cur.t = ts; cur.phi = d.phi; cur.u = d.u; cur.Xc = d.Xc;
+  cur.xb = d.xb; cur.yb = d.yb; cur.s = d.s;
+  var span = B.t - A.t;
+  var f = span > 1e-15 ? (ts - A.t) / span : 0;
+  cur.phase = ts <= 1e-9 ? 0 : (f > 0.5 ? B.phase : A.phase);
+}
+
+function fmt(v, d) {
+  d = d === undefined ? 3 : d;
+  if (Math.abs(v) < 1e-9) v = 0;          /* 数值零（如 -1e-16）统一显示 +0.000 */
+  return (v < 0 ? '-' : '+') + Math.abs(v).toFixed(d);
+}
+function setV(id, txt) { document.getElementById(id).innerHTML = txt; }
+
+function condText() {
+  var S = SIM, head = '当前条件：<b>' + S.tag + '</b> · ';
+  if (S.kind === 'fixed')
+    return head + '滑块 m = ' + S.m + ' kg，R = ' + R + ' m，g = ' + G + ' m/s²，滑块初速度 <b>' +
+           S.u + ' m/s（向右）</b>；轨道由支架固定在水平地面上，不能水平移动（V ≡ 0，不随滑块运动）。';
+  return head + '滑块 m = ' + S.m + ' kg，轨道 M = ' + S.M + ' kg，R = ' + R + ' m，g = ' + G +
+         ' m/s²，滑块初速度 <b>' + S.u + ' m/s（向右）</b>，轨道初速度 0；轨道未被固定，可沿光滑水平面自由平移。';
+}
+function refresh() {
+  var s = cur.s, arr = phaseArr(SIM);
+  setV('roT', cur.t.toFixed(3) + '<span class="u">s</span>');
+  setV('roH', s.h.toFixed(3) + '<span class="u">m</span>');
+  setV('roVx', fmt(s.vx) + '<span class="u">m/s</span>');
+  setV('roVy', fmt(s.vy) + '<span class="u">m/s</span>');
+  setV('roV', fmt(s.V) + '<span class="u">m/s</span>');
+  setV('roP', fmt(s.p) + '<span class="u">kg·m/s</span>');
+  setV('roE', s.E.toFixed(3) + '<span class="u">J</span>');
+  document.getElementById('phaseTag').textContent =
+    predict ? '预测中 · 只给条件，不给答案' : arr[Math.min(cur.phase, arr.length - 1)];
+  document.getElementById('condLine').innerHTML = condText();
+  document.getElementById('progFill').style.width = (cur.t / SIM.tEnd * 100).toFixed(2) + '%';
+}
+
+var btnPlay = document.getElementById('btnPlay'), btnReset = document.getElementById('btnReset'),
+    selSpeed = document.getElementById('selSpeed'), ckArrow = document.getElementById('ckArrow'),
+    btnDefault = document.getElementById('btnDefault'), mPredict = document.getElementById('mPredict'),
+    mAnswer = document.getElementById('mAnswer'),
+    qbtns = [document.getElementById('q0'), document.getElementById('q1'), document.getElementById('q2'),
+             document.getElementById('q3'), document.getElementById('q4')],
+    locb = [document.getElementById('l0'), document.getElementById('l1'),
+            document.getElementById('l2'), document.getElementById('l3')];
+
+function setBtn() { btnPlay.textContent = playing ? '暂停' : '播放'; }
+
+/* 定位按钮按情境生成：标签只在“显示结果”模式下出现 */
+function buildLoc() {
+  for (var i = 0; i < locb.length; i++) {
+    var b = locb[i], mk = SIM.marks[i];
+    if (!mk) { b.style.display = 'none'; b.onclick = null; continue; }
+    b.style.display = '';
+    b._a = '定位·' + mk.label;
+    b._q = '定位·' + LOC_Q[i];
+    b.textContent = predict ? b._q : b._a;
+    b.disabled = predict;
+    b.onclick = (function (tt) {
+      return function () { playing = false; tSim = tt; seek(tSim); refresh(); draw(); setBtn(); };
+    })(mk.t);
+  }
+}
+
+/* 预测提示：按情境给出条件与问题（只在“先预测”模式下显示） */
+var HINTS = {
+  low: '<b>先预测（只给条件，答案已隐藏）：</b>① 滑块在圆弧上「相对轨道」的最高点，到那里时滑块与轨道各有多快？' +
+       '② 等质量（1 kg / 1 kg）时，滑块回到同一底端分离后相对地面会怎样？轨道呢？' +
+       '<br>先用 0.1× 慢放看一遍过程；核对时先点「显示结果」，再用「定位」跳到关键状态（预测模式下「定位」按钮不可用）。',
+  F01: '<b>先预测（只给条件，答案已隐藏）：</b>① 轨道被支架固定在地面上，滑块冲上圆弧后能升多高？到最高点时滑块是静止的吗？' +
+       '② 滑块回到地面离开底端后往哪边走？轨道与支架会动吗？③ 这种情况下水平动量还守恒吗？' +
+       '<br>先用 0.1× 慢放看一遍过程；核对时先点「显示结果」，再用「定位」跳到关键状态（预测模式下「定位」按钮不可用）。',
+  H01: '<b>先预测（只给条件，答案已隐藏）：</b>① 初速度 6 m/s 比 4 m/s 大得多，滑块能到达圆弧顶端吗？' +
+       '② 圆弧在顶端结束——到了顶端之后滑块会怎样运动？在空中，它的水平速度与轨道速度有什么关系？' +
+       '③ 落回时会“撞”上已经右移的轨道吗？④ 回到同一底端分离后，两者各多快？' +
+       '<br>先用 0.05× 慢放看一遍全程；核对时先点「显示结果」，四个「定位」按钮可分别跳到离轨、飞行最高点、回落、分离（预测模式下「定位」按钮不可用）。'
+};
+var hintKey = function (S) { return S.kind === 'fixed' ? 'F01' : (S.arrives ? 'H01' : 'low'); };
+
+/* 切换情境：回初态并清除旧结果 */
+function loadScen(i) {
+  curIdx = i;
+  playing = false; tSim = 0;
+  SIM = getSim(SCEN[i].id);
+  VIEW = VIEWS[SIM.grp];
+  for (var k = 0; k < qbtns.length; k++) qbtns[k].className = 'pbtn' + (k === i ? ' on' : '');
+  document.getElementById('hintBox').innerHTML = HINTS[hintKey(SIM)];
+  var rg = chartRange(SIM);
+  document.getElementById('legendNote').textContent =
+    '横轴 t / s（0 – ' + SIM.tEnd.toFixed(2) + ' s，间隔 0.2 s），纵轴 v / (m/s)（' +
+    (rg.lo - 0.5).toFixed(1) + ' – ' + (rg.hi + 0.5).toFixed(1) + '，间隔 1 m/s）';
+  seek(0); buildLoc(); refresh(); buildChecks(); setBtn(); resize();
+}
+
+/* 先预测 / 显示结果 */
+function setMode(p) {
+  predict = p;
+  document.body.className = p ? 'predict' : 'answer';
+  mPredict.className = p ? 'on' : '';
+  mAnswer.className = p ? '' : 'on ans';
+  if (p) { playing = false; tSim = 0; seek(0); setBtn(); }
+  buildLoc(); refresh(); resize();
+}
+
+function loop(now) {
+  requestAnimationFrame(loop);
+  if (lastNow === 0) lastNow = now;
+  var dtReal = (now - lastNow) / 1000;
+  lastNow = now;
+  if (!playing) return;
+  if (dtReal > 0.12) dtReal = 0.12;
+  tSim += dtReal * speed;
+  if (tSim >= SIM.tEnd) {        /* 观察区间结束：画面与时间一起停，不留“位置停住而时间继续” */
+    tSim = SIM.tEnd; playing = false; setBtn();
+  }
+  seek(tSim); refresh(); draw();
+}
+
+btnPlay.onclick = function () {
+  if (tSim >= SIM.tEnd - 1e-12) { tSim = 0; seek(0); }
+  playing = !playing; lastNow = 0; setBtn();
+};
+btnReset.onclick = function () { playing = false; tSim = 0; seek(0); refresh(); draw(); setBtn(); };
+ckArrow.onchange = function () { showArrow = this.checked; draw(); };
+selSpeed.onchange = function () { speed = parseFloat(this.value); };
+btnDefault.onclick = function () {
+  selSpeed.value = '0.1'; speed = 0.1;
+  ckArrow.checked = true; showArrow = true;
+  predict = false;
+  mPredict.className = ''; mAnswer.className = 'on ans';
+  document.body.className = 'answer';
+  loadScen(DEFI);
+};
+for (var qi = 0; qi < qbtns.length; qi++) {
+  qbtns[qi].onclick = (function (i) { return function () { loadScen(i); }; })(qi);
+}
+mPredict.onclick = function () { setMode(true); };
+mAnswer.onclick = function () { setMode(false); };
+
+/* ---- 核验表：理论值来自独立推导，实际值来自同一套画面状态 ---- */
+function buildChecks() {
+  var S = SIM, k = S.key, m = S.m, M = S.M, u0 = S.u, TOT = m + M;
+  var body = document.getElementById('checkBody'), rows = [];
+  function add(name, exp, act, ok, hi) {
+    rows.push('<tr' + (hi ? ' class="hi"' : '') + '><td>' + name + '</td><td class="num">' + exp +
+      '</td><td class="num">' + act + '</td><td class="' + (ok ? 'ok' : '') + '">' + (ok ? '通过' : '需检查') + '</td></tr>');
+  }
+  function near(a, b, tol) { return Math.abs(a - b) < tol; }
+
+  if (S.kind === 'fixed') {
+    var hMax = u0 * u0 / (2 * G), tTop = k.top.h, pMin = -m * u0;
+    add('① 最高高度（能量守恒 h = u²/2g）', 'h = ' + hMax.toFixed(3) + ' m',
+        't = ' + S.evT.top.toFixed(3) + ' s<br>h = ' + tTop.toFixed(6) + ' m',
+        near(tTop, hMax, 1e-9), true);
+    add('② 相对最高点滑块瞬间静止', 'vx = 0，vy = 0，V = 0',
+        'vx = ' + fmt(k.top.vx) + '，vy = ' + fmt(k.top.vy) + '，V = ' + fmt(k.top.V) + ' m/s',
+        Math.abs(k.top.vx) < 1e-12 && Math.abs(k.top.vy) < 1e-12, true);
+    add('③ 回到地面离开底端', 'vx = ' + fmt(-u0) + ' m/s<br>（轨道始终 V = 0）',
+        't = ' + S.evT.sep.toFixed(3) + ' s<br>vx = ' + fmt(k.sep.vx) + '，V = ' + fmt(k.sep.V) + ' m/s',
+        near(k.sep.vx, -u0, 1e-9) && Math.abs(k.sep.V) < 1e-12, true);
+    add('④ 总机械能（守恒）', 'E = ½mu² = ' + (0.5 * m * u0 * u0).toFixed(3) + ' J',
+        '全程 |E − ' + (0.5 * m * u0 * u0).toFixed(3) + '| 最大 = ' + S.eDrift.toExponential(1) + ' J',
+        S.eDrift < 1e-9);
+    add('⑤ 水平动量（不守恒）',
+        '支架固定轨道，地面给轨道水平力<br>→ p = m·vx 不守恒',
+        'p：' + fmt(u0) + ' → ' + fmt(k.top.vx) + ' → ' + fmt(k.sep.vx) + ' kg·m/s<br>变化幅度 ' +
+        (u0 - pMin).toFixed(3) + ' kg·m/s',
+        near(k.sep.vx, -u0, 1e-9), true);
+    body.innerHTML = rows.join('');
+    return;
+  }
+
+  if (S.arrives) {
+    var vE = m * u0 / TOT;
+    var vyE = Math.sqrt((M * u0 * u0 - 2 * G * R * TOT) / TOT);   /* 顶端 vy = √(Mu²/(m+M) − 2gR) */
+    var hPk = R + vyE * vyE / (2 * G), hEnd = 2 * m * u0 / TOT - u0;
+    add('① 顶端离轨（弧面在此结束）',
+        'vx = V = mu/(m+M) = ' + fmt(vE) + ' m/s<br>vy = +√' + (vyE * vyE).toFixed(0) + ' = ' + fmt(vyE) + ' m/s',
+        't = ' + S.evT.fly0.toFixed(3) + ' s<br>vx = ' + fmt(k.fly0.vx) + '，vy = ' + fmt(k.fly0.vy) +
+        '，V = ' + fmt(k.fly0.V) + ' m/s',
+        near(k.fly0.vx, vE, 1e-9) && near(k.fly0.vy, vyE, 1e-9), true);
+    add('② 飞行最高点', 'h = ' + hPk.toFixed(3) + ' m<br>vy = 0，vx 与 V 仍为 ' + vE.toFixed(3) + ' m/s',
+        't = ' + S.evT.peak.toFixed(3) + ' s<br>h = ' + k.peak.h.toFixed(6) + ' m<br>vy = ' + fmt(k.peak.vy) +
+        '，vx = ' + fmt(k.peak.vx) + '，V = ' + fmt(k.peak.V),
+        near(k.peak.h, hPk, 1e-9) && Math.abs(k.peak.vy) < 1e-9, true);
+    add('③ 落回移动后的顶端', 'h = 1.000 m，vy = −' + vyE.toFixed(6) + ' m/s<br>相对轨道的水平位移 = 0',
+        't = ' + S.evT.back.toFixed(3) + ' s<br>h = ' + k.back.h.toFixed(6) + ' m，vy = ' + fmt(k.back.vy) +
+        '<br>滑块 x − 轨道顶端 x = ' + (k.back.x - (k.backC.x)).toExponential(1) + ' m',
+        near(k.back.vy, -vyE, 1e-9) && Math.abs(k.back.x - k.backC.x) < 1e-5, true);
+    add('④ 底端分离', 'vx = ' + fmt(hEnd) + ' m/s<br>V = ' + fmt(2 * m * u0 / TOT) + ' m/s',
+        't = ' + S.evT.sep.toFixed(3) + ' s<br>vx = ' + fmt(k.sep.vx) + '<br>V = ' + fmt(k.sep.V) + ' m/s',
+        near(k.sep.vx, hEnd, 1e-9) && near(k.sep.V, 2 * m * u0 / TOT, 1e-9), true);
+    add('⑤ 全过程水平动量（守恒）', 'p = m·u = ' + (m * u0).toFixed(3) + ' kg·m/s<br>（含飞行段，无水平外力）',
+        '全程 |p − ' + (m * u0).toFixed(3) + '| 最大 = ' + S.pDrift.toExponential(1) + ' kg·m/s',
+        S.pDrift < 1e-9);
+    add('⑥ 全过程总机械能（守恒）', 'E = ½mu² = ' + (0.5 * m * u0 * u0).toFixed(3) + ' J',
+        '全程 |E − ' + (0.5 * m * u0 * u0).toFixed(3) + '| 最大 = ' + S.eDrift.toExponential(1) + ' J',
+        S.eDrift < 1e-9);
+    body.innerHTML = rows.join('');
+    return;
+  }
+
+  var vTop = m * u0 / TOT, hTop = 0.8 * M / TOT;
+  var Vsep = 2 * m * u0 / TOT, vxSep = Vsep - u0;
+  add('① 相对最高点（m=' + m + ', M=' + M + '）',
+    'h = ' + hTop.toFixed(3) + ' m<br>vx = V = ' + fmt(vTop) + ' m/s<br>vy = +0.000 m/s，之后仍会下滑',
+    't = ' + S.evT.top.toFixed(3) + ' s<br>h = ' + k.top.h.toFixed(3) + ' m<br>vx = ' + fmt(k.top.vx) +
+    '，vy = ' + fmt(k.top.vy) + '，V = ' + fmt(k.top.V) + ' m/s',
+    near(k.top.h, hTop, 1e-9) && near(k.top.vx, vTop, 1e-9) && near(k.top.V, vTop, 1e-9) && Math.abs(k.top.vy) < 1e-9, true);
+  add('② 底端分离（m=' + m + ', M=' + M + '）',
+    'vx = ' + fmt(vxSep) + ' m/s<br>V = ' + fmt(Vsep) + ' m/s<br>h = 0.000 m',
+    't = ' + S.evT.sep.toFixed(3) + ' s<br>vx = ' + fmt(k.sep.vx) + '，vy = ' + fmt(k.sep.vy) +
+    '<br>V = ' + fmt(k.sep.V) + ' m/s',
+    near(k.sep.vx, vxSep, 1e-9) && near(k.sep.V, Vsep, 1e-9), true);
+  add('③ 全过程水平动量（守恒）',
+    'p = m·v₀ = ' + (m * u0).toFixed(3) + ' kg·m/s<br>（水平方向无外力，光滑面）',
+    '全程 |p − ' + (m * u0).toFixed(3) + '| 最大 = ' + S.pDrift.toExponential(1) + ' kg·m/s',
+    S.pDrift < 1e-9);
+  add('④ 全过程总机械能（守恒）',
+    'E = ½m·v₀² = ' + (0.5 * m * u0 * u0).toFixed(3) + ' J<br>（各接触面光滑，无耗散）',
+    '全程 |E − ' + (0.5 * m * u0 * u0).toFixed(3) + '| 最大 = ' + S.eDrift.toExponential(1) + ' J',
+    S.eDrift < 1e-9);
+  body.innerHTML = rows.join('');
+}
+
+/* ============================================================
+   6. 初始化：预建五种情境、自动取景，支持 ?s= 与 ?t= 直链
+   ============================================================ */
+(function init() {
+  for (var i = 0; i < SCEN.length; i++) getSim(SCEN[i].id);      /* 预建（取景需要） */
+  for (var g = 0; g < SCEN.length; g++) VIEWS[SCEN[g].grp] = viewOf(SCEN[g].grp);
+
+  var q = location.search, m1 = /[?&]s=([^&]+)/.exec(q), m2 = /[?&]t=([^&]+)/.exec(q);
+  var idx = DEFI;
+  if (m1) {
+    var v = decodeURIComponent(m1[1]), j;
+    for (j = 0; j < SCEN.length; j++) if (SCEN[j].id === v || String(j) === v) { idx = j; break; }
+  }
+  speed = parseFloat(selSpeed.value);
+  document.body.className = 'answer';
+  mAnswer.className = 'on ans';
+  loadScen(idx);
+  if (m2) {
+    var t0 = parseFloat(decodeURIComponent(m2[1]));
+    if (isFinite(t0)) { tSim = Math.max(0, Math.min(SIM.tEnd, t0)); seek(tSim); refresh(); draw(); }
+  }
+  if (/[?&]mode=predict/.test(q)) setMode(true);
+  window.addEventListener('resize', function () { resize(); });
+})();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

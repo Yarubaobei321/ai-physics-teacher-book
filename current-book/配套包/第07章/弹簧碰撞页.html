@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第08章 · 接触弹簧：B 撞向连着弹簧的 A（接触后分离）</title>
+<style>
+  :root{
+    --ink:#1f2328; --ink2:#5b6570; --ink3:#8a949e;
+    --line:#e3e6ea; --card:#ffffff; --bg:#f4f6f8;
+    --blue:#2b5cab; --blue-fill:#5b93ea;
+    --orange:#ff8c1a; --orange-line:#bf5b00;
+    --green:#2f9e6f; --green-line:#1d6b49;
+    --warn:#8a5b00; --warn-bg:#fff8e8; --warn-line:#f0dcae;
+    --bad:#b3261e; --bad-bg:#fdeceb;
+    --ok:#0a7a44; --ok-bg:#eef8f2;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    font-size:15px; line-height:1.6; padding:20px 18px 48px;
+  }
+  .wrap{ max-width:1040px; margin:0 auto; }
+  h1{ font-size:20px; line-height:1.35; margin:0 0 6px; font-weight:700; letter-spacing:.2px; }
+  p.sub{ margin:0 0 3px; color:var(--ink2); font-size:13.5px; }
+  p.sub b{ color:var(--ink); font-weight:600; }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:10px; }
+  .stage{ padding:10px; margin-top:13px; }
+  #scene{ display:block; width:100%; height:auto; border-radius:8px; background:#fbfcfd; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:9px 13px; padding:11px 14px; margin-top:12px; }
+  button{
+    font-family:inherit; font-size:14px; font-weight:600; color:#fff; background:var(--blue);
+    border:none; border-radius:7px; padding:8px 16px; cursor:pointer; letter-spacing:.4px;
+  }
+  button.ghost{ background:#fff; color:var(--blue); border:1px solid #b9cbe4; }
+  button:hover{ filter:brightness(1.07); }
+  button.ghost:hover{ filter:none; background:#f0f5fc; }
+  button:disabled{ opacity:.42; cursor:not-allowed; }
+  .pbtn{
+    font-family:inherit; font-size:13.5px; font-weight:600; color:#33475e; background:#fff;
+    border:1px solid #ccd4de; border-radius:7px; padding:6px 12px; cursor:pointer;
+  }
+  .pbtn:hover{ background:#f0f5fc; }
+  .pbtn.on{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  .pbtn:disabled{ opacity:.42; cursor:not-allowed; }
+  .seg{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .seg>b{ font-size:13.5px; color:var(--ink2); font-weight:600; }
+  select, input[type=number]{
+    font-family:inherit; font-size:13.5px; padding:6px 8px; border:1px solid #ccd4de;
+    border-radius:7px; background:#fff; color:var(--ink);
+  }
+  input[type=number]{ width:92px; }
+  label.f{ font-size:13px; color:var(--ink2); display:inline-flex; align-items:center; gap:6px; }
+  .grid{ display:grid; gap:10px; grid-template-columns:repeat(auto-fit,minmax(152px,1fr)); margin-top:12px; }
+  .ro{ padding:9px 12px; }
+  .ro .k{ font-size:12.5px; color:var(--ink2); }
+  .ro .v{ font-size:19px; font-weight:700; font-variant-numeric:tabular-nums;
+          font-family:ui-monospace,Menlo,Consolas,monospace; letter-spacing:-.4px; }
+  .ro .u{ font-size:12px; color:var(--ink3); font-weight:500; margin-left:3px; }
+  .ro.check{ background:#f8fbfe; }
+  .ro.check .v{ font-size:17px; color:#1f4e9c; }
+  #chartCard{ padding:12px 14px 8px; margin-top:12px; }
+  #chartCard .cap{ font-size:13px; color:var(--ink2); margin-bottom:4px; }
+  #chart{ display:block; width:100%; height:250px; background:#fff; }
+  .legend{ display:flex; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--ink2); margin-top:6px; }
+  .legend i{ display:inline-block; width:15px; height:3px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  #barsCard{ padding:12px 14px; margin-top:12px; }
+  #barsCard .cap{ font-size:13px; color:var(--ink2); margin-bottom:8px; }
+  .barrow{ display:flex; align-items:center; gap:10px; margin:5px 0; font-size:12.5px; color:var(--ink2); }
+  .barrow .nm{ flex:0 0 132px; }
+  .barrow .track{ position:relative; flex:1 1 auto; height:13px; background:#eef1f5; border-radius:6px; overflow:hidden; }
+  .barrow .fill{ display:block; height:100%; width:0; border-radius:6px; transition:width .05s linear; }
+  .barrow .num{ flex:0 0 96px; text-align:right; font-family:ui-monospace,Menlo,Consolas,monospace;
+                font-variant-numeric:tabular-nums; color:var(--ink); font-size:12.5px; }
+  h2{ font-size:15px; margin:22px 0 8px; font-weight:700; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; background:#fff; }
+  th,td{ border:1px solid var(--line); padding:7px 9px; text-align:left; vertical-align:top; }
+  th{ background:#f2f5f9; font-weight:600; color:var(--ink2); white-space:nowrap; }
+  td.num{ font-family:ui-monospace,Menlo,Consolas,monospace; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.c{ text-align:center; }
+  .pass{ color:var(--ok); font-weight:700; }
+  .fail{ color:var(--bad); font-weight:700; }
+  .msg{ display:none; margin-top:12px; padding:11px 14px; border-radius:8px; font-size:13.5px; }
+  .msg.show{ display:block; }
+  .msg.info{ background:#eef4ff; border:1px solid #cfe0fb; color:#1f4e9c; }
+  .msg.warn{ background:var(--warn-bg); border:1px solid var(--warn-line); color:var(--warn); }
+  .msg.bad{ background:var(--bad-bg); border:1px solid #f0b8b4; color:var(--bad); }
+  .card.note{ margin-top:14px; padding:13px 16px; font-size:12.5px; color:var(--ink2); }
+  .card.note ul{ margin:6px 0 0; padding-left:20px; }
+  .card.note li{ margin:3px 0; }
+  .card.note code{ font-family:ui-monospace,Menlo,Consolas,monospace; background:#eef2f6; padding:1px 5px; border-radius:4px; font-size:12px; }
+  .kbd{ display:inline-block; border:1px solid #ccd4de; border-bottom-width:2px; border-radius:5px; padding:0 6px; font-size:12px; background:#fff; color:var(--ink2); }
+  details{ margin-top:12px; }
+  details.card{ padding:12px 16px; }
+  summary{ cursor:pointer; font-size:14px; font-weight:600; }
+  details img{ max-width:100%; margin-top:10px; border:1px solid var(--line); border-radius:6px; background:#fff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>接触弹簧：B 撞向连着弹簧的 A（接触后分离）</h1>
+  <p class="sub" id="condLine">当前条件：</p>
+  <p class="sub">参考系：地面。正方向：向右为正。光滑水平面，轻弹簧与 A 相连；B 在左、A 在右，B 向右撞上来。只模拟一次接触与分离，不做斜面，不做第二次碰撞。</p>
+
+  <div class="card stage"><canvas id="scene"></canvas></div>
+
+  <div class="card bar">
+    <button id="btnPlay">播放</button>
+    <button id="btnReset" class="ghost">复位</button>
+    <span class="seg" id="jumpBox"><b>关键时刻：</b></span>
+    <label class="f">播放速度
+      <select id="selSpeed">
+        <option value="0.1">0.1×（慢放）</option>
+        <option value="0.25" selected>0.25×</option>
+        <option value="0.5">0.5×</option>
+        <option value="1">1×（真实时间）</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="card bar">
+    <span class="seg"><b>可调参数：</b>
+      <label class="f">m<sub>A</sub><input type="number" id="inmA" step="0.1" value="1"><span class="u">kg</span></label>
+      <label class="f">m<sub>B</sub><input type="number" id="inmB" step="0.1" value="5"><span class="u">kg</span></label>
+      <label class="f">v<sub>A0</sub><input type="number" id="invA0" step="0.1" value="0"><span class="u">m/s</span></label>
+      <label class="f">v<sub>B0</sub><input type="number" id="invB0" step="0.1" value="1.2"><span class="u">m/s</span></label>
+      <label class="f">k<input type="number" id="ink" step="0.1" value="2.05617"><span class="u">N/m</span></label>
+    </span>
+    <button class="ghost" id="btnDefault">恢复默认参数</button>
+  </div>
+
+  <div class="msg" id="msg"></div>
+
+  <div class="grid">
+    <div class="card ro"><div class="k">模拟时间 t</div><div class="v" id="roT">0.000<span class="u">s</span></div></div>
+    <div class="card ro"><div class="k">A 速度 v<sub>A</sub></div><div class="v" id="roVA">0.000<span class="u">m/s</span></div></div>
+    <div class="card ro"><div class="k">B 速度 v<sub>B</sub></div><div class="v" id="roVB">1.200<span class="u">m/s</span></div></div>
+    <div class="card ro"><div class="k">质心速度 v<sub>cm</sub></div><div class="v" id="roVcm">1.000<span class="u">m/s</span></div></div>
+    <div class="card ro"><div class="k">相对速度 u = v<sub>B</sub>−v<sub>A</sub></div><div class="v" id="roU">1.200<span class="u">m/s</span></div></div>
+    <div class="card ro"><div class="k">弹簧压缩量 δ</div><div class="v" id="roDelta">0.000<span class="u">m</span></div></div>
+    <div class="card ro check"><div class="k">总动量 p</div><div class="v" id="roP">6.000<span class="u">kg·m/s</span></div></div>
+    <div class="card ro check"><div class="k">总机械能 E</div><div class="v" id="roE">3.600<span class="u">J</span></div></div>
+  </div>
+
+  <div class="card" id="chartCard">
+    <div class="cap">速度—时间图像。游标（竖虚线）对应当前模拟时刻；虚线 t<sub>0</sub> 为共速时刻，t<sub>s</sub> 为分离时刻。</div>
+    <canvas id="chart"></canvas>
+    <div class="legend">
+      <span><i style="background:#2b5cab"></i>A 的速度 v<sub>A</sub>（右端带弹簧的物块）</span>
+      <span><i style="background:#ff8c1a"></i>B 的速度 v<sub>B</sub>（左端撞上来的物块）</span>
+      <span>横轴 t / s，纵轴 v / (m·s⁻¹)</span>
+    </div>
+  </div>
+
+  <div class="card" id="barsCard">
+    <div class="cap">能量分配（以 t = 0 的总机械能为满格）：蓝色为 A 的动能，橙色为 B 的动能，绿色为弹簧弹性势能。</div>
+    <div class="barrow"><span class="nm">A 的动能 E<sub>kA</sub></span><span class="track"><i class="fill" id="barA" style="background:#5b93ea"></i></span><span class="num" id="numA">0.000 J</span></div>
+    <div class="barrow"><span class="nm">B 的动能 E<sub>kB</sub></span><span class="track"><i class="fill" id="barB" style="background:#ff8c1a"></i></span><span class="num" id="numB">3.600 J</span></div>
+    <div class="barrow"><span class="nm">弹性势能 E<sub>p</sub></span><span class="track"><i class="fill" id="barP" style="background:#2f9e6f"></i></span><span class="num" id="numP">0.000 J</span></div>
+    <div class="barrow"><span class="nm">总机械能</span><span class="track"><i class="fill" id="barE" style="background:#8a949e"></i></span><span class="num" id="numE">3.600 J</span></div>
+  </div>
+
+  <h2>物理核验</h2>
+  <p class="sub">“独立预期”一列用与画面无关的另一条路径写出：分离后的速度用一维弹性碰撞公式，最大压缩量与共速时刻 A 的位移用动量守恒对时间积分，弹性势能峰值用能量差。<b>“本页实际”一列来自页面上驱动画面与图像的那一套解析解。</b></p>
+  <table>
+    <thead><tr><th>检查项</th><th>独立预期（公式与数值）</th><th>本页实际</th><th class="c">结论</th></tr></thead>
+    <tbody id="checkBody"></tbody>
+  </table>
+
+  <div class="card note">
+    <b>模型范围与设定</b>
+    <ul>
+      <li>理想轻弹簧、光滑水平面；相对运动为简谐运动，解析解同时驱动画面、读数与曲线，不做数值积分。</li>
+      <li>接触后分离：只取半个周期（相对速度由 +u₀ 变到 −u₀），弹簧恢复原长时 <b>B 与弹簧分离</b>，之后两者各自匀速。<b>不模拟斜面，也不模拟第二次碰撞。</b></li>
+      <li><b>弹簧固定在 A 上（连 A 的左侧）</b>，所以分离后弹簧跟着 A 一起走、长度回到原长；B 的右边缘与弹簧左端之间会出现并拉大空隙。画面上的“空隙”读数是实算出来的，不是画出来的装饰。</li>
+      <li><b>弹簧原长是绘图设定</b>，题目没有给出原长：基准为 1.00 m，并<b>随该组参数允许的最大压缩量自动加长</b>（留 20% 余量、向上取整到 0.1 m），以保证画面上弹簧始终有正长度、两物块不会互相穿透。当前取值见上方提示行。</li>
+      <li>压缩量 δ = (u₀/ω)·sin(ωt)，0 ≤ t ≤ t<sub>s</sub>；t &gt; t<sub>s</sub> 后 δ ≡ 0。位移由同一组速度函数积分得到，B 不会穿过弹簧或物块。</li>
+      <li><b>时间轴末端随分离时刻联动：</b>T<sub>end</sub> = ⌈t<sub>s</sub>⌉ + 1，保证分离之后仍有一段可见的匀速过程；关键时刻按钮 0 / t₀ / t<sub>s</sub> / T<sub>end</sub> 也随之生成。默认参数下正好是 0 / 1 / 2 / 3 s。分离之前不会显示“分离完成”。</li>
+      <li>正文题给的两个近似值 0.36v₀t₀ 与 0.768v₀t₀ 是取整后的参考值：0.36 由解析解 (1−2/π) 取整，0.768 又用取整后的 0.36 反推，所以略大于解析解的 0.76394v₀t₀。本页不写死这两个数，全部按解析解实时计算。</li>
+      <li>参数取非法值（质量或劲度系数不大于 0、v<sub>B0</sub> ≤ v<sub>A0</sub>）时页面拒绝模拟并说明原因，不会给出画面。</li>
+    </ul>
+  </div>
+
+
+
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   物理计算核心（唯一一套公式；页面、读数、图表、能量条同源）
+   —— 不依赖 DOM，可被外部脚本单独取出复算
+   ============================================================ */
+/* ==== CALC-CORE-START ==== */
+var PHYS_CORE = (function () {
+
+  /* 由质量、初速度、劲度系数构造模型常量 */
+  /* L0Hint：弹簧原长的下限，1.00 m 是绘图设定；实际绘图原长随允许的最大压缩量自动加长，
+     保证画面上弹簧不会被压到零长度（物理量不受影响，L0 只决定 t=0 时两物块的间距）。 */
+  function makeParams(mA, mB, vA0, vB0, k, L0Hint) {
+    var M   = mA + mB;                 // 总质量
+    var mu  = (mA * mB) / M;           // 约化质量
+    var omega = Math.sqrt(k / mu);     // 相对运动的角频率
+    var u0  = vB0 - vA0;               // B 相对 A 的接近速度（>0 才会接触）
+    var vcm = (mA * vA0 + mB * vB0) / M;
+    var t0  = Math.PI / (2 * omega);   // 共速（弹簧最短）时刻
+    var ts  = Math.PI / omega;         // 分离（弹簧恢复原长）时刻
+    var dmax = u0 / omega;             // 最大压缩量 u0·sqrt(mu/k)
+    var hint = (typeof L0Hint === "number" && L0Hint > 0) ? L0Hint : 1.00;
+    /* 绘图原长：留出 20% 余量，向上取整到 0.1 m；绝不小于 hint */
+    var L0 = (u0 > 0) ? Math.max(hint, Math.ceil(dmax * 1.2 * 10) / 10) : hint;
+    /* 时间轴末端随分离时刻联动：分离之后至少再留 1 s，默认参数下正好是 3 s。
+       减 1e-9 是为了不让 t_s 的浮点尾差（如 2.0000000000000004）把上限多抬一格。 */
+    var TEND = (isFinite(ts) && ts > 0) ? (Math.ceil(ts - 1e-9) + 1) : 3;
+    return {
+      mA: mA, mB: mB, vA0: vA0, vB0: vB0, k: k, L0: L0, L0Hint: hint, TEND: TEND,
+      L0grew: (L0 > hint + 1e-12),
+      M: M, mu: mu, omega: omega, u0: u0, vcm: vcm, t0: t0, ts: ts, dmax: dmax,
+      valid: (mA > 0 && mB > 0 && k > 0 && u0 > 0),
+      reason: (mA <= 0 || mB <= 0) ? "质量必须大于 0"
+            : (k <= 0)             ? "劲度系数 k 必须大于 0"
+            : (u0 <= 0)            ? "B 没有追上 A（v_B0 ≤ v_A0），不发生接触"
+            : ""
+    };
+  }
+
+  /* 任意时刻的状态：速度、压缩量、位移、能量。t 为模拟时刻（s）。
+     位置以“B 的右边缘”与“A 的左边缘”为标志；t=0 时二者相距 L0（弹簧原长）。 */
+  function stateAt(P, t) {
+    if (t < 0) t = 0;
+    var w, sA, sB, vA, vB, delta, phase;
+
+    if (t <= P.ts) {
+      w = P.omega * t;
+      vA = P.vcm - (P.mB / P.M) * P.u0 * Math.cos(w);
+      vB = P.vcm + (P.mA / P.M) * P.u0 * Math.cos(w);
+      delta = (P.u0 / P.omega) * Math.sin(w);
+      sA = P.vcm * t - (P.mB * P.u0 / (P.M * P.omega)) * Math.sin(w);
+      sB = sA + delta;
+      phase = (t < P.t0) ? "压缩（B 比 A 快，动能转为弹性势能）"
+            : (t === P.t0 || Math.abs(t - P.t0) < 1e-12) ? "共速：弹簧最短，弹性势能最大"
+            : "恢复（A 比 B 快，弹性势能转回动能）";
+    } else {
+      /* 分离后各自匀速；分离时刻两种速度由上面的公式在 t=ts 处连续衔接 */
+      vA = P.vcm + (P.mB / P.M) * P.u0;
+      vB = P.vcm - (P.mA / P.M) * P.u0;
+      var sAs = P.vcm * P.ts - (P.mB * P.u0 / (P.M * P.omega)) * Math.sin(P.omega * P.ts);
+      delta = 0;
+      sA = sAs + vA * (t - P.ts);
+      sB = sAs + vB * (t - P.ts);
+      phase = "分离后：B 已离开弹簧，两者各自匀速直线运动";
+    }
+
+    var xA = P.L0 + sA;     // A 左边缘的世界坐标
+    var xB = 0 + sB;        // B 右边缘的世界坐标
+    var xSpringL = xA - (P.L0 - delta);   // 弹簧左端：弹簧固定在 A 上，压缩时被压短
+    var KEA = 0.5 * P.mA * vA * vA;
+    var KEB = 0.5 * P.mB * vB * vB;
+    var Ep  = 0.5 * P.k * delta * delta;
+    return {
+      t: t, vA: vA, vB: vB, u: vB - vA, delta: delta, phase: phase,
+      sA: sA, sB: sB, xA: xA, xB: xB,
+      xSpringL: xSpringL, springGap: xSpringL - xB, gap: xA - xB,
+      KEA: KEA, KEB: KEB, Ep: Ep, Etot: KEA + KEB + Ep,
+      p: P.mA * vA + P.mB * vB
+    };
+  }
+
+  return { makeParams: makeParams, stateAt: stateAt };
+})();
+/* ==== CALC-CORE-END ==== */
+
+/* ============================================================
+   独立预期（另一条路径，用于核验表；与上面那套解析解无关）
+   分离后速度：一维弹性碰撞公式；δmax 与 s_A(t0)：能量法与动量积分
+   ============================================================ */
+var EXPECT = {
+  separation: function (P) {
+    var M = P.mA + P.mB;
+    return {
+      vA: ((P.mA - P.mB) * P.vA0 + 2 * P.mB * P.vB0) / M,
+      vB: ((P.mB - P.mA) * P.vB0 + 2 * P.mA * P.vA0) / M
+    };
+  },
+  deltaMax: function (P) { return P.u0 * Math.sqrt(P.mu / P.k); },          // ½μu₀² = ½kδ²
+  epMax:    function (P) { return 0.5 * P.mu * P.u0 * P.u0; },              // 共速时损失的全部相对动能
+  sAatT0:   function (P) { return P.vcm * P.t0 - (P.mB / P.M) * EXPECT.deltaMax(P); } // Mv_cm·t₀ = m_A s_A + m_B s_B 且 s_B−s_A=δ
+};
+
+/* ============================================================
+   页面交互
+   ============================================================ */
+(function () {
+  var TEND = 3.0;                /* 时间轴末端：每次载入参数后由核心按 t_s 重算 */
+  var DEFAULTS = { mA: 1, mB: 5, vA0: 0, vB0: 1.2, k: 5 * Math.PI * Math.PI / 24, L0: 1.00 };
+  var L0 = 1.00;                 /* 弹簧原长下限：绘图设定（实际绘图原长可能更大） */
+  var WA = 0.5, WB = 0.5;        /* 物块宽度：绘图设定 */
+
+  var $ = function (id) { return document.getElementById(id); };
+  var scene = $("scene"), chart = $("chart");
+  var sctx = scene.getContext("2d");
+  var cctx = chart.getContext("2d");
+  var DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  var P = null;            /* 当前模型常量 */
+  var t = 0, playing = false, speed = 0.25, lastFrame = 0;
+  var view = { lo: -1.3, hi: 6.3 };
+
+  function fmt(x, d) {
+    if (typeof x !== "number" || !isFinite(x)) return "—";
+    var s = x.toFixed(d);
+    if (/^-0(\.0+)?$/.test(s)) s = s.replace(/^-/, "");
+    return s;
+  }
+  function showMsg(kind, html) {
+    var el = $("msg");
+    el.className = "msg show " + kind;
+    el.innerHTML = html;
+  }
+  function hideMsg() { $("msg").className = "msg"; $("msg").innerHTML = ""; }
+
+  function resize(cv, cssH) {
+    var w = cv.clientWidth || cv.parentNode.clientWidth;
+    cv.width = Math.max(320, Math.round(w * DPR));
+    cv.height = Math.round(cssH * DPR);
+    cv.style.height = cssH + "px";
+  }
+
+  /* ---------- 参数读取与校验 ---------- */
+  function readParams() {
+    var q = function (id) { var v = parseFloat($(id).value); return isFinite(v) ? v : NaN; };
+    var mA = q("inmA"), mB = q("inmB"), vA0 = q("invA0"), vB0 = q("invB0"), k = q("ink");
+    if ([mA, mB, vA0, vB0, k].some(function (z) { return !isFinite(z); }))
+      return { ok: false, why: "参数里出现了空值或非数字，请检查后重新输入。" };
+    var p = PHYS_CORE.makeParams(mA, mB, vA0, vB0, k, L0);
+    if (!p.valid) return { ok: false, why: p.reason, p: p };
+    return { ok: true, p: p };
+  }
+
+  function setView(p) {
+    var s0 = PHYS_CORE.stateAt(p, 0), se = PHYS_CORE.stateAt(p, p.TEND);
+    var lo = Math.min(s0.xB - WB, s0.xA) - 0.7;
+    var hi = Math.max(se.xA + WA, se.xB, s0.xA + p.L0) + 0.7;
+    if (!(hi > lo)) { lo = -1.3; hi = 6.3; }
+    view = { lo: lo, hi: hi };
+  }
+
+  /* ---------- 画面 ---------- */
+  function drawScene() {
+    var W = scene.width / DPR, H = scene.height / DPR;
+    sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    sctx.clearRect(0, 0, W, H);
+    sctx.fillStyle = "#fbfcfd"; sctx.fillRect(0, 0, W, H);
+
+    var mL = 26, mR = 26, groundY = H - 62, blockH = 46, springY = groundY - blockH / 2;
+    var sx = function (x) { return mL + (x - view.lo) / (view.hi - view.lo) * (W - mL - mR); };
+    var S = PHYS_CORE.stateAt(P, t);
+
+    /* 地面与斜线阴影 */
+    sctx.strokeStyle = "#8a8175"; sctx.lineWidth = 2;
+    sctx.beginPath(); sctx.moveTo(mL - 8, groundY + .5); sctx.lineTo(W - mR + 8, groundY + .5); sctx.stroke();
+    sctx.strokeStyle = "#c9c2b6"; sctx.lineWidth = 1;
+    for (var hx = mL - 14; hx < W - mR + 14; hx += 11) {
+      sctx.beginPath(); sctx.moveTo(hx, groundY + 12); sctx.lineTo(hx + 9, groundY + 1); sctx.stroke();
+    }
+
+    /* 弹簧：固定在 A 的左边缘；压缩时被压短、分离后回到绘图原长。
+       左端坐标 xSpringL = xA − (L0 − δ)，接触期间正好落在 B 的右边缘上。 */
+    var x1 = sx(S.xSpringL), x2 = sx(S.xA);
+    var coils = 11, segs = coils * 2, amp = 13;
+    sctx.strokeStyle = "#6b7280"; sctx.lineWidth = 2.2;
+    sctx.beginPath(); sctx.moveTo(x1, springY);
+    for (var i = 1; i < segs; i++) {
+      var px = x1 + (x2 - x1) * i / segs;
+      sctx.lineTo(px, springY + (i % 2 ? -amp : amp));
+    }
+    sctx.lineTo(x2, springY); sctx.stroke();
+    /* 弹簧与 A 的固定连接点 */
+    sctx.fillStyle = "#4a5560";
+    sctx.beginPath(); sctx.arc(x2, springY, 3.4, 0, Math.PI * 2); sctx.fill();
+
+    /* 分离后 B 与弹簧左端之间的空隙：画在速度箭头与质心线之间的空档里，避免与两者重叠 */
+    if (S.springGap > 1e-6) {
+      var gL = sx(S.xB), gR = sx(S.xSpringL), gy = groundY - 96;
+      sctx.strokeStyle = "#b3261e"; sctx.lineWidth = 1.4;
+      sctx.beginPath(); sctx.moveTo(gL, gy); sctx.lineTo(gR, gy); sctx.stroke();
+      [[gL, 1], [gR, -1]].forEach(function (d) {
+        sctx.beginPath();
+        sctx.moveTo(d[0], gy); sctx.lineTo(d[0] + d[1] * 8, gy - 4); sctx.lineTo(d[0] + d[1] * 8, gy + 4);
+        sctx.closePath(); sctx.fillStyle = "#b3261e"; sctx.fill();
+      });
+      sctx.fillStyle = "#b3261e"; sctx.font = "11.5px -apple-system,Segoe UI,sans-serif";
+      sctx.textAlign = "center"; sctx.textBaseline = "bottom";
+      sctx.fillText("B 已离开弹簧，空隙 " + fmt(S.springGap, 3) + " m", (gL + gR) / 2, gy - 6);
+    }
+
+    /* 质心竖直虚线：抬到最高一层，避免与空隙标注、速度标签挤在一起 */
+    var xCM = (P.mA * (S.xA + WA / 2) + P.mB * (S.xB - WB / 2)) / P.M;
+    var cxp = sx(xCM);
+    sctx.save();
+    sctx.setLineDash([6, 5]); sctx.strokeStyle = "#2f9e6f"; sctx.lineWidth = 1.6;
+    sctx.beginPath(); sctx.moveTo(cxp, groundY + 4); sctx.lineTo(cxp, groundY - 150); sctx.stroke();
+    sctx.restore();
+    sctx.fillStyle = "#1d6b49"; sctx.font = "12px -apple-system,Segoe UI,sans-serif";
+    sctx.textAlign = "center"; sctx.textBaseline = "bottom";
+    sctx.fillText("质心（匀速）", cxp, groundY - 152);
+
+    /* 两箭头共用的像素速度比例：扫描全程，保证任一时刻两支箭头（含箭头头部）
+       都落在画布内，同时不让两支箭头各用各的比例（否则长度不可比）。
+       上限 74 px/(m/s)；把 A 的速度文字也一并夹在画布内。 */
+    function arrowScaleFor() {
+      var W = scene.width / DPR;
+      var mL = 26, mR = 26, edge = 16, MAXS = 74;
+      var sxm = function (x) { return mL + (x - view.lo) / (view.hi - view.lo) * (W - mL - mR); };
+      var n = 160, i, s = MAXS;
+      for (i = 0; i <= n; i++) {
+        var st = PHYS_CORE.stateAt(P, P.TEND * i / n);
+        var cA = sxm(st.xA + WA / 2), cB = sxm(st.xB - WB / 2);
+        if (Math.abs(st.vA) > 1e-9) s = Math.min(s, (st.vA > 0 ? (W - edge - cA) : (cA - edge)) / Math.abs(st.vA));
+        if (Math.abs(st.vB) > 1e-9) s = Math.min(s, (st.vB > 0 ? (W - edge - cB) : (cB - edge)) / Math.abs(st.vB));
+      }
+      if (!isFinite(s) || s <= 4) s = MAXS;
+      return Math.min(MAXS, s);
+    }
+    var arrowScale = arrowScaleFor();
+
+    /* 物块：质量文字放在块下方，B 与 A 各占一行（groundY+6 / groundY+24）避免互相压住 */
+    function block(xLeftPx, wPx, fill, stroke, label, mass, massY, v, col) {
+      sctx.fillStyle = fill; sctx.strokeStyle = stroke; sctx.lineWidth = 2;
+      sctx.beginPath();
+      if (sctx.roundRect) sctx.roundRect(xLeftPx, groundY - blockH, wPx, blockH, 5);
+      else sctx.rect(xLeftPx, groundY - blockH, wPx, blockH);
+      sctx.fill(); sctx.stroke();
+      sctx.fillStyle = "#12212f"; sctx.font = "600 15px -apple-system,Segoe UI,sans-serif";
+      sctx.textAlign = "center"; sctx.textBaseline = "middle";
+      sctx.fillText(label, xLeftPx + wPx / 2, groundY - blockH / 2);
+      sctx.fillStyle = "#5b6570"; sctx.font = "11.5px -apple-system,Segoe UI,sans-serif";
+      sctx.textBaseline = "top";
+      sctx.fillText(mass, xLeftPx + wPx / 2, groundY + massY);
+      /* 速度箭头（零速不画箭头） */
+      var L = v * arrowScale;
+      if (Math.abs(v) > 1e-9) {
+        var y0 = groundY - blockH - 22, xa = xLeftPx + wPx / 2;
+        sctx.strokeStyle = col; sctx.fillStyle = col; sctx.lineWidth = 2.4;
+        sctx.beginPath(); sctx.moveTo(xa, y0); sctx.lineTo(xa + L, y0); sctx.stroke();
+        var sg = L >= 0 ? 1 : -1;
+        sctx.beginPath();
+        sctx.moveTo(xa + L, y0);
+        sctx.lineTo(xa + L - sg * 9, y0 - 5);
+        sctx.lineTo(xa + L - sg * 9, y0 + 5);
+        sctx.closePath(); sctx.fill();
+        sctx.font = "12px -apple-system,Segoe UI,sans-serif"; sctx.textBaseline = "bottom";
+        sctx.textAlign = "center";
+        sctx.fillText("v=" + fmt(v, 2), Math.max(30, Math.min(W - 30, xa + L / 2)), y0 - 8);
+      }
+    }
+    block(sx(S.xB - WB), Math.max(28, sx(S.xB) - sx(S.xB - WB)),
+          "#ffd9a8", "#bf5b00", "B", "m_B = " + fmt(P.mB, 2) + " kg", 6, S.vB, "#bf5b00");
+    block(sx(S.xA), Math.max(28, sx(S.xA + WA) - sx(S.xA)),
+          "#cfe0fb", "#2b5cab", "A", "m_A = " + fmt(P.mA, 2) + " kg", 24, S.vA, "#2b5cab");
+
+    /* 位移标尺：下移到质量文字下面 */
+    sctx.strokeStyle = "#b7c0c9"; sctx.lineWidth = 1; sctx.setLineDash([3, 3]);
+    sctx.beginPath(); sctx.moveTo(sx(0), groundY + 50); sctx.lineTo(sx(S.xB), groundY + 50); sctx.stroke();
+    sctx.setLineDash([]);
+    sctx.fillStyle = "#8a949e"; sctx.font = "11.5px -apple-system,Segoe UI,sans-serif";
+    sctx.textAlign = "left"; sctx.textBaseline = "bottom";
+    sctx.fillText("B 位移 " + fmt(S.sB, 3) + " m", sx(0) + 4, groundY + 48);
+  }
+
+  /* ---------- v–t 图 ---------- */
+  function drawChart() {
+    var W = chart.width / DPR, H = chart.height / DPR;
+    cctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cctx.clearRect(0, 0, W, H);
+    cctx.fillStyle = "#fff"; cctx.fillRect(0, 0, W, H);
+
+    var mg = { l: 56, r: 18, t: 16, b: 38 };
+    var n = 480, i, s, vs = [], mn = 0, mx = 0;
+    for (i = 0; i <= n; i++) {
+      s = PHYS_CORE.stateAt(P, TEND * i / n);
+      vs.push(s);
+      mx = Math.max(mx, s.vA, s.vB);
+      mn = Math.min(mn, s.vA, s.vB);
+    }
+    if (mn > -0.25) mn = 0;                       /* 速度全为正时不画负半轴 */
+    mn = Math.floor(mn / 0.5) * 0.5;
+    var vHi = Math.ceil((mx * 1.12) / 0.5) * 0.5;
+    if (vHi <= mn) vHi = mn + 1;
+    var px = function (x) { return mg.l + (x / TEND) * (W - mg.l - mg.r); };
+    var py = function (v) { return H - mg.b - (v - mn) / (vHi - mn) * (H - mg.t - mg.b); };
+
+    /* 网格与刻度 */
+    cctx.strokeStyle = "#eef1f5"; cctx.lineWidth = 1;
+    cctx.fillStyle = "#8a949e"; cctx.font = "11.5px -apple-system,Segoe UI,sans-serif";
+    var tv;
+    for (tv = 0; tv <= TEND + 1e-9; tv += 0.5) {
+      cctx.beginPath(); cctx.moveTo(px(tv), mg.t); cctx.lineTo(px(tv), H - mg.b); cctx.stroke();
+      if (Math.abs(tv - Math.round(tv)) < 1e-9) {
+        cctx.textAlign = "center"; cctx.textBaseline = "top";
+        cctx.fillText(String(Math.round(tv)), px(tv), H - mg.b + 6);
+      }
+    }
+    for (tv = mn; tv <= vHi + 1e-9; tv += 0.5) {
+      cctx.beginPath(); cctx.moveTo(mg.l, py(tv)); cctx.lineTo(W - mg.r, py(tv)); cctx.stroke();
+      cctx.textAlign = "right"; cctx.textBaseline = "middle";
+      cctx.fillText(tv.toFixed(1), mg.l - 6, py(tv));
+    }
+    /* 零线加粗 */
+    if (mn < 0) {
+      cctx.strokeStyle = "#c9ced6"; cctx.lineWidth = 1.6;
+      cctx.beginPath(); cctx.moveTo(mg.l, py(0)); cctx.lineTo(W - mg.r, py(0)); cctx.stroke();
+    }
+    /* 轴 */
+    cctx.strokeStyle = "#1f2328"; cctx.lineWidth = 1.5;
+    cctx.beginPath(); cctx.moveTo(mg.l, mn < 0 ? py(0) : mg.t); cctx.lineTo(mg.l, H - mg.b); cctx.lineTo(W - mg.r, H - mg.b); cctx.stroke();
+    cctx.fillStyle = "#1f2328"; cctx.font = "12px -apple-system,Segoe UI,sans-serif";
+    cctx.textAlign = "left"; cctx.textBaseline = "top"; cctx.fillText("v / (m·s⁻¹)", mg.l - 48, 0);
+    cctx.textAlign = "right"; cctx.textBaseline = "bottom"; cctx.fillText("t / s", W - mg.r, H - 4);
+
+    /* 关键时刻竖线 */
+    function vline(tv, col, txt) {
+      cctx.save(); cctx.setLineDash([5, 4]); cctx.strokeStyle = col; cctx.lineWidth = 1.3;
+      cctx.beginPath(); cctx.moveTo(px(tv), mg.t); cctx.lineTo(px(tv), H - mg.b); cctx.stroke();
+      cctx.restore();
+      cctx.fillStyle = col; cctx.font = "11.5px -apple-system,Segoe UI,sans-serif";
+      cctx.textAlign = "left"; cctx.textBaseline = "top";
+      cctx.fillText(txt, px(tv) + 3, mg.t + 2);
+    }
+    vline(P.t0, "#8a5b00", "t₀=" + fmt(P.t0, 3) + "s");
+    vline(P.ts, "#8a949e", "t_s=" + fmt(P.ts, 3) + "s");
+
+    /* 两条速度曲线 */
+    function curve(getv, col) {
+      cctx.strokeStyle = col; cctx.lineWidth = 2.2; cctx.beginPath();
+      for (var k = 0; k <= n; k++) {
+        var X = px(vs[k].t), Y = py(getv(vs[k]));
+        if (k === 0) cctx.moveTo(X, Y); else cctx.lineTo(X, Y);
+      }
+      cctx.stroke();
+    }
+    curve(function (s) { return s.vA; }, "#2b5cab");
+    curve(function (s) { return s.vB; }, "#ff8c1a");
+
+    /* 游标与当前点 */
+    var cx = px(t);
+    cctx.strokeStyle = "#b3261e"; cctx.lineWidth = 1.4;
+    cctx.beginPath(); cctx.moveTo(cx, mg.t); cctx.lineTo(cx, H - mg.b); cctx.stroke();
+    var S = PHYS_CORE.stateAt(P, t);
+    [[S.vA, "#2b5cab"], [S.vB, "#ff8c1a"]].forEach(function (d) {
+      cctx.fillStyle = d[1]; cctx.strokeStyle = "#fff"; cctx.lineWidth = 1.6;
+      cctx.beginPath(); cctx.arc(cx, py(d[0]), 4.2, 0, Math.PI * 2); cctx.fill(); cctx.stroke();
+    });
+  }
+
+  /* ---------- 读数、能量条 ---------- */
+  function updateReadouts() {
+    var S = PHYS_CORE.stateAt(P, t);
+    $("roT").innerHTML = fmt(S.t, 3) + '<span class="u">s</span>';
+    $("roVA").innerHTML = fmt(S.vA, 3) + '<span class="u">m/s</span>';
+    $("roVB").innerHTML = fmt(S.vB, 3) + '<span class="u">m/s</span>';
+    $("roVcm").innerHTML = fmt(P.vcm, 3) + '<span class="u">m/s</span>';
+    $("roU").innerHTML = fmt(S.u, 3) + '<span class="u">m/s</span>';
+    $("roDelta").innerHTML = fmt(S.delta, 3) + '<span class="u">m</span>';
+    $("roP").innerHTML = fmt(S.p, 3) + '<span class="u">kg·m/s</span>';
+    $("roE").innerHTML = fmt(S.Etot, 3) + '<span class="u">J</span>';
+
+    var E0 = PHYS_CORE.stateAt(P, 0).Etot || 1;
+    var set = function (id, val) { $(id).style.width = Math.max(0, Math.min(100, val / E0 * 100)) + "%"; };
+    set("barA", S.KEA); set("barB", S.KEB); set("barP", S.Ep); set("barE", S.Etot);
+    $("numA").textContent = fmt(S.KEA, 3) + " J";
+    $("numB").textContent = fmt(S.KEB, 3) + " J";
+    $("numP").textContent = fmt(S.Ep, 3) + " J";
+    $("numE").textContent = fmt(S.Etot, 3) + " J";
+  }
+
+  /* ---------- 核验表 ---------- */
+  function buildChecks() {
+    var s0 = PHYS_CORE.stateAt(P, 0),
+        s0b = PHYS_CORE.stateAt(P, P.t0),
+        sts = PHYS_CORE.stateAt(P, P.ts),
+        s3 = PHYS_CORE.stateAt(P, TEND);
+    var sep = EXPECT.separation(P);
+    var dmaxE = EXPECT.deltaMax(P), epE = EXPECT.epMax(P), sAe = EXPECT.sAatT0(P);
+
+    /* 动量与能量全程漂移；压缩量峰值直接扫一遍 */
+    var n = 600, dpmax = 0, demax = 0, dmaxAct = 0, i, s;
+    for (i = 0; i <= n; i++) {
+      s = PHYS_CORE.stateAt(P, TEND * i / n);
+      dpmax = Math.max(dpmax, Math.abs(s.p - s0.p));
+      demax = Math.max(demax, Math.abs(s.Etot - s0.Etot));
+      dmaxAct = Math.max(dmaxAct, s.delta);
+    }
+    var sp = PHYS_CORE.stateAt(P, P.ts + 0.3 * (TEND - P.ts)),
+        sp2 = PHYS_CORE.stateAt(P, P.ts + 0.6 * (TEND - P.ts));
+    var diffU = Math.abs(sp2.vA - sp.vA) + Math.abs(sp2.vB - sp.vB);
+
+    function row(name, expStr, expVal, actStr, actVal, tol) {
+      var ok = Math.abs(actVal - expVal) <= tol;
+      return "<tr><td>" + name + "</td><td class='num'>" + expStr + "</td><td class='num'>" + actStr +
+             "</td><td class='c'><span class='" + (ok ? "pass" : "fail") + "'>" + (ok ? "一致 ✓" : "不一致 ✗") + "</span></td></tr>";
+    }
+    var h = [];
+    /* 时间轴必须覆盖分离之后：T_end = ⌈t_s⌉ + 1 */
+    h.push(row("时间轴末端 T_end = ⌈t_s⌉ + 1（保证分离之后仍有可见过程）",
+      fmt(Math.ceil(P.ts) + 1, 3) + " s", Math.ceil(P.ts) + 1, fmt(P.TEND, 3) + " s", P.TEND, 1e-12));
+    h.push(row("分离时刻落在时间轴之内（t_s < T_end）", "1（是）", 1, (P.ts < P.TEND ? "1（是）" : "0（否）"), (P.ts < P.TEND ? 1 : 0), 0));
+    h.push(row("t=0 总动量 p = m_A v_A0 + m_B v_B0", fmt(P.mA * P.vA0 + P.mB * P.vB0, 3), s0.p, fmt(s0.p, 6), s0.p, 1e-9));
+    h.push(row("t=0 总机械能 E = ½m_A v_A0² + ½m_B v_B0²", fmt(0.5 * P.mA * P.vA0 * P.vA0 + 0.5 * P.mB * P.vB0 * P.vB0, 3), s0.Etot, fmt(s0.Etot, 6), s0.Etot, 1e-9));
+    h.push(row("t=t₀ 时两者速度相等（v_A − v_B）", "0.000", 0, fmt(s0b.vA - s0b.vB, 6), s0b.vA - s0b.vB, 1e-9));
+    h.push(row("共速速度 = 质心速度 v_cm", fmt(P.vcm, 6), P.vcm, fmt(s0b.vA, 6), s0b.vA, 1e-9));
+    h.push(row("弹性势能峰值 E_p = ½μu₀²", fmt(epE, 3), epE, fmt(s0b.Ep, 3), s0b.Ep, 1e-2));
+    h.push(row("最大压缩量 δ_max = u₀√(μ/k)", fmt(dmaxE, 3), dmaxE, fmt(dmaxAct, 3), dmaxAct, 1e-3));
+    h.push(row("绘图原长必须大于最大压缩量（不穿透）", "1（是）", 1, (P.L0 > P.dmax ? "1（是）L₀ = " + fmt(P.L0, 3) + " m" : "0（否）"), (P.L0 > P.dmax ? 1 : 0), 0));
+    h.push(row("t₀ 内 A 的位移 s_A = v_cm t₀ − (m_B/M)δ_max", fmt(sAe, 3), sAe, fmt(s0b.sA, 3), s0b.sA, 1e-3));
+    h.push(row("分离后 v_A = 弹性碰撞公式 (m_A−m_B)v_A0+2m_B v_B0)/M", fmt(sep.vA, 3), sep.vA, fmt(sts.vA, 6), sts.vA, 1e-6));
+    h.push(row("分离后 v_B = 弹性碰撞公式 ((m_B−m_A)v_B0+2m_A v_A0)/M", fmt(sep.vB, 3), sep.vB, fmt(sts.vB, 6), sts.vB, 1e-6));
+    h.push(row("分离后两个时刻速度之差为零（各自匀速）", "0.000", 0, fmt(diffU, 6), diffU, 1e-9));
+    h.push(row("分离时刻相对速度 u(t_s) = −u₀", fmt(-P.u0, 3), -P.u0, fmt(sts.u, 6), sts.u, 1e-6));
+    h.push(row("分离后 B 与弹簧左端出现空隙（t = T_end 时的空隙）", "> 0", 1,
+      (s3.springGap > 1e-9 ? "1（是）" + fmt(s3.springGap, 3) + " m" : "0（否）"), (s3.springGap > 1e-9 ? 1 : 0), 0));
+    h.push(row("接触期间弹簧左端始终不越过 B 的右边缘（最小空隙）", "≥ 0", 0,
+      fmt(Math.min.apply(null, (function () {
+        var a = [], k;
+        for (k = 0; k <= 400; k++) a.push(PHYS_CORE.stateAt(P, P.ts * k / 400).springGap);
+        return a;
+      })()), 12), Math.min.apply(null, (function () {
+        var a = [], k;
+        for (k = 0; k <= 400; k++) a.push(PHYS_CORE.stateAt(P, P.ts * k / 400).springGap);
+        return a;
+      })()), 1e-9));
+    h.push(row("全程动量守恒（|p(t) − p(0)| 的最大值）", "0.000", 0, fmt(dpmax, 12), dpmax, 1e-9));
+    h.push(row("全程机械能守恒（|E(t) − E(0)| 的最大值）", "0.000", 0, fmt(demax, 12), demax, 1e-9));
+    $("checkBody").innerHTML = h.join("");
+  }
+
+  /* ---------- 渲染入口 ---------- */
+  function render(full) {
+    drawScene();
+    drawChart();
+    updateReadouts();
+    if (full) buildChecks();
+  }
+
+  function updateCondLine() {
+    $("condLine").innerHTML = "当前条件：<b>m<sub>A</sub> = " + fmt(P.mA, 3) + " kg</b>，" +
+      "<b>m<sub>B</sub> = " + fmt(P.mB, 3) + " kg</b>，<b>v<sub>A0</sub> = " + fmt(P.vA0, 3) + " m/s</b>，" +
+      "<b>v<sub>B0</sub> = " + fmt(P.vB0, 3) + " m/s</b>，" +
+      "<b>k = " + fmt(P.k, 5) + " N/m</b>　→　μ = " + fmt(P.mu, 5) + " kg，ω = " + fmt(P.omega, 5) +
+      " rad/s，t₀ = " + fmt(P.t0, 5) + " s，t<sub>s</sub> = " + fmt(P.ts, 5) + " s，时间轴 0—" + fmt(P.TEND, 3) +
+      " s；绘图弹簧原长 " + fmt(P.L0, 2) + " m（绘图设定）。";
+  }
+
+  /* ---------- 关键时刻按钮：随分离时刻生成 ---------- */
+  function buildJumpButtons() {
+    var box = $("jumpBox");
+    box.innerHTML = '<b>关键时刻：</b>';
+    if (!P) return;
+    var items = [
+      ["0 s", 0],
+      ["t₀ = " + fmt(P.t0, 3) + " s", P.t0],
+      ["t_s = " + fmt(P.ts, 3) + " s（分离）", P.ts],
+      ["末端 = " + fmt(P.TEND, 3) + " s", P.TEND]
+    ];
+    items.forEach(function (it) {
+      var btn = document.createElement("button");
+      btn.className = "pbtn";
+      btn.textContent = it[0];
+      btn.addEventListener("click", function () {
+        if (!P) return;
+        setPlaying(false);
+        t = Math.min(it[1], P.TEND);
+        Array.prototype.forEach.call(box.querySelectorAll(".pbtn"), function (o) { o.classList.remove("on"); });
+        btn.classList.add("on");
+        render(false);
+      });
+      box.appendChild(btn);
+    });
+  }
+
+  /* ---------- 加载与交互 ---------- */
+  function load(keepTime) {
+    var r = readParams();
+    if (!r.ok) {
+      P = null;
+      playing = false;
+      $("btnPlay").disabled = true; $("btnPlay").textContent = "播放";
+      $("jumpBox").innerHTML = '<b>关键时刻：</b>';
+      ["roT", "roVA", "roVB", "roVcm", "roU", "roDelta", "roP", "roE"].forEach(function (id) { $(id).innerHTML = "—"; });
+      ["barA", "barB", "barP", "barE"].forEach(function (id) { $(id).style.width = "0%"; });
+      ["numA", "numB", "numP", "numE"].forEach(function (id) { $(id).textContent = "—"; });
+      sctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      sctx.clearRect(0, 0, scene.width / DPR, scene.height / DPR);
+      sctx.fillStyle = "#fbfcfd"; sctx.fillRect(0, 0, scene.width / DPR, scene.height / DPR);
+      cctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      cctx.clearRect(0, 0, chart.width / DPR, chart.height / DPR);
+      $("checkBody").innerHTML = "<tr><td colspan='4'>参数不满足模型的适用条件，未进行核验。</td></tr>";
+      showMsg(r.p && r.p.reason && r.p.reason.indexOf("没有追上") >= 0 ? "warn" : "bad",
+        "<b>拒绝模拟：</b>" + r.why + "。请把参数改回可接触的范围（v<sub>B0</sub> &gt; v<sub>A0</sub>、质量与 k 大于 0）。");
+      return;
+    }
+    P = r.p;
+    TEND = P.TEND;                       /* 时间轴末端随 t_s 联动 */
+    if (!keepTime) t = 0;
+    if (t > TEND) t = TEND;
+    setView(P);
+    $("btnPlay").disabled = false;
+    /* 绘图设定提示：弹簧原长如何取 */
+    if (P.L0grew) {
+      showMsg("info", "<b>绘图设定：</b>这组参数下最大压缩量 δ<sub>max</sub> = " + fmt(P.dmax, 3) +
+        " m，已超过基准原长 " + fmt(P.L0Hint, 2) + " m，所以<b>绘图用的弹簧原长自动加长到 " + fmt(P.L0, 2) +
+        " m</b>（留 20% 余量）。这只改变画面比例，不影响任何速度、能量与位移；分离后弹簧长度回到这个绘图原长。");
+    } else {
+      hideMsg();
+    }
+    buildJumpButtons();
+    updateCondLine();
+    render(true);
+  }
+
+  /* 动画循环 */
+  function tick(ts) {
+    if (playing && P) {
+      if (!lastFrame) lastFrame = ts;
+      var dt = Math.min((ts - lastFrame) / 1000, 0.05);
+      lastFrame = ts;
+      t += dt * speed;
+      if (t >= TEND) { t = TEND; setPlaying(false); }
+      render(false);
+    } else {
+      lastFrame = ts;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function setPlaying(on) {
+    playing = on;
+    $("btnPlay").textContent = on ? "暂停" : "播放";
+    lastFrame = 0;
+  }
+  function setSpeedTo(v) {
+    /* 与纸带页一致：倍率只改变观看节奏，不改变同一模拟时刻的物理状态 */
+    speed = v;
+  }
+
+  $("btnPlay").addEventListener("click", function () {
+    if (!P) return;
+    if (t >= TEND) t = 0;                 /* 已到末端则从头开始 */
+    setPlaying(!playing);
+  });
+  function clearJumpOn() {
+    Array.prototype.forEach.call($("jumpBox").querySelectorAll(".pbtn"), function (o) { o.classList.remove("on"); });
+  }
+  $("btnReset").addEventListener("click", function () {
+    if (!P) return;
+    setPlaying(false); t = 0;
+    clearJumpOn();
+    render(false);
+  });
+  $("selSpeed").addEventListener("change", function () { setSpeedTo(parseFloat(this.value)); });
+
+  ["inmA", "inmB", "invA0", "invB0", "ink"].forEach(function (id) {
+    $(id).addEventListener("change", function () {
+      setPlaying(false);
+      clearJumpOn();
+      load(false);                        /* 参数改变：复位当前时间 */
+    });
+  });
+  $("btnDefault").addEventListener("click", function () {
+    $("inmA").value = DEFAULTS.mA; $("inmB").value = DEFAULTS.mB;
+    $("invA0").value = DEFAULTS.vA0; $("invB0").value = DEFAULTS.vB0;
+    $("ink").value = DEFAULTS.k;
+    $("selSpeed").value = "0.25"; setSpeedTo(0.25);
+    setPlaying(false);
+    load(false);
+  });
+
+  function onResize() {
+    /* 下限 250 px：保证质心标签那一层仍在画布之内 */
+    resize(scene, Math.max(250, Math.round(Math.min(window.innerWidth - 60, 1000) / 3.0)));
+    resize(chart, 250);
+    if (P) render(true);
+  }
+  window.addEventListener("resize", onResize);
+
+  onResize();
+  load(false);
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="转盘式法拉第电磁感应模拟实验：磁铁随光盘转过固定线圈，改变匝数、磁铁个数、转速、线圈距离和传感器采样率，观察磁通量与感应电动势，记录数据并作图。">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="icon" href="data:,">
+  <title>转盘式法拉第电磁感应实验 | 模拟实验室</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --yucai-blue: #0b63c7; --yucai-50: #eef7ff; --yucai-100: #d8ecff; --yucai-200: #b7dcff;
+      --yucai-700: #074f9f; --yucai-900: #0d3969;
+      --ink: #102033; --lab: #f5f8fb; --slate-50: #f8fafc; --slate-100: #f1f5f9; --slate-200: #e2e8f0;
+      --slate-300: #cbd5e1; --slate-500: #64748b; --slate-600: #475569; --slate-700: #334155;
+      --signal: #f4a51c; --magnet: #c3543d; --flux: #008f9e; --emf: #2465a8; --coil: #a0612a;
+      --surface: rgba(255, 255, 255, 0.94); --shadow-soft: 0 18px 60px rgba(16, 32, 51, 0.12);
+      --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--lab); color: var(--ink); font-family: var(--font-sans); line-height: 1.6; }
+    a { color: var(--yucai-blue); }
+    .page-shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    .focus-ring:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--yucai-200); outline-offset: 2px; }
+    .site-header { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.96); border-bottom: 1px solid var(--slate-200); backdrop-filter: blur(8px); }
+    .header-row { display: flex; align-items: center; justify-content: space-between; min-height: 64px; gap: 16px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; font-weight: 800; }
+    .desktop-nav { display: flex; gap: 4px; }
+    .desktop-nav a, .mobile-nav a { color: var(--slate-700); text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 15px; white-space: nowrap; }
+    .desktop-nav a.active, .mobile-nav a.active { background: var(--yucai-50); color: var(--yucai-900); font-weight: 700; }
+    .mobile-nav { display: none; overflow-x: auto; gap: 4px; padding-bottom: 8px; }
+    .hero { padding: 36px 0 20px; }
+    .hero-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: start; }
+    .eyebrow { margin: 0 0 6px; color: var(--yucai-blue); font-weight: 800; letter-spacing: .12em; font-size: 13px; }
+    h1 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 40px); line-height: 1.2; }
+    .hero-copy { margin: 0; color: var(--slate-700); font-size: 17px; }
+    .model-card { background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; padding: 18px 20px; box-shadow: var(--shadow-soft); }
+    .model-card h2 { margin: 0 0 8px; font-size: 18px; }
+    .model-card p { margin: 0 0 8px; color: var(--slate-700); font-size: 15px; }
+    .formula { overflow-x: auto; font-size: 18px; }
+    .main-section { padding: 8px 0 32px; }
+    .tool-surface { background: var(--surface); border: 1px solid var(--slate-200); border-radius: 8px; box-shadow: var(--shadow-soft); padding: 14px; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--slate-200); }
+    button, select { font: inherit; font-size: 15px; min-height: 38px; border-radius: 6px; border: 1px solid var(--slate-300); background: #fff; color: var(--ink); padding: 6px 12px; cursor: pointer; }
+    button.primary { background: var(--yucai-blue); color: #fff; border-color: var(--yucai-blue); font-weight: 700; min-width: 84px; }
+    button.preset { background: var(--yucai-50); border-color: var(--yucai-100); color: var(--yucai-900); }
+    .toolbar .spacer { flex: 1; }
+    .time-readout { font-variant-numeric: tabular-nums; color: var(--slate-700); font-size: 15px; }
+    .workspace { display: grid; grid-template-columns: 3fr 1fr; gap: 14px; padding-top: 12px; }
+    .stage svg { display: block; width: 100%; height: auto; background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; }
+    #deviceCanvas { aspect-ratio: 900 / 300; }
+    #graphCanvas { aspect-ratio: 900 / 430; margin-top: 10px; }
+    .controls { display: flex; flex-direction: column; gap: 12px; }
+    .control label, .control .label { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .control output { font-weight: 700; color: var(--yucai-900); font-variant-numeric: tabular-nums; }
+    .control input[type=range] { width: 100%; accent-color: var(--yucai-blue); }
+    .control select { width: 100%; }
+    .control .hint { margin: 2px 0 0; font-size: 13px; color: var(--slate-500); }
+    .checks { display: flex; flex-direction: column; gap: 6px; font-size: 15px; }
+    .checks label { display: flex; gap: 8px; align-items: center; font-weight: 500; }
+    .radios { display: flex; gap: 12px; font-size: 15px; flex-wrap: wrap; }
+    .readouts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .readout { background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 6px; padding: 8px 10px; }
+    .readout span { display: block; font-size: 13px; color: var(--slate-600); }
+    .readout strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+    .record { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+    .record-panel { background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; padding: 12px; }
+    .record-panel h3 { margin: 0 0 8px; font-size: 17px; }
+    .record-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+    th, td { border-bottom: 1px solid var(--slate-200); padding: 5px 6px; text-align: right; }
+    th:first-child, td:first-child { text-align: left; }
+    .table-wrap { max-height: 220px; overflow: auto; }
+    #fitCanvas { width: 100%; height: auto; aspect-ratio: 520 / 300; display: block; }
+    .fit-text { font-size: 14px; color: var(--slate-700); margin: 6px 0 0; }
+    .explain { padding: 8px 0 24px; }
+    .explain-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .card { background: #fff; border: 1px solid var(--slate-200); border-radius: 8px; padding: 18px 20px; }
+    .card h2 { margin: 0 0 10px; font-size: 20px; }
+    .card h3 { margin: 14px 0 6px; font-size: 17px; }
+    .card p, .card li { color: var(--slate-700); font-size: 16px; }
+    .card ol, .card ul { padding-left: 1.3em; margin: 6px 0; }
+    .wide { grid-column: 1 / -1; }
+    .photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .photos figure { margin: 0; }
+    .photos img { width: 100%; height: 200px; object-fit: contain; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: 6px; }
+    .photos figcaption { font-size: 14px; color: var(--slate-600); margin-top: 4px; }
+    .note { font-size: 14px; color: var(--slate-600); }
+    .footer { border-top: 1px solid var(--slate-200); background: #fff; padding: 20px 0; margin-top: 16px; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--slate-600); font-size: 14px; }
+    math { font-size: 1.05em; }
+    @media (max-width: 900px) {
+      .desktop-nav { display: none; } .mobile-nav { display: flex; }
+      .hero-grid, .workspace, .record, .explain-grid { grid-template-columns: 1fr; }
+      .readouts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .photos { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="page-shell header-row">
+      <a class="brand focus-ring" href="/" aria-label="返回育才物理创新实验室首页">
+        <span aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30"><rect x="3" y="3" width="24" height="24" rx="5" fill="#0b63c7"/><path d="M9 17.6 14.2 7.8h2.2l-3.3 6.4h7.9L15.7 24h-2.2l3.5-6.4H9Z" fill="#fff"/><circle cx="21.5" cy="8.2" r="2.3" fill="#f4a51c"/></svg></span>
+        <span>育才物理创新实验室</span>
+      </a>
+      <nav class="desktop-nav" aria-label="主导航">
+        <a class="focus-ring" href="/">首页</a><a class="focus-ring" href="/programming/">在线编程</a><a class="focus-ring" href="/dis/">网页版 DIS</a><a class="focus-ring" href="/photogate-comparison/">光电门对比</a><a class="focus-ring" href="/online-lab/">在线实验室</a><a class="focus-ring active" href="/simulations/" aria-current="page">模拟实验室</a>
+      </nav>
+    </div>
+    <nav class="page-shell mobile-nav" aria-label="移动端主导航">
+      <a class="focus-ring" href="/">首页</a><a class="focus-ring" href="/programming/">在线编程</a><a class="focus-ring" href="/dis/">网页版 DIS</a><a class="focus-ring" href="/photogate-comparison/">光电门对比</a><a class="focus-ring" href="/online-lab/">在线实验室</a><a class="focus-ring active" href="/simulations/" aria-current="page">模拟实验室</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="page-shell hero-grid">
+        <div>
+          <p class="eyebrow">SIMULATION LAB</p>
+          <h1>转盘式法拉第电磁感应实验</h1>
+          <p class="hero-copy">小磁铁贴在光盘边上随光盘转动，从固定线圈前面一次次经过。改变线圈匝数、磁铁个数和转速，测出感应电动势，看它和哪些量成正比；再改变线圈离光盘的距离、传感器每秒采样的点数，看清实验波形为什么是现在这个样子。装置原型是王硕老师的定量探究实验。</p>
+        </div>
+        <aside class="model-card" aria-label="模型核心">
+          <h2>模型核心</h2>
+          <p>磁铁的转角为 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>θ</mi><mo>=</mo><mi>ω</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">\theta=\omega t</annotation></semantics></math></span>。几何条件不变时，穿过每匝线圈的磁通量只随转角变化：</p>
+          <div class="formula"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="script">E</mi><mo>=</mo><mo>−</mo><mi>N</mi><mfrac><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">Φ</mi></mrow><mrow><mi mathvariant="normal">d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mo>−</mo><mi>N</mi><mtext> </mtext><mi>ω</mi><mtext> </mtext><mfrac><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">Φ</mi></mrow><mrow><mi mathvariant="normal">d</mi><mi>θ</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">\mathcal E=-N\frac{\mathrm d\Phi}{\mathrm dt}=-N\,\omega\,\frac{\mathrm d\Phi}{\mathrm d\theta}</annotation></semantics></math></span></div>
+          <p>匝数 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi></mrow><annotation encoding="application/x-tex">N</annotation></semantics></math></span> 加倍、转速 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ω</mi></mrow><annotation encoding="application/x-tex">\omega</annotation></semantics></math></span> 加倍，电动势都加倍；磁铁越强、离线圈越近，<span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mstyle scriptlevel="0" displaystyle="true"><mfrac><mrow><mi mathvariant="normal">d</mi><mi mathvariant="normal">Φ</mi></mrow><mrow><mi mathvariant="normal">d</mi><mi>θ</mi></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\dfrac{\mathrm d\Phi}{\mathrm d\theta}</annotation></semantics></math></span> 越大。</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="main-section">
+      <div class="page-shell">
+        <div class="tool-surface">
+          <div class="toolbar" role="toolbar" aria-label="播放控制">
+            <button id="playPause" class="primary" type="button">播放</button>
+            <button id="reset" type="button">复位</button>
+            <button id="step" type="button" title="暂停时前进一个采样间隔">单步</button>
+            <button id="toAlign" type="button" title="跳到磁铁正对线圈的时刻并暂停">跳到正对</button>
+            <label class="time-readout">观看速度
+              <select id="speed" aria-label="观看速度">
+                <option value="1">1× 实时</option><option value="0.25">0.25× 慢放</option><option value="0.1">0.1× 慢放</option>
+              </select>
+            </label>
+            <span class="spacer"></span>
+            <button id="presetWang" class="preset" type="button">王硕老师的装置</button>
+            <button id="presetNear" class="preset" type="button">线圈贴近光盘</button>
+            <span id="timeReadout" class="time-readout">t = 0.00 s</span>
+          </div>
+
+          <div class="workspace">
+            <div class="stage">
+              <svg id="deviceCanvas" width="900" height="300" role="img" aria-label="装置示意：左为正视图，光盘带着磁铁转动，虚线圆是线圈的位置；右为侧视图，线圈在光盘前方距离 D 处" viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg"></svg>
+              <svg id="graphCanvas" width="900" height="430" role="img" aria-label="上图为单匝磁通量随时间变化，橙色切线表示此刻的变化率；下图为感应电动势，蓝点是传感器采到的点，灰线是模型的连续曲线" viewBox="0 0 900 430" xmlns="http://www.w3.org/2000/svg"></svg>
+            </div>
+            <div class="controls" aria-label="参数调节">
+              <div class="control">
+                <label for="turns">线圈匝数 <output id="turnsOut"></output></label>
+                <select id="turns"><option>100</option><option>200</option><option>400</option><option>800</option><option selected>1400</option><option>1600</option></select>
+                <p class="hint">对应实验室三个可拆卸变压器线圈的接线柱。</p>
+              </div>
+              <div class="control">
+                <label for="magnets">磁铁个数 <output id="magnetsOut"></output></label>
+                <input id="magnets" type="range" min="1" max="10" step="1" value="10">
+                <div class="radios" role="radiogroup" aria-label="磁铁排法">
+                  <label><input type="radio" name="arr" value="stack" checked> 叠成一组</label>
+                  <label><input type="radio" name="arr" value="row"> 沿边缘排开</label>
+                </div>
+              </div>
+              <div class="control">
+                <label for="rpm">转速 <output id="rpmOut"></output></label>
+                <input id="rpm" type="range" min="30" max="180" step="1" value="118">
+                <p class="hint">由转速仪读出，单位 r/min。</p>
+              </div>
+              <div class="control">
+                <label for="dist">线圈到光盘 D <output id="distOut"></output></label>
+                <input id="dist" type="range" min="2" max="25" step="0.5" value="15">
+              </div>
+              <div class="control">
+                <label for="rate">传感器采样 <output id="rateOut"></output></label>
+                <select id="rate"><option value="10" selected>每秒 10 个点</option><option value="20">每秒 20 个点</option><option value="50">每秒 50 个点</option><option value="100">每秒 100 个点</option><option value="1000">每秒 1000 个点</option></select>
+              </div>
+              <div class="checks">
+                <label><input id="quant" type="checkbox" checked> 读数分辨率 0.01 mV</label>
+                <label><input id="showModel" type="checkbox"> 显示模型连续曲线</label>
+                <label><input id="showTangent" type="checkbox" checked> 显示 Φ 的切线</label>
+                <label><input id="lockY" type="checkbox"> 锁定电动势纵轴</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="readouts" aria-live="polite">
+            <div class="readout"><span>磁铁位置</span><strong id="rPos">—</strong></div>
+            <div class="readout"><span>单匝磁通量 Φ</span><strong id="rPhi">—</strong></div>
+            <div class="readout"><span>此刻电动势 ε</span><strong id="rEmf">—</strong></div>
+            <div class="readout"><span>近 3 s 采样最大值</span><strong id="rSampPeak">—</strong></div>
+            <div class="readout"><span>模型真实峰值</span><strong id="rTruePeak">—</strong></div>
+            <div class="readout"><span>半周面积 ∫ε dt</span><strong id="rArea">—</strong></div>
+          </div>
+
+          <div class="record">
+            <div class="record-panel">
+              <h3>记录数据</h3>
+              <div class="record-actions">
+                <label>研究
+                  <select id="studyVar" aria-label="研究变量">
+                    <option value="turns">匝数</option><option value="magnets">磁铁个数</option><option value="rpm" selected>转速</option><option value="dist">线圈距离</option>
+                  </select>
+                </label>
+                <button id="recordBtn" class="primary" type="button">记录读数</button>
+                <button id="clearBtn" type="button">清空</button>
+              </div>
+              <div class="table-wrap">
+                <table><thead><tr><th id="varHead">转速 / (r/min)</th><th>采样读数 / mV</th><th>真实峰值 / mV</th><th>其余条件</th></tr></thead><tbody id="recordBody"></tbody></table>
+              </div>
+              <p class="note">“采样读数”按实验时的做法取：近 3 s 里传感器采到的最大正值。先播放 3 s 以上再记录。</p>
+            </div>
+            <div class="record-panel">
+              <h3>读数随研究变量的变化</h3>
+              <svg id="fitCanvas" width="520" height="300" role="img" aria-label="记录的读数与研究变量的散点图和拟合直线" viewBox="0 0 520 300" xmlns="http://www.w3.org/2000/svg"></svg>
+              <p id="fitText" class="fit-text">记录两个以上的点后显示拟合直线。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="explain">
+      <div class="page-shell explain-grid">
+        <article class="card">
+          <h2>建立模型</h2>
+          <p>光盘在竖直面内转动，磁铁贴在半径 5 cm 处，N 面朝向线圈。线圈固定在光盘前方，轴线对着磁铁转过的最高点，近端面离光盘 <span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>D</mi></mrow><annotation encoding="application/x-tex">D</annotation></semantics></math></span>。每个磁铁看作一个小磁偶极子，算出它的磁场穿过线圈的磁通量。</p>
+          <p>磁铁的磁性强弱、线圈的大小没有在实物上测过，取的是估计值。所以页面上的毫伏数用来看趋势、比条件，和实物的读数不必一一对上。</p>
+          <h3>为什么波形是这样</h3>
+          <p>磁铁接近，磁通量增大；正对线圈时，磁通量最大，这一刻它不再增大，电动势为零；离开时磁通量减小，电动势反号。电动势看的是磁通量变化的快慢，就是上图切线的斜率，不是磁通量本身的大小。</p>
+          <div class="formula"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi mathvariant="normal">Φ</mi><mtext> 大</mtext><mo separator="true">,</mo><mtext> </mtext><mfrac><mrow><mi mathvariant="normal">Δ</mi><mi mathvariant="normal">Φ</mi></mrow><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi></mrow></mfrac><mtext> 不一定大</mtext><mo separator="true">;</mo><mspace width="2em"/><mtext>正如 </mtext><mi>v</mi><mtext> 大</mtext><mo separator="true">,</mo><mtext> </mtext><mfrac><mrow><mi mathvariant="normal">Δ</mi><mi>v</mi></mrow><mrow><mi mathvariant="normal">Δ</mi><mi>t</mi></mrow></mfrac><mtext> 不一定大</mtext></mrow><annotation encoding="application/x-tex">\Phi\ \text{大},\ \frac{\Delta\Phi}{\Delta t}\ \text{不一定大};\qquad \text{正如}\ v\ \text{大},\ \frac{\Delta v}{\Delta t}\ \text{不一定大}</annotation></semantics></math></span></div>
+          <p>线圈贴近光盘时，磁铁只在经过的一小段时间里影响线圈，波形是一对尖脉冲，中间有很长的平静段。线圈离得远时，磁铁转到哪里都在影响它，波形在整圈里都起伏。王硕老师的实测波形没有平静段，读数又只有零点几到一两毫伏，说明线圈离光盘不近。</p>
+        </article>
+        <article class="card">
+          <h2>三个关系</h2>
+          <div class="formula"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi mathvariant="script">E</mi><mi>max</mi><mo>⁡</mo></msub><mo>∝</mo><mi>N</mi><mo separator="true">,</mo><mspace width="2em"/><msub><mi mathvariant="script">E</mi><mi>max</mi><mo>⁡</mo></msub><mo>∝</mo><mi>ω</mi></mrow><annotation encoding="application/x-tex">\mathcal E_{\max}\propto N,\qquad \mathcal E_{\max}\propto \omega</annotation></semantics></math></span></div>
+          <p>磁铁叠成一组时，磁通量随个数成倍增加，电动势也成倍增加。沿光盘边缘排开时，各个磁铁经过线圈的时刻错开，电动势就不再严格成倍。这正是王硕老师在误差分析里写的“磁铁个数与磁通量不严格成正比”。</p>
+          <h3>面积和转速无关</h3>
+          <div class="formula"><span class="katex"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mo>∫</mo><mtext>半周</mtext></msub><mi mathvariant="script">E</mi><mtext> </mtext><mi mathvariant="normal">d</mi><mi>t</mi><mo>=</mo><mi>N</mi><mrow><mo fence="true">(</mo><msub><mi mathvariant="normal">Φ</mi><mi>max</mi><mo>⁡</mo></msub><mo>−</mo><msub><mi mathvariant="normal">Φ</mi><mi>min</mi><mo>⁡</mo></msub><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">\int_{\text{半周}}\mathcal E\,\mathrm dt=N\left(\Phi_{\max}-\Phi_{\min}\right)</annotation></semantics></math></span></div>
+          <p>转速加倍，峰值加倍，一个半周的时间减半，面积不变。面积反映磁通量变化了多少，峰值反映变化得多快。</p>
+          <h3>每秒只采 10 个点会怎样</h3>
+          <p>实验用的微电压传感器每秒采 10 个点。转速 120 r/min 时一圈 0.5 s，只采到 5 个点，连起来是折线，峰值常常落在两个点之间，读数偏小；采样点和峰尖慢慢错开，读数会一会儿高一会儿低。把采样调到每秒 100 个点，波形和峰值就稳定了。</p>
+        </article>
+        <article class="card">
+          <h2>观察任务</h2>
+          <ol>
+            <li>暂停在“跳到正对”的位置：磁通量多大？切线是什么方向？电动势是多少？</li>
+            <li>“研究”选转速，在 60 到 150 r/min 之间记录 5 个点。读数和转速成正比吗？“半周面积”变了吗？</li>
+            <li>保持每秒 10 个点，转速调到 147 r/min，看采样点的峰值怎样慢慢起伏，大约多少秒起伏一次？改成每秒 100 个点再看。</li>
+            <li>点“线圈贴近光盘”，再慢慢把 D 拉远：波形从什么样变成什么样？读数随 D 变化有多快？</li>
+            <li>磁铁改为“沿边缘排开”，记录 2 到 10 个磁铁的读数，还是正比吗？</li>
+          </ol>
+        </article>
+        <article class="card">
+          <h2>易错提醒</h2>
+          <ul>
+            <li>磁通量最大时，电动势恰好为零。电动势取决于磁通量的变化率。</li>
+            <li>转速仪测的是转得多快；只有磁铁、线圈的位置都不变时，转速才和磁通量的变化率成正比。</li>
+            <li>“磁铁加倍，磁通量加倍”要看磁铁怎样放。</li>
+            <li>两组实验之间如果线圈挪了位置，读数可以差好几倍；只在同一组里比较。</li>
+            <li>传感器画出的三角形是稀疏的点连成的，不是电压真实的形状。</li>
+            <li>页面的正负号按“线圈的正方向从光盘指向线圈”规定；实测的正负还取决于传感器怎样接线，比的是“接近和离开反号”。</li>
+          </ul>
+        </article>
+        <article class="card wide">
+          <h2>真实装置与实测波形</h2>
+          <div class="photos">
+            <figure><img src="media/device-overview.jpg" alt="王硕老师的实验装置全景：右边是光盘、减速电机和调速板，左边是线圈、微电压传感器和电脑，前面是转速仪"><figcaption>装置全景。光盘上贴磁铁，由调速电机带着转；线圈固定，接微电压传感器。</figcaption></figure>
+            <figure><img src="media/coil-and-disc.jpg" alt="线圈在前，光盘在后，光盘竖直转动"><figcaption>线圈与光盘：光盘竖直转动，线圈对着光盘。</figcaption></figure>
+            <figure><img src="media/waveform-147rpm.png" alt="转速约 147 转每分时传感器记录的电压波形，纵轴单位毫伏，每 0.1 秒一个点"><figcaption>实测波形（约 147 r/min，1400 匝，10 个磁铁）。点间隔 0.1 s，峰值随采样位置起伏。</figcaption></figure>
+          </div>
+          <p class="note">照片和波形来自王硕老师的《法拉第电磁感应定律（实验课）》，这节课 2021 年被评为广东省中小学实验精品课；装置研究见管佩磊、王硕《新教材实施下的高中物理实验创新研究——以“法拉第电磁感应定律”教学为例》（《中学物理教学参考》2021 年第 4 期）。实测波形只在这里展示，没有用来标定页面上的模型。</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="page-shell footer-inner">
+      <div><strong>育才物理创新实验室</strong> · 公众号：育才一中物理创新实验室</div>
+      <div>面向物理实验、创新教具和学生作品发布的校园实验室门户</div>
+    </div>
+  </footer>
+
+  <script src="faraday-model.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const M = window.FaradayModel;
+    const C = { ink: "#102033", grid: "#e2e8f0", axis: "#64748b", magnet: "#c3543d", flux: "#008f9e", emf: "#2465a8", coil: "#a0612a", signal: "#f4a51c", model: "#94a3b8", disc: "#eef2f7" };
+    const WINDOW = 3; // 图上显示最近 3 s
+    const state = {
+      turns: 1400, magnets: 10, arrangement: "stack", rpm: 118, dist: 15, rate: 10,
+      quant: true, showModel: false, showTangent: true, lockY: false,
+      t: 0, playing: false, speed: 1, exp: null, yScale: null, records: [], sampleOffset: 0.037
+    };
+
+    function rebuild(keepScale) {
+      state.exp = M.createExperiment({ turns: state.turns, magnets: state.magnets, rpm: state.rpm, distance: state.dist / 100, arrangement: state.arrangement });
+      state.t = 0;
+      const peak = state.exp.peakEmf() * 1000;
+      if (!state.lockY || !keepScale || !state.yScale) state.yScale = niceMax(peak * 1.15);
+      updateOutputs();
+      draw();
+    }
+
+    function niceMax(v) {
+      const p = Math.pow(10, Math.floor(Math.log10(v)));
+      const f = v / p;
+      const n = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+      return n * p;
+    }
+
+    function fmt(v, d) { return Number.isFinite(v) ? v.toFixed(d) : "—"; }
+    function mvFmt(v) { if (Math.abs(v) < 5e-4) v = 0; const a = Math.abs(v); return a >= 100 ? v.toFixed(0) : a >= 10 ? v.toFixed(1) : a >= 1 ? v.toFixed(2) : v.toFixed(3); }
+
+    function updateOutputs() {
+      $("turnsOut").textContent = state.turns + " 匝";
+      $("magnetsOut").textContent = state.magnets + " 个";
+      $("rpmOut").textContent = state.rpm + " r/min";
+      $("distOut").textContent = state.dist.toFixed(1) + " cm";
+      $("rateOut").textContent = state.rate + " Hz";
+      $("rTruePeak").textContent = mvFmt(state.exp.peakEmf() * 1000) + " mV";
+      $("rArea").textContent = mvFmt(state.exp.lobeArea() * 1000) + " mV·s";
+    }
+
+    function samplesIn(t0, t1) {
+      const out = [], res = state.quant ? 1e-5 : 0;
+      const k0 = Math.max(0, Math.ceil((t0 - state.sampleOffset) * state.rate));
+      const k1 = Math.floor((t1 - state.sampleOffset) * state.rate);
+      for (let k = k0; k <= k1; k++) out.push(M.sampleAt(state.exp, k, state.rate, state.sampleOffset, res));
+      return out;
+    }
+
+    function positionLabel(theta) {
+      const a = ((theta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      const deg = a * 180 / Math.PI;
+      if (deg < 4 || deg > 356) return "正对线圈";
+      if (deg > 270) return "接近线圈";
+      if (deg < 90) return "离开线圈";
+      return "远离线圈";
+    }
+
+    // 矢量绘图：沿用原来的逻辑坐标和模型计算，文字、曲线不经过位图放大。
+    function setupCanvas(svg) {
+      const NS = "http://www.w3.org/2000/svg";
+      const W = +svg.getAttribute("width"), H = +svg.getAttribute("height");
+      svg.replaceChildren();
+      const make = (tag, attrs = {}) => {
+        const el = document.createElementNS(NS, tag);
+        for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, String(value));
+        return el;
+      };
+      const defs = make("defs"); svg.append(defs);
+      let state = {fillStyle:"#000",strokeStyle:"#000",lineWidth:1,globalAlpha:1,font:"10px sans-serif",textAlign:"left",textBaseline:"alphabetic",transform:"",dash:[],clip:""};
+      const stack = []; let path = "", serial = 0;
+      const attrs = (fill, stroke) => ({fill:fill?state.fillStyle:"none",stroke:stroke?state.strokeStyle:"none","stroke-width":state.lineWidth,opacity:state.globalAlpha,...(state.transform?{transform:state.transform}:{}),...(state.dash.length?{"stroke-dasharray":state.dash.join(" ")}:{})});
+      const append = (el) => {
+        if (state.clip) { const group=make("g",{"clip-path":`url(#${state.clip})`});group.append(el);svg.append(group); }
+        else svg.append(el);
+      };
+      const context = {
+        beginPath(){path="";},
+        moveTo(x,y){path+=`M${x},${y} `;},
+        lineTo(x,y){path+=`L${x},${y} `;},
+        closePath(){path+="Z ";},
+        rect(x,y,w,h){path+=`M${x},${y}h${w}v${h}h${-w}Z `;},
+        arc(x,y,r,start,end){
+          const span=end-start, sx=x+r*Math.cos(start), sy=y+r*Math.sin(start);
+          if(Math.abs(span)>=2*Math.PI-1e-8){path+=`M${x+r},${y}a${r},${r} 0 1,0 ${-2*r},0a${r},${r} 0 1,0 ${2*r},0 `;}
+          else path+=`M${sx},${sy}A${r},${r} 0 ${Math.abs(span)>Math.PI?1:0},${span>=0?1:0} ${x+r*Math.cos(end)},${y+r*Math.sin(end)} `;
+        },
+        stroke(){if(path)append(make("path",{d:path,...attrs(false,true)}));},
+        fill(){if(path)append(make("path",{d:path,...attrs(true,false)}));},
+        fillRect(x,y,width,height){append(make("rect",{x,y,width,height,...attrs(true,false)}));},
+        strokeRect(x,y,width,height){append(make("rect",{x,y,width,height,...attrs(false,true)}));},
+        fillText(value,x,y){const el=make("text",{x,y,fill:state.fillStyle,opacity:state.globalAlpha,"text-anchor":state.textAlign==="center"?"middle":state.textAlign==="right"?"end":"start","dominant-baseline":state.textBaseline==="middle"?"central":"alphabetic",...(state.transform?{transform:state.transform}:{})});el.style.font=state.font;el.textContent=String(value);append(el);},
+        save(){stack.push({...state,dash:[...state.dash]});},
+        restore(){if(stack.length)state=stack.pop();},
+        translate(x,y){state.transform+=` translate(${x} ${y})`;},
+        rotate(angle){state.transform+=` rotate(${angle*180/Math.PI})`;},
+        setLineDash(values){state.dash=[...values];},
+        clip(){const id=`${svg.id}-clip-${++serial}`;const el=make("clipPath",{id,clipPathUnits:"userSpaceOnUse"});el.append(make("path",{d:path}));defs.append(el);state.clip=id;},
+      };
+      const ctx = new Proxy(context,{get(target,key){return key in target?target[key]:state[key];},set(target,key,value){state[key]=value;return true;}});
+      return {ctx,W,H};
+    }
+
+    function arrow(ctx, x1, y1, x2, y2, color, w) {
+      ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w || 2;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const a = Math.atan2(y2 - y1, x2 - x1), s = 9;
+      ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - s * Math.cos(a - 0.4), y2 - s * Math.sin(a - 0.4)); ctx.lineTo(x2 - s * Math.cos(a + 0.4), y2 - s * Math.sin(a + 0.4)); ctx.closePath(); ctx.fill();
+    }
+
+    function drawDevice() {
+      const { ctx, W, H } = setupCanvas($("deviceCanvas"));
+      const exp = state.exp, g = M.GEOMETRY, theta = exp.theta(state.t);
+      // 正视图
+      const cx = 200, cy = 160, s = 1800; // px per m
+      ctx.font = "600 16px " + getComputedStyle(document.body).fontFamily;
+      ctx.fillStyle = C.ink; ctx.fillText("正视图（对着线圈看）", 20, 26);
+      ctx.fillStyle = C.disc; ctx.strokeStyle = C.axis; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, g.discRadius * s, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, 5, 0, 2 * Math.PI); ctx.fillStyle = C.axis; ctx.fill();
+      // 旋转方向
+      ctx.strokeStyle = C.axis; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(cx, cy, 34, -2.3, -0.9); ctx.stroke();
+      arrow(ctx, cx + 34 * Math.cos(-1.0), cy + 34 * Math.sin(-1.0), cx + 34 * Math.cos(-0.85), cy + 34 * Math.sin(-0.85), C.axis, 1.5);
+      // 线圈投影（轨道最高点）
+      const coilX = cx, coilY = cy - g.orbitRadius * s;
+      ctx.setLineDash([6, 5]); ctx.strokeStyle = C.coil; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(coilX, coilY, g.coilRadius * s, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = C.coil; ctx.font = "600 15px " + getComputedStyle(document.body).fontFamily;
+      ctx.fillText("线圈位置", coilX + g.coilRadius * s + 8, coilY - 18);
+      // 磁铁
+      const groups = exp.arrangement === "row" ? exp.magnets : 1;
+      for (let j = 0; j < groups; j++) {
+        const ang = theta + (j - (groups - 1) / 2) * (g.magnetPitch / g.orbitRadius);
+        const x = cx + g.orbitRadius * s * Math.sin(ang), y = cy - g.orbitRadius * s * Math.cos(ang);
+        const size = exp.arrangement === "row" ? 16 : 18 + Math.min(10, exp.magnets) * 1.2;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(ang);
+        ctx.fillStyle = C.magnet; ctx.fillRect(-size / 2, -size / 2, size, size);
+        ctx.fillStyle = "#fff"; ctx.font = "700 13px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("N", 0, 1);
+        ctx.restore();
+      }
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = C.magnet; ctx.font = "600 15px " + getComputedStyle(document.body).fontFamily;
+      ctx.fillText(exp.arrangement === "row" ? exp.magnets + " 个磁铁沿边缘排开" : exp.magnets + " 个磁铁叠成一组", 20, H - 16);
+
+      // 侧视图
+      const ox = 470, oy = 160, sx = Math.min(16, 300 / (state.dist + 4)) * 100; // px per m
+      ctx.fillStyle = C.ink; ctx.font = "600 16px " + getComputedStyle(document.body).fontFamily;
+      ctx.fillText("侧视图", ox, 26);
+      const discTop = oy - g.discRadius * 1800 * 0.75, discBot = oy + g.discRadius * 1800 * 0.75;
+      ctx.strokeStyle = C.axis; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(ox + 20, discTop); ctx.lineTo(ox + 20, discBot); ctx.stroke();
+      ctx.fillStyle = C.axis; ctx.font = "14px " + getComputedStyle(document.body).fontFamily; ctx.fillText("光盘", ox + 4, discBot + 22);
+      const orbitY = (a) => oy - g.orbitRadius * 1800 * 0.75 * Math.cos(a);
+      const my = orbitY(theta);
+      const front = Math.cos(theta) > -0.2;
+      ctx.globalAlpha = front ? 1 : 0.35;
+      ctx.fillStyle = C.magnet; ctx.fillRect(ox + 23, my - 9, 10, 18);
+      ctx.globalAlpha = 1;
+      const coilY0 = orbitY(0), coilLeft = ox + 23 + state.dist / 100 * sx, coilW = g.coilDepth * sx, coilH = g.coilRadius * 2 * 1800 * 0.75;
+      ctx.fillStyle = "rgba(160,97,42,0.18)"; ctx.strokeStyle = C.coil; ctx.lineWidth = 2;
+      ctx.fillRect(coilLeft, coilY0 - coilH / 2, coilW, coilH); ctx.strokeRect(coilLeft, coilY0 - coilH / 2, coilW, coilH);
+      for (let i = 1; i < 6; i++) { const xx = coilLeft + coilW * i / 6; ctx.beginPath(); ctx.moveTo(xx, coilY0 - coilH / 2); ctx.lineTo(xx, coilY0 + coilH / 2); ctx.stroke(); }
+      ctx.fillStyle = C.coil; ctx.font = "600 15px " + getComputedStyle(document.body).fontFamily; ctx.fillText(state.turns + " 匝线圈", coilLeft, coilY0 + coilH / 2 + 22);
+      // 距离标注
+      const dimY = coilY0 - coilH / 2 - 16;
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(ox + 23, dimY); ctx.lineTo(coilLeft, dimY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(ox + 23, dimY - 5); ctx.lineTo(ox + 23, dimY + 5); ctx.moveTo(coilLeft, dimY - 5); ctx.lineTo(coilLeft, dimY + 5); ctx.stroke();
+      ctx.fillStyle = C.ink; ctx.font = "600 15px " + getComputedStyle(document.body).fontFamily; ctx.fillText("D = " + state.dist.toFixed(1) + " cm", (ox + 23 + coilLeft) / 2 - 34, dimY - 8);
+      ctx.fillStyle = C.axis; ctx.font = "13px " + getComputedStyle(document.body).fontFamily;
+      ctx.fillText("侧视图按比例缩放显示", ox, H - 16);
+    }
+
+    function drawGraphs() {
+      const { ctx, W, H } = setupCanvas($("graphCanvas"));
+      const exp = state.exp, t = state.t, t1 = Math.max(t, WINDOW), t0 = t1 - WINDOW;
+      const L = 78, R = 20, gx = (tt) => L + (tt - t0) / WINDOW * (W - L - R);
+      const font = getComputedStyle(document.body).fontFamily;
+      // Φ 面板
+      const p1 = { top: 30, bottom: 175 }, p2 = { top: 225, bottom: 395 };
+      const phiMax = exp.table.phiMax * 1e6, phiMin = Math.min(0, exp.table.phiMin * 1e6);
+      const phiTop = niceMax(phiMax * 1.1);
+      const py = (v) => p1.bottom - (v - phiMin) / (phiTop - phiMin) * (p1.bottom - p1.top);
+      const ys = state.yScale;
+      const ey = (v) => (p2.top + p2.bottom) / 2 - v / ys * (p2.bottom - p2.top) / 2;
+      // 网格与轴
+      ctx.lineWidth = 1; ctx.strokeStyle = C.grid; ctx.font = "13px " + font; ctx.fillStyle = C.axis;
+      for (let k = Math.ceil(t0 * 2) / 2; k <= t1 + 1e-9; k += 0.5) {
+        const x = gx(k); ctx.beginPath(); ctx.moveTo(x, p1.top); ctx.lineTo(x, p1.bottom); ctx.moveTo(x, p2.top); ctx.lineTo(x, p2.bottom); ctx.stroke();
+        ctx.fillText(k.toFixed(1), x - 10, p2.bottom + 18);
+      }
+      ctx.fillText("t / s", W - R - 28, p2.bottom + 34);
+      [[p1, phiMin, phiTop, py], [p2, -ys, ys, ey]].forEach(([p, lo, hi, f]) => {
+        for (let i = 0; i <= 4; i++) {
+          const v = lo + (hi - lo) * i / 4, y = f(v);
+          ctx.strokeStyle = C.grid; ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke();
+          ctx.fillStyle = C.axis; ctx.fillText(Math.abs(v) < 1e-12 ? "0" : mvFmt(v), 8, y + 4);
+        }
+        ctx.strokeStyle = C.axis; ctx.beginPath(); ctx.moveTo(L, p.top); ctx.lineTo(L, p.bottom); ctx.stroke();
+      });
+      ctx.strokeStyle = C.axis; ctx.beginPath(); ctx.moveTo(L, ey(0)); ctx.lineTo(W - R, ey(0)); ctx.stroke();
+      ctx.font = "600 15px " + font; ctx.fillStyle = C.flux; ctx.fillText("单匝磁通量 Φ / μWb", L + 6, p1.top - 10);
+      ctx.fillStyle = C.emf; ctx.fillText("感应电动势 ε / mV（传感器采样）", L + 6, p2.top - 10);
+      // Φ 曲线（只画到当前时刻）
+      ctx.save(); ctx.beginPath(); ctx.rect(L, 0, W - L - R, H); ctx.clip();
+      ctx.strokeStyle = C.flux; ctx.lineWidth = 2.5; ctx.beginPath();
+      const n = 360;
+      for (let i = 0; i <= n; i++) { const tt = t0 + (Math.min(t, t1) - t0) * i / n; if (tt < 0) continue; const x = gx(tt), y = py(exp.flux1(tt) * 1e6); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.stroke();
+      // 切线
+      if (state.showTangent) {
+        const slope = (exp.flux1(t + 1e-4) - exp.flux1(t - 1e-4)) / 2e-4 * 1e6; // μWb/s
+        const dt = Math.min(0.25, exp.period / 6);
+        ctx.strokeStyle = C.signal; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(gx(t - dt), py(exp.flux1(t) * 1e6 - slope * dt)); ctx.lineTo(gx(t + dt), py(exp.flux1(t) * 1e6 + slope * dt)); ctx.stroke();
+      }
+      ctx.fillStyle = C.flux; ctx.beginPath(); ctx.arc(gx(t), py(exp.flux1(t) * 1e6), 5, 0, 2 * Math.PI); ctx.fill();
+      // 模型连续曲线
+      if (state.showModel) {
+        ctx.strokeStyle = C.model; ctx.lineWidth = 1.6; ctx.setLineDash([5, 4]); ctx.beginPath();
+        for (let i = 0; i <= 600; i++) { const tt = t0 + (Math.min(t, t1) - t0) * i / 600; if (tt < 0) continue; const x = gx(tt), y = ey(exp.emf(tt) * 1000); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+        ctx.stroke(); ctx.setLineDash([]);
+      }
+      // 采样点
+      const smp = samplesIn(Math.max(0, t0), t);
+      ctx.strokeStyle = C.emf; ctx.lineWidth = 2; ctx.beginPath();
+      smp.forEach((p, i) => { const x = gx(p.t), y = ey(p.v * 1000); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke();
+      ctx.fillStyle = C.emf; smp.forEach((p) => { if (state.rate <= 100) { ctx.beginPath(); ctx.arc(gx(p.t), ey(p.v * 1000), 3.2, 0, 2 * Math.PI); ctx.fill(); } });
+      // 此刻
+      ctx.strokeStyle = "rgba(16,32,51,0.35)"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      ctx.beginPath(); ctx.moveTo(gx(t), p1.top); ctx.lineTo(gx(t), p2.bottom); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = C.signal; ctx.beginPath(); ctx.arc(gx(t), ey(exp.emf(t) * 1000), 5, 0, 2 * Math.PI); ctx.fill();
+      ctx.restore();
+      // 超出量程提示
+      if (exp.peakEmf() * 1000 > ys * 1.02) { ctx.fillStyle = C.magnet; ctx.font = "600 14px " + font; ctx.fillText("纵轴已锁定，曲线超出量程", W - R - 190, p2.top - 10); }
+      // 读数
+      $("rPos").textContent = positionLabel(exp.theta(t));
+      $("rPhi").textContent = mvFmt(exp.flux1(t) * 1e6) + " μWb";
+      $("rEmf").textContent = mvFmt(exp.emf(t) * 1000) + " mV";
+      const recent = samplesIn(Math.max(0, t - 3), t);
+      $("rSampPeak").textContent = recent.length && t >= 3 ? mvFmt(Math.max(...recent.map((p) => p.v)) * 1000) + " mV" : "播放满 3 s";
+      $("timeReadout").textContent = "t = " + t.toFixed(2) + " s";
+    }
+
+    const varInfo = {
+      turns: { head: "匝数", unit: "匝", get: () => state.turns },
+      magnets: { head: "磁铁个数", unit: "个", get: () => state.magnets },
+      rpm: { head: "转速 / (r/min)", unit: "r/min", get: () => state.rpm },
+      dist: { head: "线圈距离 / cm", unit: "cm", get: () => state.dist }
+    };
+
+    function record() {
+      if (state.t < 3) { $("fitText").textContent = "先播放 3 s 以上，再记录读数。"; return; }
+      const recent = samplesIn(state.t - 3, state.t);
+      const reading = Math.max(...recent.map((p) => p.v)) * 1000;
+      const v = $("studyVar").value;
+      const others = Object.keys(varInfo).filter((k) => k !== v).map((k) => varInfo[k].get() + varInfo[k].unit).join("，") + "，" + state.rate + " Hz";
+      state.records.push({ v, x: varInfo[v].get(), reading, truth: state.exp.peakEmf() * 1000, others });
+      renderRecords();
+    }
+
+    function renderRecords() {
+      const v = $("studyVar").value;
+      $("varHead").textContent = varInfo[v].head;
+      const rows = state.records.filter((r) => r.v === v);
+      $("recordBody").innerHTML = rows.map((r) => `<tr><td>${r.x}</td><td>${mvFmt(r.reading)}</td><td>${mvFmt(r.truth)}</td><td>${r.others}</td></tr>`).join("");
+      drawFit(rows, v);
+    }
+
+    function drawFit(rows, v) {
+      const { ctx, W, H } = setupCanvas($("fitCanvas"));
+      const font = getComputedStyle(document.body).fontFamily;
+      const L = 60, R = 16, T = 16, B = 44;
+      if (!rows.length) { ctx.fillStyle = C.axis; ctx.font = "15px " + font; ctx.fillText("还没有记录。", L, H / 2); $("fitText").textContent = "记录两个以上的点后显示拟合直线。"; return; }
+      const xmax = niceMax(Math.max(...rows.map((r) => r.x)) * 1.1), ymax = niceMax(Math.max(...rows.map((r) => Math.max(r.reading, r.truth))) * 1.1);
+      const fx = (x) => L + x / xmax * (W - L - R), fy = (y) => H - B - y / ymax * (H - T - B);
+      ctx.strokeStyle = C.grid; ctx.fillStyle = C.axis; ctx.font = "12px " + font;
+      for (let i = 0; i <= 4; i++) {
+        const y = fy(ymax * i / 4), x = fx(xmax * i / 4);
+        ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(W - R, y); ctx.stroke(); ctx.fillText(mvFmt(ymax * i / 4), 8, y + 4);
+        ctx.fillText(+(xmax * i / 4).toFixed(1) + "", x - 8, H - B + 18);
+      }
+      ctx.strokeStyle = C.axis; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B); ctx.stroke();
+      ctx.fillText(varInfo[v].head, W - R - 90, H - 8); ctx.fillText("读数 / mV", L + 4, T + 10);
+      rows.forEach((r) => { ctx.strokeStyle = C.model; ctx.beginPath(); ctx.arc(fx(r.x), fy(r.truth), 5, 0, 2 * Math.PI); ctx.stroke(); ctx.fillStyle = C.emf; ctx.beginPath(); ctx.arc(fx(r.x), fy(r.reading), 4.5, 0, 2 * Math.PI); ctx.fill(); });
+      if (rows.length >= 2) {
+        const n = rows.length, mx = rows.reduce((s, r) => s + r.x, 0) / n, my = rows.reduce((s, r) => s + r.reading, 0) / n;
+        const sxx = rows.reduce((s, r) => s + (r.x - mx) ** 2, 0);
+        if (sxx > 0) {
+          const k = rows.reduce((s, r) => s + (r.x - mx) * (r.reading - my), 0) / sxx, b = my - k * mx;
+          ctx.strokeStyle = C.signal; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(fx(0), fy(b)); ctx.lineTo(fx(xmax), fy(b + k * xmax)); ctx.stroke();
+          $("fitText").textContent = `拟合直线：读数 = ${k.toPrecision(3)} × ${varInfo[v].head.split(" ")[0]} ${b >= 0 ? "+" : "−"} ${Math.abs(b).toPrecision(2)} mV。蓝点是采样读数，空心圈是模型真实峰值。截距和读数相比很小，才说明是正比。`;
+        }
+      } else $("fitText").textContent = "再记录一个点。";
+    }
+
+    function draw() { drawDevice(); drawGraphs(); }
+
+    let last = null;
+    function loop(ts) {
+      if (state.playing) {
+        if (last !== null) state.t += Math.min(0.05, (ts - last) / 1000) * state.speed;
+        last = ts; draw(); requestAnimationFrame(loop);
+      } else last = null;
+    }
+    function setPlaying(p) { state.playing = p; $("playPause").textContent = p ? "暂停" : "播放"; if (p) requestAnimationFrame(loop); }
+
+    $("playPause").onclick = () => setPlaying(!state.playing);
+    $("reset").onclick = () => { setPlaying(false); state.t = 0; draw(); };
+    $("step").onclick = () => { setPlaying(false); state.t += 1 / state.rate; draw(); };
+    $("toAlign").onclick = () => {
+      setPlaying(false);
+      const e = state.exp, cur = e.theta(state.t), next = Math.ceil((cur + 1e-9) / (2 * Math.PI)) * 2 * Math.PI;
+      state.t += (next - cur) / e.omega; draw();
+    };
+    $("speed").onchange = (ev) => { state.speed = +ev.target.value; };
+    const bindParam = (id, key, conv, ev) => $(id).addEventListener(ev || "input", (e) => { state[key] = conv(e.target.value); setPlaying(false); rebuild(true); });
+    bindParam("turns", "turns", Number, "change");
+    bindParam("magnets", "magnets", Number);
+    bindParam("rpm", "rpm", Number);
+    bindParam("dist", "dist", Number);
+    bindParam("rate", "rate", Number, "change");
+    document.querySelectorAll('input[name=arr]').forEach((r) => r.addEventListener("change", (e) => { state.arrangement = e.target.value; setPlaying(false); rebuild(true); }));
+    $("quant").onchange = (e) => { state.quant = e.target.checked; draw(); };
+    $("showModel").onchange = (e) => { state.showModel = e.target.checked; draw(); };
+    $("showTangent").onchange = (e) => { state.showTangent = e.target.checked; draw(); };
+    $("lockY").onchange = (e) => { state.lockY = e.target.checked; if (!state.lockY) rebuild(false); };
+    $("recordBtn").onclick = record;
+    $("clearBtn").onclick = () => { const v = $("studyVar").value; state.records = state.records.filter((r) => r.v !== v); renderRecords(); };
+    $("studyVar").onchange = renderRecords;
+    function applyPreset(p) {
+      Object.assign(state, p); setPlaying(false);
+      $("turns").value = state.turns; $("magnets").value = state.magnets; $("rpm").value = state.rpm; $("dist").value = state.dist; $("rate").value = state.rate;
+      document.querySelector(`input[name=arr][value=${state.arrangement}]`).checked = true;
+      rebuild(false);
+    }
+    $("presetWang").onclick = () => applyPreset({ turns: 1400, magnets: 10, arrangement: "stack", rpm: 118, dist: 15, rate: 10 });
+    $("presetNear").onclick = () => applyPreset({ turns: 1400, magnets: 10, arrangement: "stack", rpm: 60, dist: 3, rate: 100 });
+    const redrawForSize = () => { draw(); renderRecords(); };
+    window.addEventListener("resize", redrawForSize);
+    window.visualViewport?.addEventListener("resize", redrawForSize);
+    rebuild(false); renderRecords();
+  })();
+  </script>
+</body>
+</html>

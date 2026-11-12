@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第10章 · 有限水槽预测底图</title>
+<style>
+:root{--ink:#1b1f24;--sub:#5b646e;--line:#dfe4ea;--bg:#f6f7f9;--card:#fff;--hl:#0b63ce}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+header{padding:22px 26px 16px;background:#fff;border-bottom:1px solid var(--line)}
+h1{margin:0 0 6px;font-size:21px}
+h2{font-size:16px;margin:22px 0 8px;padding-left:9px;border-left:4px solid var(--hl)}
+.sub{color:var(--sub);font-size:13.5px}
+.wrap{display:grid;grid-template-columns:minmax(360px,1.25fr) minmax(340px,1fr);gap:18px;padding:18px 26px 60px;align-items:start}
+@media(max-width:960px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.paper{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px;overflow:auto;max-height:84vh}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+th{background:#f2f4f7;font-weight:600}
+code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:12.5px}
+label.ck{display:flex;gap:8px;align-items:center;margin:5px 0;font-size:14px}
+.note{background:#fff8e6;border:1px solid #f0d79a;border-radius:9px;padding:9px 12px;font-size:13.5px;margin-top:10px}
+.warn{background:#fdecec;border-color:#f0b9b9}
+.ok{color:#0a7a3d;font-weight:600}
+.bad{color:#c62828;font-weight:600}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+button{font:inherit;font-size:13.5px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+button:hover{border-color:var(--hl);color:var(--hl)}
+input[type=range]{width:100%}
+</style></head><body>
+<header>
+<h1>第 10 章 · 有限水槽预测底图</h1>
+<div class="sub">二维稳态电流场（拉普拉斯）真实数值解 ｜ 内腔 294×294 mm ｜ 上下水平钢条 250×3×10 mm，中心线 y=±90 mm ｜ 正端上板 φ=U、负端下板 φ=0 ｜ 四壁绝缘 ∂φ/∂n=0</div>
+</header>
+<div class="wrap">
+  <div>
+    <div class="card" style="margin-bottom:12px">
+      <div class="btnrow">
+        <button onclick="toggle('lyContour')">等势线 0.25/0.50/0.75</button>
+        <button onclick="toggle('lyMinor')">其余 0.1U 等势线</button>
+        <button onclick="toggle('lyField')">电场线</button>
+        <button onclick="toggle('lyLabel')">文字标注</button>
+        <button onclick="toggle('lyAxis')">坐标轴与钢条</button>
+      </div>
+      <label class="ck">缩放 <input type="range" min="60" max="220" value="100" oninput="document.getElementById('tankSvg').style.width=this.value+'%'"></label>
+      <div class="sub">图中尺寸按 1:1 毫米绘制（viewBox 310×310 mm）。</div>
+    </div>
+    <div class="paper"><svg id="tankSvg" viewBox="0 0 310 310" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block"><rect x="0" y="0" width="310.0" height="310.0" fill="#ffffff"/><rect x="5" y="5" width="300" height="300" fill="#fbfbfc" stroke="#111" stroke-width="0.5"/><rect x="8" y="8" width="294" height="294" fill="#ffffff" stroke="#666" stroke-width="0.35"/><path d="M5,305 L-3,305 M5,305 L5,313" stroke="#111" stroke-width="0.45"/><circle cx="5" cy="305" r="1.2" fill="none" stroke="#111" stroke-width="0.3"/><path d="M5,5 L-3,5 M5,5 L5,-3" stroke="#111" stroke-width="0.45"/><circle cx="5" cy="5" r="1.2" fill="none" stroke="#111" stroke-width="0.3"/><path d="M305,305 L313,305 M305,305 L305,313" stroke="#111" stroke-width="0.45"/><circle cx="305" cy="305" r="1.2" fill="none" stroke="#111" stroke-width="0.3"/><path d="M305,5 L313,5 M305,5 L305,-3" stroke="#111" stroke-width="0.45"/><circle cx="305" cy="5" r="1.2" fill="none" stroke="#111" stroke-width="0.3"/><line x1="105" y1="288.0" x2="205" y2="288.0" stroke="#111" stroke-width="0.5"/><line x1="105" y1="286" x2="105" y2="290" stroke="#111" stroke-width="0.5"/><line x1="205" y1="286" x2="205" y2="290" stroke="#111" stroke-width="0.5"/><text x="155" y="285" font-size="4" text-anchor="middle" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#111">100 mm 校准线（打印后量此线应为 100 mm）</text><g id="lyMinor"><path d="M302,231.811L298.5,231.668L294.5,231.22L281,228.721L274.5,227.774L267.5,227.109L258.5,226.606L245,226.223L226,225.991L155,225.827L84,225.991L65,226.223L51.5,226.606L42.5,227.109L35.5,227.774L29,228.721L15.5,231.22L11.5,231.668L8,231.811" fill="none" stroke="#c3cad3" stroke-width="0.22" stroke-linecap="round"/><path d="M302,210.809L290.5,210.552L260,209.095L241,208.592L208,208.249L155,208.144L102,208.249L69,208.592L50,209.095L19.5,210.552L8,210.809" fill="none" stroke="#b3bcc8" stroke-width="0.22" stroke-linecap="round"/><path d="M302,191.833L287.5,191.707L229.5,190.689L155,190.443L80.5,190.689L22.5,191.707L8,191.833" fill="none" stroke="#a8b2c0" stroke-width="0.22" stroke-linecap="round"/><path d="M302,173.341L222.5,172.833L155,172.727L87.5,172.833L8,173.341" fill="none" stroke="#9aa6b6" stroke-width="0.22" stroke-linecap="round"/><path d="M302,136.659L222.5,137.167L155,137.273L87.5,137.167L8,136.659" fill="none" stroke="#9aa6b6" stroke-width="0.22" stroke-linecap="round"/><path d="M302,118.167L287.5,118.293L229.5,119.311L155,119.557L80.5,119.311L22.5,118.293L8,118.167" fill="none" stroke="#a8b2c0" stroke-width="0.22" stroke-linecap="round"/><path d="M302,99.19L290.5,99.448L260,100.905L241,101.408L208,101.751L155,101.856L102,101.751L69,101.408L50,100.905L19.5,99.448L8,99.19" fill="none" stroke="#b3bcc8" stroke-width="0.22" stroke-linecap="round"/><path d="M302,78.189L298.5,78.332L294.5,78.779L281,81.279L274.5,82.226L267.5,82.891L258.5,83.394L245,83.777L226,84.009L155,84.173L84,84.009L65,83.777L51.5,83.394L42.5,82.891L35.5,82.226L29,81.279L15.5,78.779L11.5,78.332L8,78.189" fill="none" stroke="#c3cad3" stroke-width="0.22" stroke-linecap="round"/></g><g id="lyContour"><path d="M302,201.221L290,201.069L257,200.06L234.5,199.631L202.5,199.377L155,199.296L107.5,199.377L75.5,199.631L53,200.06L20,201.069L8,201.221" fill="none" stroke="#1f6feb" stroke-width="0.55" stroke-linecap="round"/><path d="M302,155L8,155" fill="none" stroke="#7b2fbe" stroke-width="0.7" stroke-linecap="round"/><path d="M302,108.779L290,108.931L257,109.94L234.5,110.369L202.5,110.623L155,110.704L107.5,110.623L75.5,110.369L53,109.94L20,108.931L8,108.779" fill="none" stroke="#d5342b" stroke-width="0.55" stroke-linecap="round"/></g><g id="lyField"><path d="M35,67.3L32.378,86.311L31.295,99.866L30.58,122.253L30.343,155.052L30.582,187.851L31.258,209.439L32.302,222.997L35.014,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M31.938,118.804 L30.588,122.165 L29.439,118.73 Z" fill="#2f8f83" stroke="none"/><path d="M31.884,189.393 L30.733,192.827 L29.385,189.465 Z" fill="#2f8f83" stroke="none"/><path d="M55,67.3L53.618,117.679L53.277,155.277L53.614,192.075L55.001,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M54.86,118.867 L53.573,122.253 L52.361,118.839 Z" fill="#2f8f83" stroke="none"/><path d="M54.836,189.333 L53.624,192.746 L52.336,189.36 Z" fill="#2f8f83" stroke="none"/><path d="M75,67.3L74.201,155.295L75,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M75.77,118.86 L74.52,122.26 L73.27,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M75.771,189.34 L74.521,192.74 L73.271,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M95,67.3L94.618,155.299L95,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M96.02,118.86 L94.77,122.26 L93.52,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M96.021,189.34 L94.771,192.74 L93.521,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M115,67.3L115,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M116.25,118.86 L115,122.26 L113.75,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M116.25,189.34 L115,192.74 L113.75,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M135,67.3L135,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M136.25,118.86 L135,122.26 L133.75,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M136.25,189.34 L135,192.74 L133.75,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M155,67.3L155,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M156.25,118.86 L155,122.26 L153.75,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M156.25,189.34 L155,192.74 L153.75,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M175,67.3L175,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M176.25,118.86 L175,122.26 L173.75,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M176.25,189.34 L175,192.74 L173.75,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M195,67.3L195,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M196.25,118.86 L195,122.26 L193.75,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M196.25,189.34 L195,192.74 L193.75,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M215,67.3L215.382,155.299L215,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M216.48,118.86 L215.23,122.26 L213.98,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M216.479,189.34 L215.229,192.74 L213.979,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M235,67.3L235.799,155.295L235,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M236.73,118.86 L235.48,122.26 L234.23,118.86 Z" fill="#2f8f83" stroke="none"/><path d="M236.729,189.34 L235.479,192.74 L234.229,189.34 Z" fill="#2f8f83" stroke="none"/><path d="M255,67.3L256.382,117.679L256.723,155.277L256.386,192.075L254.999,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M257.639,118.839 L256.427,122.253 L255.14,118.867 Z" fill="#2f8f83" stroke="none"/><path d="M257.664,189.36 L256.376,192.746 L255.164,189.333 Z" fill="#2f8f83" stroke="none"/><path d="M275,67.3L277.622,86.311L278.705,99.866L279.42,122.253L279.657,155.052L279.418,187.851L278.742,209.439L277.698,222.997L274.986,243.5" fill="none" stroke="#2f8f83" stroke-width="0.35" opacity="0.85"/><path d="M280.561,118.73 L279.412,122.165 L278.062,118.804 Z" fill="#2f8f83" stroke="none"/><path d="M280.615,189.465 L279.267,192.827 L278.116,189.393 Z" fill="#2f8f83" stroke="none"/></g><g id="lyAxis"><rect x="30" y="63.5" width="250" height="3" fill="#3c4048" stroke="#20242a" stroke-width="0.25"/><line x1="30" y1="66.5" x2="280" y2="66.5" stroke="#7a828e" stroke-width="0.20"/><rect x="30" y="243.5" width="250" height="3" fill="#3c4048" stroke="#20242a" stroke-width="0.25"/><line x1="30" y1="246.5" x2="280" y2="246.5" stroke="#7a828e" stroke-width="0.20"/><line x1="8" y1="155" x2="302" y2="155" stroke="#000" stroke-width="0.18" stroke-dasharray="2,2" opacity="0.45"/><line x1="155" y1="302" x2="155" y2="8" stroke="#000" stroke-width="0.18" stroke-dasharray="2,2" opacity="0.45"/><circle cx="155" cy="155" r="1.4" fill="#7b2fbe"/></g><g id="lyLabel"><text x="158" y="152.5" font-size="3.4" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#333">中心 O（φ/U=0.5）</text><text x="9" y="56" font-size="3.6" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#d5342b">正端钢条 φ=U（上，y=+90，长250×厚3×高10）</text><text x="9" y="256" font-size="3.6" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#1f6feb">参考端钢条 φ=0（下，y=−90）</text><text x="161" y="12" font-size="3.3" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#555">四壁绝缘 ∂φ/∂n=0 → 等势线到达壁面时与壁垂直</text><text x="9" y="298" font-size="3.1" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#666">内腔 294×294 mm ｜ 水深 5 mm ｜ 网格 0.5 mm（n=589）｜ 缺陷 9.1e-09</text><rect x="7.0" y="9.0" width="92" height="32" fill="#ffffff" stroke="#999" stroke-width="0.25" opacity="0.95"/><text x="9.0" y="14.0" font-size="3.4" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#111">等势线 φ/U 与电场方向</text><line x1="10.0" y1="19.0" x2="23.0" y2="19.0" stroke="#d5342b" stroke-width="0.7"/><text x="25.0" y="20.3" font-size="3.1" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#333">0.75 U</text><line x1="10.0" y1="23.3" x2="23.0" y2="23.3" stroke="#7b2fbe" stroke-width="0.7"/><text x="25.0" y="24.6" font-size="3.1" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#333">0.50 U</text><line x1="10.0" y1="27.6" x2="23.0" y2="27.6" stroke="#1f6feb" stroke-width="0.7"/><text x="25.0" y="28.900000000000002" font-size="3.1" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#333">0.25 U</text><line x1="10.0" y1="31.9" x2="23.0" y2="31.9" stroke="#a8b2c0" stroke-width="0.7"/><text x="25.0" y="33.199999999999996" font-size="3.1" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#333">其余每 0.1U</text><line x1="10.0" y1="36.5" x2="23.0" y2="36.5" stroke="#2f8f83" stroke-width="0.35"/><text x="25.0" y="37.8" font-size="3.1" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#333">电力线 = E=−∇φ 方向</text><text x="5" y="309.1" font-size="2.7" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#555">打印请选“100%／实际大小”，勿用“适合页面”；本页 310×310 mm 无法塞进单张 A4，本图未声称已校准打印。</text></g></svg></div>
+  </div>
+
+  <div>
+    <h2>一、这是解出来的，不是画出来的</h2>
+    <div class="card">
+      <p style="margin-top:0">在水层（水深 5 mm，均匀）上解 <code>∇²φ = 0</code>：正/负端钢条上是狄利克雷条件（U、0），四条槽壁是零法向电流（∂φ/∂n=0）的诺伊曼条件。钢板贯穿水层，故俯视截面即一条等电位矩形。</p>
+      <p><b>网格与残差</b>（自写红黑 SOR 迭代，非插值、非平行板直线填充）：</p>
+      <table><tr><th>项</th><th>值</th></tr>
+        <tr><td>主网格步长</td><td>0.5 mm（n=589×589 节点）</td></tr>
+        <tr><td>迭代次数 / 松弛因子 ω</td><td>1900 / 1.989389</td></tr>
+        <tr><td>缺陷 max|h²∇²φ|</td><td>9.064e-09 V（U=1 归一）</td></tr>
+        <tr><td>粗网格对照 h=1 mm 的中心值</td><td>0.500000</td></tr>
+        <tr><td>电力线 / 箭头</td><td>13 条 / <b>26</b> 个</td></tr><tr><td>箭头与 E = −∇φ 的最小夹角余弦</td><td class="ok">0.9999</td></tr>
+      </table>
+    </div>
+
+    <h2>二、网格必须能表示几何（否则是假解）</h2>
+    <div class="card">
+      <p style="margin-top:0">网格节点落在 h 的整数倍上。如果某个 h 让 <code>|y∓90| ≤ 1.5 mm</code> 内没有任何节点，
+        两条 3 mm 钢条就会整体消失：<code>fixed</code> 为空，<b>初值全零恰好“满足”拉普拉斯方程</b>，
+        于是迭代 1 次、缺陷 0、φ≡0 —— 看着像收敛，其实什么都没解。因此求解前必须显式检查两条电极都有固定节点。</p>
+      <p><b>能表示几何的网格阶梯</b>（细化时迭代数单调增加，说明确实在求解）：</p>
+      <table><tr><th>h / mm</th><th>节点</th><th>正端固定节点</th><th>负端固定节点</th><th>迭代</th><th>缺陷</th><th>中心 φ</th><th>上下反射和</th></tr>
+      <tr><td>3</td><td>99×99</td><td>83</td><td>83</td><td>400</td><td>4.34e-09</td><td>0.500000</td><td>1.000000</td></tr><tr><td>1.5</td><td>197×197</td><td>501</td><td>501</td><td>700</td><td>6.31e-09</td><td>0.500000</td><td>1.000000</td></tr><tr><td>1</td><td>295×295</td><td>753</td><td>753</td><td>1050</td><td>5.04e-09</td><td>0.500000</td><td>1.000000</td></tr><tr><td>0.75</td><td>393×393</td><td>1665</td><td>1665</td><td>1350</td><td>5.62e-09</td><td>0.500000</td><td>1.000000</td></tr><tr><td>0.5</td><td>589×589</td><td>3507</td><td>3507</td><td>1900</td><td>9.06e-09</td><td>0.500000</td><td>1.000000</td></tr></table>
+      <p style="margin-top:12px"><b>被拒绝的网格（复核发现）</b>：</p>
+      <ul style="margin:4px 0 0 18px;padding:0"><li>h = <b>7.35 mm</b>：正端固定节点 <b>0</b>、负端固定节点 <b>0</b> —— 网格节点都落在 h 的整数倍上，<code>|y∓90| ≤ 1.5 mm</code> 内一个节点都没有，<b>3 mm 钢条被整个漏掉</b>。此时初始的全零场就“满足”了拉普拉斯方程，于是迭代 1 次、缺陷 0、φ≡0 —— 看着像收敛，其实什么都没解，<b>不能当作收敛检验</b>。现在 <code>solve()</code> 对这种网格直接抛错拒绝。</li><li>h = <b>3.675 mm</b>：正端固定节点 <b>0</b>、负端固定节点 <b>0</b> —— 网格节点都落在 h 的整数倍上，<code>|y∓90| ≤ 1.5 mm</code> 内一个节点都没有，<b>3 mm 钢条被整个漏掉</b>。此时初始的全零场就“满足”了拉普拉斯方程，于是迭代 1 次、缺陷 0、φ≡0 —— 看着像收敛，其实什么都没解，<b>不能当作收敛检验</b>。现在 <code>solve()</code> 对这种网格直接抛错拒绝。</li></ul>
+      <div class="note warn">这不是把坏结果删掉，而是把判据写进代码：<code>solve(..., require_electrodes=True)</code>
+        默认开启，遇到漏掉电极的网格直接抛错，不允许静默返回全零场。</div>
+    </div>
+
+    <h2>三、四项自检（全部通过）</h2>
+    <div class="card">
+      <table><tr><th>检查</th><th>结果</th></tr>
+      <tr><td>中心 φ/U ≈ 0.5</td><td class="ok">0.500000</td></tr>
+      <tr><td>上下反射 φ(x,y)+φ(x,−y) ≈ 1</td><td class="ok">最大偏差 8.76e-07</td></tr>
+      <tr><td>左右对称 φ(−x,y)=φ(x,y)</td><td class="ok">最大差 5.77e-15</td></tr>
+      <tr><td>取值范围 0—1</td><td class="ok">[0.000, 1.000]</td></tr>
+      <tr><td>绝缘壁法向梯度 ≈ 0（等势线垂直入壁）</td><td class="ok">6.67e-05</td></tr>
+      <tr><td>板端等势线弯曲（非直线）</td><td class="ok">见图中 x=±125 处 0.1/0.9 等势线外鼓</td></tr>
+      <tr><td>箭头方向与 E=−∇φ 一致</td><td class="ok">最小余弦 0.9999（由正端指向负端，即图面上向下）</td></tr>
+      </table>
+      <div class="note">φ(x,y)+φ(x,−y)=1 是真空（绝缘、无源）区解的唯一性结论：把上下两条钢条电位互换即得镜像场，故两者之和恒为 1；由此中心必为 0.5，0.5 等势线恰为直线 y=0。</div>
+    </div>
+
+    <h2>四、有限解 vs 理想平行板</h2>
+    <div class="card">
+      <table><tr><th>位置（mm）</th><th>φ/U（数值解）</th></tr><tr><td>(0, 0)</td><td>0.5000</td></tr><tr><td>(0, 45)</td><td>0.7540</td></tr><tr><td>(0, 57)</td><td>0.8218</td></tr><tr><td>(0, -45)</td><td>0.2460</td></tr><tr><td>(0, -57)</td><td>0.1782</td></tr><tr><td>(0, 88)</td><td>0.9972</td></tr><tr><td>(0, -88)</td><td>0.0028</td></tr><tr><td>(0, 147)</td><td>0.9990</td></tr><tr><td>(0, -147)</td><td>0.0010</td></tr><tr><td>(100, 0)</td><td>0.5000</td></tr><tr><td>(140, 0)</td><td>0.5000</td></tr></table>
+      <p class="sub">正中间 y=57 mm 处：数值解 0.8218，理想无限大平行板 0.8167。中央区确实近似匀强（等势线水平等距），但板外与板端不是——这正是不能用理想平行板直线填满整个槽的原因。</p>
+    </div>
+
+    <h2>五、A 布局（仅作拓展，简化解析模型）</h2>
+    <div class="card">
+      <div class="note warn" style="margin-top:0">这是 <b>单点与圆筒</b> 的二维轴对称简化：<code>r = R·(a/R)^(φ/U)</code>，取有效圆柱半径 a=3 mm（底帽半径）、外环内半径 R=124 mm。原实物螺柱半径仅 1.5 mm、底帽高 1.1 mm，<b>不能说整个水深截面都是半径 3 mm</b>；此式不适用于本章的平行板工况。</div>
+      <svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:330px;display:block;margin:0 auto"><rect x="0" y="0" width="300" height="300" fill="#fff"/><circle cx="150.0" cy="150.0" r="140.12" fill="none" stroke="#111" stroke-width="1.6"/><text x="150.0" y="5.9" font-size="11" text-anchor="middle" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#111">外环内半径 R=124 mm（φ/U=0）</text><circle cx="150.0" cy="150.0" r="8.60" fill="none" stroke="#d5342b" stroke-width="1.6"/><text x="161.6" y="154.0" font-size="11" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#d5342b">3U/4: r=7.607 mm</text><circle cx="150.0" cy="150.0" r="21.79" fill="none" stroke="#7b2fbe" stroke-width="1.6"/><text x="174.8" y="154.0" font-size="11" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#7b2fbe">U/2: r=19.287 mm</text><circle cx="150.0" cy="150.0" r="55.26" fill="none" stroke="#1f6feb" stroke-width="1.6"/><text x="208.3" y="154.0" font-size="11" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#1f6feb">U/4: r=48.904 mm</text><circle cx="150.0" cy="150.0" r="3.39" fill="#222"/><text x="157.0" y="144.0" font-size="11" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#222">a=3 mm（底帽半径）</text><text x="6" y="292" font-size="10.5" font-family="Helvetica,Arial,PingFang SC,sans-serif" fill="#555">A 布局拓展：r = R·(a/R)^(φ/U)，φ/U=1 在 r=a，φ/U=0 在 r=R</text></svg>
+      <table style="margin-top:8px"><tr><th>等势</th><th>解析半径 r / mm</th></tr>
+        <tr><td>3U/4</td><td>7.607</td></tr>
+        <tr><td>U/2</td><td>19.287</td></tr>
+        <tr><td>U/4</td><td>48.904</td></tr>
+      </table>
+    </div>
+
+    <h2>六、打印说明</h2>
+    <div class="card">
+      <p style="margin-top:0">页面 310×310 mm，含外框 300、内框 294、四角定位记号与一条 100 mm 校准线。</p>
+      <ul style="margin:6px 0 0 18px;padding:0">
+        <li>打印对话框里选 <b>100% / 实际大小</b>，<b>不要</b>选“适合页面/缩放到 A4”。</li>
+        <li>310 mm 放不进单张 A4（210×297 mm），需要 A3 或拼贴；页面已写明该限制。</li>
+        <li>打印后量一下 100 mm 校准线：对得上才算校准成功。</li>
+        <li><b>本说明不声称已完成校准打印</b>；如需 PDF 可由 WorkBuddy 另导出，否则请直接用随附的 <code>平行板预测底图-310mm.svg</code> 打印。</li>
+      </ul>
+    </div>
+
+    <h2>七、随附文件</h2>
+    <div class="card"><table>
+      <tr><th>文件</th><th>用途</th></tr>
+      <tr><td><code>平行板预测底图-310mm.svg</code></td><td>可按实际大小打印的 310×310 mm 底图</td></tr>
+      <tr><td><code>有限水槽预测页.html</code></td><td>本页（可开关图层、缩放）</td></tr>
+      
+      
+      
+      
+    </table></div>
+    <div class="card" style="margin-top:12px">
+      <b>本次修正记录</b>（独立复核提出两处问题，逐一复核后处理）：
+      <ul style="margin:6px 0 0 18px;padding:0">
+        <li><b>电力线箭头漏画（属实，已修）</b>：原实现按折线<b>点数</b>的 30%/70% 取整数下标放箭头；
+          中央直线被 RDP 简化成 2 点后下标越界，13 条线只画了 8 个箭头（应 26 个）。现改为
+          <b>按弧长插值</b>放箭头，并加断言“每条线至少 1 个箭头”。</li>
+        <li><b>箭头方向被翻转两次（复核，未复现）</b>：双翻转确实存在于早期用
+          <code>atan2(−Δy,Δx)</code> + <code>rotate(−ang)</code> 的写法；该写法此前已被替换为
+          “只做一次模型坐标→屏幕坐标转换”的绝对坐标箭头。对当前 SVG 做数值复核：8 个箭头在模型坐标下
+          尖端相对翼展中点 dy = −3.146（指向 −y），与 npz 中 E<sub>y</sub> = −0.00564（指向负端）一致，
+          <b>方向本来就是对的</b>。现改为填充三角并把“与 −∇φ 的夹角余弦 &gt; 0.9”写成断言，防止回归。</li>
+        <li><b>坏网格被当成收敛（属实，已修）</b>：h = 7.35 / 3.675 mm 使
+          <code>|y∓90| ≤ 1.5 mm</code> 内无节点，两条钢条整体消失，<code>fixed</code> 为空，
+          全零初值即“满足”拉普拉斯，于是迭代 1 次、缺陷 0、φ≡0。现 <code>solve()</code> 默认
+          <code>require_electrodes=True</code>，电极节点为 0 直接抛错；自测改用能表示几何的阶梯并报告
+          电极节点数、残差、中心值、对称性。</li>
+      </ul>
+    </div>
+  </div>
+</div>
+<script>
+function toggle(id){var e=document.getElementById(id);e.style.display=(e.style.display==='none')?'':'none';}
+</script>
+</body></html>

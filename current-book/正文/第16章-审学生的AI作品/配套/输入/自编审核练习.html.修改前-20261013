@@ -1,0 +1,23 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>自编审核练习 · 一维弹性碰撞</title>
+<style>body{font:18px/1.7 system-ui,sans-serif;color:#172e43;background:#f4f6f8;margin:0}main{max-width:1060px;margin:36px auto;padding:30px;background:white;border-radius:16px}h1{font-size:30px;margin:0 0 8px}.note{color:#52677b}.inputs{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}input{box-sizing:border-box;width:100%;font:inherit;padding:6px}button{font:inherit;padding:9px 16px;margin:20px 10px 20px 0;background:#176ca1;color:white;border:0;border-radius:5px;cursor:pointer}table{border-collapse:collapse;width:100%;margin-top:14px}th,td{padding:12px;border-bottom:1px solid #cdd7df;text-align:left}th{background:#edf4f9}.value{font-size:21px;font-weight:650;color:#155b86}#message{color:#205a3b}small{font-size:15px}@media(max-width:650px){.inputs{grid-template-columns:repeat(2,1fr)}main{margin:0;padding:18px}}</style>
+<main><h1>自编审核练习：一维弹性碰撞</h1><p class="note">本页由本书编辑环节独立编写，供教师练习核对按钮、输入与计算。不是学生原件，也不包含实测数据。</p><p>研究对象：水平直线上两物体组成的系统；碰撞期间外力冲量忽略，取向右为正，采用一维完全弹性碰撞模型。下表数值由公式计算。</p><div class="inputs"><label>m₁ / kg<input id="m1" type="number" value="2" min="0.1" step="0.1"></label><label>v₁ / (m/s)<input id="v1" type="number" value="4" step="0.1"></label><label>m₂ / kg<input id="m2" type="number" value="3" min="0.1" step="0.1"></label><label>v₂ / (m/s)<input id="v2" type="number" value="-1" step="0.1"></label></div>
+<button id="exampleB">载入示例 B：4、3、2、−2</button><button id="calculate">按输入值计算</button><button id="reset">恢复默认</button><p id="message"></p><p>本次计算编号：<strong id="event"></strong></p><table><thead><tr><th>同一次事件</th><th>v₁ / (m/s)</th><th>v₂ / (m/s)</th><th>总动量 / (kg·m/s)</th><th>总动能 / J</th></tr></thead><tbody id="result"></tbody></table><p id="difference" class="value"></p><p><small>操作练习：先记下默认结果，再点“载入示例 B”。按可见输入独立复算，并和页面比较；不要只看守恒提示。</small></p></main>
+<script>
+const fields=['m1','v1','m2','v2'];
+let state={m1:2,v1:4,m2:3,v2:-1};
+let eventNumber=0;
+const f=n=>Number(n.toFixed(6)).toString();
+function writeInputs(values){fields.forEach(k=>document.getElementById(k).value=values[k]);}
+function render(){
+ const {m1,v1,m2,v2}=state;
+ const u1=((m1-m2)*v1+2*m2*v2)/(m1+m2),u2=(2*m1*v1+(m2-m1)*v2)/(m1+m2);
+ const p0=m1*v1+m2*v2,k0=.5*m1*v1*v1+.5*m2*v2*v2,p1=m1*u1+m2*u2,k1=.5*m1*u1*u1+.5*m2*u2*u2;
+ document.getElementById('event').textContent=++eventNumber;
+ document.getElementById('result').innerHTML=`<tr><td>碰前</td><td>${f(v1)}</td><td>${f(v2)}</td><td>${f(p0)}</td><td>${f(k0)}</td></tr><tr><td>碰后</td><td>${f(u1)}</td><td>${f(u2)}</td><td>${f(p1)}</td><td>${f(k1)}</td></tr>`;
+ document.getElementById('difference').textContent=`动量差：${f(p1-p0)} kg·m/s；动能差：${f(k1-k0)} J`;
+}
+document.getElementById('exampleB').onclick=()=>{writeInputs({m1:4,v1:3,m2:2,v2:-2});document.getElementById('message').textContent='已载入示例 B。';render();};
+document.getElementById('calculate').onclick=()=>{const values=Object.fromEntries(fields.map(k=>[k,Number(document.getElementById(k).value)]));if(!Object.values(values).every(Number.isFinite)||values.m1<=0||values.m2<=0){document.getElementById('message').textContent='请输入有限数值，并使质量大于零。';return;}state=values;document.getElementById('message').textContent='已按输入值计算。';render();};
+document.getElementById('reset').onclick=()=>{state={m1:2,v1:4,m2:3,v2:-1};writeInputs(state);document.getElementById('message').textContent='已恢复默认。';render();};
+render();
+</script></html>

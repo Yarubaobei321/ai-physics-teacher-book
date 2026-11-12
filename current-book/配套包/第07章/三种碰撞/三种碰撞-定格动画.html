@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>三种碰撞：同一个开头，不同的恢复（定格动画）</title>
+<style>
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#f4f6f8; color:#1f2328;
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif; }
+  .wrap{ max-width:1280px; margin:0 auto; padding:14px 14px 30px; }
+  canvas{ display:block; width:100%; height:auto; background:#fff; border:1px solid #e3e6ea; border-radius:10px; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 12px; padding:12px 2px 4px; font-size:16px; }
+  button{ font:inherit; font-weight:600; cursor:pointer; color:#33475e; background:#fff; border:1px solid #ccd4de; border-radius:7px; padding:7px 14px; }
+  button.main{ color:#fff; background:#2b5cab; border-color:#2b5cab; min-width:108px; }
+  button:disabled{ opacity:.4; cursor:not-allowed; }
+  .tip{ color:#5b6570; font-size:15px; }
+  body.shot .wrap{ max-width:none; padding:0; } body.shot .bar, body.shot .tip{ display:none; }
+  body.shot canvas{ border:none; border-radius:0; width:1280px; height:720px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="cv"></canvas>
+  <div class="bar">
+    <button class="main" id="auto">自动播放</button>
+    <button id="prev">上一帧</button>
+    <button id="next">下一帧</button>
+    <button id="first">回到开头</button>
+    <span id="pos"></span>
+    <span class="tip">键盘：← → 逐帧，空格 播放／暂停。带 Ⅰ Ⅱ Ⅲ 的关键帧会多停几秒。</span>
+  </div>
+  <p class="tip">模型：光滑水平面，A、B 各 1 kg，A 初速度 4 m/s，B 静止；地面参考系，向右为正。慢放：弹簧取得很软（k = π²/2 ≈ 4.93 N/m）。“部分恢复”一道以放回 25% 形变能为例；它的恢复阶段比弹性一道短，是本页模型的设定（恢复时弹力下降更快）。弹簧原长为绘图设定。</p>
+</div>
+<script>
+/*PHYS-BEGIN*/
+const K = Math.PI*Math.PI/2, V0 = 4, T0 = 0.5, L0 = 2.4, BW = 1.0, XA0 = 1.2;
+function makeModel(m1, m2, eta){
+  const M = m1+m2, mu = m1*m2/M, e = Math.sqrt(eta);
+  const w1 = Math.sqrt(K/mu), t1 = Math.PI/(2*w1), dmax = V0/w1;
+  const t2 = e*t1, dres = dmax*(1-eta);
+  const vc = m1*V0/M, E0 = 0.5*m1*V0*V0;
+  const s0 = L0 + V0*T0, X0 = XA0 + (m2/M)*s0;
+  function at(t){
+    const tc = t - T0; let d, dd, gap = 0, phase;
+    if (tc < 0){ d = 0; dd = V0; gap = -V0*tc; phase = 'before'; }
+    else if (tc <= t1){ d = dmax*Math.sin(w1*tc); dd = V0*Math.cos(w1*tc); phase = 'compress'; }
+    else if (eta > 0 && tc < t1+t2){ const th = (w1/e)*(tc-t1); d = dres + eta*dmax*Math.cos(th); dd = -e*V0*Math.sin(th); phase = 'restore'; }
+    else if (eta > 0){ d = dres; dd = -e*V0; gap = e*V0*(tc-t1-t2); phase = 'after'; }
+    else { d = dmax; dd = 0; phase = 'stuck'; }
+    const vA = vc + (m2/M)*dd, vB = vc - (m1/M)*dd;
+    const s = L0 - d + gap, X = X0 + vc*t;
+    const xa = X - (m2/M)*s, xb = X + (m1/M)*s;
+    const KA = 0.5*m1*vA*vA, KB = 0.5*m2*vB*vB;
+    let Ue = 0;
+    if (phase === 'compress') Ue = eta*0.5*K*d*d;
+    else if (phase === 'restore') Ue = 0.5*(K/eta)*(d-dres)*(d-dres);
+    let Q = E0 - KA - KB - Ue; if (Math.abs(Q) < 1e-9) Q = 0;
+    return {t, phase, d, gap, vA, vB, xa, xb, len: L0-d, KA, KB, Ue, Q};
+  }
+  return {m1, m2, eta, e, t1, t2, dmax, dres, vc, E0,
+          tI: T0, tII: T0+t1, tIII: eta > 0 ? T0+t1+t2 : Infinity,
+          vAel: (m1-m2)/M*V0, vBel: 2*m1/M*V0,
+          vAf: vc - (m2/M)*e*V0, vBf: vc + (m1/M)*e*V0, at};
+}
+/*PHYS-END*/
+
+const C = {A:'#ff8c1a', Al:'#bf5b00', As:'#ffe6cc', B:'#5b93ea', Bl:'#2b5cab', Bs:'#dbe8fb', S:'#2f9e6f', Q:'#9aa3ad', ink:'#1f2328', ink2:'#5b6570', grid:'#e3e6ea'};
+const FONT = '-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif';
+const LANES = [
+  {name:'弹性碰撞', sub:'形变完全恢复', mdl: makeModel(1,1,1)},
+  {name:'非弹性碰撞', sub:'形变部分恢复', mdl: makeModel(1,1,0.25)},
+  {name:'完全非弹性碰撞', sub:'形变不恢复', mdl: makeModel(1,1,0)},
+];
+
+// 帧表：t 为模拟时刻，hold 为停留毫秒，key 为关键帧记号
+const FR = [];
+const add = (t, hold, cap, key, extra) => FR.push(Object.assign({t: Math.round(t*100)/100, hold, cap, key: key || ''}, extra || {}));
+add(0, 5000, '运动的 A 以 4 m/s 碰向静止的 B。碰撞中的形变看不见，把它想象成 B 左端的一根轻弹簧。三条道的开头完全相同。', '', {intro: true});
+for (let t = 0.1; t < 0.45; t += 0.1) add(t, 380, '接触前：A 匀速，B 静止。');
+add(0.5, 3600, '刚接触，弹簧开始被压缩。', 'Ⅰ');
+for (let t = 0.6; t < 0.95; t += 0.1) add(t, 520, '压缩：A 受到向左的弹力而减速，B 受到向右的弹力而加速。减少的动能用于形变。三条道仍然一样。');
+add(1.0, 7000, '共速，v共 = 2 m/s，压缩最大，系统动能比开始少了 4 J。此刻三条道完全相同。接下来的区别只有一个：形变能恢复多少？', 'Ⅱ');
+for (let t = 1.05; t < 1.22; t += 0.05) add(t, 620, '能恢复的弹簧继续向右推 B、向左推 A：B 比 v共 更快，A 比 v共 更慢。不恢复的一道，A、B 保持共速。');
+add(1.25, 5000, '部分恢复的弹簧先停止恢复，与 A 分开：只放回 1 J，A 为 1 m/s，B 为 3 m/s，损失 3 J。', 'Ⅲ', {hl: 1});
+for (let t = 1.3; t < 1.47; t += 0.05) add(t, 620, '完全恢复的弹簧还在推：B 继续加速，A 继续减速。');
+add(1.5, 5000, '弹簧恢复原长，与 A 分开：4 J 全部放回，A 停下，B 为 4 m/s，系统动能回到 8 J。', 'Ⅲ', {hl: 0});
+for (let t = 1.6; t < 2.25; t += 0.1) add(t, 380, '分开后各自匀速。完全非弹性的一道，A、B 一直以 2 m/s 一起运动，4 J 全部成为内能。');
+add(2.3, 9000, '', '', {summary: true});
+
+const cv = document.getElementById('cv'), dpr = Math.max(1, window.devicePixelRatio || 1);
+cv.width = 1280*dpr; cv.height = 720*dpr;
+const c = cv.getContext('2d'); c.setTransform(dpr,0,0,dpr,0,0);
+const SX = 232, SC = 62, px = x => SX + x*SC;      // 场景区：1 m = 62 px
+const BARX = 1026, BARW = 232;                      // 右侧能量条：8 J = 232 px
+
+function line(x1,y1,x2,y2){ c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke(); }
+function fmt(v){ return Math.abs(v) < 0.005 ? '0' : v.toFixed(Math.abs(v - Math.round(v)) < 0.005 ? 0 : 1); }
+function arrow(x, y, len, color){
+  if (Math.abs(len) < 2) return;
+  const s = Math.sign(len), x2 = x + len, h = Math.min(11, Math.abs(len));
+  c.strokeStyle = color; c.fillStyle = color; c.lineWidth = 4; line(x, y, x2 - s*h*0.8, y);
+  c.beginPath(); c.moveTo(x2, y); c.lineTo(x2 - s*h, y-7); c.lineTo(x2 - s*h, y+7); c.closePath(); c.fill();
+}
+function wrap(text, x, y, maxW, lh){
+  let ln = '';
+  for (const ch of text){ if (c.measureText(ln + ch).width > maxW){ c.fillText(ln, x, y); y += lh; ln = ch; } else ln += ch; }
+  c.fillText(ln, x, y); return y;
+}
+
+function drawLane(i, t, hl){
+  const {name, sub, mdl} = LANES[i], st = mdl.at(t), top = 70 + i*152, gy = top + 122, bw = BW*SC, bh = 56;
+  if (hl){ c.fillStyle = '#fff8e8'; c.fillRect(8, top+2, 1264, 146); }
+  c.strokeStyle = C.grid; c.lineWidth = 1; line(16, top, 1264, top);
+  c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+  c.fillStyle = C.ink; c.font = '700 23px ' + FONT; c.fillText(name, 20, top + 62);
+  c.fillStyle = C.ink2; c.font = '18px ' + FONT; c.fillText(sub, 20, top + 92);
+  // 地面
+  c.strokeStyle = '#8a949e'; c.lineWidth = 2; line(SX-10, gy, 1000, gy);
+  c.lineWidth = 1.2; for (let x = 0; x <= 12; x++) line(px(x), gy, px(x), gy + (x%2 ? 5 : 9));
+  // 弹簧
+  const yc = gy - bh/2, xr = px(st.xb), xl = px(st.xb - st.len), n = 12, seg = (xr - xl - 6)/n;
+  c.strokeStyle = C.S; c.lineWidth = 3; c.lineJoin = 'round'; c.beginPath(); c.moveTo(xl+6, yc);
+  for (let k = 0; k < n; k++) c.lineTo(xl + 6 + seg*(k+0.5), yc + (k%2 ? 11 : -11));
+  c.lineTo(xr, yc); c.stroke(); c.lineWidth = 6; line(xl+3, yc-19, xl+3, yc+19);
+  // 物块与速度箭头
+  for (const [x, fill, edge, nm, v] of [[px(st.xa)-bw, C.A, C.Al, 'A', st.vA], [px(st.xb), C.B, C.Bl, 'B', st.vB]]){
+    c.fillStyle = fill; c.strokeStyle = edge; c.lineWidth = 2.5; c.beginPath(); c.rect(x, gy-bh, bw, bh-1); c.fill(); c.stroke();
+    c.fillStyle = '#fff'; c.textAlign = 'center'; c.font = '700 24px ' + FONT; c.fillText(nm, x+bw/2, gy-bh/2+9);
+    const cx = x + bw/2, ay = gy - bh - 14;
+    arrow(cx - v*6.5, ay, v*13, edge);
+    c.fillStyle = edge; c.font = '600 19px ' + FONT; c.fillText(fmt(v) + ' m/s', cx, ay - 13);
+  }
+  // 能量条
+  const kx = BARW/mdl.E0; let x = BARX;
+  for (const [val, col] of [[st.KA, C.A], [st.KB, C.B], [st.Ue, C.S], [st.Q, C.Q]]){ c.fillStyle = col; c.fillRect(x, top+48, val*kx, 30); x += val*kx; }
+  c.strokeStyle = C.ink2; c.lineWidth = 1.5; c.strokeRect(BARX, top+48, BARW, 30);
+  c.fillStyle = C.ink; c.font = '17px ' + FONT; c.textAlign = 'left';
+  c.fillText('动能 ' + (st.KA+st.KB).toFixed(1) + '　势能 ' + st.Ue.toFixed(1) + '　内能 ' + st.Q.toFixed(1) + ' J', BARX, top + 104);
+}
+
+function drawSummary(){
+  const X = v => 410 + v*135, ay = 676;
+  c.textBaseline = 'alphabetic'; c.textAlign = 'left'; c.fillStyle = C.ink; c.font = '700 24px ' + FONT;
+  c.fillText('碰后速度落在两个极限之间', 28, 566);
+  c.font = '19px ' + FONT; c.fillStyle = C.ink2;
+  c.fillText('一端是共同速度，', 28, 604); c.fillText('另一端是弹性碰撞的结果。', 28, 632);
+  c.fillText('恢复得越多，离 v共 越远。', 28, 660);
+  c.strokeStyle = '#8a949e'; c.lineWidth = 1.5; line(X(0)-20, ay, X(4)+20, ay);
+  c.textAlign = 'center'; c.font = '17px ' + FONT;
+  for (let v = 0; v <= 4; v++){ line(X(v), ay, X(v), ay+6); c.fillStyle = C.ink2; c.fillText(v, X(v), ay+26); }
+  c.textAlign = 'left'; c.fillText('m/s', X(4)+30, ay+26);
+  for (const [nm, y, a, b, soft, col, key] of [['A 的碰后速度', 580, 0, 2, C.As, C.Al, 'vAf'], ['B 的碰后速度', 630, 2, 4, C.Bs, C.Bl, 'vBf']]){
+    c.fillStyle = soft; c.fillRect(X(a), y-16, X(b)-X(a), 32); c.strokeStyle = col; c.lineWidth = 1.5; c.strokeRect(X(a), y-16, X(b)-X(a), 32);
+    c.fillStyle = col; c.font = '700 18px ' + FONT; c.textAlign = 'left'; c.fillText(nm, X(4)+54, y+6);
+    LANES.forEach((ln, i) => { const v = ln.mdl[key]; c.fillStyle = col; c.beginPath(); c.arc(X(v), y, 9, 0, 7); c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke(); });
+  }
+  c.fillStyle = C.ink2; c.font = '16px ' + FONT; c.textAlign = 'center';
+  c.fillText('弹性', X(0), 556); c.fillText('部分恢复', X(1), 556); c.fillText('v共（完全非弹性）', X(2), 556); c.fillText('部分恢复', X(3), 556); c.fillText('弹性', X(4), 556);
+  c.setLineDash([4,4]); c.strokeStyle = C.ink2; line(X(2), 562, X(2), ay); c.setLineDash([]);
+}
+
+let fi = 0, auto = false, timer = null;
+function draw(){
+  const f = FR[fi];
+  c.clearRect(0,0,1280,720); c.fillStyle = '#fff'; c.fillRect(0,0,1280,720);
+  c.textBaseline = 'alphabetic'; c.textAlign = 'left'; c.fillStyle = C.ink; c.font = '700 28px ' + FONT;
+  c.fillText('三种碰撞：同一个开头，不同的恢复', 20, 44);
+  c.textAlign = 'right'; c.font = '18px ' + FONT; c.fillStyle = C.ink2;
+  c.fillText('A、B 各 1 kg　地面参考系，向右为正　慢放　t = ' + f.t.toFixed(2) + ' s', 1260, 42);
+  // 图例
+  LANES.forEach((_, i) => drawLane(i, f.t, f.hl === i));
+  c.strokeStyle = C.grid; c.lineWidth = 1; line(16, 526, 1264, 526);
+  c.font = '14px ' + FONT; c.textAlign = 'left'; let lx = 1262 - 4*14 - 3*14 - ['A 动能','B 动能','弹性势能','内能'].reduce((w, n) => w + c.measureText(n).width, 0);
+  for (const [nm, col] of [['A 动能', C.A], ['B 动能', C.B], ['弹性势能', C.S], ['内能', C.Q]]){ c.fillStyle = col; c.fillRect(lx, 99, 11, 11); c.fillStyle = C.ink2; c.fillText(nm, lx+14, 109); lx += c.measureText(nm).width + 28; }
+  if (f.summary) drawSummary();
+  else {
+    let x = 28;
+    if (f.key){
+      c.fillStyle = '#2b5cab'; c.beginPath(); c.arc(62, 600, 34, 0, 7); c.fill();
+      c.fillStyle = '#fff'; c.font = '700 36px ' + FONT; c.textAlign = 'center'; c.fillText(f.key, 62, 613); x = 118;
+    }
+    c.fillStyle = C.ink; c.font = '27px ' + FONT; c.textAlign = 'left'; wrap(f.cap, x, 582, 1240 - x, 42);
+  }
+  // 进度
+  c.fillStyle = C.grid; c.fillRect(0, 714, 1280, 6); c.fillStyle = '#2b5cab'; c.fillRect(0, 714, 1280*fi/(FR.length-1), 6);
+  document.getElementById('pos').textContent = '第 ' + (fi+1) + ' / ' + FR.length + ' 帧';
+  document.getElementById('prev').disabled = fi === 0; document.getElementById('next').disabled = fi === FR.length-1;
+}
+function go(i){ fi = Math.max(0, Math.min(FR.length-1, i)); draw(); }
+function setAuto(a){
+  auto = a; clearTimeout(timer); document.getElementById('auto').textContent = a ? '暂停' : '自动播放';
+  if (a){ if (fi === FR.length-1) go(0); step(); }
+}
+function step(){ timer = setTimeout(() => { if (fi < FR.length-1){ go(fi+1); step(); } else setAuto(false); }, FR[fi].hold); }
+document.getElementById('auto').onclick = () => setAuto(!auto);
+document.getElementById('prev').onclick = () => { setAuto(false); go(fi-1); };
+document.getElementById('next').onclick = () => { setAuto(false); go(fi+1); };
+document.getElementById('first').onclick = () => { setAuto(false); go(0); };
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'ArrowRight'){ setAuto(false); go(fi+1); } else if (ev.key === 'ArrowLeft'){ setAuto(false); go(fi-1); }
+  else if (ev.key === ' '){ ev.preventDefault(); setAuto(!auto); }
+});
+// 导出用：?shot=1&frame=n 只显示画布；window.FRAMES 供导出脚本读取停留时间
+window.FRAMES = FR;
+const qs = new URLSearchParams(location.search);
+if (qs.has('shot')) document.body.classList.add('shot');
+go(qs.has('frame') ? +qs.get('frame') : 0);
+</script>
+</body>
+</html>

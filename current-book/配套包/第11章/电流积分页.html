@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>电容电流的积分（构造数据演示与 CSV 分析）</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --line:#dfe3e8; --ink:#1f2328; --ink2:#5b6472;
+    --pos:#2563eb; --neg:#d97706; --accent:#0f766e; --warn:#b45309; --bad:#b91c1c;
+    --band:#eef2f7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:14px/1.6 -apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif}
+  .wrap{max-width:1120px;margin:0 auto;padding:22px 18px 60px}
+  h1{font-size:20px;margin:0 0 6px}
+  h2{font-size:15px;margin:0 0 10px;padding-left:9px;border-left:3px solid var(--accent)}
+  .sub{color:var(--ink2);font-size:13px;margin:0 0 16px}
+  .badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;
+    background:#fef3c7;color:#92400e;border:1px solid #fcd34d;vertical-align:middle}
+  .badge.ok{background:#dcfce7;color:#166534;border-color:#86efac}
+  .badge.gray{background:#eef2f7;color:#475569;border-color:#cbd5e1}
+  .badge.ask{background:#e0f2fe;color:#075985;border-color:#7dd3fc}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;padding:7px 12px;border-radius:7px;border:1px solid var(--line);
+    background:#fff;color:var(--ink);cursor:pointer}
+  button:hover{border-color:#9aa4b2}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{filter:brightness(1.08)}
+  button.ghost{background:#f8fafc}
+  input[type=number],input[type=text]{font:inherit;padding:6px 8px;border-radius:7px;
+    border:1px solid var(--line);width:130px;background:#fff}
+  label{font-size:13px;color:var(--ink2)}
+  canvas{display:block;border-radius:8px;background:#fff;cursor:crosshair}
+  .chartbox{border:1px solid var(--line);border-radius:8px;padding:2px;background:#fff}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:10px}
+  .stat{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:#fcfdfe}
+  .stat .k{font-size:12px;color:var(--ink2)}
+  .stat .v{font-size:16px;font-weight:600;margin-top:2px;word-break:break-all}
+  .stat .u{font-size:11px;color:var(--ink2);font-weight:400}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  thead th{background:var(--band);font-weight:600}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .note{font-size:12.5px;color:var(--ink2)}
+  .note.warn{color:var(--warn)}
+  .note.bad{color:var(--bad)}
+  ul.plain{margin:6px 0 0;padding-left:18px}
+  ul.plain li{margin:2px 0;font-size:12.5px;color:var(--ink2)}
+  .kb{display:inline-block;padding:0 5px;border:1px solid var(--line);border-radius:4px;
+    background:#f1f5f9;font-size:12px}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:820px){.split{grid-template-columns:1fr}}
+  #report div{font-size:12.5px}
+  .errline{color:var(--bad)}
+  .okline{color:#166534}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>电容电流的积分</h1>
+  <p class="sub">
+    <span class="badge gray" id="srcBadge">未载入数据</span>
+    <span class="badge gray" id="srcBadge2">本页不连接任何硬件</span>
+    本页仅做两件事：①按电路参数<b>构造</b> RC 电流数据；②分析你从本地导入的 CSV。
+    所有数值由本页前端实时计算，原始数据只读保留。
+  </p>
+
+  <!-- ===== 数据源 ===== -->
+  <div class="card">
+    <h2>1 · 数据源</h2>
+    <div class="row">
+      <button class="primary" id="btnEx1">构造例 1：RC 充放电（R=10 kΩ, C=470 μF, U=5 V, τ=4.7 s）</button>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label for="file">导入 CSV（time_s,current_mA[,phase]）</label>
+      <input type="file" id="file" accept=".csv,.txt">
+      <button class="ghost" id="btnClear">清空</button>
+      <span class="note" id="srcName">当前数据集：—</span>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <label for="offset">校零偏置 (mA)：</label>
+      <input type="number" id="offset" step="0.001" value="0">
+      <button id="btnCal">生成校零副本</button>
+      <button id="btnRaw">恢复原始数据</button>
+      <button id="btnDwRaw" class="ghost">下载原始数据 CSV</button>
+      <button id="btnDwCal" class="ghost">下载校零副本 CSV</button>
+      <span id="calTag" class="badge gray">未校零</span>
+    </div>
+    <p class="note" style="margin:8px 0 0">
+      校零偏置须由你<b>显式输入</b>，本页不猜测、不自动估计。校零只生成<b>副本</b>，原始数据始终保留可下载。
+    </p>
+  </div>
+
+  <!-- ===== 字段与单位 ===== -->
+  <div class="card" id="unitCard" style="display:none">
+    <h2>1b · 字段与单位（CSV 导入）</h2>
+    <div id="unitPanel"></div>
+  </div>
+
+  <!-- ===== 图表 ===== -->
+  <div class="card">
+    <h2>2 · 电流波形（Ⅰ 正方向向上）</h2>
+    <div class="row" style="margin-bottom:8px">
+      <button class="ghost" id="btnSelClear">清除选区</button>
+      <button class="ghost" id="btnFitSel">用当前选区拟合 τ</button>
+      <span class="note">在图上<b>按住并横向拖动</b>即可框选时间区间。</span>
+    </div>
+    <div class="row" id="presets" style="margin-bottom:8px"></div>
+    <div class="chartbox"><canvas id="chart"></canvas></div>
+    <p class="note" style="margin:8px 0 0" id="legend">
+      <span style="color:#2563eb">■</span> 正向电流面积（I&gt;0）&nbsp;&nbsp;
+      <span style="color:#d97706">■</span> 反向电流面积（I&lt;0）&nbsp;&nbsp;
+      <span style="color:#64748b">▬</span> 零线 I=0&nbsp;&nbsp;
+      <span style="color:#0f766e">▮</span> 当前选区
+    </p>
+  </div>
+
+  <!-- ===== 汇总统计 ===== -->
+  <div class="card">
+    <h2>3 · 采样信息与电荷汇总（整段）</h2>
+    <div class="stats" id="stats"></div>
+    <p class="note warn" id="chargeWarn" style="margin:10px 0 0"></p>
+  </div>
+
+  <!-- ===== 分段 & 选区 ===== -->
+  <div class="split">
+    <div class="card">
+      <h2>4 · 分段明细（不跨段积分）</h2>
+      <div id="segWrap"><p class="note">尚未载入数据。</p></div>
+    </div>
+    <div class="card">
+      <h2>5 · 选区结果</h2>
+      <div id="selWrap"><p class="note">未选定时为整段结果。</p></div>
+    </div>
+  </div>
+
+  <!-- ===== 拟合 ===== -->
+  <div class="card">
+    <h2>6 · 单指数拟合 ln|I| = ln I₀ − t/τ</h2>
+    <div class="stats" id="fitStats"></div>
+    <p class="note" id="fitNote" style="margin:10px 0 0"></p>
+  </div>
+
+  <!-- ===== 理论值 / 校验报告 ===== -->
+  <div class="split">
+    <div class="card">
+      <h2>7 · 理论参考值（构造参数推导）</h2>
+      <div id="theory"><p class="note">选择构造例后显示。</p></div>
+    </div>
+    <div class="card">
+      <h2>8 · CSV 校验报告</h2>
+      <div id="report"><p class="note">导入 CSV 后显示接受 / 拒收明细。</p></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>9 · 算法与边界说明</h2>
+    <ul class="plain">
+      <li><b>梯形法：</b>Q = Σ (I<sub>i</sub>+I<sub>i+1</sub>)/2 × Δt / 1000，单位 C；同值以 mA·s 并列显示（1 mA·s = 10⁻³ C）。</li>
+      <li><b>跨零分算：</b>波形穿越零线时，正、负部分<b>分别</b>积分，分别给出正面积、负面积与<b>总通过电荷</b>（|正|+|负|）；抵消后的净值另列，<b>不得</b>把净值 0 当作总通过电荷。</li>
+      <li><b>不跨段：</b>不同过程（充电/放电、不同 phase）之间时间不连续，任何梯形<b>不跨越</b>段边界；总电荷按段分别求和不做跨段拼接。</li>
+      <li><b>数字校验：</b>单元格必须整体匹配合法数字（可选正负号 / 小数 / 科学计数法）；<span class="mono">1oops</span>、<span class="mono">2junk</span>、<span class="mono">abc</span>、<span class="mono">NaN</span> 等一律拒收，不做前缀截断。</li>
+      <li><b>字段与单位：</b>从表头识别时间列 / 电流列及其单位（s、ms、µs、min；mA、A、µA）并<b>显式换算</b>；无法识别时不静默按 s/mA 处理，而是拒绝数据行并要求在「字段与单位」中显式选择。</li>
+      <li><b>数据校验：</b>拒绝非法数字、重复时间、时间非严格递增（乱序）的行，并在报告中列出原因与行号。</li>
+      <li><b>拟合参考时刻：</b>τ 的拟合以<b>当前拟合段起点</b>为局部时间原点，返回的 I₀ 是<b>该参考时刻</b>处的幅值，而非全局 t=0 处的幅值（段不从 t=0 起算时二者不同）。</li>
+      <li><b>拟合适用范围：</b>τ 仅在「同一段、同符号、且离零点足够远（|I| ≥ 该段最大值的 5%）」的区间内线性拟合 ln|I|；<b>只适用于单指数段</b>，多指数、含开关跳变或跨段数据不适用。</li>
+      <li><b>有限时段：</b>有限采样区间内指数尾巴不计入，故测算面积必然小于极限电荷 CU；<b>不可要求</b>测算值恰等于 CU。</li>
+    </ul>
+  </div>
+
+  <p class="note" style="text-align:center" id="footNote">
+    本页不连接任何硬件、不声明任何蓝牙服务或 UUID。载入构造例或导入 CSV 后，此处按数据来源分别说明。
+  </p>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   0 · 通用工具
+   ============================================================ */
+const $ = id => document.getElementById(id);
+
+function netDisplay(net, total, sig) {
+  return net !== 0 && Math.abs(net) <= 64 * Number.EPSILON * total ? "0（舍入误差）" : fmtSig(net, sig);
+}
+function fmtSig(x, sig){
+  sig = sig || 9;
+  if(!isFinite(x)) return '—';
+  if(x === 0) return '0';
+  const a = Math.abs(x);
+  if(a >= 1e-4 && a < 1e7) return Number(x.toPrecision(sig)).toString();
+  return x.toExponential(sig - 1);
+}
+function fmtNum(x, d){
+  if(!isFinite(x)) return '—';
+  return x.toFixed(d);
+}
+function median(arr){
+  if(!arr.length) return NaN;
+  const s = arr.slice().sort((a,b)=>a-b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2;
+}
+
+/* ============================================================
+   1 · 全局状态
+   ============================================================ */
+const S = {
+  raw: null,        // { name, note, segs:[{id,label,tl0,tl1,tg0,tg1,kind}], pts:[{t,i,seg}] }
+  theory: null,     // [[k,v],...]
+  calibrated: false,
+  offset: 0,
+  view: null,       // 当前显示用 { pts, segs, ... }（校零时为副本）
+  sel: null,        // {t0,t1} 全局时间
+  report: null,     // CSV 校验报告
+  csvText: null,    // 最近导入的 CSV 原文（供单位覆盖后重新解析）
+  csvName: null,
+  unitsOverride: { time:null, current:null }
+};
+
+/* 构造数据常量（集中定义，便于核对） */
+const EX1 = { R:10000, C:470e-6, U:5, tau:4.7, I0:0.5, T:23.5, dt:0.05, gap:0.5 };
+
+/* ============================================================
+   2 · 构造数据生成
+   ============================================================ */
+function genEx1(){
+  const pts = [];
+  const nA = Math.round(EX1.T / EX1.dt);
+  for(let k = 0; k <= nA; k++){
+    const t = k * EX1.dt;
+    pts.push({ t:+t.toFixed(6), i:+(EX1.I0 * Math.exp(-t / EX1.tau)).toFixed(10), seg:0 });
+  }
+  const g0 = EX1.T + EX1.gap;
+  for(let k = 0; k <= nA; k++){
+    const s = k * EX1.dt;
+    pts.push({ t:+(g0 + s).toFixed(6), i:+(-EX1.I0 * Math.exp(-s / EX1.tau)).toFixed(10), seg:1 });
+  }
+  const segs = [
+    { id:0, label:'A 充电 I=+0.5·e^(−t/4.7) mA', kind:'charge',
+      tl0:0, tl1:EX1.T, tg0:0, tg1:EX1.T },
+    { id:1, label:'B 放电 I=−0.5·e^(−s/4.7) mA', kind:'discharge',
+      tl0:0, tl1:EX1.T, tg0:g0, tg1:g0 + EX1.T }
+  ];
+  return {
+    demo:1,
+    name:'构造例1 · RC充放电（R=10 kΩ, C=470 μF, U=5 V）',
+    note:'构造例1：A、B 为两个独立标准过程，各自从 t=0 起算 23.5 s；两段之间为开关切换，时间轴断开，不做跨段梯形积分。',
+    segs, pts
+  };
+}
+
+function theoryEx1(){
+  const exact = EX1.C * EX1.U * (1 - Math.exp(-EX1.T / EX1.tau)); // C
+  return [
+    ['τ = RC', '10000 Ω × 470 μF = 4.7 s'],
+    ['I₀ = U/R', '5 V ÷ 10000 Ω = 0.5 mA'],
+    ['极限电荷 CU', '470 μF × 5 V = 0.00235 C'],
+    ['每段精确面积 |∫I dt|（0–23.5 s）', fmtSig(EX1.C*EX1.U*(1-Math.exp(-5)),10) + ' C'],
+    ['  同一值（mA·s）', fmtSig(EX1.C*EX1.U*(1-Math.exp(-5))*1000,10) + ' mA·s'],
+    ['5τ 充电完成度 1−e⁻⁵', fmtNum((1-Math.exp(-5))*100,4) + ' %（未达绝对充满）'],
+    ['有限时段提示', '23.5 s 截止，指数尾巴未计入，测算面积 < CU'],
+    ['采样', 'Δt = 0.05 s，0–23.5 s 共 ' + (Math.round(EX1.T/EX1.dt)+1) + ' 点/段']
+  ];
+}
+/* ============================================================
+   3 · 校零副本
+   ============================================================ */
+function buildView(){
+  if(!S.raw){ S.view = null; return; }
+  if(S.calibrated && S.offset !== 0){
+    const pts = S.raw.pts.map(p => ({ t:p.t, i:+(p.i - S.offset).toFixed(10), seg:p.seg }));
+    S.view = { name:S.raw.name, note:S.raw.note, segs:S.raw.segs, pts,
+               calibrated:true, offset:S.offset };
+  }else{
+    S.view = { name:S.raw.name, note:S.raw.note, segs:S.raw.segs,
+               pts:S.raw.pts, calibrated:false, offset:0 };
+  }
+  $('calTag').className = 'badge ' + (S.view.calibrated ? 'ok' : 'gray');
+  $('calTag').textContent = S.view.calibrated
+      ? '已校零（偏置 ' + fmtSig(S.offset,6) + ' mA）' : '未校零';
+  $('srcName').textContent = '当前数据集：' + S.view.name
+      + '（' + S.view.pts.length + ' 点' + (S.view.calibrated ? '，已校零' : '，原始') + '）';
+}
+
+/* ============================================================
+   4 · 采样信息
+   ============================================================ */
+function samplingInfo(pts){
+  if(pts.length < 2) return { min:NaN, med:NaN, max:NaN, rate:NaN, t0:NaN, t1:NaN, n:pts.length };
+  const d = [];
+  for(let k = 1; k < pts.length; k++){
+    const dt = pts[k].t - pts[k-1].t;
+    if(dt > 0) d.push(dt);
+  }
+  const med = median(d);
+  return { min:Math.min.apply(null,d), med, max:Math.max.apply(null,d),
+           rate: med > 0 ? 1/med : NaN,
+           t0:pts[0].t, t1:pts[pts.length-1].t, n:pts.length };
+}
+
+/* ============================================================
+   5 · 电荷积分（分段、正负分算、含选区边界插值）
+   ============================================================ */
+function groupBySeg(pts){
+  const m = new Map();
+  for(const p of pts){
+    if(!m.has(p.seg)) m.set(p.seg, []);
+    m.get(p.seg).push(p);
+  }
+  for(const arr of m.values()) arr.sort((a,b)=>a.t-b.t);
+  return m;
+}
+function interpAt(arr, t){
+  if(arr.length < 2 || t <= arr[0].t || t >= arr[arr.length-1].t) return null;
+  for(let k = 1; k < arr.length; k++){
+    if(arr[k].t >= t){
+      const a = arr[k-1], b = arr[k];
+      const f = (t - a.t) / (b.t - a.t);
+      return { t, i:a.i + (b.i - a.i)*f, seg:a.seg };
+    }
+  }
+  return null;
+}
+function sliceSeg(arr, t0, t1){
+  const inner = arr.filter(p => p.t >= t0 && p.t <= t1);
+  const out = [];
+  const a = interpAt(arr, t0);
+  if(a) out.push(a);
+  out.push.apply(out, inner);
+  const b = interpAt(arr, t1);
+  if(b) out.push(b);
+  return out;
+}
+/* 单段梯形积分：返回 {net, pos, neg}（单位 mA·s） */
+function integrate(list){
+  let net = 0, pos = 0, neg = 0;
+  for(let k = 1; k < list.length; k++){
+    const a = list[k-1], b = list[k];
+    if(a.seg !== b.seg) continue;                  // 绝不跨段
+    const dt = b.t - a.t;
+    if(!(dt > 0)) continue;
+    const ia = a.i, ib = b.i;
+    if(ia * ib >= 0){
+      const area = (ia + ib)/2 * dt;
+      net += area;
+      if(area >= 0) pos += area; else neg += -area;
+    }else{
+      const f = ia / (ia - ib);                     // 过零点
+      const tc = a.t + dt * f;
+      const a1 = ia/2 * (tc - a.t);                 // a → 零
+      const a2 = ib/2 * (b.t - tc);                 // 零 → b
+      net += a1 + a2;
+      if(ia > 0){ pos += a1; neg += -a2; } else { neg += -a1; pos += a2; }
+    }
+  }
+  return { net, pos, neg };
+}
+/* 对给定全局时间窗 [t0,t1]（null 表示整段）求各段与合计 */
+function chargeOf(view, t0, t1){
+  const groups = groupBySeg(view.pts);
+  const per = [];
+  let tot = { net:0, pos:0, neg:0 };
+  for(const seg of view.segs){
+    const arr = groups.get(seg.id) || [];
+    if(!arr.length) continue;
+    const a0 = (t0 == null) ? arr[0].t : t0;
+    const a1 = (t1 == null) ? arr[arr.length-1].t : t1;
+    const lo = Math.max(a0, arr[0].t), hi = Math.min(a1, arr[arr.length-1].t);
+    if(!(hi > lo)) continue;
+    const r = integrate(sliceSeg(arr, lo, hi));
+    per.push({ id:seg.id, label:seg.label, kind:seg.kind, t0:lo, t1:hi,
+               net:r.net, pos:r.pos, neg:r.neg });
+    tot.net += r.net; tot.pos += r.pos; tot.neg += r.neg;
+  }
+  return { per, tot };
+}
+/* 时间范围（全局） */
+function timeRange(view){
+  let t0 = Infinity, t1 = -Infinity;
+  for(const p of view.pts){ if(p.t < t0) t0 = p.t; if(p.t > t1) t1 = p.t; }
+  return { t0, t1 };
+}
+
+/* ============================================================
+   6 · 单指数拟合
+   ============================================================ */
+function fitTau(view, t0, t1, threshRatio){
+  threshRatio = threshRatio == null ? 0.05 : threshRatio;
+  const win = view.pts.filter(p => p.t >= t0 && p.t <= t1 && isFinite(p.i) && p.i !== 0);
+  if(win.length < 4) return { ok:false, why:'区间内有效点不足（< 4）' };
+
+  // 切分为「同段 + 同符号」的连续段
+  const runs = [];
+  let cur = null;
+  for(const p of win){
+    const sign = p.i > 0 ? 1 : -1;
+    if(cur && cur.sign === sign && cur.seg === p.seg){
+      cur.list.push(p);
+    }else{
+      cur = { sign, seg:p.seg, list:[p] };
+      runs.push(cur);
+    }
+  }
+  // 取最长同号段
+  runs.sort((a,b) => b.list.length - a.list.length);
+  const run = runs[0];
+  if(!run || run.list.length < 4) return { ok:false, why:'未找到足够的同号连续区间' };
+
+  let maxAbs = 0;
+  for(const p of run.list) maxAbs = Math.max(maxAbs, Math.abs(p.i));
+  const use = run.list.filter(p => Math.abs(p.i) >= threshRatio * maxAbs);
+  if(use.length < 4) return { ok:false, why:'离零点足够远的点不足（< 4）' };
+
+  const excl = run.list.length - use.length;
+  /* 以拟合段起点为局部时间原点：ln|I| = ln I₀ − (t − t_ref)/τ
+     若直接用全局 t，段不从 0 起算时截距会变成 I(t=0) 的外推值（错误）。 */
+  const tRef = run.list[0].t;
+  let n = 0, st = 0, stt = 0, sy = 0, syy = 0, sty = 0;
+  for(const p of use){
+    const x = p.t - tRef;
+    const y = Math.log(Math.abs(p.i));
+    n++; st += x; stt += x*x; sy += y; syy += y*y; sty += x*y;
+  }
+  const den = n*stt - st*st;
+  if(Math.abs(den) < 1e-15) return { ok:false, why:'时间轴退化，无法拟合' };
+  const slope = (n*sty - st*sy) / den;
+  const icept = (sy - slope*st) / n;          // ln|I| 在 t = tRef 处
+  if(!(slope < 0)) return { ok:false, why:'斜率非负，非衰减型，不适用单指数拟合' };
+  const tau = -1 / slope;
+
+  // R²
+  const ybar = sy / n;
+  let ssTot = 0, ssRes = 0;
+  for(const p of use){
+    const x = p.t - tRef;
+    const y = Math.log(Math.abs(p.i));
+    const pred = icept + slope * x;
+    ssTot += (y - ybar)*(y - ybar);
+    ssRes += (y - pred)*(y - pred);
+  }
+  const r2 = ssTot > 0 ? 1 - ssRes/ssTot : 1;
+
+  return { ok:true, tau, slope, icept, n, r2, sign:run.sign, tRef,
+           tStart:use[0].t, tEnd:use[use.length-1].t,
+           excluded:excl, thresh:threshRatio, maxAbs,
+           i0:Math.exp(icept) };
+}
+
+/* ============================================================
+   7 · 绘图
+   ============================================================ */
+const cv = $('chart'), ctx = cv.getContext('2d');
+const PAD = { l:66, r:18, t:26, b:46 };
+const CLR = { pos:'#2563eb', neg:'#d97706', zero:'#334155', grid:'#e8ecf1',
+              axis:'#94a3b8', sel:'#0f766e', ink:'#1f2328', ink2:'#5b6472',
+              band:'#eef2f7', boundary:'#b91c1c' };
+let SCALE = null;
+
+function niceStep(range, target){
+  const raw = range / Math.max(1, target);
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const c = raw / mag;
+  let s;
+  if(c <= 1) s = 1; else if(c <= 2) s = 2; else if(c <= 2.5) s = 2.5;
+  else if(c <= 5) s = 5; else s = 10;
+  return s * mag;
+}
+function resizeCanvas(){
+  const box = cv.parentElement.getBoundingClientRect();
+  const w = Math.max(340, Math.floor(box.width - 6));
+  const h = 400;
+  const dpr = window.devicePixelRatio || 1;
+  cv.style.width = w + 'px';
+  cv.style.height = h + 'px';
+  cv.width = Math.floor(w * dpr);
+  cv.height = Math.floor(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  draw();
+}
+function draw(){
+  const W = cv.clientWidth, H = cv.clientHeight;
+  ctx.clearRect(0, 0, W, H);
+  const view = S.view;
+  if(!view){ SCALE = null; return; }
+
+  const tr = timeRange(view);
+  let yMin = 0, yMax = 0;
+  for(const p of view.pts){ if(p.i < yMin) yMin = p.i; if(p.i > yMax) yMax = p.i; }
+  if(yMin === 0 && yMax === 0){ yMax = 1; yMin = -1; }
+  const yPad = (yMax - yMin) * 0.12 || 0.1;
+  yMin -= yPad; yMax += yPad;
+  if(yMin > 0) yMin = 0;
+  if(yMax < 0) yMax = 0;
+
+  const x0 = PAD.l, x1 = W - PAD.r, y0 = PAD.t, y1 = H - PAD.b;
+  const tx0 = tr.t0, tx1 = tr.t1;
+  const X = t => x0 + (t - tx0) / (tx1 - tx0 || 1) * (x1 - x0);
+  const Y = i => y1 - (i - yMin) / (yMax - yMin || 1) * (y1 - y0);
+  SCALE = { X, Y, x0, x1, y0, y1, tx0, tx1, tAtPx: px => tx0 + (px - x0)/(x1-x0||1)*(tx1-tx0) };
+
+  // 网格 + 轴
+  ctx.font = '11px ui-monospace,Menlo,monospace';
+  ctx.textBaseline = 'middle';
+  const sx = niceStep(tx1 - tx0, 8);
+  ctx.strokeStyle = CLR.grid; ctx.fillStyle = CLR.ink2;
+  ctx.lineWidth = 1;
+  for(let t = Math.ceil(tx0/sx)*sx; t <= tx1 + 1e-9; t += sx){
+    const px = Math.round(X(t)) + .5;
+    ctx.beginPath(); ctx.moveTo(px, y0); ctx.lineTo(px, y1); ctx.stroke();
+    ctx.textAlign = 'center';
+    ctx.fillText(t.toFixed(sx < 1 ? 2 : (sx < 10 ? 1 : 0)), px, y1 + 14);
+  }
+  const ys = niceStep(yMax - yMin, 6);
+  for(let v = Math.ceil(yMin/ys)*ys; v <= yMax + 1e-9; v += ys){
+    const py = Math.round(Y(v)) + .5;
+    ctx.beginPath(); ctx.moveTo(x0, py); ctx.lineTo(x1, py); ctx.stroke();
+    ctx.textAlign = 'right';
+    ctx.fillStyle = CLR.ink2;
+    ctx.fillText((Math.abs(v) < 1e-9 ? 0 : v).toFixed(ys < 1 ? 2 : 0), x0 - 8, py);
+  }
+  ctx.fillStyle = CLR.ink2;
+  ctx.textAlign = 'left';  ctx.fillText('t / s', x1 - 30, y1 + 30);
+  ctx.save(); ctx.translate(14, (y0+y1)/2); ctx.rotate(-Math.PI/2);
+  ctx.textAlign = 'center'; ctx.fillText('I / mA', 0, 0); ctx.restore();
+
+  // 段间断开带
+  if(view.segs.length > 1){
+    for(let k = 1; k < view.segs.length; k++){
+      const gapL = X(view.segs[k-1].tg1), gapR = X(view.segs[k].tg0);
+      if(gapR > gapL){
+        ctx.fillStyle = CLR.band;
+        ctx.fillRect(gapL, y0, gapR - gapL, y1 - y0);
+        ctx.strokeStyle = CLR.boundary; ctx.setLineDash([4,3]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(Math.round(gapL)+.5, y0); ctx.lineTo(Math.round(gapL)+.5, y1); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(Math.round(gapR)+.5, y0); ctx.lineTo(Math.round(gapR)+.5, y1); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.save(); ctx.translate((gapL+gapR)/2, y0 + 14); ctx.rotate(-Math.PI/2); ctx.textAlign = "right";
+        ctx.fillStyle = CLR.boundary; ctx.textAlign = 'right';
+        ctx.font = '11px sans-serif'; ctx.fillText('开关切换 · 不跨段', 0, 0); ctx.restore();
+        ctx.font = '11px ui-monospace,Menlo,monospace';
+      }
+    }
+  }
+
+  // 曲线 + 面积填充
+  const groups = groupBySeg(view.pts);
+  const yz = Y(0);
+  for(const seg of view.segs){
+    const arr = groups.get(seg.id);
+    if(!arr || arr.length < 2) continue;
+    for(let k = 1; k < arr.length; k++){
+      const a = arr[k-1], b = arr[k];
+      const ax = X(a.t), bx = X(b.t), ay = Y(a.i), by = Y(b.i);
+      const col = (a.i + b.i) >= 0 ? CLR.pos : CLR.neg;
+      ctx.fillStyle = col; ctx.globalAlpha = 0.20;
+      if(a.i * b.i >= 0){
+        ctx.beginPath(); ctx.moveTo(ax, yz); ctx.lineTo(ax, ay);
+        ctx.lineTo(bx, by); ctx.lineTo(bx, yz); ctx.closePath(); ctx.fill();
+      }else{
+        const f = a.i / (a.i - b.i), cx = ax + (bx - ax) * f;
+        const c1 = a.i > 0 ? CLR.pos : CLR.neg, c2 = b.i > 0 ? CLR.pos : CLR.neg;
+        ctx.fillStyle = c1;
+        ctx.beginPath(); ctx.moveTo(ax, yz); ctx.lineTo(ax, ay); ctx.lineTo(cx, yz); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = c2;
+        ctx.beginPath(); ctx.moveTo(cx, yz); ctx.lineTo(bx, by); ctx.lineTo(bx, yz); ctx.closePath(); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    // 折线
+    ctx.strokeStyle = '#0b3d91'; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for(let k = 0; k < arr.length; k++){
+      const px = X(arr[k].t), py = Y(arr[k].i);
+      if(k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+
+  // 零线
+  ctx.strokeStyle = CLR.zero; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(x0, Math.round(yz)+.5); ctx.lineTo(x1, Math.round(yz)+.5); ctx.stroke();
+  ctx.fillStyle = CLR.ink; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('I = 0', x0 + 4, yz - 8);
+
+  // 正方向标注
+  ctx.save();
+  ctx.strokeStyle = CLR.pos; ctx.fillStyle = CLR.pos; ctx.lineWidth = 2;
+  const ax = x1 - 22, ay0 = yz, ay1 = yz - 40;
+  ctx.beginPath(); ctx.moveTo(ax, ay0); ctx.lineTo(ax, ay1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax, ay1 - 8); ctx.lineTo(ax - 4, ay1); ctx.lineTo(ax + 4, ay1); ctx.closePath(); ctx.fill();
+  ctx.font = '12px sans-serif'; ctx.textAlign = 'right';
+  ctx.fillText('+I 正方向', ax - 8, ay1 + 4);
+  ctx.restore();
+
+  // 选区
+  if(S.sel){
+    const sx0 = X(Math.max(S.sel.t0, tx0)), sx1 = X(Math.min(S.sel.t1, tx1));
+    ctx.fillStyle = CLR.sel; ctx.globalAlpha = 0.12;
+    ctx.fillRect(sx0, y0, sx1 - sx0, y1 - y0);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = CLR.sel; ctx.lineWidth = 1.4; ctx.setLineDash([5,3]);
+    ctx.beginPath(); ctx.moveTo(Math.round(sx0)+.5, y0); ctx.lineTo(Math.round(sx0)+.5, y1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(Math.round(sx1)+.5, y0); ctx.lineTo(Math.round(sx1)+.5, y1); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = CLR.sel; ctx.font = '11px ui-monospace,Menlo,monospace'; ctx.textAlign = 'left';
+    ctx.fillText('◀ ' + S.sel.t0.toFixed(2) + ' s', sx0 + 4, y1 - 8);
+    ctx.textAlign = 'right';
+    ctx.fillText(S.sel.t1.toFixed(2) + ' s ▶', sx1 - 4, y1 - 8);
+  }
+}
+
+/* 鼠标选区 */
+let dragging = false, dragStart = null;
+function pxTime(ev){
+  const r = cv.getBoundingClientRect();
+  return SCALE.tAtPx(ev.clientX - r.left);
+}
+cv.addEventListener('mousedown', ev => {
+  if(!SCALE) return;
+  dragging = true; dragStart = pxTime(ev);
+  S.sel = { t0:dragStart, t1:dragStart }; render();
+});
+window.addEventListener('mousemove', ev => {
+  if(!dragging || !SCALE) return;
+  const t = pxTime(ev);
+  S.sel = { t0:Math.min(dragStart, t), t1:Math.max(dragStart, t) };
+  render();
+});
+window.addEventListener('mouseup', () => {
+  if(!dragging) return;
+  dragging = false;
+  if(S.sel && Math.abs(S.sel.t1 - S.sel.t0) < 1e-9) S.sel = null;
+  render();
+});
+cv.addEventListener('dblclick', () => { S.sel = null; render(); });
+
+/* ============================================================
+   8 · 渲染：统计 / 表格 / 拟合 / 理论 / 报告
+   ============================================================ */
+function statCard(k, v, u){
+  return '<div class="stat"><div class="k">' + k + '</div><div class="v">' + v
+       + (u ? ' <span class="u">' + u + '</span>' : '') + '</div></div>';
+}
+function render(){
+  draw();
+  const view = S.view;
+  if(!view){
+    $('stats').innerHTML = '<p class="note">尚未载入数据。</p>';
+    $('segWrap').innerHTML = '<p class="note">尚未载入数据。</p>';
+    $('selWrap').innerHTML = '<p class="note">尚未载入数据。</p>';
+    $('fitStats').innerHTML = ''; $('fitNote').textContent = '';
+    $('chargeWarn').textContent = '';
+    return;
+  }
+
+  const info = samplingInfo(view.pts);
+  const whole = chargeOf(view, null, null);
+  const tr = timeRange(view);
+
+  // 统计卡
+  let h = '';
+  h += statCard('点数', info.n + '', '个');
+  h += statCard('时间范围', info.t0.toFixed(2) + ' – ' + info.t1.toFixed(2), 's');
+  h += statCard('采样间隔 min / 中位 / max',
+      info.min.toFixed(4) + ' / ' + info.med.toFixed(4) + ' / ' + info.max.toFixed(4), 's');
+  h += statCard('估计采样率 1/Δt中位', isFinite(info.rate) ? fmtSig(info.rate, 6) : '—', 'Hz');
+  h += statCard('净电荷 Q（有符号）', netDisplay(whole.tot.net / 1000, (whole.tot.pos + whole.tot.neg) / 1000, 9), 'C');
+  h += statCard('|Q|', netDisplay(Math.abs(whole.tot.net) / 1000, (whole.tot.pos + whole.tot.neg) / 1000, 9), 'C');
+  h += statCard('净电荷（mA·s）', netDisplay(whole.tot.net, whole.tot.pos + whole.tot.neg, 9), 'mA·s');
+  h += statCard('正面积 Σ(I&gt;0)', fmtSig(whole.tot.pos, 9), 'mA·s');
+  h += statCard('负面积 Σ(|I&lt;0|)', fmtSig(whole.tot.neg, 9), 'mA·s');
+  h += statCard('总通过电荷（|正|+|负|）', fmtSig(whole.tot.pos + whole.tot.neg, 9), 'mA·s');
+  h += statCard('数据状态', view.calibrated ? '校零副本' : '原始');
+  $('stats').innerHTML = h;
+
+  const netC = whole.tot.net / 1000, thrC = (whole.tot.pos + whole.tot.neg) / 1000;
+  $('chargeWarn').innerHTML =
+    '整段净电荷 Q = ' + netDisplay(netC, thrC, 9) + ' C（可正负抵消）；总通过电荷 = ' + fmtSig(thrC, 9)
+    + ' C。' + (Math.abs(netC) < 1e-12 && thrC > 1e-12
+      ? ' 注意：净值≈0 由正负抵消产生，<b>不等于</b>没有电荷通过——实际通过量为总通过电荷。' : '');
+
+  // 分段表
+  let t = '<table><thead><tr><th>段</th><th>时间窗 / s</th><th>Q / mA·s</th>'
+        + '<th>Q（库仑）</th><th>正面积 / mA·s</th><th>负面积 / mA·s</th></tr></thead><tbody>';
+  for(const r of whole.per){
+    t += '<tr><td>' + r.label + '</td><td>' + r.t0.toFixed(2) + ' – ' + r.t1.toFixed(2)
+      + '</td><td>' + fmtSig(r.net, 8) + '</td><td>' + fmtSig(r.net/1000, 8)
+      + '</td><td>' + fmtSig(r.pos, 8) + '</td><td>' + fmtSig(r.neg, 8) + '</td></tr>';
+  }
+  t += '<tr><td><b>分段累计（不跨段）</b></td><td>—</td><td><b>' + netDisplay(whole.tot.net, whole.tot.pos + whole.tot.neg, 8)
+    + '</b></td><td><b>' + netDisplay(whole.tot.net/1000, (whole.tot.pos + whole.tot.neg)/1000, 8) + '</b></td><td><b>'
+    + fmtSig(whole.tot.pos, 8) + '</b></td><td><b>' + fmtSig(whole.tot.neg, 8) + '</b></td></tr>';
+  t += '</tbody></table>';
+  t += '<p class="note" style="margin-top:8px">共 ' + whole.per.length
+    + ' 段；段间时间不连续，梯形积分在段内进行，不做跨段拼接。</p>';
+  $('segWrap').innerHTML = t;
+
+  // 选区结果
+  if(S.sel){
+    const c = chargeOf(view, S.sel.t0, S.sel.t1);
+    if(!c.per.length){
+      $('selWrap').innerHTML = '<p class="note">选区内无数据点。</p>';
+    }else{
+      let s = '<div class="stats">';
+      s += statCard('选区起 → 止', S.sel.t0.toFixed(2) + ' → ' + S.sel.t1.toFixed(2), 's');
+      s += statCard('净电荷 Q', netDisplay(c.tot.net/1000, (c.tot.pos + c.tot.neg)/1000, 9), 'C');
+      s += statCard('|Q|', netDisplay(Math.abs(c.tot.net)/1000, (c.tot.pos + c.tot.neg)/1000, 9), 'C');
+      s += statCard('净电荷（mA·s）', netDisplay(c.tot.net, c.tot.pos + c.tot.neg, 9), 'mA·s');
+      s += statCard('正面积', fmtSig(c.tot.pos, 9), 'mA·s');
+      s += statCard('负面积', fmtSig(c.tot.neg, 9), 'mA·s');
+      s += statCard('总通过电荷', fmtSig(c.tot.pos + c.tot.neg, 9), 'mA·s');
+      s += statCard('跨段数', c.per.length + '', '段');
+      s += '</div>';
+      if(c.per.length > 1){
+        s += '<p class="note warn" style="margin-top:8px">选区横跨 ' + c.per.length
+          + ' 段，结果按段分别积分后相加，段间跳变未参与积分。</p>';
+      }
+      $('selWrap').innerHTML = s;
+    }
+  }else{
+    $('selWrap').innerHTML = '<p class="note">未框选。当前显示为整段结果（见上方汇总与分段表）。</p>';
+  }
+
+  // 拟合
+  const w0 = S.sel ? S.sel.t0 : tr.t0, w1 = S.sel ? S.sel.t1 : tr.t1;
+  const f = fitTau(view, w0, w1, 0.05);
+  if(!f.ok){
+    $('fitStats').innerHTML = statCard('τ', '—', '');
+    $('fitNote').innerHTML = '未拟合：' + f.why + '。';
+  }else{
+    let g = '';
+    g += statCard('τ', fmtSig(f.tau, 8), 's');
+    g += statCard('参考时刻 t₀', fmtSig(f.tRef, 8), 's');
+    g += statCard('I₀ @ t₀', fmtSig(f.i0, 8), 'mA');
+    g += statCard('斜率', fmtSig(f.slope, 8), 's⁻¹');
+    g += statCard('R²', fmtSig(f.r2, 8), '');
+    g += statCard('拟合点数', f.n + '', '个');
+    g += statCard('拟合区间', f.tStart.toFixed(2) + ' – ' + f.tEnd.toFixed(2), 's');
+    g += statCard('符号', f.sign > 0 ? '正段 I&gt;0' : '负段 I&lt;0', '');
+    g += statCard('因离零舍弃', f.excluded + '', '点');
+    $('fitStats').innerHTML = g;
+    $('fitNote').innerHTML = '拟合区间取「同一段 · 同符号 · |I| ≥ 该段最大值的 5%（'
+      + fmtSig(f.maxAbs, 5) + ' mA 的 5%）」的连续点列，线性拟合 ln|I| = ln I₀ − (t − t₀)/τ，'
+      + '<b>t₀ 取该拟合段的起点</b>（本次 t₀ = ' + fmtSig(f.tRef, 8) + ' s）。'
+      + '<b>该 τ 仅适用于单指数段</b>；若数据含多个指数、开关跳变或跨段拼接，结果不成立。'
+      + (S.sel ? '（本次使用<b>当前选区</b>作为拟合区间。）' : '（未框选，默认在整段上取最长同号连续区间。）');
+  }
+}
+
+/* ============================================================
+   9 · 理论表 & 校验报告
+   ============================================================ */
+function renderTheory(){
+  const th = S.theory;
+  if(!th){ $('theory').innerHTML = '<p class="note">当前为导入数据，无构造参数理论表。</p>'; return; }
+  let h = '<table><thead><tr><th>量</th><th>值</th></tr></thead><tbody>';
+  for(const r of th) h += '<tr><td>' + r[0] + '</td><td class="mono">' + r[1] + '</td></tr>';
+  h += '</tbody></table>';
+  $('theory').innerHTML = h;
+}
+function renderReport(){
+  const rp = S.report;
+  if(!rp || !rp.fromCSV){ $('report').innerHTML = '<p class="note">导入 CSV 后显示接受 / 拒收明细。</p>'; return; }
+  const u = rp.units || {};
+  let h = '<p class="note">共 ' + rp.total + ' 数据行：'
+        + '<span class="okline">接受 ' + rp.accepted + '</span>，'
+        + '<span class="errline">拒收 ' + rp.rejected + '</span>。'
+        + '<br>识别表头：' + (rp.header ? '<span class="mono">' + rp.header.join(' , ') + '</span>' : '无（首行即数据）')
+        + '；分段依据：' + rp.segBy + '。</p>';
+  if(u.timeUnit !== undefined){
+    h += '<p class="note" style="margin-top:6px">单位换算：时间列 ' + u.timeColName + ' → <b>'
+       + (u.timeUnit || '未确定') + '</b>（×' + u.timeFactor + '，' + u.timeSource + '）；电流列 '
+       + u.curColName + ' → <b>' + (u.curUnit || '未确定') + '</b>（×' + u.curFactor + '，' + u.curSource + '）。'
+       + (u.applied ? ' <b>已按上述系数换算为 s / mA。</b>' : ' 未发生换算（原始单位即 s / mA）。') + '</p>';
+  }
+  if(rp.errors.length){
+    h += '<div class="errline" style="margin-top:8px"><b>拒收明细</b><br>'
+      + rp.errors.slice(0, 40).map(e => e.line
+          ? ('· 第 ' + e.line + ' 行：' + e.why + '（' + e.raw + '）')
+          : ('· ' + e.why + ' ' + e.raw)).join('<br>');
+    if(rp.errors.length > 40) h += '<br>… 其余 ' + (rp.errors.length - 40) + ' 条省略';
+    h += '</div>';
+  }else{
+    h += '<p class="okline" style="margin-top:8px">无拒收行。</p>';
+  }
+  $('report').innerHTML = h;
+}
+
+/* ---- 字段与单位面板（CSV 导入时显示，可显式覆盖） ---- */
+function renderUnitPanel(){
+  const card = $('unitCard'), rp = S.report;
+  if(!rp || !rp.fromCSV){ card.style.display = 'none'; return; }
+  card.style.display = '';
+  const u = rp.units || {};
+  const opts = (map, cur) => Object.keys(map).map(k =>
+    '<option value="' + k + '"' + (k === cur ? ' selected' : '') + '>' + map[k] + '</option>').join('');
+  let h = '<table><thead><tr><th>项</th><th>结果</th></tr></thead><tbody>';
+  h += '<tr><td>表头</td><td class="mono">'
+     + (rp.header ? rp.header.join(' , ') : '无表头（首行即数据）') + '</td></tr>';
+  h += '<tr><td>时间列</td><td>' + u.timeColName + ' → <b>' + (u.timeUnit || '未确定')
+     + '</b>（' + u.timeSource + '）</td></tr>';
+  h += '<tr><td>电流列</td><td>' + u.curColName + ' → <b>' + (u.curUnit || '未确定')
+     + '</b>（' + u.curSource + '）</td></tr>';
+  h += '</tbody></table>';
+  h += '<div class="row" style="margin-top:10px">'
+     + '<label for="selTU">时间单位</label><select id="selTU"><option value="">(未选择)</option>'
+     + opts(T_LABEL, u.timeUnit) + '</select>'
+     + '<label for="selCU">电流单位</label><select id="selCU"><option value="">(未选择)</option>'
+     + opts(C_LABEL, u.curUnit) + '</select>'
+     + '<button class="ghost" id="btnUnitsAuto">恢复自动识别</button></div>';
+  h += '<p class="note" style="margin:8px 0 0">表头可识别时按识别结果<b>显式换算</b>；无法识别时'
+     + '<b>不会</b>静默按 s/mA 处理，而是拒绝数据行并要求在此选择。用户选择优先于表头。</p>';
+  $('unitPanel').innerHTML = h;
+  $('selTU').onchange = e => { S.unitsOverride.time = e.target.value || null; reparseCSV(); };
+  $('selCU').onchange = e => { S.unitsOverride.current = e.target.value || null; reparseCSV(); };
+  $('btnUnitsAuto').onclick = () => { S.unitsOverride = { time:null, current:null }; reparseCSV(); };
+}
+
+/* ---- 数据来源身份（构造例 / 用户导入 分开表述） ---- */
+function renderIdentity(){
+  const b1 = $('srcBadge'), b2 = $('srcBadge2'), fn = $('footNote');
+  const src = S.raw && S.raw.source;
+  if(src === 'constructed'){
+    b1.className = 'badge';      b1.textContent = '构造数据演示（非实测）';
+    b2.className = 'badge gray'; b2.textContent = '非实测数据';
+    fn.innerHTML = '本页不连接任何硬件、不声明任何蓝牙服务或 UUID。构造例的物理自洽性由参数推导保证，'
+      + '<b>非官方答案核验、非传感器原始数据</b>。';
+  }else if(src === 'imported'){
+    b1.className = 'badge ask';  b1.textContent = '用户导入，来源待用户确认';
+    b2.className = 'badge gray'; b2.textContent = '本页不判断是否为实测';
+    fn.innerHTML = '本页不连接任何硬件、不声明任何蓝牙服务或 UUID。导入数据由用户自行提供，'
+      + '本页<b>不对其来源、真实性或是否为实测作任何判断</b>；页面数值仅为本地前端对用户所给数据的运算结果。';
+  }else{
+    b1.className = 'badge gray'; b1.textContent = '未载入数据';
+    b2.className = 'badge gray'; b2.textContent = '本页不连接任何硬件';
+    fn.innerHTML = '本页不连接任何硬件、不声明任何蓝牙服务或 UUID。载入构造例或导入 CSV 后，此处按数据来源分别说明。';
+  }
+}
+
+/* ---- 导出文件名：构造例与用户导入分开，导入不冒用「构造数据」 ---- */
+function dlName(kind){
+  const src = S.raw.source;
+  const base = src === 'imported'
+    ? (S.raw.fileBase || 'data')
+    : S.raw.name.replace(/[\\/:*?"<>|]/g, '_').slice(0, 50);
+  const suffix = kind === 'cal' ? '_校零副本_offset' + fmtSig(S.offset, 5) + 'mA' : '';
+  return (src === 'constructed' ? '构造数据_' : '导入_') + base + suffix + '.csv';
+}
+
+/* ============================================================
+   10 · CSV 解析与校验（严格数字 + 字段/单位显式换算）
+   ============================================================ */
+/* 严格数字：整串必须合法，拒绝 1oops / 2junk / abc / NaN / 空 / 十六进制 */
+const NUM_RE = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/;
+function strictNum(s){
+  if(typeof s !== 'string') return NaN;
+  const t = s.trim();
+  if(!t || !NUM_RE.test(t)) return NaN;
+  const v = Number(t);
+  return isFinite(v) ? v : NaN;
+}
+const TIME_UNITS = [
+  { re:/^(s|sec|secs|second|seconds)$/i, u:'s',   f:1    },
+  { re:/^(ms|msec|msecs|millis|millisec|milliseconds?)$/i, u:'ms', f:1e-3 },
+  { re:/^(us|µs|μs|usec|microsec|microseconds?)$/i, u:'µs', f:1e-6 },
+  { re:/^(min|mins|minute|minutes)$/i, u:'min', f:60 }
+];
+const CUR_UNITS = [
+  { re:/^(ma|mamp|milliamps?|milliamperes?)$/i, u:'mA', f:1 },
+  { re:/^(a|amp|amps|ampere|amperes)$/i, u:'A',  f:1000 },
+  { re:/^(ua|µa|μa|uamp|microamps?|microamperes?)$/i, u:'µA', f:1e-3 }
+];
+const T_FACTOR = { s:1, ms:1e-3, 'µs':1e-6, min:60 };
+const C_FACTOR = { mA:1, A:1000, 'µA':1e-3 };
+const T_LABEL  = { s:'s（秒）', ms:'ms（毫秒）', 'µs':'µs（微秒）', min:'min（分）' };
+const C_LABEL  = { mA:'mA（毫安）', A:'A（安培）', 'µA':'µA（微安）' };
+
+function hdrTokens(cell){
+  return String(cell).toLowerCase()
+    .replace(/[()\[\]{}]/g, '_')
+    .split(/[_\/\s\-.:]+/)
+    .filter(Boolean);
+}
+/* 判定表头单元格属于时间列 / 电流列，并抽出单位；无法识别的残留词计入 unknown */
+function classifyHeader(cell){
+  const toks = hdrTokens(cell);
+  let field = null, unit = null;
+  const unknown = [];
+  for(const tk of toks){
+    if(field === null && /^(t|time|times)$/.test(tk)){ field = 'time'; continue; }
+    if(field === null && /^(i|current|curr)$/.test(tk)){ field = 'current'; continue; }
+    const tu = TIME_UNITS.find(x => x.re.test(tk));
+    const cu = CUR_UNITS.find(x => x.re.test(tk));
+    if(tu && !cu) unit = { kind:'time', u:tu.u, f:tu.f };
+    else if(cu && !tu) unit = { kind:'current', u:cu.u, f:cu.f };
+    else unknown.push(tk);                      // 既非字段也非已知单位
+  }
+  return { field, unit, unknown, toks };
+}
+
+function parseCSV(text, override){
+  override = override || {};
+  const lines = String(text).split(/\r?\n/);
+  const acc = [], errors = [];
+  let header = null, headerLine = -1, iT = 0, iI = 1, iPh = -1;
+  let prevT = -Infinity;
+  const phaseVals = new Set();
+  let hdr = { timeCell:'', curCell:'', timeCls:{ unit:null, unknown:[] },
+              curCls:{ unit:null, unknown:[] }, timeFound:false, curFound:false };
+
+  /* --- 第 1 遍：定位表头行（首格非数字则视为表头） --- */
+  for(let ln = 0; ln < lines.length; ln++){
+    const s = lines[ln].trim();
+    if(!s || s.charAt(0) === '#') continue;
+    const cells = s.split(/[,;\t]/).map(x => x.trim());
+    if(!isNaN(strictNum(cells[0]))){ header = []; break; }      // 无表头
+    header = cells; headerLine = ln;
+    const cls = cells.map(classifyHeader);
+    const kt = cls.findIndex(c => c.field === 'time');
+    const ki = cls.findIndex(c => c.field === 'current');
+    iT = kt >= 0 ? kt : 0;
+    iI = ki >= 0 ? ki : (cells.length > 1 ? 1 : 0);
+    iPh = cells.findIndex(c => /phase|state|段|阶段/i.test(c));
+    hdr = {
+      timeCell: cells[iT] || ('第' + (iT + 1) + '列'),
+      curCell:  cells[iI] || ('第' + (iI + 1) + '列'),
+      timeCls: cls[iT] || { unit:null, unknown:[] },
+      curCls:  cls[iI] || { unit:null, unknown:[] },
+      timeFound: kt >= 0, curFound: ki >= 0
+    };
+    break;
+  }
+  if(header === null) header = [];
+
+  /* --- 单位决议：用户指定 > 表头识别 > 默认；无法识别则整体拒收 --- */
+  let tUnit, cUnit, tSrc, cSrc;
+  if(override.time){ tUnit = override.time; tSrc = '用户指定'; }
+  else if(hdr.timeCls.unit && hdr.timeCls.unit.kind === 'time'){ tUnit = hdr.timeCls.unit.u; tSrc = '表头识别'; }
+  else if((hdr.timeCls.unknown || []).length){ tUnit = null; tSrc = '未识别'; }
+  else { tUnit = 's'; tSrc = header.length ? '表头未注明单位，按默认 s' : '无表头，按默认 s'; }
+
+  if(override.current){ cUnit = override.current; cSrc = '用户指定'; }
+  else if(hdr.curCls.unit && hdr.curCls.unit.kind === 'current'){ cUnit = hdr.curCls.unit.u; cSrc = '表头识别'; }
+  else if((hdr.curCls.unknown || []).length){ cUnit = null; cSrc = '未识别'; }
+  else { cUnit = 'mA'; cSrc = header.length ? '表头未注明单位，按默认 mA' : '无表头，按默认 mA'; }
+
+  const units = {
+    timeUnit:tUnit, timeSource:tSrc, timeCol:iT, timeColName:hdr.timeCell,
+    curUnit:cUnit,  curSource:cSrc,  curCol:iI, curColName:hdr.curCell,
+    timeFactor: tUnit ? T_FACTOR[tUnit] : null,
+    curFactor:  cUnit ? C_FACTOR[cUnit]  : null,
+    applied: (tUnit !== 's' || cUnit !== 'mA')
+  };
+
+  const base = { header: header.length ? header : null, units, fromCSV:true };
+
+  /* --- 第 2 遍：解析数据行 --- */
+  let total = 0, dataRows = 0;
+  for(let ln = 0; ln < lines.length; ln++){
+    if(ln === headerLine) continue;
+    const s = lines[ln].trim();
+    if(!s || s.charAt(0) === '#') continue;
+    dataRows++;
+  }
+
+  if(tUnit === null || cUnit === null){
+    const bad = [];
+    if(tUnit === null) bad.push('时间列“' + hdr.timeCell + '”');
+    if(cUnit === null) bad.push('电流列“' + hdr.curCell + '”');
+    return Object.assign(base, {
+      pts:[], segs:[], errors:[{ line:0, raw:'(全部 ' + dataRows + ' 数据行)',
+        why:'单位未确定：' + bad.join('、') + ' 含无法识别的单位标记，已整体拒收，不做静默假设；请在「字段与单位」中显式选择' }],
+      total:dataRows, accepted:0, rejected:dataRows, segBy:'—', blocked:true });
+  }
+
+  const need = Math.max(iT, iI) + 1;
+  for(let ln = 0; ln < lines.length; ln++){
+    if(ln === headerLine) continue;
+    const s = lines[ln].trim();
+    if(!s || s.charAt(0) === '#') continue;
+    const cells = s.split(/[,;\t]/).map(x => x.trim());
+    total++;
+
+    if(cells.length < need){
+      errors.push({ line:ln+1, why:'列数不足（需 ≥ ' + need + ' 列）', raw:s.slice(0,46) });
+      continue;
+    }
+    const rawT = cells[iT], rawI = cells[iI];
+    const nt = strictNum(rawT), ni = strictNum(rawI);
+    if(isNaN(nt) || isNaN(ni)){
+      const bad = [];
+      if(isNaN(nt)) bad.push('时间="' + rawT + '"');
+      if(isNaN(ni)) bad.push('电流="' + rawI + '"');
+      errors.push({ line:ln+1, why:'非法数字串（' + bad.join('，') + '；未做前缀截断）', raw:s.slice(0,46) });
+      continue;
+    }
+    const t = nt * T_FACTOR[tUnit];
+    const i = ni * C_FACTOR[cUnit];
+    if(t <= prevT){
+      const dup = Math.abs(t - prevT) < 1e-12;
+      errors.push({ line:ln+1, why: dup ? '重复时间' : '时间非递增（乱序）', raw:s.slice(0,46) });
+      continue;
+    }
+    const ph = iPh >= 0 ? (cells[iPh] || '') : '';
+    if(ph) phaseVals.add(ph);
+    acc.push({ t, i, ph, _seg:0 });
+    prevT = t;
+  }
+
+  // 分段：按 phase 变化切分（无 phase 则单段）
+  let segs, segBy;
+  if(phaseVals.size > 1){
+    segBy = 'phase 列（' + Array.from(phaseVals).join(' / ') + '）';
+    let sid = 0, last = acc.length ? acc[0].ph : '';
+    const segRanges = [];
+    for(const p of acc){
+      if(p.ph !== last){ sid++; last = p.ph; }
+      p._seg = sid;
+      if(!segRanges[sid]) segRanges[sid] = { id:sid, ph:p.ph, t0:p.t, t1:p.t };
+      segRanges[sid].t1 = p.t;
+    }
+    segs = segRanges.map(r => ({ id:r.id, label:'phase = ' + r.ph, kind:'phase',
+      tl0:r.t0, tl1:r.t1, tg0:r.t0, tg1:r.t1 }));
+  }else{
+    segBy = '单段（无 phase 或多段同名）';
+    segs = acc.length ? [{ id:0, label:'全部数据', kind:'single',
+      tl0:acc[0].t, tl1:acc[acc.length-1].t, tg0:acc[0].t, tg1:acc[acc.length-1].t }] : [];
+  }
+  const pts = acc.map(p => ({ t:p.t, i:p.i, seg:p._seg }));
+
+  return Object.assign(base, { pts, segs, errors, total, accepted:acc.length,
+           rejected:errors.length, segBy, blocked:false });
+}
+
+/* ============================================================
+   11 · 下载
+   ============================================================ */
+function download(name, text){
+  const blob = new Blob([text], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function toCSV(view){
+  const segOf = new Map(view.segs.map(s => [s.id, s.kind === 'charge' ? 'charge'
+                                : s.kind === 'discharge' ? 'discharge' : ('seg' + s.id)]));
+  let out = 'time_s,current_mA,phase\n';
+  for(const p of view.pts) out += p.t + ',' + p.i + ',' + (segOf.get(p.seg) || '') + '\n';
+  return out;
+}
+
+/* ============================================================
+   12 · 预设选区按钮
+   ============================================================ */
+function renderPresets(){
+  const box = $('presets');
+  box.innerHTML = '';
+  if(!S.view) return;
+  const add = (txt, t0, t1) => {
+    const b = document.createElement('button');
+    b.className = 'ghost'; b.textContent = txt;
+    b.onclick = () => { S.sel = (t0 == null) ? null : { t0, t1 }; render(); };
+    box.appendChild(b);
+  };
+  if(S.raw && S.raw.demo === 1){
+    const g0 = S.raw.segs[1].tg0, g1 = S.raw.segs[1].tg1;
+    add('A 充电段 (0–23.5 s)', 0, EX1.T);
+    add('B 放电段 (0–23.5 s，独立过程)', g0, g1);
+    add('A+B 分段累计（看净值与总通过）', 0, g1);
+  }else if(S.view.segs.length === 1){
+    const a = S.view.segs[0];
+    add('全程 ' + a.tl0.toFixed(2) + '–' + a.tl1.toFixed(2) + ' s', a.tg0, a.tg1);
+  }
+}
+
+/* ============================================================
+   13 · 装载
+   ============================================================ */
+function loadConstructed(){
+  S.raw = genEx1();
+  S.raw.source = 'constructed';
+  S.theory = theoryEx1();
+  S.calibrated = false; S.offset = 0;
+  S.sel = null;
+  S.report = null;
+  S.csvText = null; S.csvName = null;
+  S.unitsOverride = { time:null, current:null };
+  $('offset').value = 0;
+  buildView();
+  $('srcName').textContent = '当前数据集：' + S.raw.name + '（构造数据演示，非实测）';
+  renderIdentity(); renderUnitPanel(); renderTheory(); renderReport(); renderPresets(); render();
+}
+/* 把一份解析结果装载为当前数据集 */
+function applyParsed(r, fname){
+  S.report = r;
+  S.calibrated = false; S.offset = 0; S.sel = null;
+  if(!r.pts.length){
+    S.raw = null; S.view = null; S.theory = null;
+    $('srcName').textContent = r.blocked
+      ? 'CSV 已导入但被整体拒收（见下方校验报告）'
+      : 'CSV 无可接受数据行';
+  }else{
+    S.raw = {
+      source:'imported', demo:null,
+      name:'用户导入 · ' + fname,
+      fileBase: String(fname).replace(/\.[^.]+$/, '') || 'data',
+      note:'来自本地文件；本页不改写原始数据（校零仅生成副本）。来源待用户确认。',
+      segs:r.segs, pts:r.pts
+    };
+    $('offset').value = 0;
+    buildView();
+    $('srcName').textContent = '当前数据集：' + S.raw.name
+      + '（' + r.accepted + ' 点，用户导入，来源待用户确认）';
+  }
+  renderIdentity(); renderUnitPanel(); renderTheory(); renderReport(); renderPresets(); render();
+}
+function loadCSV(text, fname){
+  S.csvText = text; S.csvName = fname;
+  S.unitsOverride = { time:null, current:null };
+  applyParsed(parseCSV(text, S.unitsOverride), fname);
+}
+function reparseCSV(){
+  if(S.csvText == null) return;
+  applyParsed(parseCSV(S.csvText, S.unitsOverride), S.csvName);
+}
+
+/* ============================================================
+   14 · 事件绑定
+   ============================================================ */
+$('btnEx1').onclick = () => loadConstructed();
+$('btnClear').onclick = () => {
+  S.raw = null; S.view = null; S.theory = null; S.report = null; S.sel = null;
+  S.calibrated = false; S.offset = 0;
+  S.csvText = null; S.csvName = null;
+  S.unitsOverride = { time:null, current:null };
+  $('srcName').textContent = '当前数据集：—';
+  $('file').value = '';
+  renderIdentity(); renderUnitPanel(); renderTheory(); renderReport(); renderPresets(); render();
+};
+$('file').onchange = ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => loadCSV(String(rd.result), f.name);
+  rd.readAsText(f, 'utf-8');
+};
+$('btnCal').onclick = () => {
+  if(!S.raw){ alert('请先载入数据或导入 CSV。'); return; }
+  const v = parseFloat($('offset').value);
+  if(!isFinite(v)){ alert('校零偏置需为数值（mA）。'); return; }
+  S.offset = v; S.calibrated = (v !== 0);
+  buildView(); render();
+};
+$('btnRaw').onclick = () => { S.calibrated = false; buildView(); render(); };
+$('btnDwRaw').onclick = () => {
+  if(!S.raw) return;
+  download(dlName('raw'), toCSV({ pts:S.raw.pts, segs:S.raw.segs }));
+};
+$('btnDwCal').onclick = () => {
+  if(!S.view || !S.view.calibrated){ alert('当前未生成校零副本，请先输入偏置并点击「生成校零副本」。'); return; }
+  download(dlName('cal'), toCSV(S.view));
+};
+$('btnSelClear').onclick = () => { S.sel = null; render(); };
+$('btnFitSel').onclick = () => {
+  if(!S.view){ alert('请先载入数据。'); return; }
+  if(!S.sel){ alert('请先在图上拖动框选一个时间区间。'); return; }
+  render();
+  $('fitStats').scrollIntoView({ behavior:'smooth', block:'center' });
+};
+window.addEventListener('resize', resizeCanvas);
+
+/* ============================================================
+   15 · 启动
+   ============================================================ */
+buildView();
+renderIdentity(); renderUnitPanel(); renderTheory(); renderReport(); renderPresets();
+resizeCanvas();
+render();
+
+/* 供外部核对：挂载只读接口 */
+window.CAP = {
+  EX1,
+  genEx1, theoryEx1,
+  parseCSV, strictNum, classifyHeader, integrate, chargeOf, samplingInfo, fitTau,
+  loadCSV, loadConstructed,
+  get state(){ return { raw:S.raw, view:S.view, sel:S.sel, calibrated:S.calibrated, offset:S.offset }; },
+  get report(){ return S.report; }
+};
+})();
+</script>
+</body>
+</html>

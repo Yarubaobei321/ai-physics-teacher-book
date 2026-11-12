@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>小车纸带记录页 · 探究小车速度随时间变化的规律</title>
+<style>
+  :root{
+    --ink:#1b1b1b; --ink2:#4a4a4a; --ink3:#6b7280;
+    --line:#c9ced6; --line2:#e3e6ea;
+    --panel:#f6f7f9; --white:#fff;
+    --accent:#1f4e9c; --accent-bg:#eef3fb;
+    --danger:#b3261e; --danger-bg:#fdeceb;
+    --ok:#1c6b3c; --ok-bg:#ecf6ef;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--white); color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.65;
+  }
+  .wrap{ max-width:880px; margin:0 auto; padding:24px 20px 64px; }
+  header.top{ border-bottom:2px solid var(--ink); padding-bottom:10px; margin-bottom:18px; }
+  header.top h1{ font-size:21px; margin:0 0 4px; letter-spacing:.3px; }
+  header.top .sub{ color:var(--ink2); font-size:13px; }
+  .card{
+    border:1px solid var(--line); border-radius:6px; padding:16px 18px; margin:0 0 16px;
+    background:var(--white);
+  }
+  .card > h2{
+    font-size:16px; margin:0 0 12px; padding-bottom:6px; border-bottom:1px solid var(--line2);
+    display:flex; align-items:baseline; gap:8px;
+  }
+  .card > h2 .tag{ font-size:12px; font-weight:400; color:var(--ink3); }
+  .hint{ color:var(--ink3); font-size:12.5px; margin:6px 0 0; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:12px 20px; }
+  @media (max-width:640px){ .grid2{ grid-template-columns:1fr; } }
+  .field{ display:flex; align-items:center; gap:8px; }
+  .field label{ flex:0 0 auto; min-width:118px; color:var(--ink2); font-size:13.5px; }
+  input[type=text], textarea{
+    font:inherit; color:var(--ink); background:var(--white);
+    border:1px solid var(--line); border-radius:4px; padding:6px 8px; width:100%;
+  }
+  input[type=text]:focus, textarea:focus{ outline:2px solid var(--accent-bg); border-color:var(--accent); }
+  input.w-narrow{ max-width:130px; }
+  textarea{ resize:vertical; }
+  .xgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px 14px; }
+  @media (max-width:640px){ .xgrid{ grid-template-columns:repeat(2,1fr); } }
+  .xitem{ display:flex; align-items:center; gap:6px; }
+  .xitem label{ flex:0 0 auto; min-width:64px; font-size:13.5px; color:var(--ink2); }
+  .unit{ flex:0 0 auto; font-size:12.5px; color:var(--ink3); }
+  .actions{ display:flex; flex-wrap:wrap; gap:10px; margin:0 0 16px; }
+  button{
+    font:inherit; font-size:14px; padding:8px 18px; border-radius:4px; cursor:pointer;
+    border:1px solid var(--line); background:var(--panel); color:var(--ink);
+  }
+  button:hover:not(:disabled){ border-color:var(--ink3); }
+  button.primary{ background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  button.primary:hover{ background:#193f7d; }
+  button:disabled{ opacity:.45; cursor:not-allowed; }
+  .msg{ display:none; border-radius:4px; padding:10px 12px; font-size:13.5px; margin:0 0 16px; }
+  .msg.show{ display:block; }
+  .msg.err{ background:var(--danger-bg); border:1px solid #f0b8b4; color:var(--danger); }
+  .msg.info{ background:var(--accent-bg); border:1px solid #c2d3ee; color:#173c7a; }
+  .msg.ok{ background:var(--ok-bg); border:1px solid #b6dfc4; color:var(--ok); }
+  #results{ display:none; }
+  #results.show{ display:block; }
+  table{ border-collapse:collapse; width:100%; font-size:13.5px; margin:4px 0 6px; }
+  caption{ text-align:left; font-size:13px; color:var(--ink2); padding:0 0 4px; }
+  th,td{ border:1px solid var(--line); padding:5px 8px; text-align:center; }
+  th{ background:var(--panel); font-weight:600; }
+  thead .unit-row th{ font-weight:400; color:var(--ink2); font-size:12.5px; }
+  .kv{ font-size:14px; margin:2px 0; }
+  .kv b{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  .eq{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:13px; color:var(--ink2); }
+  .two-col{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+  @media (max-width:720px){ .two-col{ grid-template-columns:1fr; } }
+  canvas{ border:1px solid var(--line); border-radius:4px; max-width:100%; background:#fff; }
+  footer.foot{ color:var(--ink3); font-size:12px; margin-top:22px; border-top:1px solid var(--line2); padding-top:10px; }
+  .sheet{ display:none; }
+  /* ---------- 打印 ---------- */
+  @media print{
+    *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    @page{ margin:12mm 10mm; }
+    body{ font-size:11pt; }
+    .wrap{ max-width:none; padding:0; }
+    .no-print{ display:none !important; }
+    #msg{ display:none !important; }
+    textarea{ display:none !important; }
+    #results{ display:block !important; }
+    table{ font-size:10pt; }
+    /* 结果区与图像：允许跨页流动，图像本身不劈开；长文字不越出页边 */
+    .card{ border:1px solid #999; margin-bottom:10px; }
+    canvas{ max-width:100%; height:auto; break-inside:avoid; page-break-inside:avoid; }
+    tr, .two-col{ break-inside:avoid; page-break-inside:avoid; }
+    /* 打印记录表：无论是否计算都印；未填留横线；长结论可跨页 */
+    .sheet{ display:block !important; break-inside:auto; page-break-inside:auto; }
+    .sheet h2{ font-size:14pt; margin:0 0 6px; padding-bottom:4px; border-bottom:1.5px solid #333; }
+    .sheet h3{ font-size:11.5pt; margin:12px 0 4px; }
+    .sheet p{ margin:4px 0; }
+    .sheet .txt{ white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; margin:2px 0 0; }
+    .sheet table{ margin:2px 0 0; }
+    .sheet .sheet-hint{ font-size:9.5pt; color:#555; }
+    .sheet .sheet-status{ margin:4px 0 8px; padding:5px 8px; border:1px solid #999; background:#f7f7f7; font-size:10pt; }
+    .blank{ display:inline-block; min-width:88px; border-bottom:1px solid #555; height:1em; vertical-align:baseline; }
+    .blank.s{ min-width:44px; }
+    .rule{ height:1.5em; border-bottom:1px solid #aaa; break-inside:avoid; page-break-inside:avoid; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1>小车纸带记录页</h1>
+    <div class="sub">探究小车速度随时间变化的规律 · 记录与计算（单文件离线页面，不联网、不保存、不发送任何数据）</div>
+  </header>
+
+  <!-- 一、参数 -->
+  <section class="card no-print">
+    <h2>一、仪器参数<span class="tag">先填这两项，再填位置</span></h2>
+    <div class="grid2">
+      <div class="field">
+        <label for="freq">打点频率 f</label>
+        <input type="text" id="freq" class="w-narrow" inputmode="decimal" placeholder="如 50" autocomplete="off" />
+        <span class="unit">Hz</span>
+      </div>
+      <div class="field">
+        <label for="nper">相邻计数点间隔</label>
+        <input type="text" id="nper" class="w-narrow" inputmode="numeric" placeholder="如 5" autocomplete="off" />
+        <span class="unit">个打点周期 n</span>
+      </div>
+    </div>
+    <p class="hint">计数点时间间隔 <span class="eq">T = n / f</span>（n 为相邻计数点之间相隔的打点周期个数，须为正整数）。本页不预填任何示例数据，所有数值须由本组实测填写。</p>
+  </section>
+
+  <!-- 二、位置 -->
+  <section class="card no-print">
+    <h2>二、计数点到 O 的位置<span class="tag">原始读数，单位 cm</span></h2>
+    <div class="xgrid">
+      <div class="xitem"><label for="x0">x₀ (O 点)</label><input type="text" id="x0" inputmode="decimal" placeholder="cm" autocomplete="off" /><span class="unit">cm</span></div>
+      <div class="xitem"><label for="x1">x₁</label><input type="text" id="x1" inputmode="decimal" placeholder="cm" autocomplete="off" /><span class="unit">cm</span></div>
+      <div class="xitem"><label for="x2">x₂</label><input type="text" id="x2" inputmode="decimal" placeholder="cm" autocomplete="off" /><span class="unit">cm</span></div>
+      <div class="xitem"><label for="x3">x₃</label><input type="text" id="x3" inputmode="decimal" placeholder="cm" autocomplete="off" /><span class="unit">cm</span></div>
+      <div class="xitem"><label for="x4">x₄</label><input type="text" id="x4" inputmode="decimal" placeholder="cm" autocomplete="off" /><span class="unit">cm</span></div>
+      <div class="xitem"><label for="x5">x₅</label><input type="text" id="x5" inputmode="decimal" placeholder="cm" autocomplete="off" /><span class="unit">cm</span></div>
+      <div class="xitem"><label for="x6">x₆</label><input type="text" id="x6" inputmode="decimal" placeholder="cm" autocomplete="off" /><span class="unit">cm</span></div>
+    </div>
+    <p class="hint">共 7 个计数点（O 与 1～6）。x₀ 可以填 0，但必须<b>显式填写</b>；七个位置必须严格递增。本页不会重排或修改你填的数值，发现异常只提示核对。</p>
+  </section>
+
+  <!-- 三、学生填写 -->
+  <section class="card no-print">
+    <h2>三、本组记录<span class="tag">由学生填写，页面不生成结论；打印时自动带入记录表</span></h2>
+    <div class="field" style="margin-bottom:10px;">
+      <label for="grp">小组名</label>
+      <input type="text" id="grp" autocomplete="off" placeholder="如 第 3 组" style="max-width:280px;" />
+    </div>
+    <div style="margin-bottom:10px;">
+      <label for="setup" style="font-size:13.5px;color:var(--ink2);">装置与操作说明</label>
+      <textarea id="setup" rows="3" placeholder="写出器材、纸带穿法、小车释放方式、取点方式等"></textarea>
+    </div>
+    <div>
+      <label for="concl" style="font-size:13.5px;color:var(--ink2);">结论</label>
+      <textarea id="concl" rows="4" placeholder="用自己的话写出规律与对结果的讨论"></textarea>
+    </div>
+  </section>
+
+  <!-- 打印用记录表：屏幕上不显示；打印时无论是否计算都打印当前参数与原始位置 -->
+  <section class="sheet" id="print-sheet"></section>
+
+  <div class="actions no-print">
+    <button type="button" class="primary" id="btn-calc">计算</button>
+    <button type="button" id="btn-clear">清空</button>
+    <button type="button" id="btn-print">打印</button>
+    <button type="button" id="btn-csv" disabled>导出 CSV</button>
+  </div>
+
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+
+  <!-- 结果 -->
+  <div id="results"></div>
+
+  <footer class="foot no-print">
+    本页为单文件离线页面：样式与脚本全部内嵌，不联网、不存账号、不上传任何数据。计算与图像均由你在上面填写的数据实时得出。
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   计算核心（页面与核对脚本共用；不依赖 DOM）
+   ============================================================ */
+/* ==== CALC-CORE-START ==== */
+var XN = 7;            // 计数点个数：O, 1..6
+var VP = 5;            // 求速度的点：1..5
+
+/* 建议格式：固定小数位；避免出现 "-0.000" */
+function fmt(x, d) {
+  if (typeof x !== "number" || !isFinite(x)) return "—";
+  var s = x.toFixed(d);
+  if (/^-0(\.0+)?$/.test(s)) s = s.replace(/^-/, "");
+  return s;
+}
+
+/* 校验输入字符串 -> {ok, error, params} ；空值一律不按 0 处理 */
+function validate(raw) {
+  function bad(error) { return { ok: false, error: error, params: null }; }
+
+  var fs = (raw.f == null ? "" : String(raw.f)).trim();
+  var ns = (raw.n == null ? "" : String(raw.n)).trim();
+  if (fs === "") return bad("频率 f 未填写：请填写大于 0 的数值（如 50），空值不能按 0 处理。");
+  var f = Number(fs);
+  if (!isFinite(f)) return bad("频率 f 不是有效数字（当前填的是“" + fs + "”），请核对后重新填写。");
+  if (f <= 0) return bad("频率 f 必须大于 0（当前为 " + fs + " Hz），请核对。");
+
+  if (ns === "") return bad("打点周期数 n 未填写：请填写正整数（如 5），空值不能按 0 处理。");
+  var n = Number(ns);
+  if (!isFinite(n)) return bad("打点周期数 n 不是有效数字（当前填的是“" + ns + "”），请核对后重新填写。");
+  if (n <= 0) return bad("打点周期数 n 必须大于 0（当前为 " + ns + "），请核对。");
+  if (Math.abs(n - Math.round(n)) > 1e-9) return bad("打点周期数 n 必须是整数（当前为 " + ns + "），请核对。");
+  n = Math.round(n);
+
+  var xs = [], raws = [];
+  for (var i = 0; i < XN; i++) {
+    var s = (raw.x[i] == null ? "" : String(raw.x[i])).trim();
+    var label = (i === 0 ? "x₀（O 点）" : "x" + i);
+    if (s === "") return bad("位置 " + label + " 未填写：7 个位置都要填，空值不能按 0 处理" +
+      (i === 0 ? "（若 O 点就是 0，请显式填 0）" : "") + "。");
+    var v = Number(s);
+    if (!isFinite(v)) return bad("位置 " + label + " 不是有效数字（当前填的是“" + s + "”），请核对。");
+    xs.push(v); raws.push(s);
+  }
+  for (var j = 1; j < XN; j++) {
+    if (!(xs[j] > xs[j - 1])) {
+      return bad("位置不是严格递增：" + (j === 0 ? "x₀" : "x" + (j - 1)) + " = " + xs[j - 1] +
+        " cm 不小于 x" + j + " = " + xs[j] + " cm。请核对读数与单位（本页单位为 cm）；页面不会自动重排，" +
+        "请改正后重算。");
+    }
+  }
+  return { ok: true, error: null, params: { f: f, n: n, fRaw: fs, nRaw: ns, xCm: xs, xRaw: raws } };
+}
+
+/* 计算：位置换 m 后求段长、五点速度、v-t 最小二乘拟合、六段逐差法 */
+function computeAll(p) {
+  var T = p.n / p.f;                                   // 计数点时间间隔 /s
+  var xm = p.xCm.map(function (c) { return c / 100; }); // cm -> m
+
+  var s = [];                                          // 相邻段长 /m（s1..s6）
+  for (var i = 1; i < xm.length; i++) s.push(xm[i] - xm[i - 1]);
+
+  var pts = [];                                        // 速度点 1..5
+  for (var k = 1; k <= VP; k++) {
+    var v = (xm[k + 1] - xm[k - 1]) / (2 * T);          // vk = (x(k+1)-x(k-1))/(2T)
+    pts.push({ k: k, t: k * T, v: v });
+  }
+
+  // 最小二乘拟合 v = k*t + b
+  var N = pts.length, St = 0, Sv = 0, Stt = 0, Stv = 0;
+  for (var q = 0; q < N; q++) { St += pts[q].t; Sv += pts[q].v; Stt += pts[q].t * pts[q].t; Stv += pts[q].t * pts[q].v; }
+  var den = N * Stt - St * St;
+  var slope = (N * Stv - St * Sv) / den;
+  var intercept = (Sv - slope * St) / N;
+
+  // 六段逐差法
+  var diffA = ((s[3] + s[4] + s[5]) - (s[0] + s[1] + s[2])) / (9 * T * T);
+
+  return {
+    T: T, f: p.f, n: p.n,
+    fRaw: p.fRaw, nRaw: p.nRaw,
+    xCm: p.xCm.slice(), xRaw: p.xRaw.slice(),
+    sM: s, sCm: s.map(function (z) { return z * 100; }),
+    pts: pts, slope: slope, intercept: intercept, diffA: diffA
+  };
+}
+
+/* CSV 文本（UTF-8 BOM + CRLF；同时给出 cm 与 m） */
+function buildCSV(res, groupName) {
+  function q(v) {
+    var t = (v == null ? "" : String(v));
+    return /[",\r\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+  function row(arr) { return arr.map(q).join(","); }
+  var L = [];
+  L.push(row(["小车纸带记录页 导出数据"]));
+  L.push(row(["实验", "探究小车速度随时间变化的规律"]));
+  L.push(row(["小组名", groupName || "（未填写）"]));
+  L.push(row(["打点频率 f", res.fRaw == null ? fmt(res.f, 6) : res.fRaw, "Hz"]));
+  L.push(row(["相邻计数点间隔的周期数 n", res.nRaw == null ? String(res.n) : res.nRaw, "个打点周期"]));
+  L.push(row(["计数点时间间隔 T = n/f", fmt(res.T, 6), "s"]));
+  L.push("");
+  L.push(row(["[原始位置记录]"]));
+  L.push(row(["计数点", "位置 x", "单位"]));
+  for (var i = 0; i < res.xRaw.length; i++) {
+    L.push(row([(i === 0 ? "x0(O)" : "x" + i), res.xRaw[i], "cm"]));
+  }
+  L.push("");
+  L.push(row(["[相邻段长]"]));
+  L.push(row(["段", "段长 s", "单位", "段长 s", "单位"]));
+  for (var j = 0; j < res.sCm.length; j++) {
+    L.push(row(["s" + (j + 1), fmt(res.sCm[j], 4), "cm", fmt(res.sM[j], 6), "m"]));
+  }
+  L.push("");
+  L.push(row(["[速度与时刻]  vk = (x(k+1)-x(k-1))/(2T)"]));
+  L.push(row(["速度点", "时刻 t", "单位", "速度 v", "单位"]));
+  for (var k = 0; k < res.pts.length; k++) {
+    L.push(row(["v" + res.pts[k].k, fmt(res.pts[k].t, 6), "s", fmt(res.pts[k].v, 6), "m/s"]));
+  }
+  L.push("");
+  L.push(row(["[v-t 最小二乘拟合  v = k·t + b]"]));
+  L.push(row(["斜率 k", fmt(res.slope, 6), "m/s^2"]));
+  L.push(row(["截距 b", fmt(res.intercept, 6), "m/s"]));
+  L.push("");
+  L.push(row(["[六段逐差法]"]));
+  L.push(row(["a = ((s4+s5+s6)-(s1+s2+s3))/(9T^2)", fmt(res.diffA, 6), "m/s^2"]));
+  return "\ufeff" + L.join("\r\n") + "\r\n";
+}
+/* ==== CALC-CORE-END ==== */
+
+/* ============================================================
+   页面交互
+   ============================================================ */
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var PARAM_IDS = ["freq", "nper", "x0", "x1", "x2", "x3", "x4", "x5", "x6"];
+  var TEXT_IDS = ["grp", "setup", "concl"];
+  var last = null;        // 最近一次成功计算的结果（仅当 fresh 为真时可用于导出）
+  var fresh = false;      // 结果是否与当前输入一致
+  var everComputed = false; // 本次会话是否成功计算过（用于区分"未计算"与"已过期"）
+  var canvas = null;
+
+  function showMsg(kind, text) {
+    var el = $("msg");
+    el.className = "msg show " + kind;
+    el.innerHTML = text;
+  }
+  function hideMsg() { var el = $("msg"); el.className = "msg"; el.innerHTML = ""; }
+
+  function esc(t) {
+    return String(t == null ? "" : t)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  /* 撤下旧计算与图像 */
+  function invalidate(note) {
+    fresh = false;
+    last = null;
+    var box = $("results");
+    box.className = "";
+    box.innerHTML = "";
+    if (canvas) { canvas.remove(); canvas = null; }
+    $("btn-csv").disabled = true;
+    syncPrintSheet();
+    if (note) showMsg("info", note); else hideMsg();
+  }
+
+  function readRaw() {
+    var x = [];
+    for (var i = 0; i < XN; i++) x.push($("x" + i).value);
+    return { f: $("freq").value, n: $("nper").value, x: x };
+  }
+
+  function niceStep(raw) {
+    if (!(raw > 0)) return 1;
+    var e = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var f = raw / e, m;
+    if (f <= 1) m = 1; else if (f <= 2) m = 2; else if (f <= 2.5) m = 2.5; else if (f <= 5) m = 5; else m = 10;
+    return m * e;
+  }
+  /* 刻度标签必须与网格线数值一致：按步长决定小数位（0.25 -> 两位，0.2 -> 一位） */
+  function decimalsFor(step) {
+    var d = 0, s = step;
+    while (d < 6 && Math.abs(s - Math.round(s)) > 1e-9) { s *= 10; d++; }
+    return d;
+  }
+
+  function drawChart(res) {
+    if (canvas) canvas.remove();
+    var W = 680, H = 400;
+    var cv = document.createElement("canvas");
+    cv.id = "chart";
+    var ratio = (window.devicePixelRatio || 1) * (window.visualViewport ? window.visualViewport.scale : 1);
+    cv.width = Math.ceil(W * ratio); cv.height = Math.ceil(H * ratio);
+    cv.style.width = W + "px";
+    cv.style.height = H + "px";
+    var ctx = cv.getContext("2d");
+    ctx.setTransform(cv.width / W, 0, 0, cv.height / H, 0, 0);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+
+    var mg = { l: 70, r: 30, t: 26, b: 58 };
+    var tMax = 0, vMax = 0;
+    for (var i = 0; i < res.pts.length; i++) {
+      if (res.pts[i].t > tMax) tMax = res.pts[i].t;
+      if (res.pts[i].v > vMax) vMax = res.pts[i].v;
+    }
+    var yHi = vMax * 1.15 + 0.02;
+    var xHi = tMax * 1.15;
+    var stepX = niceStep(xHi / 6), stepY = niceStep(yHi / 5);
+    xHi = Math.ceil(xHi / stepX) * stepX;
+    yHi = Math.ceil(yHi / stepY) * stepY;
+
+    var px = function (t) { return mg.l + (t / xHi) * (W - mg.l - mg.r); };
+    var py = function (v) { return H - mg.b - (v / yHi) * (H - mg.t - mg.b); };
+
+    // 网格与刻度（用 i*step 生成，避免累加漂移；标签小数位与步长匹配）
+    ctx.strokeStyle = "#e6e9ee"; ctx.lineWidth = 1;
+    ctx.fillStyle = "#4a4a4a";
+    ctx.font = "12px -apple-system,Segoe UI,sans-serif";
+    var i, val, X, Y, dX = decimalsFor(stepX), dY = decimalsFor(stepY);
+    for (i = 0; i * stepX <= xHi + 1e-9; i++) {
+      val = i * stepX; X = px(val);
+      ctx.beginPath(); ctx.moveTo(X, mg.t); ctx.lineTo(X, H - mg.b); ctx.stroke();
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText(fmt(val, dX), X, H - mg.b + 8);
+    }
+    for (i = 0; i * stepY <= yHi + 1e-9; i++) {
+      val = i * stepY; Y = py(val);
+      ctx.beginPath(); ctx.moveTo(mg.l, Y); ctx.lineTo(W - mg.r, Y); ctx.stroke();
+      ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillText(fmt(val, dY), mg.l - 8, Y);
+    }
+    // 坐标轴
+    ctx.strokeStyle = "#1b1b1b"; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(mg.l, mg.t); ctx.lineTo(mg.l, H - mg.b); ctx.lineTo(W - mg.r, H - mg.b);
+    ctx.stroke();
+    ctx.fillStyle = "#1b1b1b";
+    ctx.font = "13px -apple-system,Segoe UI,sans-serif";
+    ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText("v / (m·s⁻¹)", mg.l - 62, 6);
+    ctx.textAlign = "right"; ctx.textBaseline = "bottom";
+    ctx.fillText("t / s", W - mg.r, H - 6);
+
+    // 拟合直线
+    ctx.strokeStyle = "#c0392b"; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(res.intercept));
+    ctx.lineTo(px(xHi), py(res.slope * xHi + res.intercept));
+    ctx.stroke();
+
+    // 数据散点
+    ctx.fillStyle = "#1f4e9c"; ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2;
+    for (var j = 0; j < res.pts.length; j++) {
+      var x = px(res.pts[j].t), y = py(res.pts[j].v);
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+
+    // 图例与方程（放在绘图区左上空白处，避免超出画布）
+    ctx.font = "12.5px -apple-system,Segoe UI,sans-serif";
+    ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    var lx = mg.l + 16, ly = mg.t + 22;
+    ctx.strokeStyle = "#c0392b"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 28, ly); ctx.stroke();
+    ctx.fillStyle = "#4a4a4a";
+    ctx.fillText("最小二乘拟合直线", lx + 36, ly);
+    ctx.fillStyle = "#1f4e9c";
+    ctx.beginPath(); ctx.arc(lx + 14, ly + 22, 5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#4a4a4a";
+    ctx.fillText("速度点（由相邻位置算出）", lx + 36, ly + 22);
+    ctx.font = "12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace";
+    ctx.fillText("v = " + fmt(res.slope, 3) + " t + " + fmt(res.intercept, 3) + "　（k: m/s²；b: m/s）", lx, ly + 44);
+
+    $("results").appendChild(cv);
+    canvas = cv;
+  }
+
+  function render(res) {
+    var box = $("results");
+    var h = [];
+    h.push('<section class="card"><h2>四、计算结果<span class="tag">由本页根据上方数据算出</span></h2>');
+    h.push('<p class="kv">计数点时间间隔 <span class="eq">T = n / f = ' + res.n + ' / ' + (res.fRaw == null ? fmt(res.f, 6) : res.fRaw) +
+      '</span> = <b>' + fmt(res.T, 3) + ' s</b></p>');
+    h.push('<p class="hint">速度算法：<span class="eq">v(k) = [ x(k+1) − x(k−1) ] / (2T)</span>，算出来的是 ' +
+      'x(k−1) 到 x(k+1) 这一小段的<b>平均速度</b>，本页把它当作该小段中间时刻 <span class="eq">t(k) = k·T</span> 的瞬时速度。' +
+      '对一般运动来说这是"用短时平均代替瞬时"的<b>近似</b>，只有匀变速直线运动时才严格相等；' +
+      '位置按 1 cm = 0.01 m 换算为 m 后计算。</p>');
+
+    h.push('<div class="two-col" style="margin-top:12px;">');
+    // 位置表
+    h.push('<div><table><caption>表 1　原始位置（未做任何改动）</caption><thead><tr><th>计数点</th><th>位置 x<br>（cm）</th></tr></thead><tbody>');
+    for (var i = 0; i < res.xRaw.length; i++) {
+      h.push("<tr><td>" + (i === 0 ? "O（x₀）" : "x" + i) + "</td><td>" + esc(res.xRaw[i]) + "</td></tr>");
+    }
+    h.push('</tbody></table></div>');
+    // 段长表
+    h.push('<div><table><caption>表 2　相邻段长（cm）</caption><thead><tr><th>段</th><th>段长 s<br>（cm）</th></tr></thead><tbody>');
+    for (var j = 0; j < res.sCm.length; j++) {
+      h.push("<tr><td>s" + (j + 1) + "</td><td>" + fmt(res.sCm[j], 3) + "</td></tr>");
+    }
+    h.push('</tbody></table></div>');
+    h.push('</div>');
+
+    // 速度表
+    h.push('<table style="margin-top:14px;"><caption>表 3　五点速度与时刻</caption><thead><tr>' +
+      '<th>速度点</th><th>时刻 t<br>（s）</th><th>速度 v<br>（m/s）</th></tr></thead><tbody>');
+    for (var k = 0; k < res.pts.length; k++) {
+      h.push("<tr><td>v" + res.pts[k].k + "（点 " + res.pts[k].k + "）</td><td>" + fmt(res.pts[k].t, 3) +
+        "</td><td>" + fmt(res.pts[k].v, 3) + "</td></tr>");
+    }
+    h.push('</tbody></table>');
+
+    // 图像容器（canvas 由 drawChart 追加）
+    h.push('<div id="chart-holder" style="margin-top:14px;">' +
+      '<div class="hint" style="margin-bottom:6px;">图 1　v-t 图像：散点为按相邻位置算出的速度值，直线为最小二乘拟合</div></div>');
+
+    h.push('<div class="two-col" style="margin-top:14px;">');
+    h.push('<div><p class="kv"><b>v-t 拟合直线：</b><span class="eq">v = k·t + b</span></p>' +
+      '<p class="kv">斜率 k = <b>' + fmt(res.slope, 3) + ' m/s²</b>（即加速度的拟合值）</p>' +
+      '<p class="kv">截距 b = <b>' + fmt(res.intercept, 3) + ' m/s</b>（t = 0 即 O 点处速度的拟合值）</p></div>');
+    h.push('<div><p class="kv"><b>六段逐差法：</b></p>' +
+      '<p class="kv eq">a = [(s₄+s₅+s₆) − (s₁+s₂+s₃)] / (9T²)</p>' +
+      '<p class="kv eq">等价形式 a = (x₆ − 2x₃ + x₀) / (9T²)　（只用到 x₀、x₃、x₆ 三个位置）</p>' +
+      '<p class="kv">a = <b>' + fmt(res.diffA, 3) + ' m/s²</b></p></div>');
+    h.push('</div>');
+    h.push('<p class="hint">上面两条结果是<b>同一组七个原始位置的两种处理</b>（同源）：拟合用五个速度点，逐差法化简后只用到 x₀、x₃、x₆ 三个位置。' +
+      '它们可以相互比较、相互印证，但共用同一组位置读数、同一份测量误差，因此<b>不能称作彼此"独立"的估计</b>（也不是统计独立）。' +
+      '本页只给数值，判断与解释请自己写。</p>');
+    h.push('</section>');
+
+    box.innerHTML = h.join("");
+    box.className = "show";
+    drawChart(res);
+  }
+
+  /* ---------- 打印用记录表：屏幕不显示，打印时按当前状态重建 ---------- */
+  function syncPrintSheet() {
+    var raw = readRaw();
+    var v = validate(raw);
+    var blank = '<span class="blank"></span>';
+    var blankS = '<span class="blank s"></span>';
+    function field(s) { return (s === "" ? blank : esc(s)); }
+    function rules(k) { var s = "", j; for (j = 0; j < k; j++) s += '<div class="rule"></div>'; return s; }
+    function block(t, k) { return t.trim() === "" ? rules(k) : '<div class="txt">' + esc(t) + "</div>"; }
+
+    var rows = "", i, val;
+    for (i = 0; i < XN; i++) {
+      val = String(raw.x[i]).trim();
+      rows += "<tr><td>" + (i === 0 ? "O（x₀）" : "x" + i) + "</td><td>" +
+        (val === "" ? blank : esc(val)) + "</td></tr>";
+    }
+
+    var status;
+    if (fresh) {
+      status = "<b>打印状态：已计算。</b>输入有效且与当前内容一致，计算结果与 v-t 图像附在本页之后。";
+    } else if (everComputed) {
+      status = "<b>打印状态：输入已改动，旧结果已撤下。</b>本页不含计算结果与 v-t 图像——请在页面上重新点击「计算」后再打印。" +
+        (v.ok ? "" : "（当前输入尚未通过校验，页面不会给出结果。）");
+    } else {
+      status = "<b>打印状态：尚未计算。</b>本页只含空白记录表，不含结果与图像；请在页面上填好数据并点击「计算」后再打印。" +
+        (v.ok ? "" : "（当前输入尚未通过校验。）");
+    }
+
+    $("print-sheet").innerHTML =
+      "<h2>实验记录表 · 探究小车速度随时间变化的规律</h2>" +
+      "<p>小组：" + field($("grp").value.trim()) + "　　日期：" + blankS + " 年 " + blankS + " 月 " + blankS + " 日</p>" +
+      '<p class="sheet-status">' + status + "</p>" +
+      "<h3>一、仪器参数（照仪器与纸带填写）</h3>" +
+      "<p>打点频率 f = " + field(String(raw.f).trim()) + " Hz　　相邻计数点间隔 n = " + field(String(raw.n).trim()) + " 个打点周期</p>" +
+      "<p>计数点时间间隔 T = n / f = " + blank + " s</p>" +
+      "<h3>二、各计数点到 O 的位置（cm）</h3>" +
+      "<table><thead><tr><th>计数点</th><th>位置 x / cm</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+      '<p class="sheet-hint">空横线表示尚未填写：请在纸带上量取后填写，本页不会替你补 0 或填示例值。</p>' +
+      "<h3>三、装置与操作说明</h3>" + block($("setup").value, 4) +
+      "<h3>四、结论</h3>" + block($("concl").value, 8);
+  }
+
+  /* --- 事件绑定 --- */
+  $("btn-calc").addEventListener("click", function () {
+    var v = validate(readRaw());
+    if (!v.ok) {
+      invalidate(v.error ? v.error : "输入有误，请核对。");
+      $("msg").className = "msg show err";
+      return;
+    }
+    var res = computeAll(v.params);
+    last = res; fresh = true; everComputed = true;
+    render(res);
+    $("btn-csv").disabled = false;
+    syncPrintSheet();
+    showMsg("ok", "计算完成：结果与图像均来自上方当前输入。");
+  });
+
+  $("btn-clear").addEventListener("click", function () {
+    PARAM_IDS.concat(TEXT_IDS).forEach(function (id) { $(id).value = ""; });
+    everComputed = false;
+    invalidate(null);
+    showMsg("info", "已清空全部输入与结果。");
+  });
+
+  $("btn-print").addEventListener("click", function () { window.print(); });
+
+  $("btn-csv").addEventListener("click", function () {
+    if (!fresh || !last) { $("btn-csv").disabled = true; return; }
+    var text = buildCSV(last, $("grp").value.trim());
+    var d = new Date();
+    var pad = function (z) { return (z < 10 ? "0" : "") + z; };
+    var stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+    var name = ($("grp").value.trim() || "未命名小组");
+    var blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "纸带记录_" + name + "_" + stamp + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  // 参数/位置改动：立即撤下旧计算与图像
+  PARAM_IDS.forEach(function (id) {
+    $(id).addEventListener("input", function () {
+      if (fresh || $("results").className === "show") {
+        invalidate("输入已改变，请重新点击「计算」。");
+      } else if ($("msg").className.indexOf("err") >= 0) {
+        hideMsg();
+      }
+    });
+  });
+
+  // 学生文字：只更新打印记录表，不影响计算结果
+  TEXT_IDS.forEach(function (id) { $(id).addEventListener("input", syncPrintSheet); });
+  syncPrintSheet();
+})();
+</script>
+</body>
+</html>

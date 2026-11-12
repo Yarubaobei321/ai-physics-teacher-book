@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第11章 · 真实照片分层标点</title>
+<style>
+:root{--ink:#1b1f24;--sub:#5b646e;--line:#dfe4ea;--bg:#f6f7f9;--card:#fff;--hl:#0b63ce}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 -apple-system,"PingFang SC","Microsoft YaHei",sans-serif}
+header{padding:20px 26px 14px;background:#fff;border-bottom:1px solid var(--line)}
+h1{margin:0 0 6px;font-size:21px} h2{font-size:16px;margin:20px 0 8px;padding-left:9px;border-left:4px solid var(--hl)}
+.sub{color:var(--sub);font-size:13.5px}
+.wrap{display:grid;grid-template-columns:minmax(340px,1fr) minmax(420px,1.25fr);gap:18px;padding:16px 26px 60px;align-items:start}
+@media(max-width:980px){.wrap{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.stagewrap{position:relative;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px;overflow:auto;max-height:82vh}
+.stage{position:relative;margin:0 auto}
+.stage img{display:block;width:100%;height:auto}
+.stage svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.mk{cursor:pointer}
+.mk.tweak{cursor:grab}
+.side{display:flex;gap:10px;align-items:flex-start}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+button{font:inherit;font-size:13.5px;padding:6px 11px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer}
+button:hover{border-color:var(--hl);color:var(--hl)}
+button.on{background:#e8f0fd;border-color:var(--hl);color:var(--hl)}
+label.ck{display:flex;gap:7px;align-items:center;font-size:14px;margin:4px 0}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:5px 7px;text-align:left;vertical-align:middle}
+th{background:#f2f4f7;font-weight:600;position:sticky;top:0}
+tr.unc td{background:#fffaf0}
+td.nt{color:#c62828;font-size:12px}
+input[type=number]{width:78px;font:inherit;font-size:12.5px;padding:2px 4px;border:1px solid var(--line);border-radius:5px}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.note{background:#fff8e6;border:1px solid #f0d79a;border-radius:9px;padding:9px 12px;font-size:13.5px}
+.warn{background:#fdecec;border-color:#f0b9b9}
+.ok{background:#eaf7ee;border-color:#b6e0c2}
+.tblwrap{max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:9px}
+.pair{display:none;gap:10px} .pair.show{display:flex}
+.pair>div{flex:1;min-width:0}
+</style></head><body>
+<header>
+<h1>第 11 章 · 在真实照片上分层标点</h1>
+<div class="sub">底层为原照 <code>单点实测原照.jpg</code>（原样复制、未重绘、未涂改、未裁剪）；标记为独立 SVG 叠层。黄环 6 V 共 5、红环 4 V 共 5、蓝环 2 V 共 8。</div>
+</header>
+<div class="wrap">
+  <div>
+    <div class="card">
+      <div class="btnrow">
+        <button id="bNum" class="on" onclick="tg('bNum','numg')">显示/隐藏编号</button>
+        <button id="bCenter" onclick="tg('bCenter','centerLayer')">环中心十字</button>
+        <button id="bMark" class="on" onclick="tg('bMark','markLayer')">显示/隐藏标记</button>
+        <button id="bAux" onclick="tg('bAux','auxLayer')">辅助连线（草稿·待核对）</button>
+      </div>
+      <div class="btnrow">
+        <button id="bPhotoOnly" onclick="onlyPhoto()">只看原图（关掉全部叠层）</button>
+        <button id="bOverlayOnly" onclick="onlyOverlay()">只看叠层（关掉原图）</button>
+        <button id="bPair" onclick="togglePair()">并排：原图 ｜ 标注</button>
+        <button id="bEdit" onclick="toggleEdit()">调整点位</button>
+      </div>
+      <div class="btnrow">
+        <label class="ck"><input type="checkbox" id="cbGrid" onchange="document.getElementById('gridLayer').style.display=this.checked?'':'none'"> 叠一层像素网格（便于人工核对坐标）</label>
+      </div>
+      <div class="sub">缩放：<input type="range" min="60" max="200" value="100" style="width:180px" oninput="setZoom(this.value)"></div>
+      <div class="sub" id="hint">点“调整点位”后：点选标记可直接拖动，或用方向键 ±1 px 微调。</div>
+    </div>
+    <div class="side">
+      <div id="plainPane" style="display:none;flex:1;min-width:0">
+        <div class="sub" style="text-align:center">原照（无叠层、未标注）</div>
+        <div class="stagewrap"><img src="单点实测原照.jpg" alt="单点实测-未标注原照" style="width:100%;display:block"></div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="sub" style="text-align:center" id="annTitle">标注（原图 ＋ 独立 SVG 叠层）</div>
+        <div class="stagewrap" id="stagewrap"><div class="stage" id="stage">
+          <img id="baseImg" src="单点实测原照.jpg" alt="单点实测-未标注原照">
+          <svg id="ov" viewBox="0 0 1080 1920" preserveAspectRatio="none">
+            <g id="gridLayer" style="display:none"></g>
+            <g id="centerLayer"></g>
+            <g id="auxLayer" style="display:none"></g>
+            <g id="markLayer"></g>
+            <g id="numg"></g>
+          </svg>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <h2>一、第一轮：自动识别 + 编号</h2>
+    <div class="card">
+      <p style="margin-top:0">用 HSV 阈值 + 连通域自动找出三种彩色环的中心（不重画、不合成）。识别出的数量：</p>
+      <table><tr><th>颜色</th><th>识别数</th><th>应有数</th><th>核对</th></tr><tr><td>yellow</td><td>5</td><td>5</td><td>数量一致，仍须逐点核对</td></tr><tr><td>red</td><td>5</td><td>5</td><td>数量一致，仍须逐点核对</td></tr><tr><td>blue</td><td>8</td><td>8</td><td>数量一致，仍须逐点核对</td></tr></table>
+      <p class="sub">数量一致，仍须逐点核对；下面列出被剔除的团块与触发不确定条件的点。</p>
+      <p><b>被剔除的团块（非环）</b></p><ul style="margin:4px 0 0 18px;padding:0"><li>red 团块 像素(9, 1393)、面积 173 → 判定为画面外/导线，已剔除</li></ul>
+      <p style="margin-top:10px"><b>不确定点（留待人工核对）</b></p><ul style="margin:4px 0 0 18px;padding:0"><li><b>Y1</b>（yellow 6V，像素 526.9, 1043.8）：共圆偏离 11.3 px，建议人工核对</li><li><b>Y3</b>（yellow 6V，像素 490.9, 1108.0）：环轮廓不完整（fill=0.53），中心由残月形轮廓估计</li><li><b>Y5</b>（yellow 6V，像素 534.0, 1144.9）：共圆偏离 -12.0 px，建议人工核对</li><li><b>B4</b>（blue 2V，像素 313.8, 1066.9）：轮廓被裁切（20×15 px），中心可能偏移</li></ul>
+    </div>
+
+    <h2>二、各色共圆校验</h2>
+    <div class="card">
+      <p style="margin-top:0">把三种颜色的环分别作共圆拟合（共享同一圆心、各色一个半径，圆心用二维网格搜索最小二乘）：</p>
+      <table><tr><th>颜色</th><th>半径 / px</th><th>共圆 RMS / px</th><th>半径 / 拟合中心的相对偏差</th></tr>
+        <tr><td>黄 6V</td><td>52.55</td><td>7.41</td><td>14.1%</td></tr>
+        <tr><td>红 4V</td><td>144.84</td><td>4.53</td><td>3.1%</td></tr>
+        <tr><td>蓝 2V</td><td>240.13</td><td>11.40</td><td>4.7%</td></tr></table>
+      <div class="note ok">
+        <b>两个独立佐证：</b><br>
+        ① 拟合出的电势中心在 <code>(543.52, 1105.47)</code> px，人工从坐标纸主轴线读出的标注原点在 <code>(550, 1100)</code> px，两者相差约 8.5 px（约等于环半径的一半，属读图与贴点误差量级）。<br>
+        ② 半径随电势下降而增大：6V 内环 52.5 px &lt; 4V 中环 144.8 px &lt; 2V 外环 240.1 px，与「内高外低」的场一致。<br>
+        红、黄的共圆 RMS 只有几 px；蓝的偏大，与其轮廓被裁切、环更大有关。
+      </div>
+    </div>
+
+    <h2>三、像素坐标表（可编辑）</h2>
+    <div class="card">
+      <div class="tblwrap"><table id="ptTable">
+        <tr><th>编号</th><th>颜色</th><th>电势</th><th>x / px</th><th>y / px</th><th>半径</th><th>共圆偏差</th><th>角度°</th><th>状态</th><th>说明</th></tr>
+        <tr data-id='Y1' class="unc"><td>Y1</td><td><span class='dot' style='background:yellow'></span>黄</td><td>6 V</td><td><input type='number' step='0.1' value='526.9' data-k='x'></td><td><input type='number' step='0.1' value='1043.8' data-k='y'></td><td>63.9</td><td>+11.3</td><td>105.1</td><td><span style="color:#c62828">待核对</span></td><td class='nt'>共圆偏离 11.3 px，建议人工核对</td></tr><tr data-id='Y2' class=""><td>Y2</td><td><span class='dot' style='background:yellow'></span>黄</td><td>6 V</td><td><input type='number' step='0.1' value='584.8' data-k='x'></td><td><input type='number' step='0.1' value='1070.9' data-k='y'></td><td>53.8</td><td>+1.3</td><td>40.0</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='Y3' class="unc"><td>Y3</td><td><span class='dot' style='background:yellow'></span>黄</td><td>6 V</td><td><input type='number' step='0.1' value='490.9' data-k='x'></td><td><input type='number' step='0.1' value='1108.0' data-k='y'></td><td>52.6</td><td>+0.1</td><td>182.7</td><td><span style="color:#c62828">待核对</span></td><td class='nt'>环轮廓不完整（fill=0.53），中心由残月形轮廓估计</td></tr><tr data-id='Y4' class=""><td>Y4</td><td><span class='dot' style='background:yellow'></span>黄</td><td>6 V</td><td><input type='number' step='0.1' value='590.6' data-k='x'></td><td><input type='number' step='0.1' value='1127.0' data-k='y'></td><td>51.8</td><td>-0.7</td><td>335.4</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='Y5' class="unc"><td>Y5</td><td><span class='dot' style='background:yellow'></span>黄</td><td>6 V</td><td><input type='number' step='0.1' value='534.0' data-k='x'></td><td><input type='number' step='0.1' value='1144.9' data-k='y'></td><td>40.6</td><td>-12.0</td><td>256.4</td><td><span style="color:#c62828">待核对</span></td><td class='nt'>共圆偏离 -12.0 px，建议人工核对</td></tr><tr data-id='R1' class=""><td>R1</td><td><span class='dot' style='background:red'></span>红</td><td>4 V</td><td><input type='number' step='0.1' value='495.2' data-k='x'></td><td><input type='number' step='0.1' value='959.9' data-k='y'></td><td>153.4</td><td>+8.5</td><td>108.4</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='R2' class=""><td>R2</td><td><span class='dot' style='background:red'></span>红</td><td>4 V</td><td><input type='number' step='0.1' value='638.8' data-k='x'></td><td><input type='number' step='0.1' value='996.1' data-k='y'></td><td>145.0</td><td>+0.2</td><td>48.9</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='R3' class=""><td>R3</td><td><span class='dot' style='background:red'></span>红</td><td>4 V</td><td><input type='number' step='0.1' value='401.8' data-k='x'></td><td><input type='number' step='0.1' value='1127.7' data-k='y'></td><td>143.4</td><td>-1.4</td><td>188.9</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='R4' class=""><td>R4</td><td><span class='dot' style='background:red'></span>红</td><td>4 V</td><td><input type='number' step='0.1' value='669.8' data-k='x'></td><td><input type='number' step='0.1' value='1170.6' data-k='y'></td><td>142.0</td><td>-2.8</td><td>332.7</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='R5' class=""><td>R5</td><td><span class='dot' style='background:red'></span>红</td><td>4 V</td><td><input type='number' step='0.1' value='528.8' data-k='x'></td><td><input type='number' step='0.1' value='1245.0' data-k='y'></td><td>140.4</td><td>-4.5</td><td>264.0</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='B1' class=""><td>B1</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='646.9' data-k='x'></td><td><input type='number' step='0.1' value='892.1' data-k='y'></td><td>237.1</td><td>-3.0</td><td>64.2</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='B2' class=""><td>B2</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='416.3' data-k='x'></td><td><input type='number' step='0.1' value='915.4' data-k='y'></td><td>228.7</td><td>-11.4</td><td>123.8</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='B3' class=""><td>B3</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='755.0' data-k='x'></td><td><input type='number' step='0.1' value='1027.6' data-k='y'></td><td>225.4</td><td>-14.7</td><td>20.2</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='B4' class="unc"><td>B4</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='313.8' data-k='x'></td><td><input type='number' step='0.1' value='1066.9' data-k='y'></td><td>233.0</td><td>-7.1</td><td>170.5</td><td><span style="color:#c62828">待核对</span></td><td class='nt'>轮廓被裁切（20×15 px），中心可能偏移</td></tr><tr data-id='B5' class=""><td>B5</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='784.0' data-k='x'></td><td><input type='number' step='0.1' value='1204.8' data-k='y'></td><td>260.1</td><td>+20.0</td><td>337.6</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='B6' class=""><td>B6</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='341.6' data-k='x'></td><td><input type='number' step='0.1' value='1255.0' data-k='y'></td><td>251.3</td><td>+11.1</td><td>216.5</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='B7' class=""><td>B7</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='642.9' data-k='x'></td><td><input type='number' step='0.1' value='1319.4' data-k='y'></td><td>235.9</td><td>-4.2</td><td>294.9</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr><tr data-id='B8' class=""><td>B8</td><td><span class='dot' style='background:blue'></span>蓝</td><td>2 V</td><td><input type='number' step='0.1' value='467.1' data-k='x'></td><td><input type='number' step='0.1' value='1343.0' data-k='y'></td><td>249.5</td><td>+9.4</td><td>252.2</td><td><span style="color:#0a7a3d">自动识别通过</span></td><td class='nt'>—</td></tr>
+      </table></div>
+      <div class="btnrow" style="margin-top:8px">
+        <button onclick="nudge(-1,0)">← 选中点 −1px</button><button onclick="nudge(1,0)">→</button>
+        <button onclick="nudge(0,-1)">↑</button><button onclick="nudge(0,1)">↓</button>
+        <button onclick="addPoint('yellow')">＋黄点</button><button onclick="addPoint('red')">＋红点</button>
+        <button onclick="addPoint('blue')">＋蓝点</button>
+        <button onclick="delPoint()">删除选中</button>
+        <button onclick="resetPoints()">还原自动识别结果</button>
+      </div>
+      <div class="btnrow">
+        <button onclick="exportJSON()">导出 points.json</button>
+        <button onclick="exportPNG()">导出标注 PNG（原图叠加副本）</button>
+      </div>
+    </div>
+
+    <h2>四、辅助连线（人工核对后才用）</h2>
+    <div class="card">
+      <div class="note warn" style="margin-top:0">
+        <b>先别当结论用。</b>同色、同分支的点按空间顺序连成的弧线只是“辅助连线，<b>非新增实测</b>”；缺测弧段用虚线表示这里是<b>没测</b>，<b>不是</b>已经测出等势。连线本身不证明缺测处等势。左边按钮默认是关的，请人工核对完点位身份（哪些点属于同一分支）再打开。
+      </div>
+      <table><tr><th>颜色</th><th>相邻点角度间隔 / °（明显大于常规间隔的才判为缺测弧段→虚线）</th></tr>
+        <tr><td>yellow</td><td>65.1, 77.6, 73.7, 79.0, 64.6</td></tr><tr><td>red</td><td>59.5, 80.5, 75.1, 68.7, 76.2</td></tr><tr><td>blue</td><td>44.0, 59.6, 46.7, 46.0, 35.7, 42.7, 42.7, 42.6</td></tr>
+      </table>
+      <div class="note"><b>本次结果：</b>三种颜色的点都基本均匀铺满各自的圆（角度间隔彼此接近），<b>按几何判据没有识别出明显的缺测弧段，因此虚线数为 0</b>。有没有“缺测”，最终要按实验方案里<b>原本该测哪些角度</b>来定，不能只靠几何。判据（阈值）可在本页脚本里改。</div>
+      <p class="sub" style="margin-bottom:0">红线不会接到黄环或蓝环；不同颜色之间不连线。</p>
+    </div>
+
+    <h2>五、还没做 / 不能声称的</h2>
+    <div class="card"><ul style="margin:0 0 0 18px;padding:0">
+      <li>所有点仍是自动候选，尚待人工逐点核对。“自动识别通过”只表示未触发程序的不确定条件；“待核对”提示优先检查的点。</li>
+      <li>不能排除被鳄鱼夹或导线<b>完全遮住</b>的环（遮挡处无颜色证据）。</li>
+      <li>颜色↔电压（黄6/红4/蓝2 V）沿用任务给定，未从照片独立验证。</li>
+      <li>照片为透视拍摄，像素坐标未做透视矫正；环本身有直径，中心存在约 ±2 px 估计误差。</li>
+      <li>未导出 PNG 作为“实测图”——如需，用上面的按钮生成，它只是原图叠加标注的副本。</li>
+    </ul></div>
+  </div>
+</div>
+<script>
+const IMG_W=1080, IMG_H=1920;
+let PTS=[{"id": "Y1", "color": "yellow", "voltage": 6, "x": 526.9, "y": 1043.8, "radius_px": 63.9, "circle_dev_px": 11.3, "angle_deg": 105.1, "area": 265, "w": 19.0, "h": 20.0, "fill": 0.7, "auto": true, "uncertain": [], "review": true, "note": "共圆偏离 11.3 px，建议人工核对"}, {"id": "Y2", "color": "yellow", "voltage": 6, "x": 584.8, "y": 1070.9, "radius_px": 53.8, "circle_dev_px": 1.3, "angle_deg": 40.0, "area": 250, "w": 19.0, "h": 21.0, "fill": 0.63, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "Y3", "color": "yellow", "voltage": 6, "x": 490.9, "y": 1108.0, "radius_px": 52.6, "circle_dev_px": 0.1, "angle_deg": 182.7, "area": 224, "w": 21.0, "h": 20.0, "fill": 0.53, "auto": true, "uncertain": ["环轮廓不完整（fill=0.53），中心由残月形轮廓估计"], "review": false, "note": "环轮廓不完整（fill=0.53），中心由残月形轮廓估计"}, {"id": "Y4", "color": "yellow", "voltage": 6, "x": 590.6, "y": 1127.0, "radius_px": 51.8, "circle_dev_px": -0.7, "angle_deg": 335.4, "area": 269, "w": 19.0, "h": 20.0, "fill": 0.71, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "Y5", "color": "yellow", "voltage": 6, "x": 534.0, "y": 1144.9, "radius_px": 40.6, "circle_dev_px": -12.0, "angle_deg": 256.4, "area": 249, "w": 20.0, "h": 19.0, "fill": 0.66, "auto": true, "uncertain": [], "review": true, "note": "共圆偏离 -12.0 px，建议人工核对"}, {"id": "R1", "color": "red", "voltage": 4, "x": 495.2, "y": 959.9, "radius_px": 153.4, "circle_dev_px": 8.5, "angle_deg": 108.4, "area": 226, "w": 18.0, "h": 20.0, "fill": 0.63, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R2", "color": "red", "voltage": 4, "x": 638.8, "y": 996.1, "radius_px": 145.0, "circle_dev_px": 0.2, "angle_deg": 48.9, "area": 225, "w": 18.0, "h": 19.0, "fill": 0.66, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R3", "color": "red", "voltage": 4, "x": 401.8, "y": 1127.7, "radius_px": 143.4, "circle_dev_px": -1.4, "angle_deg": 188.9, "area": 238, "w": 18.0, "h": 18.0, "fill": 0.73, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R4", "color": "red", "voltage": 4, "x": 669.8, "y": 1170.6, "radius_px": 142.0, "circle_dev_px": -2.8, "angle_deg": 332.7, "area": 248, "w": 19.0, "h": 20.0, "fill": 0.65, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R5", "color": "red", "voltage": 4, "x": 528.8, "y": 1245.0, "radius_px": 140.4, "circle_dev_px": -4.5, "angle_deg": 264.0, "area": 275, "w": 19.0, "h": 21.0, "fill": 0.69, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B1", "color": "blue", "voltage": 2, "x": 646.9, "y": 892.1, "radius_px": 237.1, "circle_dev_px": -3.0, "angle_deg": 64.2, "area": 272, "w": 19.0, "h": 19.0, "fill": 0.75, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B2", "color": "blue", "voltage": 2, "x": 416.3, "y": 915.4, "radius_px": 228.7, "circle_dev_px": -11.4, "angle_deg": 123.8, "area": 274, "w": 19.0, "h": 20.0, "fill": 0.72, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B3", "color": "blue", "voltage": 2, "x": 755.0, "y": 1027.6, "radius_px": 225.4, "circle_dev_px": -14.7, "angle_deg": 20.2, "area": 294, "w": 21.0, "h": 20.0, "fill": 0.7, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B4", "color": "blue", "voltage": 2, "x": 313.8, "y": 1066.9, "radius_px": 233.0, "circle_dev_px": -7.1, "angle_deg": 170.5, "area": 190, "w": 20.0, "h": 15.0, "fill": 0.63, "auto": true, "uncertain": ["轮廓被裁切（20×15 px），中心可能偏移"], "review": false, "note": "轮廓被裁切（20×15 px），中心可能偏移"}, {"id": "B5", "color": "blue", "voltage": 2, "x": 784.0, "y": 1204.8, "radius_px": 260.1, "circle_dev_px": 20.0, "angle_deg": 337.6, "area": 323, "w": 21.0, "h": 21.0, "fill": 0.73, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B6", "color": "blue", "voltage": 2, "x": 341.6, "y": 1255.0, "radius_px": 251.3, "circle_dev_px": 11.1, "angle_deg": 216.5, "area": 338, "w": 20.0, "h": 21.0, "fill": 0.8, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B7", "color": "blue", "voltage": 2, "x": 642.9, "y": 1319.4, "radius_px": 235.9, "circle_dev_px": -4.2, "angle_deg": 294.9, "area": 355, "w": 21.0, "h": 22.0, "fill": 0.77, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B8", "color": "blue", "voltage": 2, "x": 467.1, "y": 1343.0, "radius_px": 249.5, "circle_dev_px": 9.4, "angle_deg": 252.2, "area": 359, "w": 21.0, "h": 21.0, "fill": 0.81, "auto": true, "uncertain": [], "review": false, "note": "—"}];
+const AUTO=[{"id": "Y1", "color": "yellow", "voltage": 6, "x": 526.9, "y": 1043.8, "radius_px": 63.9, "circle_dev_px": 11.3, "angle_deg": 105.1, "area": 265, "w": 19.0, "h": 20.0, "fill": 0.7, "auto": true, "uncertain": [], "review": true, "note": "共圆偏离 11.3 px，建议人工核对"}, {"id": "Y2", "color": "yellow", "voltage": 6, "x": 584.8, "y": 1070.9, "radius_px": 53.8, "circle_dev_px": 1.3, "angle_deg": 40.0, "area": 250, "w": 19.0, "h": 21.0, "fill": 0.63, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "Y3", "color": "yellow", "voltage": 6, "x": 490.9, "y": 1108.0, "radius_px": 52.6, "circle_dev_px": 0.1, "angle_deg": 182.7, "area": 224, "w": 21.0, "h": 20.0, "fill": 0.53, "auto": true, "uncertain": ["环轮廓不完整（fill=0.53），中心由残月形轮廓估计"], "review": false, "note": "环轮廓不完整（fill=0.53），中心由残月形轮廓估计"}, {"id": "Y4", "color": "yellow", "voltage": 6, "x": 590.6, "y": 1127.0, "radius_px": 51.8, "circle_dev_px": -0.7, "angle_deg": 335.4, "area": 269, "w": 19.0, "h": 20.0, "fill": 0.71, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "Y5", "color": "yellow", "voltage": 6, "x": 534.0, "y": 1144.9, "radius_px": 40.6, "circle_dev_px": -12.0, "angle_deg": 256.4, "area": 249, "w": 20.0, "h": 19.0, "fill": 0.66, "auto": true, "uncertain": [], "review": true, "note": "共圆偏离 -12.0 px，建议人工核对"}, {"id": "R1", "color": "red", "voltage": 4, "x": 495.2, "y": 959.9, "radius_px": 153.4, "circle_dev_px": 8.5, "angle_deg": 108.4, "area": 226, "w": 18.0, "h": 20.0, "fill": 0.63, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R2", "color": "red", "voltage": 4, "x": 638.8, "y": 996.1, "radius_px": 145.0, "circle_dev_px": 0.2, "angle_deg": 48.9, "area": 225, "w": 18.0, "h": 19.0, "fill": 0.66, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R3", "color": "red", "voltage": 4, "x": 401.8, "y": 1127.7, "radius_px": 143.4, "circle_dev_px": -1.4, "angle_deg": 188.9, "area": 238, "w": 18.0, "h": 18.0, "fill": 0.73, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R4", "color": "red", "voltage": 4, "x": 669.8, "y": 1170.6, "radius_px": 142.0, "circle_dev_px": -2.8, "angle_deg": 332.7, "area": 248, "w": 19.0, "h": 20.0, "fill": 0.65, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "R5", "color": "red", "voltage": 4, "x": 528.8, "y": 1245.0, "radius_px": 140.4, "circle_dev_px": -4.5, "angle_deg": 264.0, "area": 275, "w": 19.0, "h": 21.0, "fill": 0.69, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B1", "color": "blue", "voltage": 2, "x": 646.9, "y": 892.1, "radius_px": 237.1, "circle_dev_px": -3.0, "angle_deg": 64.2, "area": 272, "w": 19.0, "h": 19.0, "fill": 0.75, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B2", "color": "blue", "voltage": 2, "x": 416.3, "y": 915.4, "radius_px": 228.7, "circle_dev_px": -11.4, "angle_deg": 123.8, "area": 274, "w": 19.0, "h": 20.0, "fill": 0.72, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B3", "color": "blue", "voltage": 2, "x": 755.0, "y": 1027.6, "radius_px": 225.4, "circle_dev_px": -14.7, "angle_deg": 20.2, "area": 294, "w": 21.0, "h": 20.0, "fill": 0.7, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B4", "color": "blue", "voltage": 2, "x": 313.8, "y": 1066.9, "radius_px": 233.0, "circle_dev_px": -7.1, "angle_deg": 170.5, "area": 190, "w": 20.0, "h": 15.0, "fill": 0.63, "auto": true, "uncertain": ["轮廓被裁切（20×15 px），中心可能偏移"], "review": false, "note": "轮廓被裁切（20×15 px），中心可能偏移"}, {"id": "B5", "color": "blue", "voltage": 2, "x": 784.0, "y": 1204.8, "radius_px": 260.1, "circle_dev_px": 20.0, "angle_deg": 337.6, "area": 323, "w": 21.0, "h": 21.0, "fill": 0.73, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B6", "color": "blue", "voltage": 2, "x": 341.6, "y": 1255.0, "radius_px": 251.3, "circle_dev_px": 11.1, "angle_deg": 216.5, "area": 338, "w": 20.0, "h": 21.0, "fill": 0.8, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B7", "color": "blue", "voltage": 2, "x": 642.9, "y": 1319.4, "radius_px": 235.9, "circle_dev_px": -4.2, "angle_deg": 294.9, "area": 355, "w": 21.0, "h": 22.0, "fill": 0.77, "auto": true, "uncertain": [], "review": false, "note": "—"}, {"id": "B8", "color": "blue", "voltage": 2, "x": 467.1, "y": 1343.0, "radius_px": 249.5, "circle_dev_px": 9.4, "angle_deg": 252.2, "area": 359, "w": 21.0, "h": 21.0, "fill": 0.81, "auto": true, "uncertain": [], "review": false, "note": "—"}];
+const CENTER=[543.52,1105.47];
+const RAD={"yellow": 52.5, "red": 144.8, "blue": 240.1};
+const AUX={"yellow": [{"from_id": "Y2", "to_id": "Y1", "gap_deg": 65.1, "dashed": false}, {"from_id": "Y1", "to_id": "Y3", "gap_deg": 77.6, "dashed": false}, {"from_id": "Y3", "to_id": "Y5", "gap_deg": 73.7, "dashed": false}, {"from_id": "Y5", "to_id": "Y4", "gap_deg": 79.0, "dashed": false}, {"from_id": "Y4", "to_id": "Y2", "gap_deg": 64.6, "dashed": false}], "red": [{"from_id": "R2", "to_id": "R1", "gap_deg": 59.5, "dashed": false}, {"from_id": "R1", "to_id": "R3", "gap_deg": 80.5, "dashed": false}, {"from_id": "R3", "to_id": "R5", "gap_deg": 75.1, "dashed": false}, {"from_id": "R5", "to_id": "R4", "gap_deg": 68.7, "dashed": false}, {"from_id": "R4", "to_id": "R2", "gap_deg": 76.2, "dashed": false}], "blue": [{"from_id": "B3", "to_id": "B1", "gap_deg": 44.0, "dashed": false}, {"from_id": "B1", "to_id": "B2", "gap_deg": 59.6, "dashed": false}, {"from_id": "B2", "to_id": "B4", "gap_deg": 46.7, "dashed": false}, {"from_id": "B4", "to_id": "B6", "gap_deg": 46.0, "dashed": false}, {"from_id": "B6", "to_id": "B8", "gap_deg": 35.7, "dashed": false}, {"from_id": "B8", "to_id": "B7", "gap_deg": 42.7, "dashed": false}, {"from_id": "B7", "to_id": "B5", "gap_deg": 42.7, "dashed": false}, {"from_id": "B5", "to_id": "B3", "gap_deg": 42.6, "dashed": false}]};
+const COL={yellow:'#e8b400', red:'#e23b2e', blue:'#1f6feb'};
+let sel=null, editMode=false;
+
+function render(){
+  const mg=document.getElementById('markLayer'), ng=document.getElementById('numg'), cg=document.getElementById('centerLayer');
+  mg.innerHTML=''; ng.innerHTML=''; cg.innerHTML='';
+  // 中心与共圆参考
+  cg.innerHTML += `<circle cx="${CENTER[0]}" cy="${CENTER[1]}" r="9" fill="none" stroke="#111" stroke-width="2"/>`
+               +  `<path d="M${CENTER[0]-16},${CENTER[1]} L${CENTER[0]+16},${CENTER[1]} M${CENTER[0]},${CENTER[1]-16} L${CENTER[0]},${CENTER[1]+16}" stroke="#111" stroke-width="2" fill="none"/>`
+               +  `<text x="${CENTER[0]+14}" y="${CENTER[1]-14}" font-size="26" fill="#111">O(O,0) 中心</text>`;
+  // 辅助弧线
+  const ag=document.getElementById('auxLayer'); ag.innerHTML='';
+  for(const c in AUX){
+    for(const a of AUX[c]){
+      const p1=PTS.find(p=>p.id===a.from_id), p2=PTS.find(p=>p.id===a.to_id);
+      if(!p1||!p2) continue;
+      const a1=Math.atan2(-(p1.y-CENTER[1]),p1.x-CENTER[0]), a2=Math.atan2(-(p2.y-CENTER[1]),p2.x-CENTER[0]);
+      let d=a2-a1; if(d<0) d+=2*Math.PI;
+      const R=RAD[c]; let pts=[];
+      for(let k=0;k<=48;k++){const t=a1+d*k/48; pts.push((CENTER[0]+R*Math.cos(t)).toFixed(1)+','+(CENTER[1]-R*Math.sin(t)).toFixed(1));}
+      ag.innerHTML += `<polyline points="${pts.join(' ')}" fill="none" stroke="${COL[c]}" stroke-width="3" `
+                    + `stroke-dasharray="${a.dashed?'14,10':''}" opacity="0.75"/>`;
+    }
+  }
+  // 标记
+  for(const p of PTS){
+    const c=COL[p.color];
+    const unc=p.uncertain&&p.uncertain.length;
+    mg.innerHTML += `<g class="mk${editMode?' tweak':''}" data-id="${p.id}" style="pointer-events:all">`
+      + `<circle cx="${p.x}" cy="${p.y}" r="17" fill="none" stroke="${c}" stroke-width="4"/>`
+      + `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="${c}"/>`
+      + `<path d="M${p.x-23},${p.y} L${p.x-8},${p.y} M${p.x+8},${p.y} L${p.x+23},${p.y} M${p.x},${p.y-23} L${p.x},${p.y-8} M${p.x},${p.y+8} L${p.x},${p.y+23}" stroke="${c}" stroke-width="2.5" fill="none"/>`
+      + (unc?`<circle cx="${p.x}" cy="${p.y}" r="25" fill="none" stroke="#c62828" stroke-width="2" stroke-dasharray="5,4"/>`:'')
+      + `</g>`;
+    const ux0=p.x-CENTER[0], uy0=p.y-CENTER[1], LL=Math.hypot(ux0,uy0)||1;
+    const lx=p.x+36*ux0/LL, ly=p.y+36*uy0/LL;
+    ng.innerHTML += `<g><rect x="${lx-26}" y="${ly-16}" width="52" height="27" rx="6" fill="#ffffffee" stroke="${c}" stroke-width="2"/>`
+      + `<text x="${lx}" y="${ly+5}" font-size="21" text-anchor="middle" fill="#111" font-weight="700">${p.id}</text></g>`;
+  }
+  // 网格
+  const gg=document.getElementById('gridLayer');
+  if(gg&&!gg.dataset.done){ let s='';
+    for(let x=0;x<IMG_W;x+=50) s+=`<line x1="${x}" y1="0" x2="${x}" y2="${IMG_H}" stroke="#0b63ce" stroke-width="1" opacity="0.35"/>`;
+    for(let y=0;y<IMG_H;y+=50) s+=`<line x1="0" y1="${y}" x2="${IMG_W}" y2="${y}" stroke="#0b63ce" stroke-width="1" opacity="0.35"/>`;
+    for(let x=0;x<IMG_W;x+=200)for(let y=0;y<IMG_H;y+=200) s+=`<text x="${x+4}" y="${y+22}" font-size="20" fill="#0b63ce">${x},${y}</text>`;
+    gg.innerHTML=s; gg.dataset.done=1; }
+  syncTable();
+}
+function tg(btn,id){const e=document.getElementById(id);const on=e.style.display!=='none';e.style.display=on?'none':'';document.getElementById(btn).classList.toggle('on',!on);}
+function onlyPhoto(){const s=document.getElementById('ov');const hide=s.style.display!=='none';s.style.display=hide?'none':'';document.getElementById('bPhotoOnly').classList.toggle('on',hide);}
+function onlyOverlay(){const i=document.getElementById('baseImg');const hide=i.style.visibility!=='hidden';i.style.visibility=hide?'hidden':'visible';document.getElementById('bOverlayOnly').classList.toggle('on',hide);}
+function setZoom(v){document.getElementById('stage').style.width=v+'%';}
+function togglePair(){const p=document.getElementById('plainPane');const on=p.style.display==='none';p.style.display=on?'block':'none';document.getElementById('bPair').classList.toggle('on',on);}
+function toggleEdit(){editMode=!editMode;document.getElementById('bEdit').classList.toggle('on',editMode);
+  document.getElementById('hint').textContent=editMode?'拖动模式已开：点选标记后直接拖动，或用方向键 ±1 px 微调。':'点“调整点位”后：点选标记可直接拖动，或用方向键 ±1 px 微调。';render();}
+function syncTable(){
+  document.querySelectorAll('#ptTable tr[data-id]').forEach(tr=>{
+    const p=PTS.find(q=>q.id===tr.dataset.id); if(!p) return;
+    tr.querySelector("input[data-k=x]").value=p.x.toFixed(1);
+    tr.querySelector("input[data-k=y]").value=p.y.toFixed(1);
+  });
+}
+function select(id){sel=id;document.querySelectorAll('#ptTable tr[data-id]').forEach(tr=>tr.style.outline=(tr.dataset.id===id?'2px solid #0b63ce':''));}
+function nudge(dx,dy){const p=PTS.find(q=>q.id===sel);if(!p)return alert('先在下面表格或图上选一个点');p.x=Math.round((p.x+dx)*10)/10;p.y=Math.round((p.y+dy)*10)/10;render();}
+function addPoint(color){const i=PTS.filter(q=>q.color===color).length+1;
+  PTS.push({id:color[0].toUpperCase()+i+(PTS.some(q=>q.id===color[0].toUpperCase()+i)?'x':''),color:color,
+    voltage:{yellow:6,red:4,blue:2}[color],x:Math.round(CENTER[0]),y:Math.round(CENTER[1]),radius_px:0,angle_deg:0,
+    area:0,w:0,h:0,fill:0,auto:false,uncertain:['人工新增，待核对'],note:'人工新增，待核对'});render();}
+function delPoint(){if(!sel) return alert('先选一个点');PTS=PTS.filter(q=>q.id!==sel);sel=null;render();}
+function resetPoints(){PTS=JSON.parse(JSON.stringify(AUTO));sel=null;render();}
+function exportJSON(){const d=Object.assign({},{source_image:'单点实测原照.jpg',image_size:[IMG_W,IMG_H],
+  center_px:{x:CENTER[0],y:CENTER[1]},points:PTS,edited:true});
+  dl(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}),'points.edited.json');}
+function exportPNG(){const img=document.getElementById('baseImg');const cv=document.createElement('canvas');
+  cv.width=IMG_W;cv.height=IMG_H;const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,IMG_W,IMG_H);
+  for(const p of PTS){const c=COL[p.color];ctx.strokeStyle=c;ctx.lineWidth=4;ctx.beginPath();ctx.arc(p.x,p.y,17,0,7);ctx.stroke();
+    ctx.fillStyle='#000';ctx.font='bold 24px sans-serif';ctx.fillText(p.id,p.x+20,p.y-20);}
+  cv.toBlob(b=>dl(b,'original-annotated.png'));}
+function dl(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();URL.revokeObjectURL(a.href);}
+// 拖动
+let drag=null;
+document.getElementById('ov').addEventListener('pointerdown',e=>{
+  const g=e.target.closest('.mk'); if(!g) return; select(g.dataset.id);
+  if(editMode){drag=g.dataset.id; const svg=document.getElementById('ov'); svg.setPointerCapture(e.pointerId);}
+});
+document.getElementById('ov').addEventListener('pointermove',e=>{
+  if(!drag) return; const svg=document.getElementById('ov'); const r=svg.getBoundingClientRect();
+  const p=PTS.find(q=>q.id===drag); if(!p) return;
+  p.x=Math.round((e.clientX-r.left)/r.width*IMG_W*10)/10; p.y=Math.round((e.clientY-r.top)/r.height*IMG_H*10)/10; render();
+});
+document.getElementById('ov').addEventListener('pointerup',()=>{drag=null;});
+document.querySelectorAll('#ptTable input').forEach(inp=>{
+  inp.addEventListener('change',()=>{const id=inp.closest('tr').dataset.id;const p=PTS.find(q=>q.id===id);
+    const k=inp.dataset.k;p[k]=parseFloat(inp.value)||0;render();});
+});
+document.querySelectorAll('#ptTable tr[data-id]').forEach(tr=>tr.addEventListener('click',()=>select(tr.dataset.id)));
+document.addEventListener('keydown',e=>{if(!sel)return;const m={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];
+  if(m){e.preventDefault();nudge(m[0],m[1]);}});
+document.getElementById('baseImg').addEventListener('load',()=>{document.getElementById('stage').style.width='100%';render();});
+render();
+</script>
+</body></html>

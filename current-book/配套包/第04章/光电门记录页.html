@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第03章 · 光电门记录导入工具（双头 ESP32-gate）</title>
+<style>
+  :root{--bg:#f6f7f9;--card:#fff;--ink:#1f2430;--sub:#5b6472;--line:#e2e6ec;--accent:#2f6df0;--warn:#b4690e;--err:#b12d1d;--ok:#1f8a4c}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;font-size:14px;line-height:1.6}
+  .wrap{max-width:1120px;margin:0 auto;padding:20px 18px 60px}
+  h1{font-size:20px;margin:0 0 4px}
+  h2{font-size:15px;margin:22px 0 10px;padding-left:9px;border-left:3px solid var(--accent)}
+  .sub{color:var(--sub);font-size:12.5px;margin:0 0 14px}
+  .ban{background:#fff3e0;border:1px solid #f0c98a;color:#8a5a00;border-radius:8px;padding:8px 12px;font-size:13px;margin-bottom:14px;font-weight:600}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+  .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  button{padding:7px 13px;border-radius:7px;border:1px solid #cfd6df;background:#fff;color:var(--ink);font-size:13px;cursor:pointer}
+  button:hover{background:#f0f3f7}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.primary:hover{background:#255bd6}
+  button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  textarea{width:100%;min-height:130px;padding:9px;border:1px solid #cfd6df;border-radius:7px;font-family:ui-monospace,Menlo,monospace;font-size:13px;background:#fff;color:var(--ink);resize:vertical}
+  input[type=number]{width:110px;padding:6px 8px;border:1px solid #cfd6df;border-radius:6px;font-size:13px;background:#fff;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border:1px solid var(--line);padding:5px 7px;text-align:right;white-space:nowrap}
+  th{background:#f0f3f7;text-align:center;color:#38414f;position:sticky;top:0}
+  td.k{text-align:center;background:#fafbfc;font-weight:600}
+  td.note{text-align:left;color:#8a5a00;white-space:normal;min-width:150px}
+  .tblwrap{max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:8px}
+  .msg{font-size:13px;padding:8px 12px;border-radius:7px;margin-top:10px;border:1px solid}
+  .msg.err{background:#fdecea;border-color:#f3c3bc;color:#a4261a}
+  .msg.warn{background:#fff6e6;border-color:#f0d59a;color:#8a5a00}
+  .msg.ok{background:#eafaf0;border-color:#b6e6c8;color:#1a6e3c}
+  .msg.note{background:#eef4ff;border-color:#c7d9f7;color:#274b8c}
+  code{font-family:ui-monospace,Menlo,monospace;background:#f0f3f7;padding:1px 5px;border-radius:4px;font-size:12px}
+  .hint{font-size:12.5px;color:var(--sub)}
+  ul{margin:0;padding-left:18px;font-size:13px}
+  .kv{font-size:12.5px;color:var(--sub)}
+  .kv b{font-family:ui-monospace,Menlo,monospace;color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>第03章 · 光电门记录导入工具（双头 ESP32-gate）</h1>
+  <p class="sub">导入双头光电门的蓝牙 8 字节通知 / USB 串口文本，生成记录表并导出 CSV。</p>
+  <div class="ban">样例记录标【构造检查样例，非实测】；自行粘贴或实时蓝牙导入标【未标注为实测】｜ 本页不连接实物、不上传、不发布</div>
+
+  <div class="card">
+    <h2 style="margin-top:0">一、数据来源</h2>
+    <div class="row">
+      <button id="btnBle" class="on">蓝牙 8 字节通知（ESP32-gate）</button>
+      <button id="btnUsb">USB 串口文本</button>
+    </div>
+    <p class="hint" id="modeHint" style="margin:10px 0 0"></p>
+
+    <div class="row" style="margin-top:12px">
+      <label class="hint">门间距 L</label>
+      <input type="number" id="Linput" step="0.001" value="0.01">
+      <span class="hint">m（默认＝固件 GATE_DISTANCE_M = 0.01 m）</span>
+    </div>
+    <p class="hint" style="margin:6px 0 0">每行在导入时快照“当时的 L”；此后改动 L <strong>不会</strong>重写已导入的历史记录。L 必须为正的有限数，<strong>无效（空 / 0 / 负 / 非有限）时拦截本次导入与蓝牙通知</strong>，不追加记录、旧记录保留。</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">二、粘贴输入</h2>
+    <textarea id="input" placeholder="粘贴内容…"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button id="btnSample">载入样例</button>
+      <button class="primary" id="btnParse">解析并追加</button>
+      <button id="btnClear">清空记录</button>
+      <button id="btnCsv">导出 CSV</button>
+    </div>
+    <div id="messages"></div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">三、记录表</h2>
+    <p class="kv" id="diag"></p>
+    <div class="tblwrap">
+      <table id="tbl">
+        <thead><tr>
+          <th>网页行号</th><th>来源</th><th>数据身份</th><th>原始文本 / 原始字节</th><th>设备时间 t (s)</th>
+          <th>固件速度 (m/s)</th><th>时间差原文</th><th>时间差 Δt (s)</th>
+          <th>当时 L (m)</th><th>网页复算 L/Δt (m/s)</th><th>段</th><th>备注</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">四、连接（按已知协议实现，本页未接实物验证）</h2>
+    <div class="row">
+      <button id="btnConnect">连接 ESP32-gate…</button>
+      <span class="hint">服务 <code>cddf0001-30f7-4671-8b43-5e40ba53514a</code>｜
+        数据 <code>cddf1001-…</code>｜通知 <code>cddf1002-…</code></span>
+    </div>
+    <div id="connMsg"></div>
+    <p class="hint">该按钮按 <code>双头光电门数据说明.md</code> 中的 UUID 与 8 字节格式实现，但<strong>本页未连接实物验证</strong>；且 Web Bluetooth 需在安全上下文（https / localhost）与支持它的浏览器中才可用，直接以 file:// 打开通常不可用。</p>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">五、协议要点与限制</h2>
+    <ul>
+      <li>双头 <code>ESP32-gate</code> 蓝牙通知<strong>恰含两个 32 位小端浮点数（8 字节）</strong>：速度 (m/s)、设备时间 (s)。<strong>不含</strong>原始时间差、<strong>不含</strong>设备事件序号。</li>
+      <li>因此蓝牙行的「时间差原文 / Δt」留空，并注明<strong>未发送</strong>；<strong>禁止</strong>用 <code>L/v</code> 倒算后冒充测得的时间差。</li>
+      <li>USB 串口文本含「两门时间差是 … us」，可用 <code>L / Δt</code> 复算速度，另列「网页复算速度」；固件速度仍保存原值。</li>
+      <li>设备时间是两束光触发时刻的平均值，<strong>不是</strong>浏览器接收时间。</li>
+      <li>网页行号只是<strong>接收顺序</strong>，<strong>不是</strong>设备序号；无设备序号时<strong>不能</strong>声称能检测全部丢包。</li>
+      <li>设备时间<strong>回退</strong>时另起记录段；<strong>相同包</strong>只标「疑似重复」。</li>
+      <li>每行保留导入<strong>当时</strong>的 L，不随输入改变历史值。</li>
+      <li>拒绝：错误字节长度、非有限数、非正的时间差；<strong>门间距 L 无效（空 / 0 / 负 / 非有限）时拦截本次导入与蓝牙通知</strong>，不追加记录，旧记录保留。</li>
+      <li>“相同包”判定比较<strong>来源 + 规范化原始字节/文本 + 全部包字段</strong>（速度、设备时间、时间差），不只看速度与时间。</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ===== 样例（来自 input/04-光电门/*-examples.txt，构造检查样例，非实测） ===== */
+var SAMPLE_BLE = [
+  "00 00 a0 3f 00 00 48 41",
+  "00 00 00 3f 00 00 70 41",
+  "00 00 80 3f 00 00 00 3f",
+  "# 以下长度错误，用于错误提示：",
+  "00 00 a0 3f"
+].join("\n");
+var SAMPLE_USB = [
+  "速度是 1.25 m/s，时间是 12.5 s，两门时间差是 8000 us",
+  "速度是 0.5 m/s，时间是 15 s，两门时间差是 20000 us",
+  "速度是 1 m/s，时间是 0.5 s，两门时间差是 10000 us"
+].join("\n");
+
+var mode = "ble";
+var rows = [];          // {n, source, raw, t, speedFw, dtRaw, dtS, L, vCalc, seg, note[]}
+var lastT = null, segCount = 0, lastKey = null;
+var sampleLoaded = false;   // 输入区内容是否来自“载入样例”
+var SAMPLE_ID = "构造检查样例，非实测";
+var PASTE_ID  = "用户导入，未标注为实测";
+var LIVE_ID   = "实时蓝牙，未标注为实测";
+
+function isPosFinite(x){ return (x !== null) && isFinite(x) && x > 0; }
+function LInvalidMsg(rawText){ return "门间距 L 无效（当前：" + JSON.stringify(String(rawText == null ? "" : rawText)) + "）："
+  + "L 必须为正的有限数。已拦截，未追加任何记录，原有记录保持不变。"; }
+
+/* 规范化原始包，用于“相同包”判定：来源 + 规范化原始字节/文本 + 全部包字段 */
+function packetKey(source, raw, parsed){
+  var r = String(raw);
+  if(source.indexOf("蓝牙") >= 0){
+    r = r.trim().split(/\s+/).map(function(t){ return t.replace(/^0x/i, "").toUpperCase(); }).join(" ");
+  }else{
+    r = r.replace(/，/g, ",").replace(/：/g, ":").replace(/[\s\u3000]+/g, "");
+  }
+  return source + "|" + r + "|" + parsed.speed + "|" + parsed.time + "|" + parsed.dtRaw;
+}
+
+var $ = function(id){ return document.getElementById(id); };
+
+function num(s){
+  s = (s==null?"":String(s)).trim();
+  if(s==="") return null;
+  var v = Number(s);
+  return isFinite(v) ? v : null;
+}
+
+/* ===== 解析 ===== */
+function parseBleLine(line){
+  var toks = line.trim().split(/\s+/);
+  var hexOk = /^(0x)?[0-9a-fA-F]{2}$/;
+  for(var i=0;i<toks.length;i++){ if(!hexOk.test(toks[i])) return {err:"含非十六进制字节："+toks[i]}; }
+  if(toks.length !== 8) return {err:"字节长度错误：需 8 字节，实得 "+toks.length+" 字节（"+(toks.length*8)+" bit）"};
+  var b = toks.map(function(t){ return parseInt(t.replace(/^0x/,""),16); });
+  var buf = new ArrayBuffer(8); var dv = new DataView(buf);
+  for(var j=0;j<8;j++) dv.setUint8(j, b[j]);
+  var speed = dv.getFloat32(0, true);       // 小端
+  var time  = dv.getFloat32(4, true);
+  if(!isFinite(speed) || !isFinite(time)) return {err:"非有限浮点数"};
+  return {speed:speed, time:time, dtRaw:"", dtS:null, note:["Δt未发送（蓝牙帧不含时间差）"]};
+}
+
+function parseUsbLine(line){
+  var s = line.replace(/，/g, ",").replace(/：/g, ":");
+  var m1 = s.match(/速度是\s*([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s*m\/s/);
+  var m2 = s.match(/时间是\s*([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s*s/);
+  var m3 = s.match(/两门时间差是\s*([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)\s*us/);
+  if(!m1 || !m2 || !m3) return {err:"格式不匹配（需含 速度/时间/两门时间差）"};
+  var speed = num(m1[1]), time = num(m2[1]), dtus = num(m3[1]);
+  if(speed===null || time===null || dtus===null) return {err:"非有限数"};
+  if(!(dtus > 0)) return {err:"非正的时间差：Δt = "+m3[1]+" us"};
+  var dtS = dtus/1e6;
+  return {speed:speed, time:time, dtRaw:m3[1]+" us", dtS:dtS, note:[]};
+}
+
+/* ===== 蓝牙连接回调入库（先拦截无效 L）===== */
+function ingestBleBytes(bytes, Lval){
+  if(!isPosFinite(Lval)) return {err: LInvalidMsg($("Linput").value)};
+  if(bytes.length !== 8) return {err:"通知被拒绝：字节长度错误：需 8 字节，实得 " + bytes.length + " 字节"};
+  var hex = bytes.map(function(x){ return ("0"+x.toString(16)).slice(-2); }).join(" ");
+  var p = parseBleLine(hex);
+  if(p.err) return {err:"通知被拒绝：" + p.err};
+  addRow("蓝牙", hex, p, Lval, LIVE_ID);
+  return {ok:true};
+}
+
+/* ===== 追加一行 ===== */
+function addRow(source, raw, parsed, L, identity){
+  var n = rows.length + 1;
+  var note = parsed.note.slice();
+
+  // 设备时间回退 -> 新段
+  var seg;
+  if(lastT !== null && parsed.time < lastT){ segCount += 1; note.push("设备时间回退 → 另起记录段"); }
+  seg = segCount;
+
+  // 相同包 -> 疑似重复
+  var key = packetKey(source, raw, parsed);
+  if(lastKey !== null && key === lastKey) note.push("相同包 → 疑似重复");
+  lastKey = key;
+  lastT = parsed.time;
+
+  // 网页复算速度（仅当有 Δt 且 L>0）
+  var vCalc = null;
+  if(parsed.dtS !== null){
+    if(L === null || !(L > 0)) note.push("L 非正或无效，无法复算");
+    else vCalc = L / parsed.dtS;
+  }
+
+  rows.push({ n:n, source:source, identity:identity, raw:raw, t:parsed.time, speedFw:parsed.speed,
+              dtRaw:parsed.dtRaw, dtS:parsed.dtS, L:L, vCalc:vCalc, seg:seg, note:note });
+}
+
+/* ===== 渲染 ===== */
+function fmt(x, d){ return (x===null||x===undefined||!isFinite(x)) ? "—" : x.toFixed(d); }
+
+function render(){
+  var tb = $("tbody"); tb.innerHTML = "";
+  rows.forEach(function(r){
+    var tr = document.createElement("tr");
+    function td(txt, cls){ var d=document.createElement("td"); if(cls) d.className=cls; d.textContent=txt; return d; }
+    tr.appendChild(td(r.n, "k"));
+    tr.appendChild(td(r.source));
+    tr.appendChild(td(r.identity, "note"));
+    tr.appendChild(td(r.raw));
+    tr.appendChild(td(fmt(r.t, 3)));
+    tr.appendChild(td(fmt(r.speedFw, 5)));
+    tr.appendChild(td(r.dtRaw === "" ? "—（未发送）" : r.dtRaw));
+    tr.appendChild(td(r.dtS === null ? "—" : r.dtS.toFixed(6)));
+    tr.appendChild(td(fmt(r.L, 4)));
+    tr.appendChild(td(r.vCalc === null ? "—" : r.vCalc.toFixed(6)));
+    tr.appendChild(td(r.seg, "k"));
+    tr.appendChild(td(r.note.length ? r.note.join("；") : "", "note"));
+    tb.appendChild(tr);
+  });
+
+  var nBle = rows.filter(function(r){return r.source.indexOf("蓝牙")>=0;}).length;
+  var nUsb = rows.length - nBle;
+  var nSeg = rows.length ? (segCount + 1) : 0;
+  var idCount = {};
+  rows.forEach(function(r){ idCount[r.identity] = (idCount[r.identity]||0) + 1; });
+  var idStr = Object.keys(idCount).map(function(k){ return k + "×" + idCount[k]; }).join("；") || "(无)";
+  $("diag").innerHTML =
+    "身份："+idStr+"｜ 已记录 <b>"+rows.length+"</b> 行（蓝牙 "+nBle+" / USB "+nUsb+"）｜ 记录段数 <b>"+nSeg+"</b>｜ "
+    + "疑似重复 <b>"+rows.filter(function(r){return r.note.join().indexOf("疑似重复")>=0;}).length+"</b>｜ "
+    + "备注：网页行号仅为接收顺序，<strong>不是</strong>设备序号；蓝牙帧无设备序号，<strong>无法</strong>据本页判断丢包数量。";
+}
+
+/* ===== 提示 ===== */
+function clearMsgs(){ $("messages").innerHTML=""; }
+function msg(cls, text){ var d=document.createElement("div"); d.className="msg "+cls; d.textContent=text; $("messages").appendChild(d); }
+
+function setMode(m){
+  mode = m;
+  $("btnBle").className = (m==="ble" ? "on" : "");
+  $("btnUsb").className = (m==="usb" ? "on" : "");
+  $("modeHint").innerHTML = (m==="ble")
+    ? "蓝牙：每行是一次 8 字节通知（空格分隔十六进制）。两门时间差留空并注明未发送。"
+    : "USB：每行文本含 速度、设备时间、两门时间差(us)。可用 L/Δt 复算速度。";
+}
+
+$("btnBle").addEventListener("click", function(){ setMode("ble"); });
+$("btnUsb").addEventListener("click", function(){ setMode("usb"); });
+$("btnSample").addEventListener("click", function(){
+  $("input").value = (mode==="ble") ? SAMPLE_BLE : SAMPLE_USB;
+  sampleLoaded = true;
+  clearMsgs(); msg("note", "已载入"+(mode==="ble"?"蓝牙":"USB")+"样例（构造检查样例，非实测）。点“解析并追加”查看结果。");
+});
+
+$("btnParse").addEventListener("click", function(){
+  clearMsgs();
+  var raw = $("input").value || "";
+  var lines = raw.split(/\r?\n/);
+  var Lval = num($("Linput").value);
+  if(!isPosFinite(Lval)){
+    msg("err", LInvalidMsg($("Linput").value));
+    render();
+    return;
+  }
+  var added=0, rejected=0, rejects=[];
+  lines.forEach(function(line, i){
+    var s = line.trim();
+    if(s==="") return;
+    if(s.charAt(0)==="#") return;              // 注释行
+    var p = (mode==="ble") ? parseBleLine(s) : parseUsbLine(s);
+    if(p.err){ rejected++; rejects.push("第 "+(i+1)+" 行被拒绝：" + p.err); return; }
+    addRow(mode==="ble"?"蓝牙":"USB", s, p, Lval, sampleLoaded ? SAMPLE_ID : PASTE_ID);
+    added++;
+  });
+  rejects.forEach(function(t){ msg("err", t); });
+  if(added>0) msg("ok", "本次追加 "+added+" 行；被拒绝 "+rejected+" 行。");
+  else if(rejected===0) msg("note", "未发现可解析的行。");
+  render();
+});
+
+$("input").addEventListener("input", function(){ sampleLoaded = false; });
+$("btnClear").addEventListener("click", function(){
+  rows=[]; lastT=null; segCount=0; lastKey=null; sampleLoaded=false;
+  clearMsgs(); $("input").value=""; render();
+  msg("note", "记录已清空。");
+});
+
+/* ===== CSV ===== */
+function csvCell(s){
+  s = (s==null?"":String(s));
+  if(/[",\n]/.test(s)) return '"'+s.replace(/"/g,'""')+'"';
+  return s;
+}
+$("btnCsv").addEventListener("click", function(){
+  var lines=[];
+  lines.push(["# 第03章 光电门记录导入工具 · CSV 导出"].map(csvCell).join(","));
+  var idCount = {}; rows.forEach(function(r){ idCount[r.identity]=(idCount[r.identity]||0)+1; });
+  lines.push(["# 数据身份", Object.keys(idCount).map(function(k){return k+"×"+idCount[k];}).join("；") || "(无记录)"].map(csvCell).join(","));
+  lines.push(["# 协议","双头 ESP32-gate 蓝牙通知=8字节(速度f32 LE, 设备时间f32 LE)；USB文本含两门时间差(us)"].map(csvCell).join(","));
+  lines.push(["# 说明","蓝牙行时间差原文/Δt 留空(未发送)；网页行号仅接收顺序，非设备序号"].map(csvCell).join(","));
+  lines.push(["# 硬件","本页未连接实物验证；连接按钮未验证"].map(csvCell).join(","));
+  lines.push("");
+  lines.push(["网页行号","来源","数据身份","原始文本/原始字节","设备时间t(s)","固件速度(m/s)","时间差原文","时间差Δt(s)","当时L(m)","网页复算速度(m/s)","段","备注"].map(csvCell).join(","));
+  rows.forEach(function(r){
+    lines.push([r.n, r.source, r.identity, r.raw, fmt(r.t,6)==="—"?"":fmt(r.t,6), fmt(r.speedFw,6)==="—"?"":fmt(r.speedFw,6),
+      r.dtRaw, r.dtS===null?"":r.dtS.toFixed(9), r.L===null?"":r.L,
+      r.vCalc===null?"":r.vCalc.toFixed(6), r.seg, r.note.join("；")].map(csvCell).join(","));
+  });
+  var blob = new Blob(["\uFEFF"+lines.join("\r\n")], {type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="光电门记录-"+ts()+".csv";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(a.href); },1000);
+});
+function ts(){ var d=new Date(),p=function(x){return (x<10?"0":"")+x;};
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+"-"+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds()); }
+
+/* ===== 蓝牙连接（按已知协议实现；本页尚未做实物连接验证） ===== */
+var SVC_EXP="cddf0001-30f7-4671-8b43-5e40ba53514a";
+var SVC_DATA="cddf1001-30f7-4671-8b43-5e40ba53514a";
+var CH_NOTIFY="cddf1002-30f7-4671-8b43-5e40ba53514a";
+$("btnConnect").addEventListener("click", async function(){
+  var box=$("connMsg"); box.innerHTML="";
+  function say(cls,t){ var d=document.createElement("div"); d.className="msg "+cls; d.textContent=t; box.appendChild(d); }
+  if(!navigator.bluetooth){ say("err","当前环境不支持 Web Bluetooth（或非安全上下文）。本页未连接实物验证，此为预期结果。"); return; }
+  try{
+    var dev = await navigator.bluetooth.requestDevice({ filters:[{ namePrefix:"ESP32-gate" }], optionalServices:[SVC_EXP, SVC_DATA] });
+    var server = await dev.gatt.connect();
+    var svc = await server.getPrimaryService(SVC_DATA);
+    var ch = await svc.getCharacteristic(CH_NOTIFY);
+    await ch.startNotifications();
+    ch.addEventListener("characteristicvaluechanged", function(e){
+      var dv = e.target.value, b=[];
+      for(var i=0;i<dv.byteLength;i++) b.push(dv.getUint8(i));
+      var r = ingestBleBytes(b, num($("Linput").value));
+      if(r.err) msg("err", r.err); else render();
+    });
+    say("ok","已连接并订阅通知。");
+  }catch(err){ say("warn","未连接：" + (err && err.message ? err.message : err)); }
+});
+
+setMode("ble");
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>静电平衡的建立</title>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: #F4F3EF;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 24px 24px 40px; box-sizing: border-box; }
+  .stage {
+    width: 100%; aspect-ratio: 16 / 9; background: #FFFFFF;
+    border-radius: 12px; box-shadow: 0 2px 18px rgba(0,0,0,.07); overflow: hidden;
+  }
+  .stage svg { display: block; width: 100%; height: 100%; }
+  .bar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    margin-top: 16px; padding: 14px 16px; background: #FFFFFF;
+    border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.05);
+  }
+  button {
+    font: inherit; font-size: 15px; color: #2C2C2A;
+    background: #F1EFE8; border: 1px solid #D3D1C7; border-radius: 8px;
+    padding: 8px 18px; cursor: pointer; transition: background .15s, border-color .15s;
+  }
+  button:hover { background: #E8E5DC; border-color: #B4B2A9; }
+  button:active { background: #DEDAD0; }
+  button.primary { background: #534AB7; border-color: #534AB7; color: #FFFFFF; min-width: 96px; }
+  button.primary:hover { background: #463E9E; border-color: #463E9E; }
+  .sep { width: 1px; height: 26px; background: #E0DED5; margin: 0 4px; }
+  .sliderBox { display: flex; align-items: center; gap: 12px; flex: 1 1 420px; min-width: 260px; }
+  input[type="range"] { flex: 1; height: 26px; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: #E0DED5; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 20px; height: 20px; margin-top: -7px;
+    border-radius: 50%; background: #534AB7; border: 2px solid #FFFFFF; box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  }
+  .readout { font-size: 14px; color: #6B6960; font-variant-numeric: tabular-nums; min-width: 72px; text-align: right; }
+  body.emit { background: #FFFFFF; }
+  body.emit .wrap { max-width: none; padding: 0; }
+  body.emit .bar { display: none; }
+  body.emit .stage { width: 1920px; height: 1080px; border-radius: 0; box-shadow: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="stage">
+    <svg id="stage" viewBox="0 0 1920 1080" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg"
+         font-family="-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif">
+      <defs>
+        <marker id="mGray" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="22" markerHeight="22"
+                markerUnits="userSpaceOnUse" orient="auto">
+          <path d="M0 0 L10 5 L0 10 Z" fill="#8A8880"/>
+        </marker>
+        <marker id="mPurple" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="22" markerHeight="22"
+                markerUnits="userSpaceOnUse" orient="auto">
+          <path d="M0 0 L10 5 L0 10 Z" fill="#534AB7"/>
+        </marker>
+      </defs>
+
+      <rect x="0" y="0" width="1920" height="1080" fill="#FFFFFF"/>
+
+      <text x="120" y="122" font-size="42" font-weight="500" fill="#2C2C2A">静电平衡的建立</text>
+      <text x="1800" y="118" font-size="26" fill="#8C8A80" text-anchor="end">过程示意，时间与位移经放大</text>
+
+      <line x1="220" y1="440" x2="450" y2="440" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <line x1="460" y1="440" x2="690" y2="440" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <line x1="220" y1="580" x2="450" y2="580" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <line x1="460" y1="580" x2="690" y2="580" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <line x1="1230" y1="440" x2="1460" y2="440" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <line x1="1470" y1="440" x2="1700" y2="440" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <line x1="1230" y1="580" x2="1460" y2="580" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <line x1="1470" y1="580" x2="1700" y2="580" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+
+      <rect x="700" y="350" width="520" height="320" rx="20" fill="#EDEBE4" stroke="#6E6B62" stroke-width="3"/>
+
+      <line x1="770" y1="440" x2="1150" y2="440" stroke="#8A8880" stroke-width="5" marker-end="url(#mGray)"/>
+      <text x="790" y="412" font-size="26" fill="#8A8880">外电场 E₀</text>
+
+      <line id="lineEp" x1="1150" y1="580" x2="1150" y2="580" stroke="#534AB7" stroke-width="5" marker-end="url(#mPurple)"/>
+      <text id="txtEpLabel" x="790" y="645" font-size="26" fill="#534AB7" opacity="0">感应电荷的电场 E′</text>
+
+      <g id="pair1" opacity="0">
+        <text x="736" y="440" font-size="46" font-weight="500" fill="#185FA5" text-anchor="middle" dominant-baseline="central">−</text>
+        <text x="1184" y="440" font-size="46" font-weight="500" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">+</text>
+      </g>
+      <g id="pair2" opacity="0">
+        <text x="736" y="510" font-size="46" font-weight="500" fill="#185FA5" text-anchor="middle" dominant-baseline="central">−</text>
+        <text x="1184" y="510" font-size="46" font-weight="500" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">+</text>
+      </g>
+      <g id="pair3" opacity="0">
+        <text x="736" y="580" font-size="46" font-weight="500" fill="#185FA5" text-anchor="middle" dominant-baseline="central">−</text>
+        <text x="1184" y="580" font-size="46" font-weight="500" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">+</text>
+      </g>
+
+      <g id="e1" transform="translate(980,510)">
+        <circle r="17" fill="#E6F1FB" stroke="#185FA5" stroke-width="3"/>
+        <text y="1" font-size="26" font-weight="500" fill="#185FA5" text-anchor="middle" dominant-baseline="central">−</text>
+      </g>
+      <g id="e2" transform="translate(1055,510)">
+        <circle r="17" fill="#E6F1FB" stroke="#185FA5" stroke-width="3"/>
+        <text y="1" font-size="26" font-weight="500" fill="#185FA5" text-anchor="middle" dominant-baseline="central">−</text>
+      </g>
+      <g id="e3" transform="translate(1130,510)">
+        <circle r="17" fill="#E6F1FB" stroke="#185FA5" stroke-width="3"/>
+        <text y="1" font-size="26" font-weight="500" fill="#185FA5" text-anchor="middle" dominant-baseline="central">−</text>
+      </g>
+
+      <text id="txtEq" x="960" y="715" font-size="34" font-weight="500" fill="#2C2C2A" text-anchor="middle" opacity="0">导体内部合场强 E = 0</text>
+
+      <line x1="120" y1="790" x2="1800" y2="790" stroke="#E5E3DC" stroke-width="2"/>
+      <text x="120" y="860" font-size="25" fill="#6B6960">带 − 号的小球：自由电子（迁移示意）</text>
+      <text x="980" y="860" font-size="25" fill="#6B6960">灰色箭头：外电场 E₀，向右，长度不变</text>
+      <text x="120" y="910" font-size="25" fill="#6B6960">紫色箭头：感应电荷的电场 E′，向左，逐渐增强</text>
+      <text x="980" y="910" font-size="25" fill="#6B6960">± 号：导体两端的净电荷，等量异种</text>
+
+      <text id="txtStatus" x="960" y="990" font-size="38" font-weight="500" fill="#2C2C2A" text-anchor="middle"></text>
+    </svg>
+  </div>
+
+  <div class="bar">
+    <button id="btnPlay" class="primary">播放</button>
+    <button id="btnReplay">重播</button>
+    <div class="sep"></div>
+    <button id="btnA">起点</button>
+    <button id="btnB">迁移</button>
+    <button id="btnC">平衡</button>
+    <div class="sep"></div>
+    <div class="sliderBox">
+      <input id="slider" type="range" min="0" max="9" step="0.01" value="0">
+      <span class="readout" id="readout">0.00 s</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var DUR = 9.00;
+  var T_START = 0.70;
+  var T_BAL = 7.40;
+  var SPAN = T_BAL - T_START;
+  var ELE_X0 = [980, 1055, 1130];
+  var TRAVEL = 190;
+  var EP_MAX = 380;
+  var TH = [0.10, 0.40, 0.70];
+
+  var lineEp = document.getElementById('lineEp');
+  var txtEpLabel = document.getElementById('txtEpLabel');
+  var txtEq = document.getElementById('txtEq');
+  var txtStatus = document.getElementById('txtStatus');
+  var elems = [document.getElementById('e1'), document.getElementById('e2'), document.getElementById('e3')];
+  var pairs = [document.getElementById('pair1'), document.getElementById('pair2'), document.getElementById('pair3')];
+
+  var TEXT = [
+    '导体已放入匀强电场，自由电子尚未发生定向移动',
+    '自由电子向左定向移动，导体两端出现等量异种电荷',
+    '自由电子不再定向移动，导体达到静电平衡状态'
+  ];
+
+  function progress(t) {
+    if (t <= T_START) return 0;
+    var u = (t - T_START) / SPAN;
+    if (u > 1) u = 1;
+    var decel = 1 - Math.pow(1 - u, 1.5);
+    var ramp = 1 - Math.exp(-u / 0.09);
+    return decel * ramp;
+  }
+
+  function clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+
+  var curPhase = -1, fade = 1;
+
+  function render(t, dt) {
+    var p = progress(t);
+
+    for (var i = 0; i < 3; i++) {
+      var x = ELE_X0[i] - TRAVEL * p;
+      elems[i].setAttribute('transform', 'translate(' + x.toFixed(2) + ',510)');
+    }
+
+    var L = EP_MAX * p;
+    if (L < 3) {
+      lineEp.setAttribute('visibility', 'hidden');
+    } else {
+      lineEp.setAttribute('visibility', 'visible');
+      lineEp.setAttribute('x2', (1150 - L).toFixed(2));
+    }
+    txtEpLabel.setAttribute('opacity', p.toFixed(3));
+
+    for (var k = 0; k < 3; k++) {
+      pairs[k].setAttribute('opacity', clamp01((p - TH[k]) / 0.10).toFixed(3));
+    }
+
+    txtEq.setAttribute('opacity', clamp01((t - T_BAL) / 0.60).toFixed(3));
+
+    var phase = t < T_START ? 0 : (t < T_BAL ? 1 : 2);
+    if (phase !== curPhase) { curPhase = phase; fade = 0; }
+    else { fade = Math.min(1, fade + (dt || 0) / 0.25); }
+    txtStatus.setAttribute('opacity', fade.toFixed(3));
+    txtStatus.textContent = TEXT[phase];
+
+    return { p: p, phase: phase };
+  }
+
+  var t = 0, playing = false, last = 0;
+  var btnPlay = document.getElementById('btnPlay');
+  var btnReplay = document.getElementById('btnReplay');
+  var btnA = document.getElementById('btnA');
+  var btnB = document.getElementById('btnB');
+  var btnC = document.getElementById('btnC');
+  var slider = document.getElementById('slider');
+  var readout = document.getElementById('readout');
+
+  function syncBtn() { btnPlay.textContent = playing ? '暂停' : '播放'; }
+  function syncUI() {
+    slider.value = t.toFixed(2);
+    readout.textContent = t.toFixed(2) + ' s';
+  }
+
+  function loop(now) {
+    if (!last) last = now;
+    var dt = Math.min(0.1, (now - last) / 1000);
+    last = now;
+    if (playing) {
+      t += dt;
+      if (t >= DUR) { t = DUR; playing = false; syncBtn(); }
+    }
+    render(t, dt);
+    syncUI();
+    requestAnimationFrame(loop);
+  }
+
+  function seek(v, keepPlaying) {
+    t = Math.max(0, Math.min(DUR, v));
+    if (!keepPlaying) { playing = false; syncBtn(); }
+    render(t, 0.016);
+    syncUI();
+  }
+
+  btnPlay.addEventListener('click', function () {
+    if (t >= DUR - 1e-6) t = 0;
+    playing = !playing;
+    last = 0;
+    syncBtn();
+  });
+  btnReplay.addEventListener('click', function () {
+    playing = true; last = 0; t = 0; syncBtn();
+  });
+  btnA.addEventListener('click', function () { seek(0.00); });
+  btnB.addEventListener('click', function () { seek(4.20); });
+  btnC.addEventListener('click', function () { seek(8.60); });
+  slider.addEventListener('input', function () { seek(parseFloat(slider.value)); });
+
+  var P = new URLSearchParams(location.search);
+  var EMIT = P.get('emit') === '1';
+  if (EMIT) {
+    document.body.classList.add('emit');
+    playing = false;
+    syncBtn();
+  }
+
+  window.__renderAt = function (time) {
+    t = time;
+    curPhase = time < T_START ? 0 : (time < T_BAL ? 1 : 2);
+    fade = 1;
+    render(time, 0.5);
+    syncUI();
+  };
+
+  if (EMIT) window.__renderAt(parseFloat(P.get('t') || '0'));
+
+  render(0, 0.5);
+  syncUI();
+  syncBtn();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
